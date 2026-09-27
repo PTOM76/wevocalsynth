@@ -3,61 +3,13 @@
 //! Smoother than WSOLA on long stretches (no grain repetition), at the cost
 //! of some phasiness and softened transients.
 
+use crate::fft::Fft;
 use std::f64::consts::PI;
 
 /// Analysis/synthesis frame length in seconds; rounded up to a power of two.
 const FRAME_SEC: f32 = 0.046;
 /// Synthesis hop as a fraction of the frame (75% overlap).
 const OVERLAP: usize = 4;
-
-/// In-place iterative radix-2 FFT over split real/imag arrays.
-struct Fft {
-    n: usize,
-    cos: Vec<f32>,
-    sin: Vec<f32>,
-    rev: Vec<usize>,
-}
-
-impl Fft {
-    fn new(n: usize) -> Self {
-        let bits = n.trailing_zeros();
-        let rev = (0..n).map(|i| i.reverse_bits() >> (usize::BITS - bits)).collect();
-        let cos = (0..n / 2).map(|i| (2.0 * PI * i as f64 / n as f64).cos() as f32).collect();
-        let sin = (0..n / 2).map(|i| (2.0 * PI * i as f64 / n as f64).sin() as f32).collect();
-        Fft { n, cos, sin, rev }
-    }
-
-    /// Forward transform when `inverse` is false; the inverse is unscaled.
-    fn run(&self, re: &mut [f32], im: &mut [f32], inverse: bool) {
-        let n = self.n;
-        for i in 0..n {
-            let j = self.rev[i];
-            if j > i {
-                re.swap(i, j);
-                im.swap(i, j);
-            }
-        }
-        let sign = if inverse { 1.0 } else { -1.0 };
-        let mut size = 2;
-        while size <= n {
-            let half = size / 2;
-            let step = n / size;
-            for start in (0..n).step_by(size) {
-                for k in 0..half {
-                    let (wr, wi) = (self.cos[k * step], sign * self.sin[k * step]);
-                    let (a, b) = (start + k, start + k + half);
-                    let tr = re[b] * wr - im[b] * wi;
-                    let ti = re[b] * wi + im[b] * wr;
-                    re[b] = re[a] - tr;
-                    im[b] = im[a] - ti;
-                    re[a] += tr;
-                    im[a] += ti;
-                }
-            }
-            size *= 2;
-        }
-    }
-}
 
 fn wrap(p: f64) -> f64 {
     p - 2.0 * PI * ((p + PI) / (2.0 * PI)).floor()
@@ -79,7 +31,9 @@ pub fn stretch(
         return channels.iter().map(|c| c.to_vec()).collect();
     }
 
-    let n = ((sample_rate * FRAME_SEC) as usize).max(256).next_power_of_two();
+    let n = ((sample_rate * FRAME_SEC) as usize)
+        .max(256)
+        .next_power_of_two();
     let hs = n / OVERLAP;
     let bins = n / 2 + 1;
     let fft = Fft::new(n);
@@ -92,7 +46,11 @@ pub fn stretch(
     let last_pos = len.saturating_sub(n) as f64;
     let span_out = out_len.saturating_sub(n).max(1) as f64;
     let frames = out_len / hs + 1;
-    let pos_of = |k: usize| ((k * hs) as f64 / span_out * last_pos).round().clamp(0.0, last_pos) as usize;
+    let pos_of = |k: usize| {
+        ((k * hs) as f64 / span_out * last_pos)
+            .round()
+            .clamp(0.0, last_pos) as usize
+    };
 
     let total = (frames * channels.len()).max(1) as f64;
     let mut out = vec![vec![0.0f32; out_len + n]; channels.len()];

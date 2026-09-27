@@ -8,6 +8,8 @@
 //! The wasm build exposes a tiny C ABI (no wasm-bindgen) so it can be loaded
 //! with plain `WebAssembly.instantiate` inside a Web Worker.
 
+mod fft;
+pub mod formant;
 pub mod pv;
 
 use std::cell::RefCell;
@@ -65,7 +67,12 @@ pub fn wsola_with_progress(
     };
     // Similarity over the overlap region only (first half of each frame).
     let corr = |a: i64, b: i64, step: usize| -> f32 {
-        seg(a)[..hs].iter().step_by(step).zip(seg(b)[..hs].iter().step_by(step)).map(|(x, y)| x * y).sum()
+        seg(a)[..hs]
+            .iter()
+            .step_by(step)
+            .zip(seg(b)[..hs].iter().step_by(step))
+            .map(|(x, y)| x * y)
+            .sum()
     };
 
     let mut out = vec![vec![0.0f32; out_len + n]; channels.len()];
@@ -162,7 +169,11 @@ pub fn resample(x: &[f32], ratio: f64, out_len: usize) -> Vec<f32> {
                         return 0.0;
                     }
                     let arg = PI * d * cutoff;
-                    let sinc = if arg.abs() < 1e-9 { 1.0 } else { arg.sin() / arg };
+                    let sinc = if arg.abs() < 1e-9 {
+                        1.0
+                    } else {
+                        arg.sin() / arg
+                    };
                     sinc * (0.5 + 0.5 * (PI * u).cos())
                 })
                 .collect();
@@ -185,7 +196,10 @@ pub fn resample(x: &[f32], ratio: f64, out_len: usize) -> Vec<f32> {
             let g = (pf - p as f64) as f32;
             // Taps cover input indices center-half+1 ..= center+half, i.e. padded[center+1 ..].
             let src = &padded[center + 1..center + 1 + taps];
-            let (r0, r1) = (&table[p * taps..(p + 1) * taps], &table[(p + 1) * taps..(p + 2) * taps]);
+            let (r0, r1) = (
+                &table[p * taps..(p + 1) * taps],
+                &table[(p + 1) * taps..(p + 2) * taps],
+            );
             src.iter()
                 .zip(r0.iter().zip(r1))
                 .map(|(&v, (&a, &b))| v * (a + (b - a) * g))
@@ -196,8 +210,21 @@ pub fn resample(x: &[f32], ratio: f64, out_len: usize) -> Vec<f32> {
 
 /// Pitch shift by `semitones` and time-stretch by `stretch` in one pass.
 /// Output length = input length * stretch regardless of the pitch change.
-pub fn process(channels: &[&[f32]], sample_rate: f32, semitones: f64, stretch: f64) -> Vec<Vec<f32>> {
-    process_with_progress(channels, sample_rate, semitones, stretch, Algorithm::Wsola, &mut |_| {})
+pub fn process(
+    channels: &[&[f32]],
+    sample_rate: f32,
+    semitones: f64,
+    stretch: f64,
+) -> Vec<Vec<f32>> {
+    process_with_progress(
+        channels,
+        sample_rate,
+        semitones,
+        stretch,
+        Algorithm::Wsola,
+        Formant::Follow,
+        &mut |_| {},
+    )
 }
 
 /// Time-stretch method used for both stretching and (before resampling) pitch shifting.
@@ -216,12 +243,27 @@ impl Algorithm {
         }
     }
 
-    fn stretch(self, channels: &[&[f32]], alpha: f64, sr: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
+    fn stretch(
+        self,
+        channels: &[&[f32]],
+        alpha: f64,
+        sr: f32,
+        progress: &mut dyn FnMut(f64),
+    ) -> Vec<Vec<f32>> {
         match self {
             Algorithm::Wsola => wsola_with_progress(channels, alpha, sr, progress),
             Algorithm::PhaseVocoder => pv::stretch(channels, alpha, sr, progress),
         }
     }
+}
+
+/// Formant handling for `process_with_progress`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Formant {
+    /// Formants move with the pitch (plain resampling).
+    Follow,
+    /// Keep formants, then shift them by this many semitones (0 = preserve).
+    Shift(f64),
 }
 
 /// `process` that reports overall progress in 0..=1 through `progress`.
@@ -231,28 +273,57 @@ pub fn process_with_progress(
     semitones: f64,
     stretch: f64,
     algorithm: Algorithm,
+    formant: Formant,
     progress: &mut dyn FnMut(f64),
 ) -> Vec<Vec<f32>> {
     let len = channels.first().map_or(0, |c| c.len());
     let target_len = (len as f64 * stretch).round() as usize;
     let ratio = 2f64.powf(semitones / 12.0);
-    if (ratio - 1.0).abs() < 1e-9 {
-        let out = algorithm.stretch(channels, stretch, sample_rate, progress);
-        progress(1.0);
-        return out;
+    let pitch = (ratio - 1.0).abs() > 1e-9;
+    // Envelope warp applied before resampling (see `formant`).
+    let warp = match formant {
+        Formant::Follow => 1.0,
+        Formant::Shift(st) => ratio / 2f64.powf(st / 12.0),
+    };
+    let correct = (warp - 1.0).abs() > 1e-9;
+
+    // Rough cost split of the stages, used only for progress reporting.
+    let stretch_share = if correct {
+        0.5
+    } else if pitch {
+        0.6
+    } else {
+        1.0
+    };
+    let formant_share = if correct {
+        if pitch {
+            0.3
+        } else {
+            0.5
+        }
+    } else {
+        0.0
+    };
+    let n = channels.len().max(1) as f64;
+
+    let mut out = algorithm.stretch(channels, stretch * ratio, sample_rate, &mut |p| {
+        progress(p * stretch_share)
+    });
+    if correct {
+        for (i, c) in out.iter_mut().enumerate() {
+            let base = stretch_share + formant_share * i as f64 / n;
+            *c = formant::correct(c, warp, sample_rate, &mut |p| {
+                progress(base + formant_share * p / n)
+            });
+        }
     }
-    // Rough cost split measured with the bench: stretch ~60%, resampling ~40%.
-    const STRETCH_SHARE: f64 = 0.6;
-    let stretched = algorithm.stretch(channels, stretch * ratio, sample_rate, &mut |p| progress(p * STRETCH_SHARE));
-    let n = stretched.len().max(1) as f64;
-    let out = stretched
-        .iter()
-        .enumerate()
-        .map(|(i, c)| {
-            progress(STRETCH_SHARE + (1.0 - STRETCH_SHARE) * i as f64 / n);
-            resample(c, ratio, target_len)
-        })
-        .collect();
+    if pitch {
+        let base = stretch_share + formant_share;
+        for (i, c) in out.iter_mut().enumerate() {
+            progress(base + (1.0 - base) * i as f64 / n);
+            *c = resample(c, ratio, target_len);
+        }
+    }
     progress(1.0);
     out
 }
@@ -311,10 +382,24 @@ pub unsafe extern "C" fn process_planar(
     semitones: f64,
     stretch: f64,
     algorithm: u32,
+    preserve_formant: u32,
+    formant_semitones: f64,
 ) -> usize {
     let all = std::slice::from_raw_parts(input, frames * channels);
     let chans: Vec<&[f32]> = all.chunks(frames.max(1)).take(channels).collect();
-    let out = process_with_progress(&chans, sample_rate, semitones, stretch, Algorithm::from_id(algorithm), &mut host_progress);
+    let out = process_with_progress(
+        &chans,
+        sample_rate,
+        semitones,
+        stretch,
+        Algorithm::from_id(algorithm),
+        if preserve_formant != 0 {
+            Formant::Shift(formant_semitones)
+        } else {
+            Formant::Follow
+        },
+        &mut host_progress,
+    );
     let out_frames = out.first().map_or(0, |c| c.len());
     OUTPUT.with(|o| {
         let mut o = o.borrow_mut();
@@ -351,7 +436,7 @@ mod tests {
     const ALGOS: [Algorithm; 2] = [Algorithm::Wsola, Algorithm::PhaseVocoder];
 
     fn run(x: &[&[f32]], sr: f32, semi: f64, alpha: f64, algo: Algorithm) -> Vec<Vec<f32>> {
-        process_with_progress(x, sr, semi, alpha, algo, &mut |_| {})
+        process_with_progress(x, sr, semi, alpha, algo, Formant::Follow, &mut |_| {})
     }
 
     #[test]
@@ -377,7 +462,10 @@ mod tests {
                 let y = run(&[&x], sr, semi, 1.0, algo);
                 assert_eq!(y[0].len(), x.len());
                 let f = freq(&y[0], sr);
-                assert!((f - expect).abs() < expect * 0.02, "{algo:?} semi {semi}: {f}Hz");
+                assert!(
+                    (f - expect).abs() < expect * 0.02,
+                    "{algo:?} semi {semi}: {f}Hz"
+                );
             }
         }
     }
@@ -388,7 +476,10 @@ mod tests {
     fn stretch_tail_is_steady() {
         let sr = 48000.0;
         let x = sine(220.0, sr, 0.3);
-        for (algo, alpha) in ALGOS.into_iter().flat_map(|a| [2.0, 4.0, 8.0].map(|x| (a, x))) {
+        for (algo, alpha) in ALGOS
+            .into_iter()
+            .flat_map(|a| [2.0, 4.0, 8.0].map(|x| (a, x)))
+        {
             let y = &run(&[&x], sr, 0.0, alpha, algo)[0];
             // Peak level in 10ms blocks over the last 30% (excluding the final block).
             let block = (sr * 0.01) as usize;
@@ -398,8 +489,78 @@ mod tests {
                 .map(|b| b.iter().fold(0.0f32, |m, v| m.max(v.abs())))
                 .collect();
             let min = peaks.iter().cloned().fold(f32::MAX, f32::min);
-            assert!(min > 0.4, "{algo:?} alpha {alpha}: tail level dips to {min} ({peaks:?})");
+            assert!(
+                min > 0.4,
+                "{algo:?} alpha {alpha}: tail level dips to {min} ({peaks:?})"
+            );
         }
+    }
+
+    /// 150Hz pulse train through a two-pole resonator at `formant` Hz.
+    fn vowel(sr: f32, secs: f32, f0: f32, formant: f32) -> Vec<f32> {
+        let period = (sr / f0) as usize;
+        let r = (-std::f32::consts::PI * 120.0 / sr).exp();
+        let a1 = 2.0 * r * (2.0 * std::f32::consts::PI * formant / sr).cos();
+        let a2 = -r * r;
+        let (mut y1, mut y2) = (0.0f32, 0.0f32);
+        (0..(sr * secs) as usize)
+            .map(|i| {
+                let x = if i % period == 0 { 1.0 } else { 0.0 };
+                let y = x + a1 * y1 + a2 * y2;
+                y2 = y1;
+                y1 = y;
+                y * 0.05
+            })
+            .collect()
+    }
+
+    /// Magnitude-weighted spectral centroid below 4kHz of the middle 4096 samples.
+    fn centroid(x: &[f32], sr: f32) -> f32 {
+        let n = 4096;
+        let mid = x.len() / 2 - n / 2;
+        let fft = fft::Fft::new(n);
+        let mut re: Vec<f32> = (0..n)
+            .map(|i| x[mid + i] * (0.5 - 0.5 * (2.0 * std::f32::consts::PI * i as f32 / n as f32).cos()))
+            .collect();
+        let mut im = vec![0.0f32; n];
+        fft.run(&mut re, &mut im, false);
+        let max_bin = (4000.0 / sr * n as f32) as usize;
+        let (mut num, mut den) = (0.0f32, 0.0f32);
+        for b in 1..max_bin {
+            let m = (re[b] * re[b] + im[b] * im[b]).sqrt();
+            num += m * b as f32 * sr / n as f32;
+            den += m;
+        }
+        num / den
+    }
+
+    #[test]
+    fn formant_is_preserved() {
+        let sr = 48000.0;
+        let x = vowel(sr, 1.0, 150.0, 800.0);
+        let base = centroid(&x, sr);
+        for algo in ALGOS {
+            let follow = process_with_progress(&[&x], sr, 12.0, 1.0, algo, Formant::Follow, &mut |_| {});
+            let keep = process_with_progress(&[&x], sr, 12.0, 1.0, algo, Formant::Shift(0.0), &mut |_| {});
+            let (cf, ck) = (centroid(&follow[0], sr), centroid(&keep[0], sr));
+            println!("{algo:?}: original {base:.0}Hz, follow {cf:.0}Hz, preserve {ck:.0}Hz");
+            assert!(cf > base * 1.5, "{algo:?}: follow should move formants up ({cf} vs {base})");
+            assert!((ck - base).abs() < base * 0.25, "{algo:?}: preserve moved formants ({ck} vs {base})");
+            // Pitch must still be shifted with the formant kept.
+            assert_eq!(keep[0].len(), x.len());
+        }
+    }
+
+    #[test]
+    fn formant_shift_without_pitch() {
+        let sr = 48000.0;
+        let x = vowel(sr, 1.0, 150.0, 800.0);
+        let base = centroid(&x, sr);
+        let y = process_with_progress(&[&x], sr, 0.0, 1.0, Algorithm::Wsola, Formant::Shift(7.0), &mut |_| {});
+        let c = centroid(&y[0], sr);
+        println!("formant +7: {base:.0}Hz -> {c:.0}Hz");
+        assert!(c > base * 1.2, "formant shift +7 should raise the centroid ({c} vs {base})");
+        assert!(y[0].iter().all(|v| v.is_finite()));
     }
 
     /// `cargo test --release -- --ignored --nocapture` to time 3 min of stereo audio.
