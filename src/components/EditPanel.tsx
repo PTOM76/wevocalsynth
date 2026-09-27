@@ -152,6 +152,7 @@ export default function EditPanel(p: Props) {
           max={12}
           step={0.1}
           unit={t('process.semitoneUnit')}
+          width={96}
           disabled={!preserveFormant}
           ariaLabel={t('process.formantShiftAria')}
         />

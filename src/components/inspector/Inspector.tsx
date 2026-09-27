@@ -66,7 +66,7 @@ export function NumberInput(p: {
       direction="row"
       sx={{
         alignItems: 'center',
-        width: p.width ?? 72,
+        width: p.width ?? 84,
         flexShrink: 0,
         height: 24,
         px: 0.75,
@@ -87,7 +87,13 @@ export function NumberInput(p: {
           if (Number.isFinite(v)) p.onChange(Math.min(p.max, Math.max(p.min, v)))
         }}
         inputProps={{ min: p.min, max: p.max, step: p.step, 'aria-label': p.ariaLabel }}
-        sx={{ flex: 1, fontSize: 12, '& input': { p: 0, textAlign: 'right', MozAppearance: 'textfield' } }}
+        sx={{
+          flex: 1,
+          fontSize: 12,
+          '& input': { p: 0, textAlign: 'right', MozAppearance: 'textfield' },
+          // 数値欄の上下の矢印（スピンボタン）は幅を取り、小数が見切れるため出さない
+          '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': { WebkitAppearance: 'none', m: 0 },
+        }}
       />
       {p.unit && <Typography sx={{ fontSize: 11, color: 'text.secondary', ml: 0.5 }}>{p.unit}</Typography>}
     </Stack>
