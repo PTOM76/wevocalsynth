@@ -40,6 +40,18 @@ function HeaderIcon(p: { title: string; icon: IconDefinition; disabled?: boolean
   )
 }
 
+/**
+ * メニューバーの文字の並べ方。英字（Roboto）と日本語（システムのフォント）では文字の上下の余白が
+ * 違うため、行の高さを固定して縦方向の中央にそろえ、フォントが混ざっても高さがずれないようにする
+ */
+const BAR_TEXT_SX = {
+  height: 26,
+  lineHeight: '26px',
+  fontSize: 13,
+  display: 'inline-flex',
+  alignItems: 'center',
+} as const
+
 /** PC: Windows のアプリのような、高さを抑えた「ファイル・編集・表示…」のメニューバー */
 function MenuBar({ menus }: { menus: MenuGroup[] }) {
   const [open, setOpen] = useState<{ index: number; anchor: HTMLElement } | null>(null)
@@ -53,10 +65,9 @@ function MenuBar({ menus }: { menus: MenuGroup[] }) {
           // 別のメニューを開いているときはマウスを乗せるだけで切り替える（デスクトップアプリと同じ操作感）
           onMouseEnter={(e) => open && open.index !== index && setOpen({ index, anchor: e.currentTarget })}
           sx={{
+            ...BAR_TEXT_SX,
             px: 1.25,
-            height: 26,
             borderRadius: 0.5,
-            fontSize: 13,
             bgcolor: open?.index === index ? 'action.selected' : undefined,
             '&:hover': { bgcolor: 'action.hover' },
           }}
@@ -102,6 +113,7 @@ function OverflowMenu({ menus }: { menus: MenuGroup[] }) {
           ...renderEntries(
             m.entries.map((e) => ('divider' in e ? e : { ...e, shortcut: undefined })),
             close,
+            `${m.label}-`,
           ),
         ])}
       </Menu>
@@ -136,7 +148,7 @@ export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRed
         <Box component="span" sx={{ color: 'primary.main', display: 'flex', fontSize: 14, mx: 0.75 }}>
           <FontAwesomeIcon icon={faWaveSquare} />
         </Box>
-        <Typography sx={{ fontSize: 13, fontWeight: 500, mr: 1 }} noWrap>
+        <Typography component="span" sx={{ ...BAR_TEXT_SX, fontWeight: 500, mr: 1 }} noWrap>
           WeVocalSynth
         </Typography>
         <MenuBar menus={menus} />

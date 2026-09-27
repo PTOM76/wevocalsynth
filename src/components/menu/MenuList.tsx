@@ -21,14 +21,17 @@ export interface MenuGroup {
   entries: MenuEntry[]
 }
 
-/** 項目の一覧を MUI のメニュー項目として並べる。選んだらメニューを閉じる */
-export function renderEntries(entries: MenuEntry[], close: () => void) {
+/**
+ * 項目の一覧を MUI のメニュー項目として並べる。選んだらメニューを閉じる。
+ * 複数のグループを1つのメニューに並べるときは、key が重ならないよう `keyPrefix` を変える
+ */
+export function renderEntries(entries: MenuEntry[], close: () => void, keyPrefix = '') {
   return entries.map((e, i) =>
     'divider' in e ? (
-      <Divider key={i} />
+      <Divider key={`${keyPrefix}${i}`} />
     ) : (
       <MenuItem
-        key={i}
+        key={`${keyPrefix}${i}`}
         dense
         disabled={e.disabled}
         onClick={() => {
