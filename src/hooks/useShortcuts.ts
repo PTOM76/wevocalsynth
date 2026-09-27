@@ -11,12 +11,13 @@ interface Handlers {
   clearSelection: () => void
   open: () => void
   save: () => void
+  exportAudio: () => void
 }
 
 /**
  * キーボード操作: Space = 再生/一時停止、Ctrl+Z / Ctrl+Y（Ctrl+Shift+Z）= 元に戻す/やり直す、
  * Ctrl+X/C/V = 切り取り/コピー/貼り付け、Ctrl+A / Esc = すべて選択 / 選択解除、
- * Ctrl+O / Ctrl+S = 開く / 保存。入力欄にフォーカスがあるときは何もしない。
+ * Ctrl+O / Ctrl+S / Ctrl+E = 開く / 保存 / 書き出し。入力欄にフォーカスがあるときは何もしない。
  */
 export function useShortcuts(handlers: Handlers) {
   const ref = useRef(handlers)
@@ -37,6 +38,7 @@ export function useShortcuts(handlers: Handlers) {
         a: h.selectAll,
         o: h.open,
         s: h.save,
+        e: h.exportAudio,
       }
       const plain: Record<string, () => void> = { Space: h.togglePlay, Escape: h.clearSelection }
       const action = mod ? withMod[k] : plain[e.code]

@@ -13,6 +13,7 @@ import ShortcutsDialog from './components/ShortcutsDialog'
 import { ContextMenu } from './components/menu/MenuList'
 import { useSettings } from './settings/settings'
 import SettingsDialog from './settings/SettingsDialog'
+import ExportDialog from './components/ExportDialog'
 import { LangContext, resolveLang, setLang } from './i18n/i18n'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
@@ -42,7 +43,7 @@ export default function App() {
     showPitch: ed.showPitch,
     open: ed.picker.open,
     save: ed.saveProjectFile,
-    exportWav: ed.exportWav,
+    openExport: () => ed.setExportOpen(true),
     undo: ed.history.undo,
     redo: ed.history.redo,
     cut: ed.cmd.cut,
@@ -185,7 +186,20 @@ export default function App() {
         )}
 
         <ContextMenu position={contextPos} entries={context} onClose={() => setContextPos(null)} />
-        <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+        {edited && (
+        <ExportDialog
+          open={ed.exportOpen}
+          onClose={() => ed.setExportOpen(false)}
+          baseName={ed.baseName}
+          sourceRate={edited.sampleRate}
+          sourceChannels={edited.channels.length}
+          hasSelection={!!selection}
+          busy={busy}
+          progress={ed.progress}
+          onExport={ed.exportFile}
+        />
+      )}
+      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
         <SettingsDialog
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}

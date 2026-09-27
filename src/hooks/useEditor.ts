@@ -2,7 +2,10 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { decodeFile } from '../audio/decode'
-import { downloadBlob, downloadWav, type WavFormat } from '../audio/wav'
+import { downloadBlob } from '../audio/wav'
+import { EXPORT_EXT, exportAudio } from '../audio/export/exportAudio'
+import { sliceRanges } from '../audio/multiRange'
+import type { ExportSettings } from '../components/ExportDialog'
 import { PROJECT_EXT, isProjectFile, loadProject, saveProject } from '../project/projectFile'
 import { applyPitchCurve, spliceProcessed } from '../audio/edit'
 import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
@@ -51,6 +54,7 @@ export function useEditor(settings: Settings) {
   const [showSpec, setShowSpec] = useState(false)
   const [penMode, setPenMode] = useState(false)
   const [autoMode, setAutoMode] = useState<Mode | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const playbackRef = useRef<ReturnType<typeof usePlayback> | null>(null)
 
@@ -176,9 +180,20 @@ export function useEditor(settings: Settings) {
       setToast({ severity: 'success', message: t('toast.saved') })
     })
 
-  const exportWav = (format: WavFormat) => {
-    if (edited) downloadWav(edited, `${baseName}_wevocal.wav`, format)
-  }
+  // 書き出しダイアログの設定で音声ファイルを作る。選択範囲が複数ならつなげて書き出す
+  const exportFile = (s: ExportSettings) =>
+    task.run(async () => {
+      if (!edited) return
+      const clip = s.selectionOnly && selections.length ? sliceRanges(edited, selections) : edited
+      const blob = await exportAudio(
+        clip,
+        { ...s, range: null, sampleRate: s.sampleRate || clip.sampleRate },
+        setProgress,
+      )
+      downloadBlob(blob, `${s.fileName.trim()}${EXPORT_EXT[s.format]}`)
+      setExportOpen(false)
+      setToast({ severity: 'success', message: t('toast.exported') })
+    })
 
   // 通常の再生と試聴は、片方を始めたらもう片方を止める
   const playback = usePlayback(player, preview.player, loop, duration, selection)
@@ -215,6 +230,7 @@ export function useEditor(settings: Settings) {
     clearSelection,
     open: () => picker.open(),
     save: saveProjectFile,
+    exportAudio: () => edited && setExportOpen(true),
   })
 
   return {
@@ -231,6 +247,6 @@ export function useEditor(settings: Settings) {
     // 表示（ピッチ・スペクトログラム）とピッチ描画
     showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, spec, pitchTarget,
     // 操作
-    cmd, apply, stretchRange, applyCurve, saveProjectFile, exportWav, picker, dragOver,
+    cmd, apply, stretchRange, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
   }
 }

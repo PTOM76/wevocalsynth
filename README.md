@@ -50,3 +50,9 @@ npm run dev
 | コーディング規約 | [docs/CODING.md](docs/CODING.md) |
 | アーキテクチャ設計 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | ドキュメントの書き方 | [docs/WRITING.md](docs/WRITING.md) |
+
+## License
+This project is licensed under the MIT License.
+
+Third-party software:
+- @breezystack/lamejs — LGPL-3.0

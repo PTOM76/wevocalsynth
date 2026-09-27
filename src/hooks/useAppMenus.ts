@@ -1,4 +1,3 @@
-import type { WavFormat } from '../audio/wav'
 import type { MenuEntry, MenuGroup } from '../components/menu/MenuList'
 import { useT } from '../i18n/i18n'
 
@@ -13,7 +12,7 @@ interface Actions {
   showPitch: boolean
   open: () => void
   save: () => void
-  exportWav: (format: WavFormat) => void
+  openExport: () => void
   undo: () => void
   redo: () => void
   cut: () => void
@@ -52,9 +51,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; context: MenuEntr
         { label: t('menu.open'), shortcut: 'Ctrl+O', disabled: a.busy, onClick: a.open },
         { label: t('menu.saveProject'), shortcut: 'Ctrl+S', disabled: noClip, onClick: a.save },
         { divider: true },
-        { label: t('menu.exportPcm16'), disabled: noClip, onClick: () => a.exportWav('pcm16') },
-        { label: t('menu.exportPcm24'), disabled: noClip, onClick: () => a.exportWav('pcm24') },
-        { label: t('menu.exportFloat32'), disabled: noClip, onClick: () => a.exportWav('float32') },
+        { label: t('menu.export'), shortcut: 'Ctrl+E', disabled: noClip, onClick: a.openExport },
         { divider: true },
         { label: t('menu.settings'), onClick: a.showSettings },
       ],
