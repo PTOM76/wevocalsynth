@@ -1,15 +1,58 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Button, IconButton, Slider, Stack, Tooltip, Typography, alpha, useMediaQuery, useTheme } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faExpand, faMagnifyingGlassMinus, faMagnifyingGlassPlus, faMusic, faPen, faCheck, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+import { faExpand, faMagnifyingGlassMinus, faMagnifyingGlassPlus, faMusic, faPen, faChartColumn, faCheck, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import type { Theme } from '@mui/material'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
-import { F0_HOP_SEC } from '../dsp/engine'
+import { F0_HOP_SEC, type Spectrogram } from '../dsp/engine'
 
 const WAVE_HEIGHT = 200
 const RULER_HEIGHT = 24
 const PITCH_HEIGHT = 140
+/** スペクトログラムの配色（magma 風）。明るさ 0〜255 → RGB */
+const SPEC_LUT = (() => {
+  const stops: [number, number, number, number][] = [
+    [0, 0, 0, 4],
+    [0.25, 59, 15, 112],
+    [0.5, 140, 41, 129],
+    [0.75, 222, 73, 104],
+    [0.9, 254, 159, 109],
+    [1, 252, 253, 191],
+  ]
+  const lut = new Uint8Array(256 * 3)
+  for (let i = 0; i < 256; i++) {
+    const u = i / 255
+    const j = Math.max(1, stops.findIndex((st) => st[0] >= u))
+    const [u0, ...c0] = stops[j - 1]
+    const [u1, ...c1] = stops[j]
+    const g = (u - u0) / (u1 - u0 || 1)
+    for (let k = 0; k < 3; k++) lut[i * 3 + k] = Math.round(c0[k] + (c1[k] - c0[k]) * g)
+  }
+  return lut
+})()
+
+/** 表示範囲のスペクトログラムを width × height の画像にする（1列に複数フレームが入る場合は最大値） */
+function renderSpectrogram(spec: Spectrogram, width: number, height: number, viewStart: number, viewDur: number) {
+  const img = new ImageData(width, height)
+  const px = img.data
+  for (let x = 0; x < width; x++) {
+    const ka = Math.max(0, Math.floor((viewStart + (x / width) * viewDur) / spec.hopSec))
+    const kb = Math.min(spec.frames - 1, Math.max(ka, Math.floor((viewStart + ((x + 1) / width) * viewDur) / spec.hopSec)))
+    for (let y = 0; y < height; y++) {
+      const r = Math.round(((height - 1 - y) / (height - 1)) * (spec.rows - 1))
+      let v = 0
+      for (let k = ka; k <= kb; k++) v = Math.max(v, spec.data[k * spec.rows + r])
+      const o = (y * width + x) * 4
+      px[o] = SPEC_LUT[v * 3]
+      px[o + 1] = SPEC_LUT[v * 3 + 1]
+      px[o + 2] = SPEC_LUT[v * 3 + 2]
+      px[o + 3] = 255
+    }
+  }
+  return img
+}
+
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 const DRAG_THRESHOLD_PX = 3
 /** 表示できる最小の時間幅（秒） */
@@ -36,6 +79,10 @@ interface Props {
   onApplyCurve: () => void
   onClearCurve: () => void
   busy: boolean
+  /** スペクトログラム。解析中は null */
+  spectrogram: Spectrogram | null
+  showSpectrogram: boolean
+  onShowSpectrogramChange: (show: boolean) => void
 }
 
 export interface DrawPoint {
@@ -120,6 +167,9 @@ export default function Waveform({
   onApplyCurve,
   onClearCurve,
   busy,
+  spectrogram,
+  showSpectrogram,
+  onShowSpectrogramChange,
 }: Props) {
   const theme = useTheme()
   // Canvas は CSS 変数を使えないため、現在の配色（ライト/ダーク）のパレット値を直接使う
@@ -236,6 +286,28 @@ export default function Waveform({
     g.lineTo(width, RULER_HEIGHT - 0.5)
     g.stroke()
 
+    // スペクトログラム（波形の代わりに表示）。選択範囲はこの上に重ねる
+    if (showSpectrogram) {
+      if (spectrogram) {
+        const img = renderSpectrogram(spectrogram, width, WAVE_HEIGHT, view.start, view.dur)
+        const off = new OffscreenCanvas(width, WAVE_HEIGHT)
+        off.getContext('2d')!.putImageData(img, 0, 0)
+        g.drawImage(off, 0, RULER_HEIGHT)
+        // 周波数の目盛り
+        g.fillStyle = 'rgba(255, 255, 255, 0.85)'
+        const logSpan = Math.log(spectrogram.maxHz / spectrogram.minHz)
+        for (const hz of [100, 1000, 10000]) {
+          if (hz >= spectrogram.maxHz) continue
+          const y = RULER_HEIGHT + WAVE_HEIGHT - (Math.log(hz / spectrogram.minHz) / logSpan) * WAVE_HEIGHT
+          g.fillRect(0, Math.round(y), 6, 1)
+          g.fillText(hz >= 1000 ? `${hz / 1000}k` : `${hz}`, 8, y)
+        }
+      } else {
+        g.fillStyle = pal.text.secondary
+        g.fillText('解析中…', 8, RULER_HEIGHT + WAVE_HEIGHT / 2)
+      }
+    }
+
     // 選択範囲
     if (selection) {
       const x0 = toX(selection.start)
@@ -248,16 +320,18 @@ export default function Waveform({
     }
 
     // 波形
-    const mid = RULER_HEIGHT + WAVE_HEIGHT / 2
-    const amp = WAVE_HEIGHT / 2 - 4
-    g.fillStyle = dark ? pal.primary.main : pal.primary.dark
-    for (let x = 0; x < width; x++) {
-      const y0 = mid - peaks.max[x] * amp
-      const y1 = mid - peaks.min[x] * amp
-      g.fillRect(x, y0, 1, Math.max(1, y1 - y0))
+    if (!showSpectrogram) {
+      const mid = RULER_HEIGHT + WAVE_HEIGHT / 2
+      const amp = WAVE_HEIGHT / 2 - 4
+      g.fillStyle = dark ? pal.primary.main : pal.primary.dark
+      for (let x = 0; x < width; x++) {
+        const y0 = mid - peaks.max[x] * amp
+        const y1 = mid - peaks.min[x] * amp
+        g.fillRect(x, y0, 1, Math.max(1, y1 - y0))
+      }
+      g.fillStyle = pal.divider
+      g.fillRect(0, mid, width, 1)
     }
-    g.fillStyle = pal.divider
-    g.fillRect(0, mid, width, 1)
 
     // ピッチ帯: 音名のグリッドと F0 曲線
     if (showPitch) {
@@ -312,7 +386,7 @@ export default function Waveform({
     // 再生位置
     g.fillStyle = pal.text.primary
     g.fillRect(Math.round(toX(position)) - 1, 0, 2, h)
-  }, [peaks, width, view, position, selection, pal, dark, theme, height, showPitch, pitch, range, target, drawVersion])
+  }, [peaks, width, view, position, selection, pal, dark, theme, height, showPitch, pitch, range, target, drawVersion, showSpectrogram, spectrogram])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -399,6 +473,17 @@ export default function Waveform({
               <FontAwesomeIcon icon={faMagnifyingGlassPlus} />
             </IconButton>
           </span>
+        </Tooltip>
+        <Tooltip title="スペクトログラム表示">
+          <IconButton
+            aria-label="スペクトログラム表示"
+            aria-pressed={showSpectrogram}
+            size="small"
+            color={showSpectrogram ? 'primary' : 'default'}
+            onClick={() => onShowSpectrogramChange(!showSpectrogram)}
+          >
+            <FontAwesomeIcon icon={faChartColumn} />
+          </IconButton>
         </Tooltip>
         <Tooltip title="ピッチ表示">
           <IconButton

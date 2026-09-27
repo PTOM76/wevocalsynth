@@ -38,7 +38,7 @@ import {
   sliceClip,
 } from './audio/edit'
 import { usePlayer } from './audio/usePlayer'
-import { analyzeF0 } from './dsp/engine'
+import { analyzeF0, analyzeSpectrogram, type Spectrogram } from './dsp/engine'
 import Waveform, { formatTime, type DrawPoint } from './components/Waveform'
 import EditPanel, { type EditParams } from './components/EditPanel'
 import VolumePanel, { type VolumeAction } from './components/VolumePanel'
@@ -71,6 +71,8 @@ export default function App() {
   const [showPitch, setShowPitch] = useState(false)
   const [pitch, setPitch] = useState<{ clip: Clip; f0: Float32Array } | null>(null)
   const [penMode, setPenMode] = useState(false)
+  const [showSpec, setShowSpec] = useState(false)
+  const [spec, setSpec] = useState<{ clip: Clip; data: Spectrogram } | null>(null)
   // 描いた目標ピッチ（Hz、F0 と同じフレーム、0 は未編集）。描画中は中身を直接書き換える
   const [target, setTargetState] = useState<{ clip: Clip; hz: Float32Array } | null>(null)
   // 描画中は再レンダーを待たずに同じ配列へ書き込むため、最新値を ref にも持つ
@@ -88,6 +90,18 @@ export default function App() {
   const shown = source === 'original' ? original : edited
   const player = usePlayer(shown)
   const duration = shown ? clipDuration(shown) : 0
+
+  // スペクトログラム表示中は、表示中のクリップが変わるたびに計算し直す
+  useEffect(() => {
+    if (!showSpec || !shown || spec?.clip === shown) return
+    let cancelled = false
+    analyzeSpectrogram(shown.channels, shown.sampleRate)
+      .then((data) => !cancelled && setSpec({ clip: shown, data }))
+      .catch((e) => !cancelled && setToast({ severity: 'error', message: `スペクトログラムの計算に失敗しました: ${String(e)}` }))
+    return () => {
+      cancelled = true
+    }
+  }, [showSpec, shown, spec])
 
   // ピッチ表示中は、表示中のクリップが変わるたびに F0 を解析し直す
   useEffect(() => {
@@ -436,6 +450,9 @@ export default function App() {
                     onApplyCurve={applyCurve}
                     onClearCurve={() => setTarget(null)}
                     busy={busy}
+                    spectrogram={spec?.clip === shown ? spec.data : null}
+                    showSpectrogram={showSpec}
+                    onShowSpectrogramChange={setShowSpec}
                   />
 
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>

@@ -1,6 +1,9 @@
 // wasm の DSP エンジンをメインスレッド外で実行する Worker
 import wasmUrl from './wevocal_dsp.wasm?url'
 
+/** スペクトログラムの周波数方向の段数。Rust 側 `spec::ROWS` と一致させる */
+export const SPEC_ROWS = 128
+
 interface DspExports {
   memory: WebAssembly.Memory
   alloc_f32(len: number): number
@@ -29,6 +32,8 @@ interface DspExports {
     formantSemitones: number,
   ): number
   analyze_f0(input: number, frames: number, sampleRate: number): number
+  analyze_spectrogram(input: number, frames: number, sampleRate: number): number
+  output_u8_ptr(): number
   output_ptr(): number
 }
 
@@ -47,9 +52,9 @@ export interface ProcessRequest {
   formantSemitones: number
 }
 
-/** F0 解析のリクエスト（モノラル） */
+/** F0 解析・スペクトログラムのリクエスト（モノラル） */
 export interface F0Request {
-  kind: 'f0'
+  kind: 'f0' | 'spec'
   id: number
   samples: Float32Array
   sampleRate: number
@@ -72,6 +77,7 @@ export type DspRequest = ProcessRequest | F0Request | CurveRequest
 
 export type DspResponse =
   | { id: number; channels: Float32Array[] }
+  | { id: number; bytes: Uint8Array }
   | { id: number; error: string }
   | { id: number; progress: number }
 
@@ -148,6 +154,19 @@ function runCurve(dsp: DspExports, req: CurveRequest, input: number, frames: num
   }
 }
 
+/** スペクトログラム（フレームごとに ROWS バイト）を計算する */
+function analyzeSpectrogram(dsp: DspExports, req: F0Request): Uint8Array {
+  const n = req.samples.length
+  const input = dsp.alloc_f32(n)
+  try {
+    new Float32Array(dsp.memory.buffer, input, n).set(req.samples)
+    const frames = dsp.analyze_spectrogram(input, n, req.sampleRate)
+    return new Uint8Array(dsp.memory.buffer, dsp.output_u8_ptr(), frames * SPEC_ROWS).slice()
+  } finally {
+    dsp.free_f32(input, n)
+  }
+}
+
 function analyzeF0(dsp: DspExports, req: F0Request): Float32Array {
   const n = req.samples.length
   const input = dsp.alloc_f32(n)
@@ -166,7 +185,13 @@ scope.onmessage = async (e: MessageEvent<DspRequest>) => {
     const dsp = await ready
     currentId = req.id
     lastProgress = -1
-    const channels = req.kind === 'f0' ? [analyzeF0(dsp, req)] : run(dsp, req)
+    if (req.kind === 'spec') {
+      const bytes = analyzeSpectrogram(dsp, req)
+      const res: DspResponse = { id: req.id, bytes }
+      scope.postMessage(res, [bytes.buffer])
+      return
+    }
+    const channels = 'samples' in req ? [analyzeF0(dsp, req)] : run(dsp, req)
     const res: DspResponse = { id: req.id, channels }
     scope.postMessage(res, channels.map((c) => c.buffer))
   } catch (err) {

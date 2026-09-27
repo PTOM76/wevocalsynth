@@ -13,6 +13,7 @@ pub mod f0;
 mod fft;
 pub mod formant;
 pub mod pv;
+pub mod spec;
 
 use std::cell::RefCell;
 use std::f64::consts::PI;
@@ -435,6 +436,7 @@ fn host_progress(p: f64) {
 
 thread_local! {
     static OUTPUT: RefCell<Vec<f32>> = const { RefCell::new(Vec::new()) };
+    static OUTPUT_U8: RefCell<Vec<u8>> = const { RefCell::new(Vec::new()) };
 }
 
 /// wasm メモリ上に f32 を `len` 個確保し、そのポインタを返す。
@@ -556,6 +558,29 @@ pub unsafe extern "C" fn analyze_f0(input: *const f32, frames: usize, sample_rat
     let n = out.len();
     OUTPUT.with(|o| *o.borrow_mut() = out);
     n
+}
+
+/// モノラル音声のスペクトログラムを計算し、フレーム数を返す。結果（フレームごとに
+/// `spec::ROWS` バイト）は `output_u8_ptr` で取得する。
+///
+/// # Safety
+/// `input` は `frames` 個の有効な f32 を指していること。
+#[no_mangle]
+pub unsafe extern "C" fn analyze_spectrogram(
+    input: *const f32,
+    frames: usize,
+    sample_rate: f32,
+) -> usize {
+    let x = std::slice::from_raw_parts(input, frames);
+    let out = spec::compute(x, sample_rate, &mut host_progress);
+    let n = out.len() / spec::ROWS;
+    OUTPUT_U8.with(|o| *o.borrow_mut() = out);
+    n
+}
+
+#[no_mangle]
+pub extern "C" fn output_u8_ptr() -> *const u8 {
+    OUTPUT_U8.with(|o| o.borrow().as_ptr())
 }
 
 #[no_mangle]
@@ -778,6 +803,23 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// 1kHz の正弦波で、1kHz 付近の段が最も明るく、無音部分は 0 になること。
+    #[test]
+    fn spectrogram_peak_row() {
+        let sr = 48000.0;
+        let mut x = sine(1000.0, sr, 0.5);
+        x.extend(vec![0.0; 24000]);
+        let s = spec::compute(&x, sr, &mut |_| {});
+        let rows = spec::ROWS;
+        let k = (0.25 * sr) as usize / spec::HOP;
+        let frame = &s[k * rows..(k + 1) * rows];
+        let peak = (0..rows).max_by_key(|&r| frame[r]).unwrap();
+        let f = spec::MIN_HZ * (sr / 2.0 / spec::MIN_HZ).powf(peak as f32 / (rows - 1) as f32);
+        assert!((f / 1000.0 - 1.0).abs() < 0.06, "peak row at {f}Hz");
+        let quiet = (0.9 * sr) as usize / spec::HOP;
+        assert!(s[quiet * rows..(quiet + 1) * rows].iter().all(|&v| v == 0));
     }
 
     #[test]
