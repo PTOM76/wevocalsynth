@@ -39,7 +39,7 @@ export function InspectorSection(p: { title: string; extra?: ReactNode; children
 export function PropRow(p: { label?: string; children: ReactNode }) {
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: 26 }}>
-      <Typography sx={{ width: 72, flexShrink: 0, fontSize: 12, color: 'text.secondary' }} noWrap>
+      <Typography sx={{ width: 84, flexShrink: 0, fontSize: 12, color: 'text.secondary' }} noWrap>
         {p.label ?? ''}
       </Typography>
       <Stack direction="row" spacing={1} sx={{ flex: 1, minWidth: 0, alignItems: 'center' }}>

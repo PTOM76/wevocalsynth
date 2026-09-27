@@ -124,10 +124,13 @@ export default function EditPanel(p: Props) {
         ))}
       </PropRow>
 
-      <PropRow label={t('process.formant')}>
+      {/* フォルマントは「保持」と「高さ」の2行をまとめ、何の設定かを見出しで示す */}
+      <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'text.secondary', pt: 0.5 }}>{t('process.formantGroup')}</Typography>
+      <PropRow label={t('process.formantKeep')}>
         <Switch size="small" checked={preserveFormant} onChange={(e) => set({ preserveFormant: e.target.checked })} slotProps={{ input: { 'aria-label': t('process.formant') } }} />
       </PropRow>
       <PropRow label={t('process.formantShift')}>
+        <Tooltip title={t('process.formantShiftHint')} placement="top">
         <Slider
           aria-label={t('process.formantShiftAria')}
           disabled={!preserveFormant}
@@ -141,6 +144,7 @@ export default function EditPanel(p: Props) {
           onChange={(_, v) => set({ formantSemitones: round2(v as number) })}
           sx={COMPACT_SLIDER_SX}
         />
+        </Tooltip>
         <NumberInput
           value={formantSemitones}
           onChange={(v) => set({ formantSemitones: v })}
