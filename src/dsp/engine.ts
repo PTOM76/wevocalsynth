@@ -42,6 +42,7 @@ function send(req: DspRequest, onProgress?: (p: number) => void): Promise<Float3
   return new Promise((resolve, reject) => {
     pending.set(req.id, { resolve, reject, onProgress })
     const buffers = req.kind === 'f0' ? [req.samples.buffer] : req.channels.map((c) => c.buffer)
+    if (req.kind === 'curve') buffers.push(req.ratios.buffer)
     getWorker().postMessage(req, buffers)
   })
 }
@@ -83,6 +84,33 @@ export function processAudio(
       sampleRate,
       ...opts,
       algorithm: ALGORITHM_ID[opts.algorithm],
+    },
+    onProgress,
+  )
+}
+
+/**
+ * ピッチカーブに従って、時間ごとに異なるピッチ変更を行う（長さは変わらない）。
+ * `ratios[k]` は時刻 k × `F0_HOP_SEC` のピッチ比。
+ */
+export function processCurve(
+  channels: Float32Array[],
+  sampleRate: number,
+  ratios: Float32Array,
+  opts: Pick<ProcessOptions, 'algorithm' | 'preserveFormant' | 'formantSemitones'>,
+  onProgress?: (p: number) => void,
+): Promise<Float32Array[]> {
+  return send(
+    {
+      kind: 'curve',
+      id: nextId++,
+      channels: channels.map((c) => c.slice()),
+      sampleRate,
+      ratios: ratios.slice(),
+      hopSamples: F0_HOP_SEC * sampleRate,
+      algorithm: ALGORITHM_ID[opts.algorithm],
+      preserveFormant: opts.preserveFormant,
+      formantSemitones: opts.formantSemitones,
     },
     onProgress,
   )

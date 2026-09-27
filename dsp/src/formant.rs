@@ -26,9 +26,22 @@ const MAX_LOG_GAIN: f32 = 3.0;
 
 /// `x` のスペクトル包絡が E(c·f) になるようフィルタする。`c == 1` なら何もしない。
 pub fn correct(x: &[f32], c: f64, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<f32> {
-    let len = x.len();
-    if len == 0 || (c - 1.0).abs() < 1e-9 {
+    if (c - 1.0).abs() < 1e-9 {
         return x.to_vec();
+    }
+    correct_varying(x, &|_| c, sample_rate, progress)
+}
+
+/// 変形率がフレームごとに変わる版の `correct`。`c_at` にはフレーム中心のサンプル位置を渡す。
+pub fn correct_varying(
+    x: &[f32],
+    c_at: &dyn Fn(usize) -> f64,
+    sample_rate: f32,
+    progress: &mut dyn FnMut(f64),
+) -> Vec<f32> {
+    let len = x.len();
+    if len == 0 {
+        return Vec::new();
     }
     let n = ((sample_rate * FRAME_SEC) as usize)
         .max(256)
@@ -69,8 +82,9 @@ pub fn correct(x: &[f32], c: f64, sample_rate: f32, progress: &mut dyn FnMut(f64
             energy += re[i] * re[i];
         }
         let o = (start + n as i64) as usize; // `out` 上の位置（n だけずらしてある）
-        if energy < 1e-10 {
-            // 無音: 補正は不要。窓の総和だけは揃えておく。
+        let c = c_at((start + n as i64 / 2).clamp(0, len as i64 - 1) as usize);
+        if energy < 1e-10 || (c - 1.0).abs() < 1e-6 {
+            // 無音または補正不要: そのまま重ね合わせる（窓の総和も揃える）。
             for i in 0..n {
                 out[o + i] += re[i] * window[i];
                 norm[o + i] += window[i] * window[i];

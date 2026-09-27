@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Box, IconButton, Slider, Stack, Tooltip, Typography, alpha, useMediaQuery, useTheme } from '@mui/material'
+import { Box, Button, IconButton, Slider, Stack, Tooltip, Typography, alpha, useMediaQuery, useTheme } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faExpand, faMagnifyingGlassMinus, faMagnifyingGlassPlus, faMusic } from '@fortawesome/free-solid-svg-icons'
+import { faExpand, faMagnifyingGlassMinus, faMagnifyingGlassPlus, faMusic, faPen, faCheck, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import type { Theme } from '@mui/material'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
@@ -27,9 +27,23 @@ interface Props {
   pitch: Float32Array | null
   showPitch: boolean
   onShowPitchChange: (show: boolean) => void
+  /** 描いた目標ピッチ（`pitch` と同じ長さ、0 は未編集） */
+  target: Float32Array | null
+  penMode: boolean
+  onPenModeChange: (pen: boolean) => void
+  /** フレーム `from.k` から `to.k` までを描く（`midi` が null なら消す） */
+  onDraw: (from: DrawPoint, to: DrawPoint) => void
+  onApplyCurve: () => void
+  onClearCurve: () => void
+  busy: boolean
 }
 
-const hzToMidi = (hz: number) => 69 + 12 * Math.log2(hz / 440)
+export interface DrawPoint {
+  k: number
+  midi: number | null
+}
+
+export const hzToMidi = (hz: number) => 69 + 12 * Math.log2(hz / 440)
 
 /** ピッチ帯の縦軸（MIDIノート番号）。有声部分の範囲に余白を足し、最低1オクターブにする */
 function pitchRange(pitch: Float32Array) {
@@ -99,6 +113,13 @@ export default function Waveform({
   pitch,
   showPitch,
   onShowPitchChange,
+  target,
+  penMode,
+  onPenModeChange,
+  onDraw,
+  onApplyCurve,
+  onClearCurve,
+  busy,
 }: Props) {
   const theme = useTheme()
   // Canvas は CSS 変数を使えないため、現在の配色（ライト/ダーク）のパレット値を直接使う
@@ -109,6 +130,7 @@ export default function Waveform({
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const dragRef = useRef<{ x0: number; t0: number; dragging: boolean } | null>(null)
+  const drawRef = useRef<DrawPoint | null>(null)
   const [width, setWidth] = useState(0)
   const duration = clipDuration(clip)
   const [view, setView] = useState({ start: 0, dur: duration })
@@ -176,6 +198,8 @@ export default function Waveform({
   )
 
   const range = useMemo(() => (pitch ? pitchRange(pitch) : null), [pitch])
+  // `target` は描画中に中身だけが書き換わるため、再描画のきっかけに使うカウンタ
+  const [drawVersion, setDrawVersion] = useState(0)
   const height = RULER_HEIGHT + WAVE_HEIGHT + (showPitch ? PITCH_HEIGHT : 0)
 
   useEffect(() => {
@@ -256,26 +280,31 @@ export default function Waveform({
             g.fillText(`${NOTE_NAMES[m % 12]}${m / 12 - 1 | 0}`, 4, toY(m) - 7)
           }
         }
-        g.strokeStyle = pal.secondary.main
-        g.lineWidth = 2
-        g.lineJoin = 'round'
-        g.beginPath()
         const k0 = Math.max(0, Math.floor(view.start / F0_HOP_SEC) - 1)
         const k1 = Math.min(pitch.length - 1, Math.ceil((view.start + view.dur) / F0_HOP_SEC) + 1)
-        let drawing = false
-        for (let k = k0; k <= k1; k++) {
-          const hz = pitch[k]
-          if (hz <= 0) {
-            drawing = false
-            continue
+        const curve = (data: Float32Array, color: string) => {
+          g.strokeStyle = color
+          g.beginPath()
+          let drawing = false
+          for (let k = k0; k <= k1; k++) {
+            const hz = data[k]
+            if (!(hz > 0)) {
+              drawing = false
+              continue
+            }
+            const x = toX(k * F0_HOP_SEC)
+            const y = toY(hzToMidi(hz))
+            if (drawing) g.lineTo(x, y)
+            else g.moveTo(x, y)
+            drawing = true
           }
-          const x = toX(k * F0_HOP_SEC)
-          const y = toY(hzToMidi(hz))
-          if (drawing) g.lineTo(x, y)
-          else g.moveTo(x, y)
-          drawing = true
+          g.stroke()
         }
-        g.stroke()
+        g.lineWidth = 2
+        g.lineJoin = 'round'
+        const edited = !!target && target.some((v) => v > 0)
+        curve(pitch, edited ? alpha(pal.secondary.main, 0.4) : pal.secondary.main)
+        if (edited) curve(target, pal.primary.main)
         g.lineWidth = 1
       }
     }
@@ -283,7 +312,7 @@ export default function Waveform({
     // 再生位置
     g.fillStyle = pal.text.primary
     g.fillRect(Math.round(toX(position)) - 1, 0, 2, h)
-  }, [peaks, width, view, position, selection, pal, dark, theme, height, showPitch, pitch, range])
+  }, [peaks, width, view, position, selection, pal, dark, theme, height, showPitch, pitch, range, target, drawVersion])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -291,7 +320,20 @@ export default function Waveform({
     return Math.max(0, Math.min(duration, t))
   }
 
+  /** ピッチ帯上の点（Shift で半音に吸着、Alt で消しゴム）。帯の外なら null */
+  const drawPointAt = (e: React.PointerEvent): DrawPoint | null => {
+    if (!penMode || !showPitch || !range) return null
+    const rect = canvasRef.current!.getBoundingClientRect()
+    const y = e.clientY - rect.top - RULER_HEIGHT - WAVE_HEIGHT
+    if (drawRef.current === null && (y < 0 || y > PITCH_HEIGHT)) return null
+    const k = Math.round(timeAt(e.clientX) / F0_HOP_SEC)
+    if (e.altKey) return { k, midi: null }
+    const m = range.hi - (Math.min(Math.max(y, 0), PITCH_HEIGHT) / PITCH_HEIGHT) * (range.hi - range.lo)
+    return { k, midi: e.shiftKey ? Math.round(m) : m }
+  }
+
   const zoomed = view.dur < duration - 1e-9
+  const hasCurve = !!target && target.some((v) => v > 0)
   const center = view.start + view.dur / 2
 
   return (
@@ -300,12 +342,28 @@ export default function Waveform({
         ref={canvasRef}
         role="img"
         aria-label="音声波形（ドラッグで範囲選択、クリックで再生位置を移動）"
-        style={{ width: '100%', height, display: 'block', cursor: 'text' }}
+        style={{ width: '100%', height, display: 'block', cursor: penMode && showPitch ? 'crosshair' : 'text' }}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
+          const p = drawPointAt(e)
+          if (p) {
+            drawRef.current = p
+            onDraw(p, p)
+            setDrawVersion((v) => v + 1)
+            return
+          }
           dragRef.current = { x0: e.clientX, t0: timeAt(e.clientX), dragging: false }
         }}
         onPointerMove={(e) => {
+          if (drawRef.current) {
+            const p = drawPointAt(e)
+            if (p) {
+              onDraw(drawRef.current, p)
+              drawRef.current = p
+              setDrawVersion((v) => v + 1)
+            }
+            return
+          }
           const d = dragRef.current
           if (!d) return
           if (!d.dragging && Math.abs(e.clientX - d.x0) < DRAG_THRESHOLD_PX) return
@@ -314,6 +372,10 @@ export default function Waveform({
           onSelect({ start: Math.min(d.t0, t), end: Math.max(d.t0, t) })
         }}
         onPointerUp={(e) => {
+          if (drawRef.current) {
+            drawRef.current = null
+            return
+          }
           const d = dragRef.current
           dragRef.current = null
           if (d && !d.dragging) onSeek(timeAt(e.clientX))
@@ -349,6 +411,39 @@ export default function Waveform({
             <FontAwesomeIcon icon={faMusic} />
           </IconButton>
         </Tooltip>
+        {showPitch && (
+          <Tooltip title="ピッチを描く（Shift: 半音に吸着 / Alt: 消す）">
+            <IconButton
+              aria-label="ピッチを描く"
+              aria-pressed={penMode}
+              size="small"
+              color={penMode ? 'primary' : 'default'}
+              onClick={() => onPenModeChange(!penMode)}
+            >
+              <FontAwesomeIcon icon={faPen} />
+            </IconButton>
+          </Tooltip>
+        )}
+        {showPitch && hasCurve && (
+          <>
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<FontAwesomeIcon icon={faCheck} />}
+              disabled={busy}
+              onClick={onApplyCurve}
+            >
+              適用
+            </Button>
+            <Tooltip title="描いたピッチを破棄">
+              <span>
+                <IconButton aria-label="描いたピッチを破棄" size="small" disabled={busy} onClick={onClearCurve}>
+                  <FontAwesomeIcon icon={faTrashCan} />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </>
+        )}
         <Tooltip title="全体表示">
           <span>
             <IconButton aria-label="全体表示" size="small" disabled={!zoomed} onClick={() => setView({ start: 0, dur: duration })}>

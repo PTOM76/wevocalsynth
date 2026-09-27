@@ -27,7 +27,11 @@ pub fn estimate(x: &[f32], sample_rate: f32, progress: &mut dyn FnMut(f64)) -> V
     }
     let ratio = (sample_rate / ANALYSIS_RATE) as f64;
     let ds_len = (x.len() as f64 / ratio).round() as usize;
-    let y = if (ratio - 1.0).abs() < 1e-9 { x.to_vec() } else { resample(x, ratio, ds_len) };
+    let y = if (ratio - 1.0).abs() < 1e-9 {
+        x.to_vec()
+    } else {
+        resample(x, ratio, ds_len)
+    };
 
     let sr = ANALYSIS_RATE;
     let hop = (sr * HOP_SEC) as usize;
@@ -66,7 +70,11 @@ pub fn estimate(x: &[f32], sample_rate: f32, progress: &mut dyn FnMut(f64)) -> V
                 s += diff * diff;
             }
             running += s;
-            d[tau] = if running > 0.0 { s * tau as f32 / running } else { 1.0 };
+            d[tau] = if running > 0.0 {
+                s * tau as f32 / running
+            } else {
+                1.0
+            };
         }
 
         // 閾値を下回った最初の谷を採用し、なければ全体の最小値を候補にする。
@@ -83,7 +91,9 @@ pub fn estimate(x: &[f32], sample_rate: f32, progress: &mut dyn FnMut(f64)) -> V
             tau += 1;
         }
         let tau = best.unwrap_or_else(|| {
-            (tau_min..tau_max).min_by(|&a, &b| d[a].total_cmp(&d[b])).unwrap_or(tau_min)
+            (tau_min..tau_max)
+                .min_by(|&a, &b| d[a].total_cmp(&d[b]))
+                .unwrap_or(tau_min)
         });
         if d[tau] > VOICED_LIMIT {
             out.push(0.0);
@@ -93,7 +103,11 @@ pub fn estimate(x: &[f32], sample_rate: f32, progress: &mut dyn FnMut(f64)) -> V
         // 放物線補間で周期を小数精度にする。
         let (a, b, c) = (d[tau - 1], d[tau], d[tau + 1]);
         let denom = a - 2.0 * b + c;
-        let shift = if denom.abs() > 1e-12 { 0.5 * (a - c) / denom } else { 0.0 };
+        let shift = if denom.abs() > 1e-12 {
+            0.5 * (a - c) / denom
+        } else {
+            0.0
+        };
         out.push(sr / (tau as f32 + shift.clamp(-1.0, 1.0)));
     }
     progress(1.0);

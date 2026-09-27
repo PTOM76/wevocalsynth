@@ -4,6 +4,7 @@
 //! 多少の残響感（フェージー感）が出て、アタックがにじむ。
 
 use crate::fft::Fft;
+use crate::TimeMap;
 use std::f64::consts::PI;
 
 /// 分析・合成フレーム長（秒）。2のべき乗に切り上げる。
@@ -23,12 +24,29 @@ pub fn stretch(
     progress: &mut dyn FnMut(f64),
 ) -> Vec<Vec<f32>> {
     let len = channels.first().map_or(0, |c| c.len());
-    let out_len = (len as f64 * alpha).round() as usize;
-    if len == 0 || out_len == 0 {
-        return vec![Vec::new(); channels.len()];
-    }
     if (alpha - 1.0).abs() < 1e-9 {
         return channels.iter().map(|c| c.to_vec()).collect();
+    }
+    let out_len = (len as f64 * alpha).round() as usize;
+    stretch_map(
+        channels,
+        &TimeMap::linear(len, out_len),
+        sample_rate,
+        progress,
+    )
+}
+
+/// 任意の時間対応 `map` で全チャンネルを伸縮する。
+pub fn stretch_map(
+    channels: &[&[f32]],
+    map: &TimeMap,
+    sample_rate: f32,
+    progress: &mut dyn FnMut(f64),
+) -> Vec<Vec<f32>> {
+    let len = channels.first().map_or(0, |c| c.len());
+    let out_len = map.out_len;
+    if len == 0 || out_len == 0 {
+        return vec![Vec::new(); channels.len()];
     }
 
     let n = ((sample_rate * FRAME_SEC) as usize)
@@ -41,16 +59,10 @@ pub fn stretch(
         .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32)
         .collect();
 
-    // 末尾の扱いは WSOLA と同じ: 最後の出力フレームを最後の入力フレームに対応づけ、
-    // 入力の外を読まないようにする。
+    // 末尾の扱いは WSOLA と同じ（`TimeMap::frame_pos` 参照）。
     let last_pos = len.saturating_sub(n) as f64;
-    let span_out = out_len.saturating_sub(n).max(1) as f64;
     let frames = out_len / hs + 1;
-    let pos_of = |k: usize| {
-        ((k * hs) as f64 / span_out * last_pos)
-            .round()
-            .clamp(0.0, last_pos) as usize
-    };
+    let pos_of = |k: usize| map.frame_pos(k * hs, len, n).round().clamp(0.0, last_pos) as usize;
 
     let total = (frames * channels.len()).max(1) as f64;
     let mut out = vec![vec![0.0f32; out_len + n]; channels.len()];

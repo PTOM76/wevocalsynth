@@ -8,6 +8,7 @@
 //! wasm ビルドは wasm-bindgen を使わず小さな C ABI だけを公開し、Web Worker 内で
 //! 素の `WebAssembly.instantiate` で読み込めるようにしている。
 
+pub mod curve;
 pub mod f0;
 mod fft;
 pub mod formant;
@@ -35,12 +36,76 @@ pub fn wsola_with_progress(
     progress: &mut dyn FnMut(f64),
 ) -> Vec<Vec<f32>> {
     let len = channels.first().map_or(0, |c| c.len());
-    let out_len = (len as f64 * alpha).round() as usize;
-    if len == 0 || out_len == 0 {
-        return vec![Vec::new(); channels.len()];
-    }
     if (alpha - 1.0).abs() < 1e-9 {
         return channels.iter().map(|c| c.to_vec()).collect();
+    }
+    let out_len = (len as f64 * alpha).round() as usize;
+    wsola_map(
+        channels,
+        &TimeMap::linear(len, out_len),
+        sample_rate,
+        progress,
+    )
+}
+
+/// 出力位置から入力位置への時間対応。単調増加で、0 → 0、`out_len` → 入力長 とする。
+/// 一定倍率の伸縮も、ピッチカーブ編集のような時間ごとに変わる伸縮も、これで表す。
+pub struct TimeMap<'a> {
+    pub out_len: usize,
+    /// 出力位置（サンプル）→ 入力位置（サンプル）
+    pub to_input: &'a dyn Fn(f64) -> f64,
+    linear: Option<f64>,
+}
+
+impl<'a> TimeMap<'a> {
+    /// 任意の対応関数から作る。
+    pub fn new(out_len: usize, to_input: &'a dyn Fn(f64) -> f64) -> Self {
+        TimeMap {
+            out_len,
+            to_input,
+            linear: None,
+        }
+    }
+
+    /// 一定倍率（出力長 / 入力長）の対応。
+    pub fn linear(len: usize, out_len: usize) -> TimeMap<'static> {
+        TimeMap {
+            out_len,
+            to_input: &|t| t,
+            linear: Some(len as f64 / out_len.max(1) as f64),
+        }
+    }
+
+    fn input_at(&self, t: f64) -> f64 {
+        match self.linear {
+            Some(k) => t * k,
+            None => (self.to_input)(t),
+        }
+    }
+
+    /// 出力フレームの開始位置 `out_start` に対応する入力フレームの開始位置。
+    /// 最後の出力フレームがちょうど最後の入力フレーム（`len - n`）に来るよう、
+    /// 出力側・入力側ともフレーム長 `n` の分だけ縮めて対応づける。
+    /// 単純に対応させると末尾で行き過ぎ、最後の断片に張り付いて同じ音を繰り返す（うなりとして聞こえる）。
+    pub(crate) fn frame_pos(&self, out_start: usize, len: usize, n: usize) -> f64 {
+        let last_pos = len.saturating_sub(n) as f64;
+        let span_out = self.out_len.saturating_sub(n).max(1) as f64;
+        let t = out_start as f64 * self.out_len as f64 / span_out;
+        self.input_at(t) * last_pos / len.max(1) as f64
+    }
+}
+
+/// 任意の時間対応 `map` で全チャンネルを WSOLA 伸縮する。
+pub fn wsola_map(
+    channels: &[&[f32]],
+    map: &TimeMap,
+    sample_rate: f32,
+    progress: &mut dyn FnMut(f64),
+) -> Vec<Vec<f32>> {
+    let len = channels.first().map_or(0, |c| c.len());
+    let out_len = map.out_len;
+    if len == 0 || out_len == 0 {
+        return vec![Vec::new(); channels.len()];
     }
 
     let mut n = ((sample_rate * FRAME_SEC) as usize).max(64);
@@ -93,11 +158,8 @@ pub fn wsola_with_progress(
         let pos = if k == 0 {
             0
         } else {
-            // 出力フレームの開始位置を入力フレームの開始位置に対応づけ、最後の出力フレームで
-            // ちょうど最後の入力フレームに到達するようにする。単純な `out_start / alpha` だと
-            // 末尾で行き過ぎ、最後の断片に張り付いて同じ音を繰り返す（うなりとして聞こえる）。
-            let span_out = out_len.saturating_sub(n).max(1) as f64;
-            let nominal = ((out_start as f64 / span_out) * last_pos as f64).round() as i64;
+            // 出力フレームに対応する入力位置（末尾の扱いは `TimeMap::frame_pos` 参照）。
+            let nominal = map.frame_pos(out_start, len, n).round() as i64;
             // 前フレームの自然な続き（新しいフレームと重なる部分）。
             // prev_pos <= last_pos なので入力の内側に収まる。
             let natural = prev_pos + hs as i64;
@@ -151,7 +213,19 @@ pub fn wsola_with_progress(
 /// `x` を `ratio` 刻みで読み出す（ratio > 1 でピッチが上がる）。窓付き sinc 補間で、
 /// 間引き時はカットオフをナイキスト未満に下げて折り返しを防ぐ。
 pub fn resample(x: &[f32], ratio: f64, out_len: usize) -> Vec<f32> {
+    resample_with(x, out_len, ratio, &|j| j as f64 * ratio)
+}
+
+/// 出力サンプル j を入力位置 `pos(j)` から読み出す。`max_step` は読み出し間隔の最大値で、
+/// 1 を超える場合はカットオフを 1 / max_step に下げて折り返しを防ぐ。
+pub fn resample_with(
+    x: &[f32],
+    out_len: usize,
+    max_step: f64,
+    pos: &dyn Fn(usize) -> f64,
+) -> Vec<f32> {
     const HALF: usize = 16;
+    let ratio = max_step;
     const PHASES: usize = 256;
     let cutoff = if ratio > 1.0 { 1.0 / ratio } else { 1.0 };
     let half = (HALF as f64 / cutoff).ceil() as usize;
@@ -189,7 +263,7 @@ pub fn resample(x: &[f32], ratio: f64, out_len: usize) -> Vec<f32> {
 
     (0..out_len)
         .map(|j| {
-            let t = j as f64 * ratio;
+            let t = pos(j).max(0.0);
             let center = (t.floor() as usize).min(max_center);
             let pf = (t - t.floor()) * PHASES as f64;
             let p = (pf as usize).min(PHASES - 1);
@@ -253,6 +327,19 @@ impl Algorithm {
         match self {
             Algorithm::Wsola => wsola_with_progress(channels, alpha, sr, progress),
             Algorithm::PhaseVocoder => pv::stretch(channels, alpha, sr, progress),
+        }
+    }
+
+    fn stretch_map(
+        self,
+        channels: &[&[f32]],
+        map: &TimeMap,
+        sr: f32,
+        progress: &mut dyn FnMut(f64),
+    ) -> Vec<Vec<f32>> {
+        match self {
+            Algorithm::Wsola => wsola_map(channels, map, sr, progress),
+            Algorithm::PhaseVocoder => pv::stretch_map(channels, map, sr, progress),
         }
     }
 }
@@ -411,6 +498,52 @@ pub unsafe extern "C" fn process_planar(
     out_frames
 }
 
+/// ピッチカーブ編集: `ratios`（`ratio_count` 個、`hop` サンプル間隔のピッチ比）に従って
+/// プレーナー形式の音声を処理し、出力フレーム数（= `frames`）を返す。結果は `output_ptr` で取得する。
+///
+/// # Safety
+/// `input` は `frames * channels` 個、`ratios` は `ratio_count` 個の有効な f32 を指していること。
+#[no_mangle]
+pub unsafe extern "C" fn process_curve_planar(
+    input: *const f32,
+    frames: usize,
+    channels: usize,
+    sample_rate: f32,
+    ratios: *const f32,
+    ratio_count: usize,
+    hop: f64,
+    algorithm: u32,
+    preserve_formant: u32,
+    formant_semitones: f64,
+) -> usize {
+    let all = std::slice::from_raw_parts(input, frames * channels);
+    let chans: Vec<&[f32]> = all.chunks(frames.max(1)).take(channels).collect();
+    let ratios = std::slice::from_raw_parts(ratios, ratio_count);
+    let formant = if preserve_formant != 0 {
+        Formant::Shift(formant_semitones)
+    } else {
+        Formant::Follow
+    };
+    let out = curve::process(
+        &chans,
+        sample_rate,
+        ratios,
+        hop,
+        Algorithm::from_id(algorithm),
+        formant,
+        &mut host_progress,
+    );
+    let out_frames = out.first().map_or(0, |c| c.len());
+    OUTPUT.with(|o| {
+        let mut o = o.borrow_mut();
+        o.clear();
+        for c in &out {
+            o.extend_from_slice(c);
+        }
+    });
+    out_frames
+}
+
 /// モノラル音声 `input`（`frames` サンプル）の F0 を `f0::HOP_SEC` 間隔で推定し、
 /// 値の個数を返す。結果（Hz、無声は 0）は `output_ptr` で取得する。
 ///
@@ -534,7 +667,9 @@ mod tests {
         let mid = x.len() / 2 - n / 2;
         let fft = fft::Fft::new(n);
         let mut re: Vec<f32> = (0..n)
-            .map(|i| x[mid + i] * (0.5 - 0.5 * (2.0 * std::f32::consts::PI * i as f32 / n as f32).cos()))
+            .map(|i| {
+                x[mid + i] * (0.5 - 0.5 * (2.0 * std::f32::consts::PI * i as f32 / n as f32).cos())
+            })
             .collect();
         let mut im = vec![0.0f32; n];
         fft.run(&mut re, &mut im, false);
@@ -554,12 +689,20 @@ mod tests {
         let x = vowel(sr, 1.0, 150.0, 800.0);
         let base = centroid(&x, sr);
         for algo in ALGOS {
-            let follow = process_with_progress(&[&x], sr, 12.0, 1.0, algo, Formant::Follow, &mut |_| {});
-            let keep = process_with_progress(&[&x], sr, 12.0, 1.0, algo, Formant::Shift(0.0), &mut |_| {});
+            let follow =
+                process_with_progress(&[&x], sr, 12.0, 1.0, algo, Formant::Follow, &mut |_| {});
+            let keep =
+                process_with_progress(&[&x], sr, 12.0, 1.0, algo, Formant::Shift(0.0), &mut |_| {});
             let (cf, ck) = (centroid(&follow[0], sr), centroid(&keep[0], sr));
             println!("{algo:?}: original {base:.0}Hz, follow {cf:.0}Hz, preserve {ck:.0}Hz");
-            assert!(cf > base * 1.5, "{algo:?}: follow should move formants up ({cf} vs {base})");
-            assert!((ck - base).abs() < base * 0.25, "{algo:?}: preserve moved formants ({ck} vs {base})");
+            assert!(
+                cf > base * 1.5,
+                "{algo:?}: follow should move formants up ({cf} vs {base})"
+            );
+            assert!(
+                (ck - base).abs() < base * 0.25,
+                "{algo:?}: preserve moved formants ({ck} vs {base})"
+            );
             // フォルマントを保持してもピッチ自体は変わっていること。
             assert_eq!(keep[0].len(), x.len());
         }
@@ -570,24 +713,69 @@ mod tests {
         let sr = 48000.0;
         let x = vowel(sr, 1.0, 150.0, 800.0);
         let base = centroid(&x, sr);
-        let y = process_with_progress(&[&x], sr, 0.0, 1.0, Algorithm::Wsola, Formant::Shift(7.0), &mut |_| {});
+        let y = process_with_progress(
+            &[&x],
+            sr,
+            0.0,
+            1.0,
+            Algorithm::Wsola,
+            Formant::Shift(7.0),
+            &mut |_| {},
+        );
         let c = centroid(&y[0], sr);
         println!("formant +7: {base:.0}Hz -> {c:.0}Hz");
-        assert!(c > base * 1.2, "formant shift +7 should raise the centroid ({c} vs {base})");
+        assert!(
+            c > base * 1.2,
+            "formant shift +7 should raise the centroid ({c} vs {base})"
+        );
         assert!(y[0].iter().all(|v| v.is_finite()));
     }
 
     #[test]
     fn f0_detects_pitch() {
         for sr in [44100.0, 48000.0] {
-            for (x, expect) in [(sine(220.0, sr, 0.5), 220.0), (vowel(sr, 0.5, 150.0, 800.0), 150.0)] {
+            for (x, expect) in [
+                (sine(220.0, sr, 0.5), 220.0),
+                (vowel(sr, 0.5, 150.0, 800.0), 150.0),
+            ] {
                 let f = f0::estimate(&x, sr, &mut |_| {});
                 assert_eq!(f.len(), (x.len() as f32 / sr / f0::HOP_SEC) as usize + 1);
                 // 端を除いた中央部分がすべて有声で、期待値の ±2% 以内であること。
                 let mid = &f[5..f.len() - 5];
                 for &v in mid {
-                    assert!((v - expect).abs() < expect * 0.02, "sr {sr}: expected {expect}Hz, got {v}Hz");
+                    assert!(
+                        (v - expect).abs() < expect * 0.02,
+                        "sr {sr}: expected {expect}Hz, got {v}Hz"
+                    );
                 }
+            }
+        }
+    }
+
+    /// 前半そのまま・後半 +7 半音のカーブで、前半と後半のピッチがそれぞれ正しく、長さが変わらないこと。
+    #[test]
+    fn curve_changes_pitch_over_time() {
+        let sr = 48000.0;
+        let x = sine(220.0, sr, 1.0);
+        let hop = sr as f64 * 0.01;
+        let up = 2f32.powf(7.0 / 12.0);
+        let ratios: Vec<f32> = (0..=100).map(|k| if k < 50 { 1.0 } else { up }).collect();
+        for algo in ALGOS {
+            for formant in [Formant::Follow, Formant::Shift(0.0)] {
+                let y = &curve::process(&[&x], sr, &ratios, hop, algo, formant, &mut |_| {})[0];
+                assert_eq!(y.len(), x.len());
+                let q = y.len() / 4;
+                let first = freq(&y[q / 2..q * 2 - q / 2], sr);
+                let second = freq(&y[q * 2 + q / 2..y.len() - q / 2], sr);
+                assert!(
+                    (first - 220.0).abs() < 220.0 * 0.03,
+                    "{algo:?} {formant:?}: first half {first}Hz"
+                );
+                let expect = 220.0 * up;
+                assert!(
+                    (second - expect).abs() < expect * 0.03,
+                    "{algo:?} {formant:?}: second half {second}Hz"
+                );
             }
         }
     }

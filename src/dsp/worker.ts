@@ -16,6 +16,18 @@ interface DspExports {
     preserveFormant: number,
     formantSemitones: number,
   ): number
+  process_curve_planar(
+    input: number,
+    frames: number,
+    channels: number,
+    sampleRate: number,
+    ratios: number,
+    ratioCount: number,
+    hop: number,
+    algorithm: number,
+    preserveFormant: number,
+    formantSemitones: number,
+  ): number
   analyze_f0(input: number, frames: number, sampleRate: number): number
   output_ptr(): number
 }
@@ -43,7 +55,20 @@ export interface F0Request {
   sampleRate: number
 }
 
-export type DspRequest = ProcessRequest | F0Request
+/** ピッチカーブ編集のリクエスト。`ratios[k]` は時刻 k × `hopSamples` のピッチ比 */
+export interface CurveRequest {
+  kind: 'curve'
+  id: number
+  channels: Float32Array[]
+  sampleRate: number
+  ratios: Float32Array
+  hopSamples: number
+  algorithm: number
+  preserveFormant: boolean
+  formantSemitones: number
+}
+
+export type DspRequest = ProcessRequest | F0Request | CurveRequest
 
 export type DspResponse =
   | { id: number; channels: Float32Array[] }
@@ -71,7 +96,7 @@ const ready: Promise<DspExports> = fetch(wasmUrl)
   .then((bytes) => WebAssembly.instantiate(bytes, { env: { report_progress: reportProgress } }))
   .then((r) => r.instance.exports as unknown as DspExports)
 
-function run(dsp: DspExports, req: ProcessRequest): Float32Array[] {
+function run(dsp: DspExports, req: ProcessRequest | CurveRequest): Float32Array[] {
   const frames = req.channels[0]?.length ?? 0
   const count = req.channels.length
   const total = frames * count
@@ -79,22 +104,47 @@ function run(dsp: DspExports, req: ProcessRequest): Float32Array[] {
   try {
     const view = new Float32Array(dsp.memory.buffer, input, total)
     req.channels.forEach((c, i) => view.set(c, i * frames))
-    const outFrames = dsp.process_planar(
-      input,
-      frames,
-      count,
-      req.sampleRate,
-      req.semitones,
-      req.stretch,
-      req.algorithm,
-      req.preserveFormant ? 1 : 0,
-      req.formantSemitones,
-    )
+    const outFrames =
+      req.kind === 'curve'
+        ? runCurve(dsp, req, input, frames, count)
+        : dsp.process_planar(
+            input,
+            frames,
+            count,
+            req.sampleRate,
+            req.semitones,
+            req.stretch,
+            req.algorithm,
+            req.preserveFormant ? 1 : 0,
+            req.formantSemitones,
+          )
     // 処理中にメモリが拡張されている可能性があるため、ビューは処理後に作り直す
     const out = new Float32Array(dsp.memory.buffer, dsp.output_ptr(), outFrames * count)
     return Array.from({ length: count }, (_, i) => out.slice(i * outFrames, (i + 1) * outFrames))
   } finally {
     dsp.free_f32(input, total)
+  }
+}
+
+function runCurve(dsp: DspExports, req: CurveRequest, input: number, frames: number, count: number): number {
+  const n = req.ratios.length
+  const ratios = dsp.alloc_f32(n)
+  try {
+    new Float32Array(dsp.memory.buffer, ratios, n).set(req.ratios)
+    return dsp.process_curve_planar(
+      input,
+      frames,
+      count,
+      req.sampleRate,
+      ratios,
+      n,
+      req.hopSamples,
+      req.algorithm,
+      req.preserveFormant ? 1 : 0,
+      req.formantSemitones,
+    )
+  } finally {
+    dsp.free_f32(ratios, n)
   }
 }
 

@@ -26,10 +26,10 @@ import type { Clip, Range } from './audio/types'
 import { clipDuration } from './audio/types'
 import { decodeFile } from './audio/decode'
 import { encodeWav, type WavFormat } from './audio/wav'
-import { applyEdit, insertAt, removeRange, sliceClip } from './audio/edit'
+import { applyEdit, applyPitchCurve, insertAt, removeRange, sliceClip } from './audio/edit'
 import { usePlayer } from './audio/usePlayer'
 import { analyzeF0 } from './dsp/engine'
-import Waveform, { formatTime } from './components/Waveform'
+import Waveform, { formatTime, type DrawPoint } from './components/Waveform'
 import EditPanel, { type EditParams } from './components/EditPanel'
 
 const HISTORY_LIMIT = 20
@@ -59,6 +59,9 @@ export default function App() {
   const [clipboard, setClipboard] = useState<Clip | null>(null)
   const [showPitch, setShowPitch] = useState(false)
   const [pitch, setPitch] = useState<{ clip: Clip; f0: Float32Array } | null>(null)
+  const [penMode, setPenMode] = useState(false)
+  // 描いた目標ピッチ（Hz、F0 と同じフレーム、0 は未編集）。描画中は中身を直接書き換える
+  const [target, setTarget] = useState<{ clip: Clip; hz: Float32Array } | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
@@ -136,6 +139,46 @@ export default function App() {
       setSelection(selection ? result.range : null)
       setParams((p) => ({ ...p, semitones: 0, stretch: 1, formantSemitones: 0 }))
       setToast({ severity: 'success', message: '適用しました' })
+    } catch (e) {
+      setToast({ severity: 'error', message: `処理に失敗しました: ${String(e)}` })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // ピッチ帯に描いた線を目標ピッチに書き込む（フレーム間は音高を線形補間）
+  const drawTarget = (from: DrawPoint, to: DrawPoint) => {
+    if (!pitch || pitch.clip !== shown) return
+    let hz = target?.clip === shown ? target.hz : null
+    if (!hz) {
+      hz = new Float32Array(pitch.f0.length)
+      setTarget({ clip: shown, hz })
+    }
+    const [a, b] = from.k <= to.k ? [from, to] : [to, from]
+    for (let k = Math.max(0, a.k); k <= Math.min(hz.length - 1, b.k); k++) {
+      if (a.midi === null || b.midi === null) {
+        hz[k] = 0
+        continue
+      }
+      // 無声のフレームにはピッチを付けられない
+      if (!(pitch.f0[k] > 0)) continue
+      const g = b.k === a.k ? 1 : (k - a.k) / (b.k - a.k)
+      const m = a.midi + (b.midi - a.midi) * g
+      hz[k] = 440 * 2 ** ((m - 69) / 12)
+    }
+  }
+
+  const applyCurve = async () => {
+    if (!edited || !pitch || pitch.clip !== edited || target?.clip !== edited) return
+    setBusy(true)
+    setProgress(0)
+    try {
+      const next = await applyPitchCurve(edited, pitch.f0, target.hz, params, setProgress)
+      if (next) {
+        commit(next)
+        setToast({ severity: 'success', message: '適用しました' })
+      }
+      setTarget(null)
     } catch (e) {
       setToast({ severity: 'error', message: `処理に失敗しました: ${String(e)}` })
     } finally {
@@ -348,6 +391,13 @@ export default function App() {
                     pitch={pitch?.clip === shown ? pitch.f0 : null}
                     showPitch={showPitch}
                     onShowPitchChange={setShowPitch}
+                    target={target?.clip === shown ? target.hz : null}
+                    penMode={penMode && source === 'edited'}
+                    onPenModeChange={setPenMode}
+                    onDraw={drawTarget}
+                    onApplyCurve={applyCurve}
+                    onClearCurve={() => setTarget(null)}
+                    busy={busy}
                   />
 
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>
