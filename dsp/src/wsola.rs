@@ -1,0 +1,150 @@
+//! WSOLA（Waveform Similarity Overlap-Add）による時間伸縮。
+
+use crate::TimeMap;
+use std::f64::consts::PI;
+
+/// 分析フレーム長（秒）。約46ms: 低い声でも十分な長さ。
+const FRAME_SEC: f32 = 0.046;
+/// 探索許容幅（秒）。約12ms: 約83Hz までのピッチ周期1つ分をカバーする。
+const TOLERANCE_SEC: f32 = 0.012;
+
+/// 全チャンネルを `alpha` 倍に時間伸縮する（出力長 = 入力長 × alpha）。
+/// 全チャンネルで同じフレーム位置を使い、ステレオ定位を崩さない。
+pub fn wsola(channels: &[&[f32]], alpha: f64, sample_rate: f32) -> Vec<Vec<f32>> {
+    wsola_with_progress(channels, alpha, sample_rate, &mut |_| {})
+}
+
+/// 進捗（0〜1）を `progress` に通知する版の `wsola`。
+pub fn wsola_with_progress(
+    channels: &[&[f32]],
+    alpha: f64,
+    sample_rate: f32,
+    progress: &mut dyn FnMut(f64),
+) -> Vec<Vec<f32>> {
+    let len = channels.first().map_or(0, |c| c.len());
+    if (alpha - 1.0).abs() < 1e-9 {
+        return channels.iter().map(|c| c.to_vec()).collect();
+    }
+    let out_len = (len as f64 * alpha).round() as usize;
+    wsola_map(
+        channels,
+        &TimeMap::linear(len, out_len),
+        sample_rate,
+        progress,
+    )
+}
+
+/// 任意の時間対応 `map` で全チャンネルを WSOLA 伸縮する。
+pub fn wsola_map(
+    channels: &[&[f32]],
+    map: &TimeMap,
+    sample_rate: f32,
+    progress: &mut dyn FnMut(f64),
+) -> Vec<Vec<f32>> {
+    let len = channels.first().map_or(0, |c| c.len());
+    let out_len = map.out_len;
+    if len == 0 || out_len == 0 {
+        return vec![Vec::new(); channels.len()];
+    }
+
+    let mut n = ((sample_rate * FRAME_SEC) as usize).max(64);
+    n += n % 2;
+    let hs = n / 2;
+    let delta = ((sample_rate * TOLERANCE_SEC) as i64).max(8);
+    // periodic Hann 窓: 50% オーバーラップで総和がちょうど 1 になる。
+    let window: Vec<f32> = (0..n)
+        .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32)
+        .collect();
+
+    // ゼロ詰めしたモノラルミックス。相関計算で境界チェックなしにスライスを使えるようにする。
+    let pad_l = delta as usize + 8;
+    let pad_r = n + hs + delta as usize + 8;
+    let mut mono = vec![0.0f32; pad_l + len + pad_r];
+    for c in channels {
+        for (m, &v) in mono[pad_l..pad_l + len].iter_mut().zip(c.iter()) {
+            *m += v / channels.len() as f32;
+        }
+    }
+    let max_pos = (len + hs + delta as usize) as i64;
+    let seg = |p: i64| -> &[f32] {
+        let s = (p.clamp(-(delta + 4), max_pos) + pad_l as i64) as usize;
+        &mono[s..s + n]
+    };
+    // 類似度は重なり部分（各フレームの前半）だけで計算する。
+    let corr = |a: i64, b: i64, step: usize| -> f32 {
+        seg(a)[..hs]
+            .iter()
+            .step_by(step)
+            .zip(seg(b)[..hs].iter().step_by(step))
+            .map(|(x, y)| x * y)
+            .sum()
+    };
+
+    let mut out = vec![vec![0.0f32; out_len + n]; channels.len()];
+    let mut wsum = vec![0.0f32; out_len + n];
+    let frames = out_len / hs + 1;
+    let mut prev_pos: i64 = 0;
+    // フレームは入力の内側に収める。末尾で最後のサンプルをはみ出すと
+    // 無音を重ね合わせてしまい、末尾がギザギザになる。
+    let last_pos = len.saturating_sub(n) as i64;
+    let clamp_pos = |p: i64| p.clamp(0, last_pos);
+
+    for k in 0..frames {
+        if k % 256 == 0 {
+            progress(k as f64 / frames as f64);
+        }
+        let out_start = k * hs;
+        let pos = if k == 0 {
+            0
+        } else {
+            // 出力フレームに対応する入力位置（末尾の扱いは `TimeMap::frame_pos` 参照）。
+            let nominal = map.frame_pos(out_start, len, n).round() as i64;
+            // 前フレームの自然な続き（新しいフレームと重なる部分）。
+            // prev_pos <= last_pos なので入力の内側に収まる。
+            let natural = prev_pos + hs as i64;
+            // 粗く探索してから、最良候補の周辺を精密に探索する。
+            let (mut best, mut best_c) = (nominal, f32::MIN);
+            let mut off = -delta;
+            while off <= delta {
+                let cand = clamp_pos(nominal + off);
+                let c = corr(natural, cand, 8);
+                if c > best_c {
+                    best_c = c;
+                    best = cand;
+                }
+                off += 4;
+            }
+            let coarse = best;
+            best_c = f32::MIN;
+            for off in -3..=3 {
+                let cand = clamp_pos(coarse + off);
+                let c = corr(natural, cand, 1);
+                if c > best_c {
+                    best_c = c;
+                    best = cand;
+                }
+            }
+            best
+        };
+        prev_pos = pos;
+
+        for i in 0..n {
+            let src = pos + i as i64;
+            let w = window[i];
+            wsum[out_start + i] += w;
+            if src >= 0 && (src as usize) < len {
+                for (o, c) in out.iter_mut().zip(channels) {
+                    o[out_start + i] += w * c[src as usize];
+                }
+            }
+        }
+    }
+
+    for o in out.iter_mut() {
+        o.truncate(out_len);
+        for (s, &w) in o.iter_mut().zip(&wsum) {
+            *s = if w > 1e-3 { *s / w } else { 0.0 };
+        }
+    }
+    out
+}
