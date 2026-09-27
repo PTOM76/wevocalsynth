@@ -2,14 +2,13 @@ import { alpha, type Theme } from '@mui/material'
 import type { Clip, Range } from '../../audio/types'
 import { F0_HOP_SEC, type Spectrogram } from '../../dsp/engine'
 import { renderSpectrogram } from './spectrogramImage'
+import { hzToMidi, noteName } from '../../audio/notes'
 
 export const WAVE_HEIGHT = 200
 export const RULER_HEIGHT = 24
 export const PITCH_HEIGHT = 140
 
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-
-export const hzToMidi = (hz: number) => 69 + 12 * Math.log2(hz / 440)
+export { hzToMidi }
 
 /** 表示範囲（秒） */
 export interface View {
@@ -178,7 +177,7 @@ export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range:
     g.fillRect(0, Math.round(toY(m)), width, 1)
     if (isC || perSemitone >= 12) {
       g.fillStyle = pal.text.secondary
-      g.fillText(`${NOTE_NAMES[m % 12]}${(m / 12 - 1) | 0}`, 4, toY(m) - 7)
+      g.fillText(noteName(m), 4, toY(m) - 7)
     }
   }
 

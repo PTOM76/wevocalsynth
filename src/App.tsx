@@ -18,6 +18,7 @@ import { usePitchTarget } from './hooks/usePitchTarget'
 import { useShortcuts } from './hooks/useShortcuts'
 import { useClipCommands } from './hooks/useClipCommands'
 import { usePlayback } from './hooks/usePlayback'
+import { useRangeNote } from './hooks/useRangeNote'
 import AppHeader from './components/AppHeader'
 import { DropOverlay, EmptyState } from './components/EmptyState'
 import { ClipInfo, TransportBar, type Source } from './components/TransportBar'
@@ -68,6 +69,7 @@ export default function App() {
   const editRanges: Range[] = edited ? (selections.length ? selections : [{ start: 0, end: clipDuration(edited) }]) : []
   const multi = editRanges.length > 1
   const preview = usePreview(edited, multi ? null : (editRanges[0] ?? null), params, editing && !busy)
+  const rangeNote = useRangeNote(editing && !multi ? edited : null, editRanges[0] ?? null)
   const loop = useRealtimePreview(edited, multi ? null : (editRanges[0] ?? null), params.semitones, params.stretch)
 
   const commit = (clip: Clip) => {
@@ -137,6 +139,16 @@ export default function App() {
       setSelections(selections.length ? result.ranges : [])
       setParams((p) => ({ ...p, ...NEUTRAL }))
       setToast({ severity: 'success', message: '適用しました' })
+    })
+
+  // Shift+右端ドラッグ: 範囲をドラッグ後の長さに伸縮する（ピッチは変えない）
+  const stretchRange = (r: Range, dur: number) =>
+    runTask(async () => {
+      if (!edited) return
+      const opts = { ...params, ...NEUTRAL, stretch: dur / (r.end - r.start) }
+      const result = await applyEditToRanges(edited, [r], opts, setProgress)
+      commit(result.clip)
+      setSelections(result.ranges)
     })
 
   const applyCurve = () =>
@@ -210,6 +222,7 @@ export default function App() {
                     selections={editing ? selections : []}
                     onSeek={player.seek}
                     onSelectionsChange={editing ? setSelections : () => {}}
+                    onStretchRange={stretchRange}
                     pitch={pitch}
                     showPitch={showPitch}
                     onShowPitchChange={setShowPitch}
@@ -259,6 +272,7 @@ export default function App() {
                 onPreview={playback.togglePreview}
                 loopPlaying={loop.playing}
                 onLoop={playback.toggleLoop}
+                currentMidi={rangeNote}
               />
             )}
             {editing && (

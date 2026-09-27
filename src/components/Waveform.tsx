@@ -23,6 +23,19 @@ import WaveformToolbar from './waveform/WaveformToolbar'
 export { hzToMidi } from './waveform/draw'
 
 const DRAG_THRESHOLD_PX = 3
+/** 範囲の端をつかめる距離（px） */
+const EDGE_GRAB_PX = 6
+/** 端のドラッグで縮められる最小の範囲（秒） */
+const MIN_RANGE_SEC = 0.01
+
+/** 範囲の端のドラッグ。stretch なら離したときにその長さまで伸縮する */
+interface EdgeDrag {
+  index: number
+  side: 'start' | 'end'
+  stretch: boolean
+  orig: Range
+  last: Range
+}
 
 /** ピッチ帯に描く点。`midi` が null なら消しゴム */
 export interface DrawPoint {
@@ -39,6 +52,8 @@ interface Props {
   onSeek: (t: number) => void
   /** ドラッグで範囲を選ぶ。Ctrl/⌘ を押しながらなら既存の範囲に追加する */
   onSelectionsChange: (rs: Range[]) => void
+  /** Shift+右端ドラッグで、範囲 `range` を長さ `duration`（秒）に伸縮する */
+  onStretchRange: (range: Range, duration: number) => void
   /** F0（Hz、`F0_HOP_SEC` 間隔、無声は 0）。解析中は null */
   pitch: Float32Array | null
   showPitch: boolean
@@ -73,7 +88,8 @@ export default function Waveform(props: Props) {
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // base: ドラッグ開始時に残す範囲（追加選択なら既存の範囲、通常は空）
-  const dragRef = useRef<{ x0: number; t0: number; dragging: boolean; base: Range[] } | null>(null)
+  const dragRef = useRef<{ x0: number; t0: number; dragging: boolean; base: Range[]; edge?: EdgeDrag } | null>(null)
+  const [edgeHover, setEdgeHover] = useState(false)
   const drawRef = useRef<DrawPoint | null>(null)
   const [width, setWidth] = useState(0)
   // `target` は描画中に中身だけが書き換わるため、再描画のきっかけに使うカウンタ
@@ -121,6 +137,31 @@ export default function Waveform(props: Props) {
     return Math.max(0, Math.min(duration, t))
   }
 
+  /** `clientX` の近くにある範囲の端（なければ null） */
+  const edgeAt = (clientX: number): { index: number; side: 'start' | 'end' } | null => {
+    const rect = canvasRef.current!.getBoundingClientRect()
+    const xOf = (t: number) => rect.left + ((t - view.start) / view.dur) * rect.width
+    let best: { index: number; side: 'start' | 'end'; d: number } | null = null
+    selections.forEach((r, index) => {
+      for (const side of ['start', 'end'] as const) {
+        const d = Math.abs(xOf(r[side]) - clientX)
+        if (d <= EDGE_GRAB_PX && (!best || d < best.d)) best = { index, side, d }
+      }
+    })
+    return best
+  }
+
+  /** 端のドラッグ中の範囲を更新する */
+  const dragEdge = (edge: EdgeDrag, clientX: number) => {
+    const t = timeAt(clientX)
+    const { orig } = edge
+    edge.last =
+      edge.side === 'start'
+        ? { start: Math.min(t, orig.end - MIN_RANGE_SEC), end: orig.end }
+        : { start: orig.start, end: Math.max(t, orig.start + MIN_RANGE_SEC) }
+    props.onSelectionsChange(selections.map((r, i) => (i === edge.index ? edge.last : r)))
+  }
+
   /** ピッチ帯上の点（Shift で半音に吸着、Alt で消しゴム）。描画中でなく帯の外なら null */
   const drawPointAt = (e: React.PointerEvent): DrawPoint | null => {
     if (!penMode || !showPitch || !range) return null
@@ -147,14 +188,27 @@ export default function Waveform(props: Props) {
       <canvas
         ref={canvasRef}
         role="img"
-        aria-label="音声波形（ドラッグで範囲選択、Ctrl+ドラッグで範囲を追加、クリックで再生位置を移動）"
-        style={{ width: '100%', height, display: 'block', cursor: penMode && showPitch ? 'crosshair' : 'text' }}
+        aria-label="音声波形（ドラッグで範囲選択、Ctrl+ドラッグで範囲を追加、範囲の端をドラッグで調整、Shift+右端ドラッグで伸縮、クリックで再生位置を移動）"
+        style={{
+          width: '100%',
+          height,
+          display: 'block',
+          cursor: penMode && showPitch ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
+        }}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
           const p = drawPointAt(e)
           if (p) return drawTo(p)
+          const t0 = timeAt(e.clientX)
+          const hit = edgeAt(e.clientX)
+          if (hit) {
+            const orig = selections[hit.index]
+            const stretch = e.shiftKey && hit.side === 'end'
+            dragRef.current = { x0: e.clientX, t0, dragging: true, base: selections, edge: { ...hit, stretch, orig, last: orig } }
+            return
+          }
           const add = e.ctrlKey || e.metaKey
-          dragRef.current = { x0: e.clientX, t0: timeAt(e.clientX), dragging: false, base: add ? selections : [] }
+          dragRef.current = { x0: e.clientX, t0, dragging: false, base: add ? selections : [] }
         }}
         onPointerMove={(e) => {
           if (drawRef.current) {
@@ -163,7 +217,11 @@ export default function Waveform(props: Props) {
             return
           }
           const d = dragRef.current
-          if (!d) return
+          if (!d) {
+            setEdgeHover(!penMode && !!edgeAt(e.clientX))
+            return
+          }
+          if (d.edge) return dragEdge(d.edge, e.clientX)
           if (!d.dragging && Math.abs(e.clientX - d.x0) < DRAG_THRESHOLD_PX) return
           d.dragging = true
           const t = timeAt(e.clientX)
@@ -176,7 +234,12 @@ export default function Waveform(props: Props) {
           }
           const d = dragRef.current
           dragRef.current = null
-          if (d && !d.dragging) props.onSeek(timeAt(e.clientX))
+          const edge = d?.edge
+          if (edge?.stretch && edge.last.end !== edge.orig.end) {
+            props.onStretchRange(edge.orig, edge.last.end - edge.last.start)
+          } else if (d && !d.dragging) {
+            props.onSeek(timeAt(e.clientX))
+          }
         }}
       />
       <WaveformToolbar

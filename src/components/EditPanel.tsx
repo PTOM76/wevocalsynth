@@ -21,6 +21,7 @@ import type { PreviewState } from '../hooks/usePreview'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRotateLeft, faHeadphones, faRepeat, faStop, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { formatTime } from '../audio/types'
+import PitchControl from './PitchControl'
 
 export interface EditParams {
   semitones: number
@@ -46,6 +47,8 @@ interface Props {
   /** リアルタイム試聴（範囲をループ再生し、スライダー操作を即座に反映） */
   loopPlaying: boolean
   onLoop: () => void
+  /** 範囲の今の音程（MIDI）。解析中は undefined、不明は null */
+  currentMidi: number | null | undefined
 }
 
 const ALGORITHM_HINT: Record<Algorithm, string> = {
@@ -55,7 +58,7 @@ const ALGORITHM_HINT: Record<Algorithm, string> = {
 
 const STRETCH_PRESETS = [0.5, 0.75, 1, 1.5, 2, 4]
 
-export default function EditPanel({ params, onChange, targetDuration, hasSelection, busy, progress, onApply, preview, previewPlaying, onPreview, loopPlaying, onLoop }: Props) {
+export default function EditPanel({ params, onChange, targetDuration, hasSelection, busy, progress, onApply, preview, previewPlaying, onPreview, loopPlaying, onLoop, currentMidi }: Props) {
   const { semitones, stretch, preserveFormant, formantSemitones } = params
   const formantShift = preserveFormant && formantSemitones !== 0
   const unchanged = semitones === 0 && stretch === 1 && !formantShift
@@ -82,29 +85,11 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
             </ToggleButtonGroup>
           </Stack>
 
-          <Box>
-            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="subtitle2">ピッチ</Typography>
-              <TextField
-                size="small"
-                type="number"
-                value={semitones}
-                onChange={(e) => onChange({ ...params, semitones: clampNum(e.target.value, -24, 24, 0) })}
-                slotProps={{ htmlInput: { min: -24, max: 24, step: 1 } }}
-                sx={{ width: 96 }}
-              />
-            </Stack>
-            <Slider
-              aria-label="ピッチ（半音）"
-              value={semitones}
-              min={-24}
-              max={24}
-              step={1}
-              marks={[-24, -12, 0, 12, 24].map((v) => ({ value: v, label: v > 0 ? `+${v}` : `${v}` }))}
-              valueLabelDisplay="auto"
-              onChange={(_, v) => onChange({ ...params, semitones: v as number })}
-            />
-          </Box>
+          <PitchControl
+            semitones={semitones}
+            onChange={(v) => onChange({ ...params, semitones: v })}
+            currentMidi={currentMidi}
+          />
 
           <Box>
             <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
