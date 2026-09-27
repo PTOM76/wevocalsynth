@@ -81,7 +81,7 @@ export default function App() {
     }
   }, [])
 
-  // Accept drops anywhere on the page.
+  // ページ上のどこにドロップしても読み込めるようにする
   useEffect(() => {
     const over = (e: DragEvent) => {
       e.preventDefault()
@@ -130,7 +130,7 @@ export default function App() {
     }
   }
 
-  // Push a new clip onto the undo history.
+  // 新しいクリップを履歴に積む（元に戻す用）
   const commit = (clip: Clip) => {
     setHistory((h) => ({
       past: h.present ? [...h.past, h.present].slice(-HISTORY_LIMIT) : h.past,
@@ -192,7 +192,7 @@ export default function App() {
     else void player.play(player.position >= duration - 1e-3 ? 0 : player.position)
   }
 
-  // Keyboard: Space = play/pause, Ctrl+Z / Ctrl+Y = undo/redo.
+  // キーボード: Space = 再生/一時停止、Ctrl+Z / Ctrl+Y = 元に戻す/やり直す、Ctrl+X/C/V = 切り取り/コピー/貼り付け
   const keyRef = useRef({ togglePlay, undo, redo, cut, copy, paste })
   keyRef.current = { togglePlay, undo, redo, cut, copy, paste }
   useEffect(() => {

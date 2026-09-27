@@ -2,7 +2,7 @@ import type { Clip } from './types'
 
 export type WavFormat = 'pcm16' | 'pcm24' | 'float32'
 
-/** Encode a clip as an interleaved RIFF/WAVE file. */
+/** クリップをインターリーブ形式の RIFF/WAVE ファイルにエンコードする */
 export function encodeWav(clip: Clip, format: WavFormat = 'pcm16'): Blob {
   const ch = clip.channels.length
   const frames = clip.channels[0]?.length ?? 0

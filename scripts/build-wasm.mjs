@@ -1,4 +1,4 @@
-// Build the Rust DSP crate to wasm and copy it into src/dsp.
+// Rust の DSP クレートを wasm にビルドし、src/dsp にコピーする
 import { execSync } from 'node:child_process'
 import { copyFileSync, mkdirSync } from 'node:fs'
 

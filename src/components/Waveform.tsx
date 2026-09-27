@@ -8,7 +8,7 @@ import { clipDuration } from '../audio/types'
 const WAVE_HEIGHT = 200
 const RULER_HEIGHT = 24
 const DRAG_THRESHOLD_PX = 3
-/** Narrowest visible span in seconds. */
+/** 表示できる最小の時間幅（秒） */
 const MIN_VIEW_SEC = 0.02
 const ZOOM_STEP = 1.5
 
@@ -21,7 +21,7 @@ interface Props {
   onSelect: (r: Range | null) => void
 }
 
-/** Min/max per pixel column across all channels for the visible span. */
+/** 表示範囲について、全チャンネルを通した1ピクセル列ごとの最小値・最大値を求める */
 function computePeaks(clip: Clip, width: number, viewStart: number, viewDur: number) {
   const len = clip.channels[0].length
   const sr = clip.sampleRate
@@ -45,7 +45,7 @@ function computePeaks(clip: Clip, width: number, viewStart: number, viewDur: num
   return { min, max }
 }
 
-/** Pick a "nice" ruler step so labels are at least ~80px apart. */
+/** ラベル間隔が約80px以上になるよう、きりのよい目盛り間隔を選ぶ */
 function rulerStep(duration: number, width: number) {
   const target = (duration * 80) / Math.max(width, 1)
   const steps = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300]
@@ -67,19 +67,19 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
   const duration = clipDuration(clip)
   const [view, setView] = useState({ start: 0, dur: duration })
 
-  // Clamp a view into the clip.
+  // 表示範囲をクリップ内に収める
   const fit = (start: number, dur: number) => {
     const d = Math.min(duration, Math.max(Math.min(MIN_VIEW_SEC, duration), dur))
     return { start: Math.max(0, Math.min(duration - d, start)), dur: d }
   }
 
-  // New/changed clip: keep the zoom if possible, otherwise show everything.
+  // クリップが変わったら、可能なら拡大率を保ち、無理なら全体表示にする
   useEffect(() => {
     setView((v) => (v.dur > duration || v.dur <= 0 ? { start: 0, dur: duration } : fit(v.start, v.dur)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duration])
 
-  // Keep the playhead in view while playing.
+  // 再生中は再生位置が画面内に収まるようにする
   useEffect(() => {
     if (!playing) return
     setView((v) => (position < v.start || position > v.start + v.dur ? fit(position, v.dur) : v))
@@ -100,8 +100,8 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
     return () => ro.disconnect()
   }, [])
 
-  // Wheel: Ctrl/⌘ = zoom at cursor, otherwise horizontal scroll. Needs a
-  // non-passive listener so the page does not scroll/zoom too.
+  // ホイール: Ctrl/⌘ 併用でカーソル位置を中心に拡大縮小、それ以外は横スクロール。
+  // ページ自体がスクロール・拡大しないよう non-passive で登録する
   const viewRef = useRef(view)
   viewRef.current = view
   useEffect(() => {
@@ -141,7 +141,7 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
     g.clearRect(0, 0, width, h)
     const toX = (t: number) => ((t - view.start) / view.dur) * width
 
-    // Ruler
+    // 目盛り
     g.fillStyle = theme.palette.text.secondary
     g.strokeStyle = theme.palette.divider
     g.font = `11px ${theme.typography.fontFamily}`
@@ -163,7 +163,7 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
     g.lineTo(width, RULER_HEIGHT - 0.5)
     g.stroke()
 
-    // Selection
+    // 選択範囲
     if (selection) {
       const x0 = toX(selection.start)
       const x1 = toX(selection.end)
@@ -174,7 +174,7 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
       g.fillRect(x1 - 1, RULER_HEIGHT, 2, WAVE_HEIGHT)
     }
 
-    // Waveform
+    // 波形
     const mid = RULER_HEIGHT + WAVE_HEIGHT / 2
     const amp = WAVE_HEIGHT / 2 - 4
     g.fillStyle = theme.palette.primary.dark
@@ -186,7 +186,7 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
     g.fillStyle = theme.palette.divider
     g.fillRect(0, mid, width, 1)
 
-    // Playhead
+    // 再生位置
     g.fillStyle = theme.palette.secondary.main
     g.fillRect(Math.round(toX(position)) - 1, 0, 2, h)
   }, [peaks, width, view, position, selection, theme])
@@ -251,7 +251,7 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
             </IconButton>
           </span>
         </Tooltip>
-        {/* Horizontal scroll bar for the visible span. */}
+        {/* 表示範囲の横スクロールバー */}
         <Slider
           size="small"
           aria-label="表示位置"

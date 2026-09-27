@@ -34,7 +34,7 @@ interface Props {
   targetDuration: number
   hasSelection: boolean
   busy: boolean
-  /** 0..1 while busy. */
+  /** 処理中の進捗（0〜1） */
   progress: number
   onApply: () => void
 }
@@ -146,7 +146,7 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
                 sx={{ width: 96 }}
               />
             </Stack>
-            {/* Log scale so 0.5x and 2x sit symmetrically around 1x. */}
+            {/* 0.5倍と2倍が1倍を中心に対称になるよう対数スケールにする */}
             <Slider
               aria-label="時間伸縮（倍率）"
               value={Math.log2(stretch)}

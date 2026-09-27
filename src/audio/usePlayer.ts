@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip } from './types'
 import { clipDuration } from './types'
 
-/** Playback of an in-memory clip through Web Audio. */
+/** メモリ上のクリップを Web Audio で再生する */
 export function usePlayer(clip: Clip | null) {
   const ctxRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
   const bufferRef = useRef<{ clip: Clip; buffer: AudioBuffer } | null>(null)
-  // Maps AudioContext time to clip time while playing.
+  // 再生中に AudioContext の時刻をクリップ上の時刻へ換算するための基準
   const clockRef = useRef({ ctxStart: 0, offset: 0, end: 0 })
   const [playing, setPlaying] = useState(false)
   const [position, setPosition] = useState(0)
@@ -50,7 +50,7 @@ export function usePlayer(clip: Clip | null) {
       src.onended = () => {
         sourceRef.current = null
         setPlaying(false)
-        // After a range preview return to its start; otherwise rest at the end.
+        // 範囲試聴の後は範囲の先頭に戻し、通常再生の後は終端で止める
         setPosition(to !== undefined ? start : end)
       }
       src.start(0, start, end - start)
@@ -77,7 +77,7 @@ export function usePlayer(clip: Clip | null) {
     [play],
   )
 
-  // Follow the playhead while playing.
+  // 再生中は再生位置を追従する
   useEffect(() => {
     if (!playing) return
     let raf = 0
@@ -90,7 +90,7 @@ export function usePlayer(clip: Clip | null) {
     return () => cancelAnimationFrame(raf)
   }, [playing, currentTime])
 
-  // Switching clips stops playback and clamps the playhead.
+  // クリップが切り替わったら再生を止め、再生位置を範囲内に収める
   useEffect(() => {
     stopSource()
     setPlaying(false)

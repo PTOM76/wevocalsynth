@@ -1,6 +1,6 @@
 import type { Clip } from './types'
 
-/** Read the sample rate from a RIFF/WAVE header, if the file is a WAV. */
+/** WAV ファイルなら RIFF/WAVE ヘッダからサンプルレートを読み取る */
 function wavSampleRate(buf: ArrayBuffer): number | null {
   if (buf.byteLength < 12) return null
   const v = new DataView(buf)
@@ -16,8 +16,8 @@ function wavSampleRate(buf: ArrayBuffer): number | null {
 }
 
 /**
- * Decode an audio file in the browser. For WAV the decoding context runs at
- * the file's own sample rate so nothing is resampled on import.
+ * 音声ファイルをブラウザ内でデコードする。WAV の場合はファイル自身の
+ * サンプルレートでデコードし、読み込み時のリサンプルを避ける。
  */
 export async function decodeFile(file: File): Promise<Clip> {
   const data = await file.arrayBuffer()

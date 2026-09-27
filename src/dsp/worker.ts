@@ -1,4 +1,4 @@
-// Runs the wasm DSP engine off the main thread.
+// wasm の DSP エンジンをメインスレッド外で実行する Worker
 import wasmUrl from './wevocal_dsp.wasm?url'
 
 interface DspExports {
@@ -25,9 +25,9 @@ export interface DspRequest {
   sampleRate: number
   semitones: number
   stretch: number
-  /** 0 = WSOLA, 1 = phase vocoder (matches `Algorithm::from_id`). */
+  /** 0 = WSOLA, 1 = Phase Vocoder（Rust 側 `Algorithm::from_id` と対応） */
   algorithm: number
-  /** Keep formants when shifting pitch, then move them by `formantSemitones`. */
+  /** ピッチ変更時にフォルマントを保持し、`formantSemitones` だけ移動する */
   preserveFormant: boolean
   formantSemitones: number
 }
@@ -37,15 +37,15 @@ export type DspResponse =
   | { id: number; error: string }
   | { id: number; progress: number }
 
-// The worker global shares Worker's message API; avoids pulling in the webworker lib.
+// Worker のグローバルは Worker と同じメッセージ API を持つ。webworker lib を読み込まずに済ませるためのキャスト
 const scope = self as unknown as Worker
 
-// Request being processed, used to tag progress messages from wasm.
+// 処理中のリクエストID。wasm からの進捗通知に付与する
 let currentId = 0
 let lastProgress = -1
 
 function reportProgress(p: number) {
-  // Throttle to whole percents.
+  // 1%単位に間引いて送る
   const pct = Math.floor(p * 100)
   if (pct === lastProgress) return
   lastProgress = pct
@@ -72,7 +72,7 @@ function run(dsp: DspExports, req: DspRequest): Float32Array[] {
       req.preserveFormant ? 1 : 0,
       req.formantSemitones,
     )
-    // Memory may have grown during processing, so create the view afterwards.
+    // 処理中にメモリが拡張されている可能性があるため、ビューは処理後に作り直す
     const out = new Float32Array(dsp.memory.buffer, dsp.output_ptr(), outFrames * count)
     return Array.from({ length: count }, (_, i) => out.slice(i * outFrames, (i + 1) * outFrames))
   } finally {

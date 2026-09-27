@@ -1,12 +1,12 @@
 import type { Clip, Range } from './types'
 import { processAudio, type ProcessOptions } from '../dsp/engine'
 
-/** Crossfade length where processed audio meets the untouched parts. */
+/** 加工部分と未加工部分の継ぎ目のクロスフェード長 */
 const FADE_SEC = 0.005
 
 /**
- * Apply pitch shift / time stretch to `range` of `clip` and splice the result
- * back in. Returns the new clip and the range the processed audio now occupies.
+ * `clip` の `range` にピッチ変更・時間伸縮を適用して元の位置に差し戻す。
+ * 新しいクリップと、加工後の音声が占める範囲を返す。
  */
 export async function applyEdit(
   clip: Clip,
@@ -33,7 +33,7 @@ export async function applyEdit(
     out.set(src.subarray(0, s), 0)
     out.set(p, s)
     out.set(src.subarray(e), s + pLen)
-    // Short linear crossfades at both seams to avoid clicks.
+    // クリックノイズを避けるため、両端の継ぎ目を短く線形クロスフェードする
     for (let i = 0; i < fade; i++) {
       const g = i / fade
       out[s + i] = p[i] * g + src[s + i] * (1 - g)
@@ -45,19 +45,19 @@ export async function applyEdit(
   return { clip: { sampleRate: sr, channels }, range: { start: s / sr, end: (s + pLen) / sr } }
 }
 
-/** Copy `range` of `clip` into a new clip. */
+/** `clip` の `range` を新しいクリップとして切り出す */
 export function sliceClip(clip: Clip, range: Range): Clip {
   const [s, e] = toFrames(clip, range)
   return { sampleRate: clip.sampleRate, channels: clip.channels.map((c) => c.slice(s, e)) }
 }
 
-/** Remove `range` from `clip`, crossfading the seam. */
+/** `clip` から `range` を削除し、継ぎ目をフェードでつなぐ */
 export function removeRange(clip: Clip, range: Range): Clip {
   const [s, e] = toFrames(clip, range)
   return join(sliceClip(clip, { start: 0, end: s / clip.sampleRate }), sliceClip(clip, { start: e / clip.sampleRate, end: Infinity }))
 }
 
-/** Insert `part` into `clip` at time `at` (seconds). Sample rates must match. */
+/** `clip` の時刻 `at`（秒）に `part` を挿入する。サンプルレートは一致している前提 */
 export function insertAt(clip: Clip, part: Clip, at: number): Clip {
   const head = sliceClip(clip, { start: 0, end: at })
   const tail = sliceClip(clip, { start: at, end: Infinity })
@@ -71,7 +71,7 @@ function toFrames(clip: Clip, range: Range): [number, number] {
   return [s, e]
 }
 
-/** Concatenate two clips with short fades at the seam to avoid clicks. */
+/** 2つのクリップを連結する。クリックノイズ防止のため継ぎ目に短いフェードを入れる */
 function join(a: Clip, b: Clip): Clip {
   const fade = Math.round(FADE_SEC * a.sampleRate)
   return {

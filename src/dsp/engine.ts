@@ -1,6 +1,6 @@
 import type { DspRequest, DspResponse } from './worker'
 
-/** Time-stretch method used by the DSP engine. */
+/** DSPエンジンの時間伸縮方式 */
 export type Algorithm = 'wsola' | 'pv'
 
 const ALGORITHM_ID: Record<Algorithm, number> = { wsola: 0, pv: 1 }
@@ -41,13 +41,13 @@ export interface ProcessOptions {
   semitones: number
   stretch: number
   algorithm: Algorithm
-  /** Keep formants when shifting pitch. */
+  /** ピッチ変更時にフォルマントを保持する */
   preserveFormant: boolean
-  /** Extra formant shift in semitones (only with `preserveFormant`). */
+  /** フォルマントの追加移動量（半音、`preserveFormant` 時のみ有効） */
   formantSemitones: number
 }
 
-/** Pitch-shift / time-stretch planar audio in the DSP worker. */
+/** プレーナー形式の音声を DSP Worker でピッチ変更・時間伸縮する */
 export function processAudio(
   channels: Float32Array[],
   sampleRate: number,
