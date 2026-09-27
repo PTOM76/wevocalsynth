@@ -160,3 +160,68 @@ function join(a: Clip, b: Clip): Clip {
     }),
   }
 }
+
+/** 音量操作の境界で急な段差が出ないよう、ゲインをなめらかに切り替える時間 */
+const GAIN_RAMP_SEC = 0.005
+
+/**
+ * `range` 内の各サンプルに `gainAt(u)` を掛けた新しいクリップを返す。
+ * u は範囲内の位置（0〜1）。範囲の両端は短いランプで元の音量につなぐ。
+ */
+function mapGain(clip: Clip, range: Range, gainAt: (u: number) => number): Clip {
+  const [s, e] = toFrames(clip, range)
+  const n = e - s
+  const ramp = Math.min(Math.round(GAIN_RAMP_SEC * clip.sampleRate), Math.floor(n / 2))
+  return {
+    sampleRate: clip.sampleRate,
+    channels: clip.channels.map((src) => {
+      const out = src.slice()
+      for (let i = 0; i < n; i++) {
+        let g = gainAt(n > 1 ? i / (n - 1) : 0)
+        // 端では 1（元の音量）から目的のゲインへ移る
+        const edge = Math.min(i, n - 1 - i)
+        if (edge < ramp) g = 1 + (g - 1) * (edge / ramp)
+        out[s + i] = src[s + i] * g
+      }
+      return out
+    }),
+  }
+}
+
+/** `range` の音量を `db` デシベル変える */
+export function gainRange(clip: Clip, range: Range, db: number): Clip {
+  const g = 10 ** (db / 20)
+  return mapGain(clip, range, () => g)
+}
+
+/** `range` をフェードイン（'in'）またはフェードアウト（'out'）する。カーブは聴感上なめらかな sin² */
+export function fadeRange(clip: Clip, range: Range, dir: 'in' | 'out'): Clip {
+  const [s, e] = toFrames(clip, range)
+  const n = e - s
+  return {
+    sampleRate: clip.sampleRate,
+    channels: clip.channels.map((src) => {
+      const out = src.slice()
+      for (let i = 0; i < n; i++) {
+        const u = n > 1 ? i / (n - 1) : 1
+        const g = Math.sin((Math.PI / 2) * (dir === 'in' ? u : 1 - u)) ** 2
+        out[s + i] = src[s + i] * g
+      }
+      return out
+    }),
+  }
+}
+
+/** `range` のピークが `peakDb` デシベルになるよう音量を揃える。無音なら null */
+export function normalizeRange(clip: Clip, range: Range, peakDb = -1): Clip | null {
+  const [s, e] = toFrames(clip, range)
+  let peak = 0
+  for (const c of clip.channels) for (let i = s; i < e; i++) peak = Math.max(peak, Math.abs(c[i]))
+  if (peak < 1e-6) return null
+  return gainRange(clip, range, peakDb - 20 * Math.log10(peak))
+}
+
+/** `range` を無音にする */
+export function silenceRange(clip: Clip, range: Range): Clip {
+  return mapGain(clip, range, () => 0)
+}

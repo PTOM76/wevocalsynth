@@ -26,11 +26,22 @@ import type { Clip, Range } from './audio/types'
 import { clipDuration } from './audio/types'
 import { decodeFile } from './audio/decode'
 import { encodeWav, type WavFormat } from './audio/wav'
-import { applyEdit, applyPitchCurve, insertAt, removeRange, sliceClip } from './audio/edit'
+import {
+  applyEdit,
+  applyPitchCurve,
+  fadeRange,
+  gainRange,
+  insertAt,
+  normalizeRange,
+  removeRange,
+  silenceRange,
+  sliceClip,
+} from './audio/edit'
 import { usePlayer } from './audio/usePlayer'
 import { analyzeF0 } from './dsp/engine'
 import Waveform, { formatTime, type DrawPoint } from './components/Waveform'
 import EditPanel, { type EditParams } from './components/EditPanel'
+import VolumePanel, { type VolumeAction } from './components/VolumePanel'
 
 const HISTORY_LIMIT = 20
 
@@ -224,6 +235,26 @@ export default function App() {
     commit(sliceClip(edited, selection))
     player.seek(0)
     setSelection(null)
+  }
+
+  // 音量編集は選択範囲（なければ全体）に対して行う
+  const volumeRange = (): Range | null => (edited ? (selection ?? { start: 0, end: clipDuration(edited) }) : null)
+  const applyGain = (db: number) => {
+    const r = volumeRange()
+    if (edited && r) commit(gainRange(edited, r, db))
+  }
+  const applyVolumeAction = (action: VolumeAction) => {
+    const r = volumeRange()
+    if (!edited || !r) return
+    if (action === 'normalize') {
+      const next = normalizeRange(edited, r)
+      if (next) commit(next)
+      else setToast({ severity: 'info', message: '無音のためノーマライズできません' })
+    } else if (action === 'silence') {
+      commit(silenceRange(edited, r))
+    } else {
+      commit(fadeRange(edited, r, action === 'fadeIn' ? 'in' : 'out'))
+    }
   }
 
   const undo = () =>
@@ -508,6 +539,10 @@ export default function App() {
                 progress={progress}
                 onApply={apply}
               />
+            )}
+
+            {source === 'edited' && edited && (
+              <VolumePanel hasSelection={!!selection} busy={busy} onGain={applyGain} onAction={applyVolumeAction} />
             )}
           </Stack>
         )}
