@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { AppBar, Box, Button, IconButton, Menu, MenuItem, Toolbar, Tooltip, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faDownload, faFolderOpen, faRotateLeft, faRotateRight, faWaveSquare } from '@fortawesome/free-solid-svg-icons'
+import { faDownload, faFloppyDisk, faFolderOpen, faRotateLeft, faRotateRight, faWaveSquare } from '@fortawesome/free-solid-svg-icons'
 import type { WavFormat } from '../audio/wav'
 
 interface Props {
@@ -13,6 +13,8 @@ interface Props {
   onRedo: () => void
   onOpen: () => void
   onExport: (format: WavFormat) => void
+  /** プロジェクト（.wvsp）として保存する */
+  onSave: () => void
 }
 
 const FORMATS: { format: WavFormat; label: string }[] = [
@@ -22,7 +24,7 @@ const FORMATS: { format: WavFormat; label: string }[] = [
 ]
 
 /** 上部のアプリバー（元に戻す・やり直す・開く・WAV出力） */
-export default function AppHeader({ canUndo, canRedo, canExport, busy, onUndo, onRedo, onOpen, onExport }: Props) {
+export default function AppHeader({ canUndo, canRedo, canExport, busy, onUndo, onRedo, onOpen, onExport, onSave }: Props) {
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
 
   return (
@@ -51,6 +53,18 @@ export default function AppHeader({ canUndo, canRedo, canExport, busy, onUndo, o
         <Button variant="outlined" startIcon={<FontAwesomeIcon icon={faFolderOpen} />} onClick={onOpen}>
           開く
         </Button>
+        <Tooltip title="プロジェクトとして保存（.wvsp）">
+          <span>
+            <Button
+              variant="outlined"
+              startIcon={<FontAwesomeIcon icon={faFloppyDisk} />}
+              disabled={!canExport || busy}
+              onClick={onSave}
+            >
+              保存
+            </Button>
+          </span>
+        </Tooltip>
         <Button
           variant="contained"
           startIcon={<FontAwesomeIcon icon={faDownload} />}

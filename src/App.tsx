@@ -3,7 +3,8 @@ import { Alert, Box, Card, CardContent, Container, Snackbar, Stack } from '@mui/
 import type { Clip, Range } from './audio/types'
 import { clipDuration } from './audio/types'
 import { decodeFile } from './audio/decode'
-import { downloadWav, type WavFormat } from './audio/wav'
+import { downloadBlob, downloadWav, type WavFormat } from './audio/wav'
+import { PROJECT_EXT, isProjectFile, loadProject, saveProject } from './project/projectFile'
 import { applyEdit, applyPitchCurve, spliceProcessed } from './audio/edit'
 import { usePlayer } from './audio/usePlayer'
 import { analyzeF0, analyzeSpectrogram } from './dsp/engine'
@@ -79,9 +80,11 @@ export default function App() {
   const loadFile = useCallback(
     async (file: File) => {
       try {
-        const clip = await decodeFile(file)
-        setFileName(file.name)
-        setOriginal(clip)
+        // .wvsp はプロジェクト（原音・加工後・パラメータ）として開く
+        const project = isProjectFile(file) ? await loadProject(file) : null
+        const clip = project ? project.edited : await decodeFile(file)
+        setFileName(project ? project.fileName : file.name)
+        setOriginal(project ? project.original : clip)
         history.reset(clip)
         setSource('edited')
         setSelection(null)
@@ -91,7 +94,7 @@ export default function App() {
         setShowSpec(false)
         setPenMode(false)
         pitchTarget.clear()
-        setParams((p) => ({ ...p, ...NEUTRAL }))
+        setParams((p) => ({ ...(project ? project.params : p), ...NEUTRAL }))
       } catch (e) {
         setToast({ severity: 'error', message: `読み込めませんでした: ${file.name} (${String(e)})` })
       }
@@ -139,8 +142,16 @@ export default function App() {
       pitchTarget.clear()
     })
 
+  const baseName = fileName.replace(/\.[^.]+$/, '') || 'audio'
+  const saveProjectFile = () =>
+    runTask(async () => {
+      if (!original || !edited) return
+      downloadBlob(await saveProject({ fileName, original, edited, params }), `${baseName}${PROJECT_EXT}`)
+      setToast({ severity: 'success', message: '保存しました' })
+    })
+
   const exportWav = (format: WavFormat) => {
-    if (edited) downloadWav(edited, `${fileName.replace(/\.[^.]+$/, '') || 'audio'}_wevocal.wav`, format)
+    if (edited) downloadWav(edited, `${baseName}_wevocal.wav`, format)
   }
 
   // 通常の再生と試聴は、片方を始めたらもう片方を止める
@@ -172,11 +183,12 @@ export default function App() {
         onRedo={history.redo}
         onOpen={openFile}
         onExport={exportWav}
+        onSave={saveProjectFile}
       />
       <input
         ref={inputRef}
         type="file"
-        accept="audio/*,.wav"
+        accept={`audio/*,.wav,${PROJECT_EXT}`}
         hidden
         onChange={(e) => {
           const f = e.target.files?.[0]
