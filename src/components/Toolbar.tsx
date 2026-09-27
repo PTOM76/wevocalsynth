@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Box, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCirclePlay, faPause, faPlay, faRepeat, faStop } from '@fortawesome/free-solid-svg-icons'
+import { faCirclePlay, faCopy, faCropSimple, faPaste, faPause, faPlay, faRepeat, faScissors, faStop, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { formatTime } from '../audio/types'
 import { SmallButton } from './waveform/WaveformToolbar'
 import { useT } from '../i18n/i18n'
@@ -19,9 +19,17 @@ interface Props {
   onLoop: () => void
   /** 表示ツール（拡大縮小・表示の切替・ピッチ描画） */
   viewTools: ReactNode
+  /** 編集（切り取り・コピー・貼り付け・選択範囲のみ残す・選択解除） */
+  canEdit: boolean
+  hasClipboard: boolean
+  onCut: () => void
+  onCopy: () => void
+  onPaste: () => void
+  onTrim: () => void
+  onClearSelection: () => void
 }
 
-/** PC 用のツールバー（高さ 40px）。再生操作・再生位置と、波形の表示ツールを1行に並べる */
+/** PC 用のツールバー（高さ 40px）。再生操作・再生位置、編集（切り取りなど）、波形の表示ツールを1行に並べる */
 export default function Toolbar(p: Props) {
   const t = useT()
   return (
@@ -45,6 +53,13 @@ export default function Toolbar(p: Props) {
         <Typography variant="body2" sx={{ fontFamily: 'monospace', ml: 1, minWidth: 150 }}>
           {formatTime(p.position)} / {formatTime(p.duration)}
         </Typography>
+      </Stack>
+      <Stack direction="row" sx={{ alignItems: 'center' }}>
+        <SmallButton title={`${t('edit.cut')} (Ctrl+X)`} label={t('edit.cut')} icon={faScissors} disabled={!p.canEdit || !p.hasSelection} onClick={p.onCut} />
+        <SmallButton title={`${t('edit.copy')} (Ctrl+C)`} label={t('edit.copy')} icon={faCopy} disabled={!p.canEdit || !p.hasSelection} onClick={p.onCopy} />
+        <SmallButton title={`${t('edit.paste')} (Ctrl+V)`} label={t('edit.paste')} icon={faPaste} disabled={!p.canEdit || !p.hasClipboard} onClick={p.onPaste} />
+        <SmallButton title={t('edit.trim')} label={t('edit.trim')} icon={faCropSimple} disabled={!p.canEdit || !p.hasSelection} onClick={p.onTrim} />
+        <SmallButton title={`${t('edit.clearSelection')} (Esc)`} label={t('edit.clearSelection')} icon={faXmark} disabled={!p.hasSelection} onClick={p.onClearSelection} />
       </Stack>
       <Stack direction="row" sx={{ alignItems: 'center' }}>
         {p.viewTools}

@@ -126,13 +126,27 @@ export default function EditPanel(p: Props) {
 
       <PropRow label={t('process.formant')}>
         <Switch size="small" checked={preserveFormant} onChange={(e) => set({ preserveFormant: e.target.checked })} slotProps={{ input: { 'aria-label': t('process.formant') } }} />
-        <Box sx={{ flexGrow: 1 }} />
+      </PropRow>
+      <PropRow label={t('process.formantShift')}>
+        <Slider
+          aria-label={t('process.formantShiftAria')}
+          disabled={!preserveFormant}
+          value={formantSemitones}
+          min={-12}
+          max={12}
+          step={0.1}
+          marks={[0].map((value) => ({ value }))}
+          valueLabelDisplay="auto"
+          valueLabelFormat={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}`}
+          onChange={(_, v) => set({ formantSemitones: round2(v as number) })}
+          sx={COMPACT_SLIDER_SX}
+        />
         <NumberInput
           value={formantSemitones}
           onChange={(v) => set({ formantSemitones: v })}
           min={-12}
           max={12}
-          step={0.5}
+          step={0.1}
           unit={t('process.semitoneUnit')}
           disabled={!preserveFormant}
           ariaLabel={t('process.formantShiftAria')}

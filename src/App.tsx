@@ -216,6 +216,13 @@ export default function App() {
                 onPlaySelection={playback.playSelection}
                 onLoop={playback.toggleLoop}
                 viewTools={viewTools}
+                canEdit={editing && !busy}
+                hasClipboard={ed.cmd.hasClipboard}
+                onCut={ed.cmd.cut}
+                onCopy={ed.cmd.copy}
+                onPaste={ed.cmd.paste}
+                onTrim={ed.cmd.trim}
+                onClearSelection={ed.clearSelection}
               />
             }
             editor={editor}
