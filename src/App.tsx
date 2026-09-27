@@ -8,6 +8,7 @@ import { PROJECT_EXT, isProjectFile, loadProject, saveProject } from './project/
 import { applyPitchCurve, spliceProcessed } from './audio/edit'
 import { applyEditToRanges, normalizeRanges } from './audio/multiRange'
 import { usePlayer } from './audio/usePlayer'
+import { useRealtimePreview } from './audio/realtime/useRealtimePreview'
 import { analyzeF0, analyzeSpectrogram } from './dsp/engine'
 import { useHistory } from './hooks/useHistory'
 import { useFileDrop } from './hooks/useFileDrop'
@@ -16,6 +17,7 @@ import { usePreview } from './hooks/usePreview'
 import { usePitchTarget } from './hooks/usePitchTarget'
 import { useShortcuts } from './hooks/useShortcuts'
 import { useClipCommands } from './hooks/useClipCommands'
+import { usePlayback } from './hooks/usePlayback'
 import AppHeader from './components/AppHeader'
 import { DropOverlay, EmptyState } from './components/EmptyState'
 import { ClipInfo, TransportBar, type Source } from './components/TransportBar'
@@ -66,6 +68,7 @@ export default function App() {
   const editRanges: Range[] = edited ? (selections.length ? selections : [{ start: 0, end: clipDuration(edited) }]) : []
   const multi = editRanges.length > 1
   const preview = usePreview(edited, multi ? null : (editRanges[0] ?? null), params, editing && !busy)
+  const loop = useRealtimePreview(edited, multi ? null : (editRanges[0] ?? null), params.semitones, params.stretch)
 
   const commit = (clip: Clip) => {
     history.commit(clip)
@@ -112,7 +115,7 @@ export default function App() {
   const runTask = async (task: () => Promise<void>) => {
     setBusy(true)
     setProgress(0)
-    preview.player.pause()
+    playback.stopAll()
     try {
       await task()
     } catch (e) {
@@ -161,21 +164,9 @@ export default function App() {
   }
 
   // 通常の再生と試聴は、片方を始めたらもう片方を止める
-  const togglePlay = () => {
-    preview.player.pause()
-    if (player.playing) player.pause()
-    else void player.play(player.position >= duration - 1e-3 ? 0 : player.position)
-  }
-  const togglePreview = () => {
-    if (preview.player.playing) {
-      preview.player.pause()
-    } else {
-      player.pause()
-      void preview.player.play(0)
-    }
-  }
+  const playback = usePlayback(player, preview.player, loop, duration, selection)
 
-  useShortcuts({ togglePlay, undo: history.undo, redo: history.redo, cut: cmd.cut, copy: cmd.copy, paste: cmd.paste })
+  useShortcuts({ togglePlay: playback.togglePlay, undo: history.undo, redo: history.redo, cut: cmd.cut, copy: cmd.copy, paste: cmd.paste })
   const openFile = () => inputRef.current?.click()
 
   return (
@@ -241,16 +232,9 @@ export default function App() {
                     editable={editing}
                     busy={busy}
                     hasClipboard={cmd.hasClipboard}
-                    onTogglePlay={togglePlay}
-                    onStop={() => {
-                      player.pause()
-                      player.seek(0)
-                    }}
-                    onPlaySelection={() => {
-                      if (!selection) return
-                      preview.player.pause()
-                      void player.play(selection.start, selection.end)
-                    }}
+                    onTogglePlay={playback.togglePlay}
+                    onStop={playback.stop}
+                    onPlaySelection={playback.playSelection}
                     onSelectionChange={(r) => setSelections(r ? [...selections.slice(0, -1), r] : [])}
                     onCut={cmd.cut}
                     onCopy={cmd.copy}
@@ -272,7 +256,9 @@ export default function App() {
                 onApply={apply}
                 preview={multi ? 'multi' : preview.state}
                 previewPlaying={preview.player.playing}
-                onPreview={togglePreview}
+                onPreview={playback.togglePreview}
+                loopPlaying={loop.playing}
+                onLoop={playback.toggleLoop}
               />
             )}
             {editing && (

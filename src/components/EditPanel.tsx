@@ -19,7 +19,7 @@ import {
 import type { Algorithm } from '../dsp/engine'
 import type { PreviewState } from '../hooks/usePreview'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRotateLeft, faHeadphones, faStop, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRotateLeft, faHeadphones, faRepeat, faStop, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { formatTime } from '../audio/types'
 
 export interface EditParams {
@@ -43,6 +43,9 @@ interface Props {
   preview: PreviewState
   previewPlaying: boolean
   onPreview: () => void
+  /** リアルタイム試聴（範囲をループ再生し、スライダー操作を即座に反映） */
+  loopPlaying: boolean
+  onLoop: () => void
 }
 
 const ALGORITHM_HINT: Record<Algorithm, string> = {
@@ -52,7 +55,7 @@ const ALGORITHM_HINT: Record<Algorithm, string> = {
 
 const STRETCH_PRESETS = [0.5, 0.75, 1, 1.5, 2, 4]
 
-export default function EditPanel({ params, onChange, targetDuration, hasSelection, busy, progress, onApply, preview, previewPlaying, onPreview }: Props) {
+export default function EditPanel({ params, onChange, targetDuration, hasSelection, busy, progress, onApply, preview, previewPlaying, onPreview, loopPlaying, onLoop }: Props) {
   const { semitones, stretch, preserveFormant, formantSemitones } = params
   const formantShift = preserveFormant && formantSemitones !== 0
   const unchanged = semitones === 0 && stretch === 1 && !formantShift
@@ -190,6 +193,18 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
                 {preview === 'tooLong' ? '試聴は20秒まで' : '試聴は1範囲のみ'}
               </Typography>
             )}
+            <Tooltip title="範囲をループ再生し、スライダーの変更をすぐ反映（簡易音質）">
+              <span>
+                <Button
+                  variant={loopPlaying ? 'contained' : 'outlined'}
+                  startIcon={<FontAwesomeIcon icon={loopPlaying ? faStop : faRepeat} />}
+                  disabled={busy || preview === 'multi'}
+                  onClick={onLoop}
+                >
+                  {loopPlaying ? '停止' : 'ループ'}
+                </Button>
+              </span>
+            </Tooltip>
             <Button
               variant="outlined"
               startIcon={
