@@ -60,7 +60,7 @@
   "clip.start": "Start",
   "clip.end": "End",
 
-  "empty.formats": "WAV / MP3 etc. (drag & drop supported)",
+  "empty.formats": "WAV / MP3 / MP4 etc. (drag & drop supported)",
   "empty.choose": "Choose a file",
   "empty.drop": "Drop to open",
 

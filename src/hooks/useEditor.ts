@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
-import { decodeFile } from '../audio/decode'
+import { AUDIO_ACCEPT, decodeFile } from '../audio/decode'
 import { downloadBlob } from '../audio/wav'
 import { EXPORT_EXT, exportAudio } from '../audio/export/exportAudio'
 import { sliceRanges } from '../audio/multiRange'
@@ -199,7 +199,7 @@ export function useEditor(settings: Settings) {
   const playback = usePlayback(player, preview.player, loop, duration, selection)
   playbackRef.current = playback
 
-  const picker = useFilePicker(`audio/*,.wav,${PROJECT_EXT}`, (f) => void loadFile(f))
+  const picker = useFilePicker(`${AUDIO_ACCEPT},${PROJECT_EXT}`, (f) => void loadFile(f))
 
   // 作業状態の自動保存と、起動時の復元
   const autosaveProject = useMemo(

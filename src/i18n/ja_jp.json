@@ -60,7 +60,7 @@
   "clip.start": "開始",
   "clip.end": "終了",
 
-  "empty.formats": "WAV / MP3 など（ドラッグ＆ドロップ可）",
+  "empty.formats": "WAV / MP3 / MP4 など（ドラッグ＆ドロップ可）",
   "empty.choose": "ファイルを選択",
   "empty.drop": "ドロップして開く",
 
