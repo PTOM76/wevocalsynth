@@ -17,14 +17,36 @@ function wavSampleRate(buf: ArrayBuffer): number | null {
 
 /**
  * MP4 / M4A なら、音声トラックの `mp4a` サンプルエントリからサンプルレートを読み取る。
- * moov はファイルの末尾にあることもあるため、全体から `mp4a` を探す
+ * 先頭から箱（サイズ＋種類）をたどって `moov` を見つけ、その中だけで `mp4a` を探す。
+ * ファイル全体を1バイトずつ走査すると、動画のような大きなファイルでメインスレッドが止まるため
  */
 export function mp4SampleRate(buf: ArrayBuffer): number | null {
   const b = new Uint8Array(buf)
-  // ftyp（先頭の箱）がなければ MP4 ではない
-  if (b.length < 12 || String.fromCharCode(b[4], b[5], b[6], b[7]) !== 'ftyp') return null
   const v = new DataView(buf)
-  for (let i = 8; i + 28 < b.length; i++) {
+  const type = (o: number) => String.fromCharCode(b[o], b[o + 1], b[o + 2], b[o + 3])
+  // ftyp（先頭の箱）がなければ MP4 ではない
+  if (b.length < 12 || type(4) !== 'ftyp') return null
+  let o = 0
+  while (o + 8 <= b.length) {
+    let size = v.getUint32(o)
+    let header = 8
+    if (size === 1 && o + 16 <= b.length) {
+      // 64bit のサイズ（大きな mdat など）
+      size = Number(v.getBigUint64(o + 8))
+      header = 16
+    } else if (size === 0) {
+      size = b.length - o // ファイルの最後まで
+    }
+    if (size < header) return null
+    if (type(o + 4) === 'moov') return findMp4aRate(v, b, o + header, Math.min(b.length, o + size))
+    o += size
+  }
+  return null
+}
+
+/** moov の範囲 [from, to) から `mp4a` サンプルエントリを探してサンプルレートを返す */
+function findMp4aRate(v: DataView, b: Uint8Array, from: number, to: number): number | null {
+  for (let i = from; i + 28 < to; i++) {
     if (b[i] !== 0x6d || b[i + 1] !== 0x70 || b[i + 2] !== 0x34 || b[i + 3] !== 0x61) continue // "mp4a"
     // mp4a の型名の後ろ: 予約6 + データ参照2 + 予約8 + チャンネル数2 + サンプルサイズ2 + 予約4 + サンプルレート（16.16 固定小数点）
     const rate = v.getUint32(i + 4 + 24) >>> 16
