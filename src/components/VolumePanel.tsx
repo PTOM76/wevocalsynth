@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button, Card, CardContent, Slider, Stack, TextField, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck } from '@fortawesome/free-solid-svg-icons'
+import { useT, type MessageKey } from '../i18n/i18n'
 
 export type VolumeAction = 'fadeIn' | 'fadeOut' | 'normalize' | 'silence'
 
@@ -12,30 +13,31 @@ interface Props {
   onAction: (action: VolumeAction) => void
 }
 
-const ACTIONS: { action: VolumeAction; label: string }[] = [
-  { action: 'fadeIn', label: 'フェードイン' },
-  { action: 'fadeOut', label: 'フェードアウト' },
-  { action: 'normalize', label: 'ノーマライズ' },
-  { action: 'silence', label: '無音化' },
+const ACTIONS: { action: VolumeAction; label: MessageKey }[] = [
+  { action: 'fadeIn', label: 'volume.fadeIn' },
+  { action: 'fadeOut', label: 'volume.fadeOut' },
+  { action: 'normalize', label: 'volume.normalize' },
+  { action: 'silence', label: 'volume.silence' },
 ]
 
 export default function VolumePanel({ hasSelection, busy, onGain, onAction }: Props) {
   const [db, setDb] = useState(0)
+  const t = useT()
 
   return (
     <Card>
       <CardContent>
         <Stack spacing={2}>
           <Stack direction="row" sx={{ alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <Typography variant="h6">音量</Typography>
+            <Typography variant="h6">{t('volume.title')}</Typography>
             <Typography variant="body2" color="text.secondary">
-              {hasSelection ? '選択範囲' : '全体'}
+              {t(hasSelection ? 'common.selection' : 'common.whole')}
             </Typography>
           </Stack>
 
           <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
             <Slider
-              aria-label="ゲイン（dB）"
+              aria-label={t('volume.gainAria')}
               value={db}
               min={-24}
               max={12}
@@ -67,14 +69,14 @@ export default function VolumePanel({ hasSelection, busy, onGain, onAction }: Pr
                 setDb(0)
               }}
             >
-              適用
+              {t('common.apply')}
             </Button>
           </Stack>
 
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
             {ACTIONS.map(({ action, label }) => (
               <Button key={action} variant="outlined" size="small" disabled={busy} onClick={() => onAction(action)}>
-                {label}
+                {t(label)}
               </Button>
             ))}
           </Stack>

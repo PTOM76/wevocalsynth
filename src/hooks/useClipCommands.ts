@@ -4,6 +4,7 @@ import { clipDuration } from '../audio/types'
 import { fadeRange, gainRange, insertAt, normalizeRange, silenceRange } from '../audio/edit'
 import { mapRanges, normalizeRanges, removeRanges, sliceRanges } from '../audio/multiRange'
 import type { VolumeAction } from '../components/VolumePanel'
+import { t } from '../i18n/i18n'
 
 interface Deps {
   /** 編集中のクリップ */
@@ -62,7 +63,7 @@ export function useClipCommands(d: Deps) {
       let fails = 0
       const next = mapRanges(edited, editRanges, (c, r) => normalizeRange(c, r) ?? (fails++, c))
       if (fails < editRanges.length) d.commit(next)
-      else d.notify('無音のためノーマライズできません')
+      else d.notify(t('toast.silentNormalize'))
     } else if (action === 'silence') {
       d.commit(mapRanges(edited, editRanges, silenceRange))
     } else {

@@ -12,6 +12,7 @@ import {
   faTrashCan,
 } from '@fortawesome/free-solid-svg-icons'
 import type { View } from './draw'
+import { useT } from '../../i18n/i18n'
 
 /** ツールチップ付きの小さいアイコンボタン。`pressed` を渡すと ON/OFF の切替ボタンになる */
 function SmallButton(props: {
@@ -64,28 +65,29 @@ interface Props {
 
 /** 波形の下のツールバー（拡大縮小・表示切替・ピッチ描画・横スクロール） */
 export default function WaveformToolbar(p: Props) {
+  const t = useT()
   return (
     <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', mt: 0.5, flexWrap: 'wrap' }}>
-      <SmallButton title="縮小 (Ctrl+ホイール)" label="縮小" icon={faMagnifyingGlassMinus} disabled={!p.zoomed} onClick={p.onZoomOut} />
-      <SmallButton title="拡大 (Ctrl+ホイール)" label="拡大" icon={faMagnifyingGlassPlus} disabled={!p.canZoomIn} onClick={p.onZoomIn} />
+      <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomOut') })} label={t('wave.zoomOut')} icon={faMagnifyingGlassMinus} disabled={!p.zoomed} onClick={p.onZoomOut} />
+      <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomIn') })} label={t('wave.zoomIn')} icon={faMagnifyingGlassPlus} disabled={!p.canZoomIn} onClick={p.onZoomIn} />
       <SmallButton
-        title="スペクトログラム表示"
-        label="スペクトログラム表示"
+        title={t('wave.spectrogram')}
+        label={t('wave.spectrogram')}
         icon={faChartColumn}
         pressed={p.showSpectrogram}
         onClick={() => p.onShowSpectrogramChange(!p.showSpectrogram)}
       />
       <SmallButton
-        title="ピッチ表示"
-        label="ピッチ表示"
+        title={t('wave.pitch')}
+        label={t('wave.pitch')}
         icon={faMusic}
         pressed={p.showPitch}
         onClick={() => p.onShowPitchChange(!p.showPitch)}
       />
       {p.showPitch && (
         <SmallButton
-          title="ピッチを描く（Shift: 半音に吸着 / Alt: 消す）"
-          label="ピッチを描く"
+          title={t('wave.drawPitchTooltip')}
+          label={t('wave.drawPitch')}
           icon={faPen}
           pressed={p.penMode}
           onClick={() => p.onPenModeChange(!p.penMode)}
@@ -100,16 +102,16 @@ export default function WaveformToolbar(p: Props) {
             disabled={p.busy}
             onClick={p.onApplyCurve}
           >
-            適用
+            {t('common.apply')}
           </Button>
-          <SmallButton title="描いたピッチを破棄" label="描いたピッチを破棄" icon={faTrashCan} disabled={p.busy} onClick={p.onClearCurve} />
+          <SmallButton title={t('wave.discardCurve')} label={t('wave.discardCurve')} icon={faTrashCan} disabled={p.busy} onClick={p.onClearCurve} />
         </>
       )}
-      <SmallButton title="全体表示" label="全体表示" icon={faExpand} disabled={!p.zoomed} onClick={p.onShowAll} />
+      <SmallButton title={t('wave.showAll')} label={t('wave.showAll')} icon={faExpand} disabled={!p.zoomed} onClick={p.onShowAll} />
       {/* 表示範囲の横スクロールバー */}
       <Slider
         size="small"
-        aria-label="表示位置"
+        aria-label={t('wave.scroll')}
         disabled={!p.zoomed}
         value={p.view.start}
         min={0}

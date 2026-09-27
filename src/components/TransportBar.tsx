@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import type { Clip, Range } from '../audio/types'
 import { formatTime } from '../audio/types'
+import { useT } from '../i18n/i18n'
 
 export type Source = 'edited' | 'original'
 
@@ -27,6 +28,7 @@ export function ClipInfo(props: {
   onSourceChange: (s: Source) => void
 }) {
   const { fileName, clip, duration, source, onSourceChange } = props
+  const t = useT()
   return (
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
       <Typography variant="subtitle1" sx={{ flexGrow: 1, fontWeight: 500 }} noWrap>
@@ -38,8 +40,8 @@ export function ClipInfo(props: {
         <Chip size="small" label={formatTime(duration)} />
       </Stack>
       <ToggleButtonGroup size="small" exclusive value={source} onChange={(_, v: Source | null) => v && onSourceChange(v)}>
-        <ToggleButton value="edited">加工後</ToggleButton>
-        <ToggleButton value="original">原音</ToggleButton>
+        <ToggleButton value="edited">{t('clip.edited')}</ToggleButton>
+        <ToggleButton value="original">{t('clip.original')}</ToggleButton>
       </ToggleButtonGroup>
     </Stack>
   )
@@ -81,6 +83,7 @@ interface Props {
 
 /** 再生操作・再生位置・選択範囲の入力・切り取りなどの編集ボタン */
 export function TransportBar(p: Props) {
+  const t = useT()
   const setField = (key: keyof Range, value: string) => {
     const v = Number(value)
     if (!Number.isFinite(v)) return
@@ -104,18 +107,18 @@ export function TransportBar(p: Props) {
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', display: p.hidePlayback ? 'none' : 'flex' }}>
-        <Tooltip title="再生 / 一時停止 (Space)">
-          <IconButton aria-label="再生 / 一時停止" color="primary" onClick={p.onTogglePlay}>
+        <Tooltip title={`${t('play.playPause')} (Space)`}>
+          <IconButton aria-label={t('play.playPause')} color="primary" onClick={p.onTogglePlay}>
             <FontAwesomeIcon icon={p.playing ? faPause : faPlay} />
           </IconButton>
         </Tooltip>
-        <ToolButton title="停止" label="停止" icon={faStop} onClick={p.onStop} />
+        <ToolButton title={t('common.stop')} label={t('common.stop')} icon={faStop} onClick={p.onStop} />
         <Button
           startIcon={<FontAwesomeIcon icon={faCirclePlay} />}
           disabled={!p.selection || !p.editable}
           onClick={p.onPlaySelection}
         >
-          範囲を試聴
+          {t('play.playSelection')}
         </Button>
         <Typography variant="body2" sx={{ fontFamily: 'monospace', minWidth: 170 }}>
           {formatTime(p.position)} / {formatTime(p.duration)}
@@ -124,21 +127,21 @@ export function TransportBar(p: Props) {
       <Box sx={{ flexGrow: 1 }} />
       {p.editable && (
         <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-          {field('start', '開始')}
-          {field('end', '終了')}
-          <ToolButton title="切り取り (Ctrl+X)" label="切り取り" icon={faScissors} disabled={noSel} onClick={p.onCut} />
-          <ToolButton title="コピー (Ctrl+C)" label="コピー" icon={faCopy} disabled={noSel} onClick={p.onCopy} />
+          {field('start', t('clip.start'))}
+          {field('end', t('clip.end'))}
+          <ToolButton title={`${t('edit.cut')} (Ctrl+X)`} label={t('edit.cut')} icon={faScissors} disabled={noSel} onClick={p.onCut} />
+          <ToolButton title={`${t('edit.copy')} (Ctrl+C)`} label={t('edit.copy')} icon={faCopy} disabled={noSel} onClick={p.onCopy} />
           <ToolButton
-            title="再生位置に貼り付け (Ctrl+V)"
-            label="再生位置に貼り付け"
+            title={`${t('edit.paste')} (Ctrl+V)`}
+            label={t('edit.paste')}
             icon={faPaste}
             disabled={!p.hasClipboard || p.busy}
             onClick={p.onPaste}
           />
-          <ToolButton title="選択範囲のみ残す" label="選択範囲のみ残す" icon={faCropSimple} disabled={noSel} onClick={p.onTrim} />
+          <ToolButton title={t('edit.trim')} label={t('edit.trim')} icon={faCropSimple} disabled={noSel} onClick={p.onTrim} />
           <ToolButton
-            title="選択解除"
-            label="選択解除"
+            title={t('edit.clearSelection')}
+            label={t('edit.clearSelection')}
             icon={faXmark}
             disabled={!p.selection}
             onClick={() => p.onSelectionChange(null)}

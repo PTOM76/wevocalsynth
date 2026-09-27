@@ -12,6 +12,7 @@ import {
   Switch,
 } from '@mui/material'
 import type { InitialMode, Settings } from './settings'
+import { useT, type LangSetting } from '../i18n/i18n'
 
 interface Props {
   open: boolean
@@ -22,9 +23,10 @@ interface Props {
 
 /** 設定画面。変更はその場で反映・保存する */
 export default function SettingsDialog({ open, onClose, settings, onChange }: Props) {
+  const t = useT()
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>設定</DialogTitle>
+      <DialogTitle>{t('settings.title')}</DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ pt: 1 }}>
           <FormControl>
@@ -32,21 +34,34 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
               control={
                 <Switch checked={settings.autoRestore} onChange={(e) => onChange({ autoRestore: e.target.checked })} />
               }
-              label="作業を自動保存し、次回開いたときに復元する"
+              label={t('settings.autoRestore')}
             />
-            <FormHelperText>音声はこのブラウザ内（IndexedDB）にだけ保存され、送信されません</FormHelperText>
+            <FormHelperText>{t('settings.autoRestoreHelp')}</FormHelperText>
           </FormControl>
           <FormControl size="small">
-            <InputLabel id="initial-mode">ファイルを開いたときのモード</InputLabel>
+            <InputLabel id="initial-mode">{t('settings.initialMode')}</InputLabel>
             <Select
               labelId="initial-mode"
-              label="ファイルを開いたときのモード"
+              label={t('settings.initialMode')}
               value={settings.initialMode}
               onChange={(e) => onChange({ initialMode: e.target.value as InitialMode })}
             >
-              <MenuItem value="auto">自動判定</MenuItem>
-              <MenuItem value="vocal">ボーカル</MenuItem>
-              <MenuItem value="instrument">楽器</MenuItem>
+              <MenuItem value="auto">{t('settings.auto')}</MenuItem>
+              <MenuItem value="vocal">{t('common.vocal')}</MenuItem>
+              <MenuItem value="instrument">{t('common.instrument')}</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small">
+            <InputLabel id="language">{t('settings.language')}</InputLabel>
+            <Select
+              labelId="language"
+              label={t('settings.language')}
+              value={settings.language}
+              onChange={(e) => onChange({ language: e.target.value as LangSetting })}
+            >
+              <MenuItem value="auto">{t('settings.languageAuto')}</MenuItem>
+              <MenuItem value="ja_jp">日本語</MenuItem>
+              <MenuItem value="en_us">English</MenuItem>
             </Select>
           </FormControl>
         </Stack>

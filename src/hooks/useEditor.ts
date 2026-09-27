@@ -25,6 +25,7 @@ import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
 import type { Settings } from '../settings/settings'
+import { t, type MessageKey } from '../i18n/i18n'
 
 export type Toast = { severity: 'success' | 'error' | 'info'; message: string }
 
@@ -56,7 +57,7 @@ export function useEditor(settings: Settings) {
   // 処理の開始時に再生を止める（playback は後で作るため関数で遅延参照する）
   const task = useTask(
     () => playbackRef.current?.stopAll(),
-    (e) => setToast({ severity: 'error', message: `処理に失敗しました: ${String(e)}` }),
+    (e) => setToast({ severity: 'error', message: t('toast.processFailed', { error: String(e) }) }),
   )
   const { busy, progress, setProgress } = task
   const edited = history.present
@@ -66,10 +67,10 @@ export function useEditor(settings: Settings) {
   const player = usePlayer(shown)
   const pitchTarget = usePitchTarget()
 
-  const fail = (what: string) => (e: unknown) => setToast({ severity: 'error', message: `${what}: ${String(e)}` })
+  const fail = (key: MessageKey) => (e: unknown) => setToast({ severity: 'error', message: t(key, { error: String(e) }) })
   // ピッチ・スペクトログラムは表示を ON にしたときだけ解析する
-  const pitch = useClipAnalysis(showPitch, shown, (c) => analyzeF0(c.channels, c.sampleRate), fail('ピッチ解析に失敗しました'))
-  const spec = useClipAnalysis(showSpec, shown, (c) => analyzeSpectrogram(c.channels, c.sampleRate), fail('スペクトログラムの計算に失敗しました'))
+  const pitch = useClipAnalysis(showPitch, shown, (c) => analyzeF0(c.channels, c.sampleRate), fail('toast.pitchFailed'))
+  const spec = useClipAnalysis(showSpec, shown, (c) => analyzeSpectrogram(c.channels, c.sampleRate), fail('toast.specFailed'))
 
   // 加工・音量編集の対象（選択範囲、なければ全体）
   const editRanges: Range[] = edited ? (selections.length ? selections : [{ start: 0, end: clipDuration(edited) }]) : []
@@ -124,7 +125,7 @@ export function useEditor(settings: Settings) {
             .catch(() => {})
         }
       } catch (e) {
-        setToast({ severity: 'error', message: `読み込めませんでした: ${file.name} (${String(e)})` })
+        setToast({ severity: 'error', message: t('toast.loadFailed', { file: file.name, error: String(e) }) })
       }
     },
     [history, pitchTarget, cmd, settings.initialMode],
@@ -142,7 +143,7 @@ export function useEditor(settings: Settings) {
       commit(result.clip)
       setSelections(selections.length ? result.ranges : [])
       setParams((p) => ({ ...p, ...NEUTRAL }))
-      setToast({ severity: 'success', message: '適用しました' })
+      setToast({ severity: 'success', message: t('toast.applied') })
     })
 
   // Shift+右端ドラッグ: 範囲をドラッグ後の長さに伸縮する（ピッチは変えない）
@@ -162,7 +163,7 @@ export function useEditor(settings: Settings) {
       const next = await applyPitchCurve(edited, pitch, target.hz, params, setProgress)
       if (next) {
         commit(next)
-        setToast({ severity: 'success', message: '適用しました' })
+        setToast({ severity: 'success', message: t('toast.applied') })
       }
       pitchTarget.clear()
     })
@@ -172,7 +173,7 @@ export function useEditor(settings: Settings) {
     task.run(async () => {
       if (!original || !edited) return
       downloadBlob(await saveProject({ fileName, original, edited, params }), `${baseName}${PROJECT_EXT}`)
-      setToast({ severity: 'success', message: '保存しました' })
+      setToast({ severity: 'success', message: t('toast.saved') })
     })
 
   const exportWav = (format: WavFormat) => {
@@ -195,9 +196,9 @@ export function useEditor(settings: Settings) {
     autosaveProject,
     async (file) => {
       await loadFile(file)
-      setToast({ severity: 'info', message: '前回の作業を復元しました' })
+      setToast({ severity: 'info', message: t('toast.restored') })
     },
-    (e) => console.warn('自動保存に失敗しました', e),
+    (e) => console.warn('autosave failed', e),
   )
 
   const selectAll = () => edited && setSelections([{ start: 0, end: clipDuration(edited) }])

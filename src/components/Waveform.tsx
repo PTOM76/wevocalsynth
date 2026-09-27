@@ -19,6 +19,7 @@ import {
 } from './waveform/draw'
 import { MIN_VIEW_SEC, ZOOM_STEP, useWaveformView } from './waveform/useWaveformView'
 import WaveformToolbar from './waveform/WaveformToolbar'
+import { useLang, useT } from '../i18n/i18n'
 
 export { hzToMidi } from './waveform/draw'
 
@@ -87,6 +88,9 @@ function usePalette() {
 export default function Waveform(props: Props) {
   const { clip, position, playing, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram } = props
   const { pal, dark, font } = usePalette()
+  const t = useT()
+  // 言語が変わったら Canvas の文字（「解析中…」）も描き直す
+  const lang = useLang()
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // base: ドラッグ開始時に残す範囲（追加選択なら既存の範囲、通常は空）
@@ -131,7 +135,7 @@ export default function Waveform(props: Props) {
     if (!showSpectrogram) drawWave(c, peaks)
     if (showPitch) drawPitchLane(c, pitch, range, target)
     drawPlayhead(c, position, height)
-  }, [peaks, width, height, view, pal, dark, font, selections, showSpectrogram, spectrogram, showPitch, pitch, range, target, drawVersion, position])
+  }, [lang, peaks, width, height, view, pal, dark, font, selections, showSpectrogram, spectrogram, showPitch, pitch, range, target, drawVersion, position])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -190,7 +194,7 @@ export default function Waveform(props: Props) {
       <canvas
         ref={canvasRef}
         role="img"
-        aria-label="音声波形（ドラッグで範囲選択、Ctrl+ドラッグで範囲を追加、範囲の端をドラッグで調整、Shift+右端ドラッグで伸縮、クリックで再生位置を移動）"
+        aria-label={t('wave.aria')}
         style={{
           width: '100%',
           height,

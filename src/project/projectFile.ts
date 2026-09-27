@@ -1,5 +1,6 @@
 import type { Clip } from '../audio/types'
 import type { EditParams } from '../components/EditPanel'
+import { t } from '../i18n/i18n'
 
 /**
  * プロジェクトファイル（.wvsp）。gzip で圧縮した次の並び:
@@ -59,15 +60,15 @@ export async function saveProject(p: Project): Promise<Blob> {
 /** .wvsp ファイルを読み込む。形式が違えば例外 */
 export async function loadProject(file: File): Promise<Project> {
   const buf = await transform(file, new DecompressionStream('gzip')).catch(() => {
-    throw new Error('プロジェクトファイルではありません')
+    throw new Error(t('project.invalid'))
   })
   const view = new DataView(buf)
   if (buf.byteLength < 8 || new TextDecoder().decode(new Uint8Array(buf, 0, 4)) !== MAGIC) {
-    throw new Error('プロジェクトファイルではありません')
+    throw new Error(t('project.invalid'))
   }
   const jsonLen = view.getUint32(4, true)
   const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, jsonLen))) as Header
-  if (header.version !== VERSION || header.clips.length !== 2) throw new Error('対応していないバージョンです')
+  if (header.version !== VERSION || header.clips.length !== 2) throw new Error(t('project.unsupported'))
 
   let offset = 8 + jsonLen
   const [original, edited] = header.clips.map((info): Clip => ({

@@ -17,6 +17,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars, faRotateLeft, faRotateRight, faWaveSquare } from '@fortawesome/free-solid-svg-icons'
 import { renderEntries, type MenuGroup } from './menu/MenuList'
+import { useT } from '../i18n/i18n'
 
 interface Props {
   menus: MenuGroup[]
@@ -54,11 +55,12 @@ function MenuBar({ menus }: { menus: MenuGroup[] }) {
 
 /** スマホ: 下から出るメニュー一覧 */
 function MobileMenu({ menus }: { menus: MenuGroup[] }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
   return (
     <>
-      <IconButton aria-label="メニュー" onClick={() => setOpen(true)}>
+      <IconButton aria-label={t('app.menu')} onClick={() => setOpen(true)}>
         <FontAwesomeIcon icon={faBars} />
       </IconButton>
       <Drawer anchor="bottom" open={open} onClose={close}>
@@ -80,6 +82,7 @@ function MobileMenu({ menus }: { menus: MenuGroup[] }) {
 
 /** 上部のアプリバー。PC ではメニューバー、スマホではメニューボタンにする */
 export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRedo }: Props) {
+  const t = useT()
   const theme = useTheme()
   const mobile = useMediaQuery(theme.breakpoints.down('md'))
   return (
@@ -93,16 +96,16 @@ export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRed
         </Typography>
         {!mobile && <MenuBar menus={menus} />}
         <Box sx={{ flexGrow: 1 }} />
-        <Tooltip title="元に戻す (Ctrl+Z)">
+        <Tooltip title={`${t('common.undo')} (Ctrl+Z)`}>
           <span>
-            <IconButton aria-label="元に戻す" onClick={onUndo} disabled={!canUndo || busy}>
+            <IconButton aria-label={t('common.undo')} onClick={onUndo} disabled={!canUndo || busy}>
               <FontAwesomeIcon icon={faRotateLeft} />
             </IconButton>
           </span>
         </Tooltip>
-        <Tooltip title="やり直す (Ctrl+Y)">
+        <Tooltip title={`${t('common.redo')} (Ctrl+Y)`}>
           <span>
-            <IconButton aria-label="やり直す" onClick={onRedo} disabled={!canRedo || busy}>
+            <IconButton aria-label={t('common.redo')} onClick={onRedo} disabled={!canRedo || busy}>
               <FontAwesomeIcon icon={faRotateRight} />
             </IconButton>
           </span>

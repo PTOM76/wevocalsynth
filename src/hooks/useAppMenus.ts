@@ -1,5 +1,6 @@
 import type { WavFormat } from '../audio/wav'
 import type { MenuEntry, MenuGroup } from '../components/menu/MenuList'
+import { useT } from '../i18n/i18n'
 
 interface Actions {
   hasClip: boolean
@@ -31,54 +32,55 @@ interface Actions {
 
 /** メニューバー（スマホではメニュー一覧）と、波形の右クリックメニューの中身 */
 export function useAppMenus(a: Actions): { menus: MenuGroup[]; context: MenuEntry[] } {
+  const t = useT()
   const noClip = !a.hasClip || a.busy
   const noSel = noClip || !a.hasSelection
   const edit: MenuEntry[] = [
-    { label: '切り取り', shortcut: 'Ctrl+X', disabled: noSel, onClick: a.cut },
-    { label: 'コピー', shortcut: 'Ctrl+C', disabled: noSel, onClick: a.copy },
-    { label: '再生位置に貼り付け', shortcut: 'Ctrl+V', disabled: noClip || !a.hasClipboard, onClick: a.paste },
-    { label: '選択範囲のみ残す', disabled: noSel, onClick: a.trim },
+    { label: t('edit.cut'), shortcut: 'Ctrl+X', disabled: noSel, onClick: a.cut },
+    { label: t('edit.copy'), shortcut: 'Ctrl+C', disabled: noSel, onClick: a.copy },
+    { label: t('edit.paste'), shortcut: 'Ctrl+V', disabled: noClip || !a.hasClipboard, onClick: a.paste },
+    { label: t('edit.trim'), disabled: noSel, onClick: a.trim },
     { divider: true },
-    { label: 'すべて選択', shortcut: 'Ctrl+A', disabled: noClip, onClick: a.selectAll },
-    { label: '選択解除', shortcut: 'Esc', disabled: noSel, onClick: a.clearSelection },
+    { label: t('edit.selectAll'), shortcut: 'Ctrl+A', disabled: noClip, onClick: a.selectAll },
+    { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: noSel, onClick: a.clearSelection },
   ]
 
   const menus: MenuGroup[] = [
     {
-      label: 'ファイル',
+      label: t('menu.file'),
       entries: [
-        { label: '開く…', shortcut: 'Ctrl+O', disabled: a.busy, onClick: a.open },
-        { label: 'プロジェクトを保存', shortcut: 'Ctrl+S', disabled: noClip, onClick: a.save },
+        { label: t('menu.open'), shortcut: 'Ctrl+O', disabled: a.busy, onClick: a.open },
+        { label: t('menu.saveProject'), shortcut: 'Ctrl+S', disabled: noClip, onClick: a.save },
         { divider: true },
-        { label: 'WAV出力（16-bit PCM）', disabled: noClip, onClick: () => a.exportWav('pcm16') },
-        { label: 'WAV出力（24-bit PCM）', disabled: noClip, onClick: () => a.exportWav('pcm24') },
-        { label: 'WAV出力（32-bit float）', disabled: noClip, onClick: () => a.exportWav('float32') },
+        { label: t('menu.exportPcm16'), disabled: noClip, onClick: () => a.exportWav('pcm16') },
+        { label: t('menu.exportPcm24'), disabled: noClip, onClick: () => a.exportWav('pcm24') },
+        { label: t('menu.exportFloat32'), disabled: noClip, onClick: () => a.exportWav('float32') },
         { divider: true },
-        { label: '設定…', onClick: a.showSettings },
+        { label: t('menu.settings'), onClick: a.showSettings },
       ],
     },
     {
-      label: '編集',
+      label: t('menu.edit'),
       entries: [
-        { label: '元に戻す', shortcut: 'Ctrl+Z', disabled: !a.canUndo || a.busy, onClick: a.undo },
-        { label: 'やり直す', shortcut: 'Ctrl+Y', disabled: !a.canRedo || a.busy, onClick: a.redo },
+        { label: t('common.undo'), shortcut: 'Ctrl+Z', disabled: !a.canUndo || a.busy, onClick: a.undo },
+        { label: t('common.redo'), shortcut: 'Ctrl+Y', disabled: !a.canRedo || a.busy, onClick: a.redo },
         { divider: true },
         ...edit,
       ],
     },
     {
-      label: '表示',
+      label: t('menu.view'),
       entries: [
-        { label: 'スペクトログラム', checked: a.showSpectrogram, disabled: !a.hasClip, onClick: a.toggleSpectrogram },
-        { label: 'ピッチ', checked: a.showPitch, disabled: !a.hasClip, onClick: a.togglePitch },
+        { label: t('menu.spectrogram'), checked: a.showSpectrogram, disabled: !a.hasClip, onClick: a.toggleSpectrogram },
+        { label: t('menu.pitch'), checked: a.showPitch, disabled: !a.hasClip, onClick: a.togglePitch },
       ],
     },
-    { label: 'ヘルプ', entries: [{ label: 'ショートカット一覧', onClick: a.showShortcuts }] },
+    { label: t('menu.help'), entries: [{ label: t('menu.shortcuts'), onClick: a.showShortcuts }] },
   ]
 
   const context: MenuEntry[] = [
-    { label: '範囲を試聴', disabled: noSel, onClick: a.playSelection },
-    { label: 'ループ試聴', disabled: noClip, onClick: a.toggleLoop },
+    { label: t('play.playSelection'), disabled: noSel, onClick: a.playSelection },
+    { label: t('play.loopPreview'), disabled: noClip, onClick: a.toggleLoop },
     { divider: true },
     ...edit,
   ]

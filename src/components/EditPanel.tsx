@@ -23,6 +23,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRotateLeft, faHeadphones, faRepeat, faStop, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { formatTime } from '../audio/types'
 import PitchControl from './PitchControl'
+import { useT, type MessageKey } from '../i18n/i18n'
 
 export interface EditParams {
   semitones: number
@@ -54,15 +55,16 @@ interface Props {
   autoMode: Mode | null
 }
 
-const MODE_HINT: Record<Mode, string> = {
-  vocal: '声など単音向け。自然な音質（WSOLA＋フォルマント保持）',
-  instrument: '和音・打楽器向け。大きく伸ばしてもなめらか（Phase Vocoder）',
+const MODE_HINT: Record<Mode, MessageKey> = {
+  vocal: 'process.vocalHint',
+  instrument: 'process.instrumentHint',
 }
 
 const STRETCH_PRESETS = [0.5, 0.75, 1, 1.5, 2, 4]
 
 export default function EditPanel({ params, onChange, targetDuration, hasSelection, busy, progress, onApply, preview, previewPlaying, onPreview, loopPlaying, onLoop, currentMidi, autoMode }: Props) {
   const { semitones, stretch, preserveFormant, formantSemitones } = params
+  const t = useT()
   const formantShift = preserveFormant && formantSemitones !== 0
   const unchanged = semitones === 0 && stretch === 1 && !formantShift
 
@@ -71,25 +73,25 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
       <CardContent>
         <Stack spacing={3}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}>
-            <Typography variant="h6">加工</Typography>
+            <Typography variant="h6">{t('process.title')}</Typography>
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               {autoMode && (
                 <Typography variant="caption" color="text.secondary">
-                  自動判定: {autoMode === 'vocal' ? 'ボーカル' : '楽器'}
+                  {t('process.autoDetected', { mode: t(autoMode === 'vocal' ? 'common.vocal' : 'common.instrument') })}
                 </Typography>
               )}
               <ToggleButtonGroup
                 size="small"
                 exclusive
                 value={params.algorithm === 'wsola' ? 'vocal' : 'instrument'}
-                aria-label="処理モード"
+                aria-label={t('process.mode')}
                 onChange={(_, v: Mode | null) => v && onChange({ ...params, ...MODE_SETTINGS[v] })}
               >
-                <Tooltip title={MODE_HINT.vocal}>
-                  <ToggleButton value="vocal">ボーカル</ToggleButton>
+                <Tooltip title={t(MODE_HINT.vocal)}>
+                  <ToggleButton value="vocal">{t('common.vocal')}</ToggleButton>
                 </Tooltip>
-                <Tooltip title={MODE_HINT.instrument}>
-                  <ToggleButton value="instrument">楽器</ToggleButton>
+                <Tooltip title={t(MODE_HINT.instrument)}>
+                  <ToggleButton value="instrument">{t('common.instrument')}</ToggleButton>
                 </Tooltip>
               </ToggleButtonGroup>
             </Stack>
@@ -110,12 +112,12 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
                     onChange={(e) => onChange({ ...params, preserveFormant: e.target.checked })}
                   />
                 }
-                label={<Typography variant="subtitle2">フォルマント保持</Typography>}
+                label={<Typography variant="subtitle2">{t('process.formant')}</Typography>}
               />
               <TextField
                 size="small"
                 type="number"
-                label="移動"
+                label={t('process.formantShift')}
                 disabled={!preserveFormant}
                 value={formantSemitones}
                 onChange={(e) => onChange({ ...params, formantSemitones: clampNum(e.target.value, -12, 12, 0) })}
@@ -124,7 +126,7 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
               />
             </Stack>
             <Slider
-              aria-label="フォルマント移動（半音）"
+              aria-label={t('process.formantShiftAria')}
               disabled={!preserveFormant}
               value={formantSemitones}
               min={-12}
@@ -138,7 +140,7 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
 
           <Box>
             <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="subtitle2">長さ</Typography>
+              <Typography variant="subtitle2">{t('process.length')}</Typography>
               <TextField
                 size="small"
                 type="number"
@@ -150,7 +152,7 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
             </Stack>
             {/* 0.5倍と2倍が1倍を中心に対称になるよう対数スケールにする */}
             <Slider
-              aria-label="時間伸縮（倍率）"
+              aria-label={t('process.lengthAria')}
               value={Math.log2(stretch)}
               min={-2}
               max={3}
@@ -176,19 +178,19 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
           </Box>
 
           <Typography variant="body2" color="text.secondary">
-            {hasSelection ? '選択範囲' : '全体'}: {formatTime(targetDuration)} →{' '}
+            {t(hasSelection ? 'common.selection' : 'common.whole')}: {formatTime(targetDuration)} →{' '}
             <b>{formatTime(targetDuration * stretch)}</b>
           </Typography>
 
-          {busy && <LinearProgress variant="determinate" value={progress * 100} aria-label="処理の進捗" />}
+          {busy && <LinearProgress variant="determinate" value={progress * 100} aria-label={t('process.progress')} />}
 
           <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
             {(preview === 'tooLong' || preview === 'multi') && !unchanged && (
               <Typography variant="caption" color="text.secondary" sx={{ mr: 'auto' }}>
-                {preview === 'tooLong' ? '試聴は20秒まで' : '試聴は1範囲のみ'}
+                {t(preview === 'tooLong' ? 'play.previewMax' : 'play.previewSingle')}
               </Typography>
             )}
-            <Tooltip title="範囲をループ再生し、スライダーの変更をすぐ反映（簡易音質）">
+            <Tooltip title={t('play.loopTooltip')}>
               <span>
                 <Button
                   variant={loopPlaying ? 'contained' : 'outlined'}
@@ -196,7 +198,7 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
                   disabled={busy || preview === 'multi'}
                   onClick={onLoop}
                 >
-                  {loopPlaying ? '停止' : 'ループ'}
+                  {t(loopPlaying ? 'common.stop' : 'play.loop')}
                 </Button>
               </span>
             </Tooltip>
@@ -212,14 +214,14 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
               disabled={busy || unchanged || preview !== 'ready'}
               onClick={onPreview}
             >
-              {previewPlaying ? '停止' : '試聴'}
+              {t(previewPlaying ? 'common.stop' : 'play.preview')}
             </Button>
             <Button
               startIcon={<FontAwesomeIcon icon={faArrowRotateLeft} />}
               disabled={busy || unchanged}
               onClick={() => onChange({ ...params, semitones: 0, stretch: 1, formantSemitones: 0 })}
             >
-              リセット
+              {t('common.reset')}
             </Button>
             <Button
               variant="contained"
@@ -227,7 +229,7 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
               disabled={busy || unchanged || targetDuration <= 0}
               onClick={onApply}
             >
-              {busy ? `処理中… ${Math.round(progress * 100)}%` : '適用'}
+              {busy ? t('process.processing', { percent: Math.round(progress * 100) }) : t('common.apply')}
             </Button>
           </Stack>
         </Stack>

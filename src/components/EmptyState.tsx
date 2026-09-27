@@ -1,19 +1,21 @@
 import { Box, Button, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faFileArrowUp, faFolderOpen } from '@fortawesome/free-solid-svg-icons'
+import { useT } from '../i18n/i18n'
 
 /** ファイルを開く前の画面 */
 export function EmptyState({ onOpen }: { onOpen: () => void }) {
+  const t = useT()
   return (
     <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center', py: 12 }}>
       <Box sx={{ color: 'text.secondary', fontSize: 40 }}>
         <FontAwesomeIcon icon={faFileArrowUp} />
       </Box>
       <Typography variant="body2" color="text.secondary">
-        WAV / MP3 など（D&D可）
+        {t('empty.formats')}
       </Typography>
       <Button variant="contained" startIcon={<FontAwesomeIcon icon={faFolderOpen} />} onClick={onOpen}>
-        ファイルを選択
+        {t('empty.choose')}
       </Button>
     </Stack>
   )
@@ -21,6 +23,7 @@ export function EmptyState({ onOpen }: { onOpen: () => void }) {
 
 /** ドラッグ中、画面全体でドロップを受け付けることを示すオーバーレイ */
 export function DropOverlay() {
+  const t = useT()
   return (
     <Box
       sx={{
@@ -38,7 +41,7 @@ export function DropOverlay() {
       }}
     >
       <Typography variant="h6" color="primary">
-        ドロップして開く
+        {t('empty.drop')}
       </Typography>
     </Box>
   )

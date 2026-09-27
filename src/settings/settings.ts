@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import type { LangSetting } from '../i18n/i18n'
 
 /** ファイルを開いたときの処理モード。auto は素材から自動判定する */
 export type InitialMode = 'auto' | 'vocal' | 'instrument'
@@ -7,9 +8,11 @@ export interface Settings {
   /** 作業状態を自動保存し、次に開いたとき復元する */
   autoRestore: boolean
   initialMode: InitialMode
+  /** 表示言語（auto はブラウザの言語に従う） */
+  language: LangSetting
 }
 
-const DEFAULTS: Settings = { autoRestore: true, initialMode: 'auto' }
+const DEFAULTS: Settings = { autoRestore: true, initialMode: 'auto', language: 'auto' }
 const STORAGE_KEY = 'wevocalsynth.settings'
 
 /** localStorage から読む。使えない環境（プライベートモードなど）や壊れた値では既定値を使う */

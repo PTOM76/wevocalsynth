@@ -3,6 +3,7 @@ import type { Clip, Range } from '../../audio/types'
 import { F0_HOP_SEC, type Spectrogram } from '../../dsp/engine'
 import { renderSpectrogram } from './spectrogramImage'
 import { hzToMidi, noteName } from '../../audio/notes'
+import { t } from '../../i18n/i18n'
 
 export const WAVE_HEIGHT = 200
 export const RULER_HEIGHT = 24
@@ -113,7 +114,7 @@ export function drawSpectrogram(c: DrawContext, spec: Spectrogram | null) {
   const { g, width, view, pal } = c
   if (!spec) {
     g.fillStyle = pal.text.secondary
-    g.fillText('解析中…', 8, RULER_HEIGHT + WAVE_HEIGHT / 2)
+    g.fillText(t('common.analyzing'), 8, RULER_HEIGHT + WAVE_HEIGHT / 2)
     return
   }
   const off = new OffscreenCanvas(width, WAVE_HEIGHT)
@@ -165,7 +166,7 @@ export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range:
   g.fillRect(0, top, width, 1)
   if (!pitch || !range) {
     g.fillStyle = pal.text.secondary
-    g.fillText('解析中…', 8, top + PITCH_HEIGHT / 2)
+    g.fillText(t('common.analyzing'), 8, top + PITCH_HEIGHT / 2)
     return
   }
   const toY = (m: number) => top + ((range.hi - m) / (range.hi - range.lo)) * PITCH_HEIGHT
