@@ -17,8 +17,11 @@ import { usePreview } from './hooks/usePreview'
 import { usePitchTarget } from './hooks/usePitchTarget'
 import { useShortcuts } from './hooks/useShortcuts'
 import { useClipCommands } from './hooks/useClipCommands'
+import { useTask } from './hooks/useTask'
+import { useFilePicker } from './hooks/useFilePicker'
 import { usePlayback } from './hooks/usePlayback'
 import { useRangeNote } from './hooks/useRangeNote'
+import { MODE_SETTINGS, detectMode, type Mode } from './audio/detectMode'
 import AppHeader from './components/AppHeader'
 import { DropOverlay, EmptyState } from './components/EmptyState'
 import { ClipInfo, TransportBar, type Source } from './components/TransportBar'
@@ -45,14 +48,19 @@ export default function App() {
     algorithm: 'wsola',
     preserveFormant: false,
   })
-  const [busy, setBusy] = useState(false)
-  const [progress, setProgress] = useState(0)
   const [showPitch, setShowPitch] = useState(false)
   const [showSpec, setShowSpec] = useState(false)
   const [penMode, setPenMode] = useState(false)
+  const [autoMode, setAutoMode] = useState<Mode | null>(null)
   const [toast, setToast] = useState<Toast | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const playbackRef = useRef<ReturnType<typeof usePlayback> | null>(null)
 
+  // 処理の開始時に再生を止める（playback は後で作るため関数で遅延参照する）
+  const task = useTask(
+    () => playbackRef.current?.stopAll(),
+    (e) => setToast({ severity: 'error', message: `処理に失敗しました: ${String(e)}` }),
+  )
+  const { busy, progress, setProgress } = task
   const edited = history.present
   const shown = source === 'original' ? original : edited
   const duration = shown ? clipDuration(shown) : 0
@@ -105,6 +113,16 @@ export default function App() {
         setPenMode(false)
         pitchTarget.clear()
         setParams((p) => ({ ...(project ? project.params : p), ...NEUTRAL }))
+        // 新しい素材ならボーカル／楽器を自動判定して初期値にする（プロジェクトは保存時の設定を使う）
+        setAutoMode(null)
+        if (!project) {
+          void detectMode(clip)
+            .then(({ mode }) => {
+              setAutoMode(mode)
+              setParams((p) => ({ ...p, ...MODE_SETTINGS[mode] }))
+            })
+            .catch(() => {})
+        }
       } catch (e) {
         setToast({ severity: 'error', message: `読み込めませんでした: ${file.name} (${String(e)})` })
       }
@@ -113,22 +131,8 @@ export default function App() {
   )
   const dragOver = useFileDrop((f) => void loadFile(f))
 
-  /** 時間のかかる処理を、処理中表示とエラー通知付きで実行する */
-  const runTask = async (task: () => Promise<void>) => {
-    setBusy(true)
-    setProgress(0)
-    playback.stopAll()
-    try {
-      await task()
-    } catch (e) {
-      fail('処理に失敗しました')(e)
-    } finally {
-      setBusy(false)
-    }
-  }
-
   const apply = () =>
-    runTask(async () => {
+    task.run(async () => {
       if (!edited || !editRanges.length) return
       // 同じ設定のプレビューがあれば、それを差し込むだけで済ませる
       const spliced = preview.result && !multi ? spliceProcessed(edited, preview.result) : null
@@ -143,7 +147,7 @@ export default function App() {
 
   // Shift+右端ドラッグ: 範囲をドラッグ後の長さに伸縮する（ピッチは変えない）
   const stretchRange = (r: Range, dur: number) =>
-    runTask(async () => {
+    task.run(async () => {
       if (!edited) return
       const opts = { ...params, ...NEUTRAL, stretch: dur / (r.end - r.start) }
       const result = await applyEditToRanges(edited, [r], opts, setProgress)
@@ -152,7 +156,7 @@ export default function App() {
     })
 
   const applyCurve = () =>
-    runTask(async () => {
+    task.run(async () => {
       const target = pitchTarget.target
       if (!edited || !pitch || shown !== edited || target?.clip !== edited) return
       const next = await applyPitchCurve(edited, pitch, target.hz, params, setProgress)
@@ -165,7 +169,7 @@ export default function App() {
 
   const baseName = fileName.replace(/\.[^.]+$/, '') || 'audio'
   const saveProjectFile = () =>
-    runTask(async () => {
+    task.run(async () => {
       if (!original || !edited) return
       downloadBlob(await saveProject({ fileName, original, edited, params }), `${baseName}${PROJECT_EXT}`)
       setToast({ severity: 'success', message: '保存しました' })
@@ -177,9 +181,11 @@ export default function App() {
 
   // 通常の再生と試聴は、片方を始めたらもう片方を止める
   const playback = usePlayback(player, preview.player, loop, duration, selection)
+  playbackRef.current = playback
 
   useShortcuts({ togglePlay: playback.togglePlay, undo: history.undo, redo: history.redo, cut: cmd.cut, copy: cmd.copy, paste: cmd.paste })
-  const openFile = () => inputRef.current?.click()
+  const picker = useFilePicker(`audio/*,.wav,${PROJECT_EXT}`, (f) => void loadFile(f))
+  const openFile = picker.open
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -194,17 +200,7 @@ export default function App() {
         onExport={exportWav}
         onSave={saveProjectFile}
       />
-      <input
-        ref={inputRef}
-        type="file"
-        accept={`audio/*,.wav,${PROJECT_EXT}`}
-        hidden
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (f) void loadFile(f)
-          e.target.value = ''
-        }}
-      />
+      {picker.input}
 
       <Container maxWidth="lg" sx={{ py: 3 }}>
         {!shown ? (
@@ -273,6 +269,7 @@ export default function App() {
                 loopPlaying={loop.playing}
                 onLoop={playback.toggleLoop}
                 currentMidi={rangeNote}
+                autoMode={autoMode}
               />
             )}
             {editing && (

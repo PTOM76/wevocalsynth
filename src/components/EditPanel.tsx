@@ -17,6 +17,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { Algorithm } from '../dsp/engine'
+import { MODE_SETTINGS, type Mode } from '../audio/detectMode'
 import type { PreviewState } from '../hooks/usePreview'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRotateLeft, faHeadphones, faRepeat, faStop, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
@@ -49,16 +50,18 @@ interface Props {
   onLoop: () => void
   /** 範囲の今の音程（MIDI）。解析中は undefined、不明は null */
   currentMidi: number | null | undefined
+  /** ファイルを開いたときの自動判定の結果（未判定なら null） */
+  autoMode: Mode | null
 }
 
-const ALGORITHM_HINT: Record<Algorithm, string> = {
-  wsola: '子音に強い・高速',
-  pv: '伸ばしてもなめらか・低速'
+const MODE_HINT: Record<Mode, string> = {
+  vocal: '声など単音向け。自然な音質（WSOLA＋フォルマント保持）',
+  instrument: '和音・打楽器向け。大きく伸ばしてもなめらか（Phase Vocoder）',
 }
 
 const STRETCH_PRESETS = [0.5, 0.75, 1, 1.5, 2, 4]
 
-export default function EditPanel({ params, onChange, targetDuration, hasSelection, busy, progress, onApply, preview, previewPlaying, onPreview, loopPlaying, onLoop, currentMidi }: Props) {
+export default function EditPanel({ params, onChange, targetDuration, hasSelection, busy, progress, onApply, preview, previewPlaying, onPreview, loopPlaying, onLoop, currentMidi, autoMode }: Props) {
   const { semitones, stretch, preserveFormant, formantSemitones } = params
   const formantShift = preserveFormant && formantSemitones !== 0
   const unchanged = semitones === 0 && stretch === 1 && !formantShift
@@ -69,20 +72,27 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
         <Stack spacing={3}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}>
             <Typography variant="h6">加工</Typography>
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              value={params.algorithm}
-              aria-label="処理方式"
-              onChange={(_, v: Algorithm | null) => v && onChange({ ...params, algorithm: v })}
-            >
-              <Tooltip title={ALGORITHM_HINT.wsola}>
-                <ToggleButton value="wsola">WSOLA</ToggleButton>
-              </Tooltip>
-              <Tooltip title={ALGORITHM_HINT.pv}>
-                <ToggleButton value="pv">Phase Vocoder</ToggleButton>
-              </Tooltip>
-            </ToggleButtonGroup>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              {autoMode && (
+                <Typography variant="caption" color="text.secondary">
+                  自動判定: {autoMode === 'vocal' ? 'ボーカル' : '楽器'}
+                </Typography>
+              )}
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={params.algorithm === 'wsola' ? 'vocal' : 'instrument'}
+                aria-label="処理モード"
+                onChange={(_, v: Mode | null) => v && onChange({ ...params, ...MODE_SETTINGS[v] })}
+              >
+                <Tooltip title={MODE_HINT.vocal}>
+                  <ToggleButton value="vocal">ボーカル</ToggleButton>
+                </Tooltip>
+                <Tooltip title={MODE_HINT.instrument}>
+                  <ToggleButton value="instrument">楽器</ToggleButton>
+                </Tooltip>
+              </ToggleButtonGroup>
+            </Stack>
           </Stack>
 
           <PitchControl
