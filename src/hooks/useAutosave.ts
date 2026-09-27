@@ -1,24 +1,42 @@
 import { useEffect, useRef } from 'react'
-import { PROJECT_EXT, saveProject, type Project } from '../project/projectFile'
-import { clearAutosave, loadAutosave, saveAutosave } from '../project/autosave'
+import type { Clip } from '../audio/types'
+import type { EditParams } from '../components/EditPanel'
+import type { Project } from '../project/projectFile'
+import { clearAutosave, loadAutosave, saveEdited, saveOriginal } from '../project/autosave'
 
 /** 編集が止まってから自動保存するまでの待ち時間（ミリ秒） */
 const SAVE_DELAY_MS = 1500
+/** ブラウザが空くのを待つ最長時間（ミリ秒）。これを過ぎたら空いていなくても保存する */
+const IDLE_TIMEOUT_MS = 5000
+
+/** ブラウザが空いているときに `fn` を呼ぶ（requestIdleCallback がない環境では少し待つだけ） */
+function whenIdle(fn: () => void): () => void {
+  if ('requestIdleCallback' in window) {
+    const id = window.requestIdleCallback(fn, { timeout: IDLE_TIMEOUT_MS })
+    return () => window.cancelIdleCallback(id)
+  }
+  const id = setTimeout(fn, 200)
+  return () => clearTimeout(id)
+}
 
 /**
  * 作業状態を IndexedDB に自動保存し、起動時に復元する。
- * 起動時の復元が終わるまでは保存しない（前回の作業を空の状態で上書きしないため）。
- * 無効にしたら保存済みのデータも消す。
+ * - 保存は音声が変わって落ち着き、さらにブラウザが空いているときに、Worker で行う（操作の邪魔をしない）
+ * - 原音は変わったときだけ保存する。スライダーを動かしただけでは保存しない。パラメータは保存時点の値を入れる
+ * - 起動時の復元が終わるまでは保存しない（前回の作業を空の状態で上書きしないため）
+ * - 無効にしたら保存済みのデータも消す
  */
 export function useAutosave(
   enabled: boolean,
-  project: Project | null,
-  onRestore: (file: File) => Promise<void>,
+  audio: { fileName: string; original: Clip | null; edited: Clip | null },
+  params: EditParams,
+  onRestore: (project: Project) => void,
   onError: (e: unknown) => void,
 ) {
   const restoredRef = useRef(false)
-  const fnRef = useRef({ onRestore, onError })
-  fnRef.current = { onRestore, onError }
+  const savedOriginal = useRef<Clip | null>(null)
+  const latest = useRef({ params, onRestore, onError })
+  latest.current = { params, onRestore, onError }
 
   // 起動時に1回だけ復元する
   useEffect(() => {
@@ -28,8 +46,13 @@ export function useAutosave(
       return
     }
     loadAutosave()
-      .then((blob) => (blob ? fnRef.current.onRestore(new File([blob], `autosave${PROJECT_EXT}`)) : undefined))
-      .catch((e) => fnRef.current.onError(e))
+      .then((p) => {
+        if (!p) return
+        // 復元した原音は保存済みなので、保存し直さない
+        savedOriginal.current = p.original
+        latest.current.onRestore(p)
+      })
+      .catch((e) => latest.current.onError(e))
       .finally(() => {
         restoredRef.current = true
       })
@@ -39,17 +62,32 @@ export function useAutosave(
 
   // 無効にしたら保存済みのデータを消す
   useEffect(() => {
-    if (!enabled) void clearAutosave().catch(() => {})
+    if (enabled) return
+    savedOriginal.current = null
+    clearAutosave()
   }, [enabled])
 
-  // 編集が落ち着いたら保存する
+  // 音声が変わって落ち着き、ブラウザが空いたら保存する
+  const { fileName, original, edited } = audio
   useEffect(() => {
-    if (!enabled || !project || !restoredRef.current) return
+    if (!enabled || !original || !edited || !restoredRef.current) return
+    let cancelIdle = () => {}
     const timer = setTimeout(() => {
-      saveProject(project)
-        .then(saveAutosave)
-        .catch((e) => fnRef.current.onError(e))
+      cancelIdle = whenIdle(() => {
+        try {
+          if (savedOriginal.current !== original) {
+            saveOriginal(original)
+            savedOriginal.current = original
+          }
+          saveEdited(edited, { fileName, params: latest.current.params })
+        } catch (e) {
+          latest.current.onError(e)
+        }
+      })
     }, SAVE_DELAY_MS)
-    return () => clearTimeout(timer)
-  }, [enabled, project])
+    return () => {
+      clearTimeout(timer)
+      cancelIdle()
+    }
+  }, [enabled, fileName, original, edited])
 }

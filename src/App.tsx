@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Alert, Box, GlobalStyles, Snackbar, useMediaQuery, useTheme } from '@mui/material'
+import { useEffect, useState } from 'react'
+import { Alert, Box, GlobalStyles, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
 import { desktopStyles } from './theme'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -20,6 +20,7 @@ import VolumePanel from './components/VolumePanel'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
 import ExportDialog from './components/ExportDialog'
+import AboutDialog from './components/AboutDialog'
 import { ContextMenu } from './components/menu/MenuList'
 import { useSettings } from './settings/settings'
 import SettingsDialog from './settings/SettingsDialog'
@@ -34,11 +35,15 @@ export default function App() {
   const lang = resolveLang(settings.language)
   setLang(lang)
   const ed = useEditor(settings)
+  // 設定のテーマ（既定 / ライト / ダーク）を反映する
+  const { setMode } = useColorScheme()
+  useEffect(() => setMode(settings.theme), [settings.theme, setMode])
   const theme = useTheme()
   const mobile = useMediaQuery(theme.breakpoints.down('md'))
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
   const viewCtl = useWaveformView(ed.duration, player.position, player.playing)
@@ -46,7 +51,7 @@ export default function App() {
   const { view } = viewCtl
   const center = view.start + view.dur / 2
 
-  const { menus, context } = useAppMenus({
+  const { menus, mobileMenus, context } = useAppMenus({
     hasClip: !!edited,
     hasSelection: !!selection,
     hasClipboard: ed.cmd.hasClipboard,
@@ -72,6 +77,8 @@ export default function App() {
     togglePitch: () => ed.setShowPitch(!ed.showPitch),
     showShortcuts: () => setShortcutsOpen(true),
     showSettings: () => setSettingsOpen(true),
+    showAbout: () => setAboutOpen(true),
+    ctrlS: settings.ctrlS,
   })
 
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
@@ -156,7 +163,7 @@ export default function App() {
       {/* アプリとして画面の高さにぴったり収め、ページ全体はスクロールさせない */}
       <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.default' }}>
         <AppHeader
-          menus={menus}
+          menus={mobile ? mobileMenus : menus}
           canUndo={ed.history.canUndo}
           canRedo={ed.history.canRedo}
           busy={busy}
@@ -250,6 +257,7 @@ export default function App() {
           onExport={ed.exportFile}
         />
       )}
+      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} onChange={updateSettings} />
       {ed.dragOver && <DropOverlay />}

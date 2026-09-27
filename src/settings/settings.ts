@@ -4,15 +4,23 @@ import type { LangSetting } from '../i18n/i18n'
 /** ファイルを開いたときの処理モード。auto は素材から自動判定する */
 export type InitialMode = 'auto' | 'vocal' | 'instrument'
 
+/** 配色。system はブラウザ（OS）の設定に合わせる */
+export type ThemeSetting = 'system' | 'light' | 'dark'
+
+/** Ctrl+S で行うこと。もう一方は Ctrl+Shift+S になる */
+export type CtrlSAction = 'project' | 'export'
+
 export interface Settings {
   /** 作業状態を自動保存し、次に開いたとき復元する */
   autoRestore: boolean
   initialMode: InitialMode
   /** 表示言語（auto はブラウザの言語に従う） */
   language: LangSetting
+  theme: ThemeSetting
+  ctrlS: CtrlSAction
 }
 
-const DEFAULTS: Settings = { autoRestore: true, initialMode: 'auto', language: 'auto' }
+const DEFAULTS: Settings = { autoRestore: true, initialMode: 'auto', language: 'auto', theme: 'system', ctrlS: 'project' }
 const STORAGE_KEY = 'wevocalsynth.settings'
 
 /** localStorage から読む。使えない環境（プライベートモードなど）や壊れた値では既定値を使う */

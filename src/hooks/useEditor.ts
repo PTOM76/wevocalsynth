@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { AUDIO_ACCEPT, decodeFile } from '../audio/decode'
@@ -6,7 +6,7 @@ import { downloadBlob } from '../audio/wav'
 import { EXPORT_EXT, exportAudio } from '../audio/export/exportAudio'
 import { sliceRanges } from '../audio/multiRange'
 import type { ExportSettings } from '../components/ExportDialog'
-import { PROJECT_EXT, isProjectFile, loadProject, saveProject } from '../project/projectFile'
+import { PROJECT_EXT, isProjectFile, loadProject, saveProject, type Project } from '../project/projectFile'
 import { applyPitchCurve, spliceProcessed } from '../audio/edit'
 import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
@@ -98,41 +98,49 @@ export function useEditor(settings: Settings) {
     notify: (message) => setToast({ severity: 'info', message }),
   })
 
+  /** 読み込んだ音声（またはプロジェクト）を画面に反映する */
+  const openClip = useCallback(
+    (clip: Clip, name: string, project: Project | null) => {
+      setFileName(name)
+      setOriginal(project ? project.original : clip)
+      history.reset(clip)
+      setSource('edited')
+      setSelectionsState([])
+      cmd.clearClipboard()
+      // 前のファイルの表示設定を持ち越すと、開いた直後に重い解析やプレビュー処理が走るため戻す
+      setShowPitch(false)
+      setShowSpec(false)
+      setPenMode(false)
+      pitchTarget.clear()
+      setParams((p) => ({ ...(project ? project.params : p), ...NEUTRAL }))
+      // 新しい素材ならボーカル／楽器を自動判定して初期値にする（プロジェクトは保存時の設定を使う）
+      setAutoMode(null)
+      if (!project && settings.initialMode !== 'auto') {
+        setParams((p) => ({ ...p, ...MODE_SETTINGS[settings.initialMode as Mode] }))
+      } else if (!project) {
+        void detectMode(clip)
+          .then(({ mode }) => {
+            setAutoMode(mode)
+            setParams((p) => ({ ...p, ...MODE_SETTINGS[mode] }))
+          })
+          .catch(() => {})
+      }
+    },
+    [history, pitchTarget, cmd, settings.initialMode],
+  )
+
   const loadFile = useCallback(
     async (file: File) => {
       try {
         // .wvsp はプロジェクト（原音・加工後・パラメータ）として開く
         const project = isProjectFile(file) ? await loadProject(file) : null
-        const clip = project ? project.edited : await decodeFile(file)
-        setFileName(project ? project.fileName : file.name)
-        setOriginal(project ? project.original : clip)
-        history.reset(clip)
-        setSource('edited')
-        setSelectionsState([])
-        cmd.clearClipboard()
-        // 前のファイルの表示設定を持ち越すと、開いた直後に重い解析やプレビュー処理が走るため戻す
-        setShowPitch(false)
-        setShowSpec(false)
-        setPenMode(false)
-        pitchTarget.clear()
-        setParams((p) => ({ ...(project ? project.params : p), ...NEUTRAL }))
-        // 新しい素材ならボーカル／楽器を自動判定して初期値にする（プロジェクトは保存時の設定を使う）
-        setAutoMode(null)
-        if (!project && settings.initialMode !== 'auto') {
-          setParams((p) => ({ ...p, ...MODE_SETTINGS[settings.initialMode as Mode] }))
-        } else if (!project) {
-          void detectMode(clip)
-            .then(({ mode }) => {
-              setAutoMode(mode)
-              setParams((p) => ({ ...p, ...MODE_SETTINGS[mode] }))
-            })
-            .catch(() => {})
-        }
+        if (project) openClip(project.edited, project.fileName, project)
+        else openClip(await decodeFile(file), file.name, null)
       } catch (e) {
         setToast({ severity: 'error', message: t('toast.loadFailed', { file: file.name, error: String(e) }) })
       }
     },
-    [history, pitchTarget, cmd, settings.initialMode],
+    [openClip],
   )
   const dragOver = useFileDrop((f) => void loadFile(f))
 
@@ -176,7 +184,7 @@ export function useEditor(settings: Settings) {
   const saveProjectFile = () =>
     task.run(async () => {
       if (!original || !edited) return
-      downloadBlob(await saveProject({ fileName, original, edited, params }), `${baseName}${PROJECT_EXT}`)
+      downloadBlob(saveProject({ fileName, original, edited, params }), `${baseName}${PROJECT_EXT}`)
       setToast({ severity: 'success', message: t('toast.saved') })
     })
 
@@ -202,19 +210,18 @@ export function useEditor(settings: Settings) {
   const picker = useFilePicker(`${AUDIO_ACCEPT},${PROJECT_EXT}`, (f) => void loadFile(f))
 
   // 作業状態の自動保存と、起動時の復元
-  const autosaveProject = useMemo(
-    () => (original && edited ? { fileName, original, edited, params } : null),
-    [fileName, original, edited, params],
-  )
   useAutosave(
     settings.autoRestore,
-    autosaveProject,
-    async (file) => {
-      await loadFile(file)
+    { fileName, original, edited },
+    params,
+    (project) => {
+      openClip(project.edited, project.fileName, project)
       setToast({ severity: 'info', message: t('toast.restored') })
     },
     (e) => console.warn('autosave failed', e),
   )
+
+  const openExport = () => edited && setExportOpen(true)
 
   const selectAll = () => edited && setSelections([{ start: 0, end: clipDuration(edited) }])
   const clearSelection = () => setSelections([])
@@ -229,8 +236,10 @@ export function useEditor(settings: Settings) {
     selectAll,
     clearSelection,
     open: () => picker.open(),
-    save: saveProjectFile,
-    exportAudio: () => edited && setExportOpen(true),
+    // Ctrl+S はプロジェクト保存か書き出しか（設定）。もう一方は Ctrl+Shift+S
+    save: settings.ctrlS === 'export' ? openExport : saveProjectFile,
+    saveAlt: settings.ctrlS === 'export' ? saveProjectFile : openExport,
+    exportAudio: openExport,
   })
 
   return {

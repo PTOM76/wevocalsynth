@@ -1,11 +1,14 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import pkg from './package.json' with { type: 'json' }
 
 // https://vite.dev/config/
 export default defineConfig({
   // GitHub Pages ではリポジトリ名のサブパスで配信されるため、CI から BASE_PATH で指定する
   base: process.env.BASE_PATH ?? '/',
+  // 「このアプリについて」に出すバージョン（package.json の version）
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [
     react(),
     VitePWA({

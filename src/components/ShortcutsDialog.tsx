@@ -7,7 +7,7 @@ const SHORTCUTS: [string | MessageKey, MessageKey][] = [
   ['Ctrl+Z / Ctrl+Y', 'shortcuts.undoRedo'],
   ['Ctrl+X / C / V', 'shortcuts.clipboard'],
   ['Ctrl+A / Esc', 'shortcuts.selectAll'],
-  ['Ctrl+O / Ctrl+S / Ctrl+E', 'shortcuts.openSave'],
+  ['Ctrl+O / Ctrl+S / Ctrl+Shift+S', 'shortcuts.openSave'],
   ['shortcuts.drag', 'shortcuts.select'],
   ['shortcuts.ctrlDrag', 'shortcuts.addRange'],
   ['shortcuts.edgeDrag', 'shortcuts.adjust'],

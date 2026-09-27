@@ -27,10 +27,13 @@ interface Actions {
   togglePitch: () => void
   showShortcuts: () => void
   showSettings: () => void
+  showAbout: () => void
+  /** Ctrl+S をどちらに割り当てているか（メニューの表記用） */
+  ctrlS: 'project' | 'export'
 }
 
 /** メニューバー（スマホではメニュー一覧）と、波形の右クリックメニューの中身 */
-export function useAppMenus(a: Actions): { menus: MenuGroup[]; context: MenuEntry[] } {
+export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: MenuGroup[]; context: MenuEntry[] } {
   const t = useT()
   const noClip = !a.hasClip || a.busy
   const noSel = noClip || !a.hasSelection
@@ -49,9 +52,9 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; context: MenuEntr
       label: t('menu.file'),
       entries: [
         { label: t('menu.open'), shortcut: 'Ctrl+O', disabled: a.busy, onClick: a.open },
-        { label: t('menu.saveProject'), shortcut: 'Ctrl+S', disabled: noClip, onClick: a.save },
+        { label: t('menu.saveProject'), shortcut: a.ctrlS === 'project' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.save },
         { divider: true },
-        { label: t('menu.export'), shortcut: 'Ctrl+E', disabled: noClip, onClick: a.openExport },
+        { label: t('menu.export'), shortcut: a.ctrlS === 'export' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.openExport },
         { divider: true },
         { label: t('menu.settings'), onClick: a.showSettings },
       ],
@@ -72,7 +75,14 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; context: MenuEntr
         { label: t('menu.pitch'), checked: a.showPitch, disabled: !a.hasClip, onClick: a.togglePitch },
       ],
     },
-    { label: t('menu.help'), entries: [{ label: t('menu.shortcuts'), onClick: a.showShortcuts }] },
+    {
+      label: t('menu.help'),
+      entries: [
+        { label: t('menu.shortcuts'), onClick: a.showShortcuts },
+        { divider: true },
+        { label: t('menu.about'), onClick: a.showAbout },
+      ],
+    },
   ]
 
   const context: MenuEntry[] = [
@@ -82,5 +92,32 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; context: MenuEntr
     ...edit,
   ]
 
-  return { menus, context }
+  // スマホの ⋮ は短くする。切り取りなどは長押しメニュー、元に戻すは上部バー、
+  // 表示の切替は「表示」タブにあるので入れない。キーボードがないのでショートカット一覧も出さない
+  const mobileMenus: MenuGroup[] = [
+    {
+      label: t('menu.file'),
+      entries: [
+        { label: t('menu.open'), disabled: a.busy, onClick: a.open },
+        { label: t('menu.saveProject'), disabled: noClip, onClick: a.save },
+        { label: t('menu.export'), disabled: noClip, onClick: a.openExport },
+      ],
+    },
+    {
+      label: t('menu.edit'),
+      entries: [
+        { label: t('edit.selectAll'), disabled: noClip, onClick: a.selectAll },
+        { label: t('edit.clearSelection'), disabled: noSel, onClick: a.clearSelection },
+      ],
+    },
+    {
+      label: t('menu.help'),
+      entries: [
+        { label: t('menu.settings'), onClick: a.showSettings },
+        { label: t('menu.about'), onClick: a.showAbout },
+      ],
+    },
+  ]
+
+  return { menus, mobileMenus, context }
 }

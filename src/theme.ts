@@ -1,11 +1,19 @@
 import { createTheme } from '@mui/material'
 
+/** メニュー・ダイアログ類の開閉アニメーションの長さ（PC 用。ツールでは待たされる感じが重さになるため短くする） */
+const DESKTOP_TRANSITIONS = {
+  menu: { enter: 110, exit: 70 },
+  dialog: { enter: 140, exit: 90 },
+  drawer: { enter: 160, exit: 110 },
+}
+
 /**
- * Google 製品寄りの Material Design テーマ。
- * 角丸は控えめ（4px）にして、ツールらしい落ち着いた見た目にする。
+ * Google 製品寄りの Material Design テーマ。角丸は控えめ（4px）にして、ツールらしい落ち着いた見た目にする。
+ * `desktop` のときだけ開閉アニメーションを短くする（スマホは Android の標準の動きのままにする）。
+ * ライト/ダークは設定で切り替えられるよう、OS の設定ではなく html のクラスで切り替える
  */
-export const theme = createTheme({
-  cssVariables: { colorSchemeSelector: 'media' },
+export const createAppTheme = (desktop: boolean) => createTheme({
+  cssVariables: { colorSchemeSelector: 'class' },
   colorSchemes: {
     light: {
       palette: {
@@ -33,14 +41,15 @@ export const theme = createTheme({
     MuiButton: { defaultProps: { disableElevation: true } },
     MuiCard: { defaultProps: { variant: 'outlined' } },
     MuiChip: { styleOverrides: { root: { borderRadius: 4 } } },
-    // メニュー・ダイアログ類の開閉アニメーションは短くする（ツールでは待たされる感じが重さになるため）
     // ページ自体はスクロールしないので、開いたときのスクロールロックは使わない。
     // ロックは <body> に余白を足して画面の幅を変え、波形の Canvas を丸ごと描き直させてしまう
-    MuiMenu: { defaultProps: { transitionDuration: { enter: 110, exit: 70 }, disableScrollLock: true } },
-    MuiPopover: { defaultProps: { transitionDuration: { enter: 110, exit: 70 }, disableScrollLock: true } },
-    MuiDialog: { defaultProps: { transitionDuration: { enter: 140, exit: 90 }, disableScrollLock: true } },
-    MuiDrawer: { defaultProps: { transitionDuration: { enter: 160, exit: 110 }, disableScrollLock: true } },
-    MuiTooltip: { defaultProps: { enterDelay: 400, slotProps: { transition: { timeout: 100 } } } },
+    MuiMenu: { defaultProps: { disableScrollLock: true, ...(desktop && { transitionDuration: DESKTOP_TRANSITIONS.menu }) } },
+    MuiPopover: { defaultProps: { disableScrollLock: true, ...(desktop && { transitionDuration: DESKTOP_TRANSITIONS.menu }) } },
+    MuiDialog: { defaultProps: { disableScrollLock: true, ...(desktop && { transitionDuration: DESKTOP_TRANSITIONS.dialog }) } },
+    MuiDrawer: { defaultProps: { disableScrollLock: true, ...(desktop && { transitionDuration: DESKTOP_TRANSITIONS.drawer }) } },
+    MuiTooltip: { defaultProps: { enterDelay: 400, ...(desktop && { slotProps: { transition: { timeout: 100 } } }) } },
+    // メニューの区切り線は既定の divider 色だと白地で見えないため、濃いめにする
+    MuiDivider: { styleOverrides: { root: ({ theme }) => ({ '.MuiMenu-list &, .MuiMenuList-root &': { borderColor: theme.vars!.palette.text.disabled } }) } },
     // 目盛りを黒系にしない: レール上は primary、バー上は白で描く
     MuiSlider: {
       styleOverrides: {

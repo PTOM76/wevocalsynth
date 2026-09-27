@@ -12,10 +12,11 @@ import {
   useTheme,
 } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEllipsisVertical, faRotateLeft, faRotateRight, faWaveSquare } from '@fortawesome/free-solid-svg-icons'
+import { faEllipsisVertical, faRotateLeft, faRotateRight } from '@fortawesome/free-solid-svg-icons'
+import AppIcon from './AppIcon'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { renderEntries, type MenuGroup } from './menu/MenuList'
-import MenuBar, { BAR_TEXT_SX } from './menu/MenuBar'
+import MenuBar from './menu/MenuBar'
 import { useT } from '../i18n/i18n'
 
 interface Props {
@@ -79,6 +80,7 @@ export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRed
   const t = useT()
   const theme = useTheme()
   const mobile = useMediaQuery(theme.breakpoints.down('md'))
+  const standalone = useMediaQuery('(display-mode: standalone), (display-mode: window-controls-overlay)')
 
   if (mobile) {
     return (
@@ -98,12 +100,12 @@ export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRed
   return (
     <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
       <Toolbar disableGutters sx={{ minHeight: '32px !important', height: 32, px: 1, gap: 0.25 }}>
-        <Box component="span" sx={{ color: 'primary.main', display: 'flex', fontSize: 14, mx: 0.75 }}>
-          <FontAwesomeIcon icon={faWaveSquare} />
-        </Box>
-        <Typography component="span" sx={{ ...BAR_TEXT_SX, fontWeight: 500, mr: 1 }} noWrap>
-          WeVocalSynth
-        </Typography>
+        {/* PWA としてインストールして開いたときは、ウィンドウのタイトルバーにアイコンが出るので出さない */}
+        {!standalone && (
+          <Box component="span" sx={{ display: 'flex', mx: 0.75 }}>
+            <AppIcon size={16} />
+          </Box>
+        )}
         <MenuBar menus={menus} />
         <Box sx={{ flexGrow: 1 }} />
         <HeaderIcon small title={`${t('common.undo')} (Ctrl+Z)`} icon={faRotateLeft} disabled={!canUndo || busy} onClick={onUndo} />
