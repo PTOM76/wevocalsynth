@@ -25,6 +25,12 @@ const send = (m: AutosaveMessage) => {
   worker.postMessage(m)
 }
 
+// 開発中のホットリロードで古い Worker が残らないようにする
+import.meta.hot?.dispose(() => {
+  worker?.terminate()
+  worker = null
+})
+
 /** 原音を保存する（ファイルを開いたときなど、原音が変わったときだけ） */
 export const saveOriginal = (original: Clip) => send({ type: 'put', key: KEYS.original, value: original })
 

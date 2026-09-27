@@ -35,7 +35,7 @@ export default function PitchControl({ semitones, onChange, currentMidi }: Props
           onChange={(_, v) => onChange(round2(v as number))}
           sx={COMPACT_SLIDER_SX}
         />
-        <NumberInput value={semitones} onChange={onChange} min={-24} max={24} step={0.01} unit={t('process.semitoneUnit')} width={96} ariaLabel={t('process.pitchAria')} />
+        <NumberInput value={semitones} onChange={onChange} min={-24} max={24} step={0.01} unit={t('process.semitoneUnit')} ariaLabel={t('process.pitchAria')} />
       </PropRow>
       <PropRow>
         <Typography sx={{ flex: 1, fontSize: 12, color: 'text.secondary' }} noWrap>

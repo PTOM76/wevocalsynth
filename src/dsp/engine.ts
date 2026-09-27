@@ -38,6 +38,13 @@ function getWorker() {
   return worker
 }
 
+// 開発中、このファイルがホットリロードで入れ替わったら古い Worker を止める
+// （止めないと WASM のメモリを抱えた Worker が書き換えのたびに増え、タブがメモリ不足で落ちる）
+import.meta.hot?.dispose(() => {
+  worker?.terminate()
+  worker = null
+})
+
 /** リクエストを Worker に送り、結果（チャンネル配列）を待つ */
 function send(req: DspRequest, onProgress?: (p: number) => void): Promise<Float32Array[]> {
   return sendRaw(req, onProgress) as Promise<Float32Array[]>

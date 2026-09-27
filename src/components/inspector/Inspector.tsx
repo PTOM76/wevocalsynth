@@ -66,7 +66,7 @@ export function NumberInput(p: {
       direction="row"
       sx={{
         alignItems: 'center',
-        width: p.width ?? 84,
+        width: p.width ?? 80,
         flexShrink: 0,
         height: 24,
         px: 0.75,
