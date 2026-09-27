@@ -1,0 +1,3 @@
+# WeVocalSynth
+WeVocalSynthは、Webブラウザ上で音声素材のピッチおよび時間を編集するための音声加工ツールである。
+
