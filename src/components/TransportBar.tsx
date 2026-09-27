@@ -14,7 +14,7 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import type { Clip, Range } from '../audio/types'
-import { formatTime } from './Waveform'
+import { formatTime } from '../audio/types'
 
 export type Source = 'edited' | 'original'
 

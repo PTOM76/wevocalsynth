@@ -4,18 +4,7 @@ import type { Clip, Range } from './audio/types'
 import { clipDuration } from './audio/types'
 import { decodeFile } from './audio/decode'
 import { downloadWav, type WavFormat } from './audio/wav'
-import {
-  applyEdit,
-  applyPitchCurve,
-  fadeRange,
-  gainRange,
-  insertAt,
-  normalizeRange,
-  removeRange,
-  silenceRange,
-  sliceClip,
-  spliceProcessed,
-} from './audio/edit'
+import { applyEdit, applyPitchCurve, spliceProcessed } from './audio/edit'
 import { usePlayer } from './audio/usePlayer'
 import { analyzeF0, analyzeSpectrogram } from './dsp/engine'
 import { useHistory } from './hooks/useHistory'
@@ -24,12 +13,13 @@ import { useClipAnalysis } from './hooks/useClipAnalysis'
 import { usePreview } from './hooks/usePreview'
 import { usePitchTarget } from './hooks/usePitchTarget'
 import { useShortcuts } from './hooks/useShortcuts'
+import { useClipCommands } from './hooks/useClipCommands'
 import AppHeader from './components/AppHeader'
 import { DropOverlay, EmptyState } from './components/EmptyState'
 import { ClipInfo, TransportBar, type Source } from './components/TransportBar'
 import Waveform from './components/Waveform'
 import EditPanel, { type EditParams } from './components/EditPanel'
-import VolumePanel, { type VolumeAction } from './components/VolumePanel'
+import VolumePanel from './components/VolumePanel'
 
 type Toast = { severity: 'success' | 'error' | 'info'; message: string }
 
@@ -49,7 +39,6 @@ export default function App() {
   })
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [clipboard, setClipboard] = useState<Clip | null>(null)
   const [showPitch, setShowPitch] = useState(false)
   const [showSpec, setShowSpec] = useState(false)
   const [penMode, setPenMode] = useState(false)
@@ -76,6 +65,16 @@ export default function App() {
     history.commit(clip)
     setSource('edited')
   }
+  const cmd = useClipCommands({
+    edited,
+    selection,
+    setSelection,
+    editRange,
+    position: player.position,
+    seek: player.seek,
+    commit,
+    notify: (message) => setToast({ severity: 'info', message }),
+  })
 
   const loadFile = useCallback(
     async (file: File) => {
@@ -86,7 +85,7 @@ export default function App() {
         history.reset(clip)
         setSource('edited')
         setSelection(null)
-        setClipboard(null)
+        cmd.clearClipboard()
         // 前のファイルの表示設定を持ち越すと、開いた直後に重い解析やプレビュー処理が走るため戻す
         setShowPitch(false)
         setShowSpec(false)
@@ -97,7 +96,7 @@ export default function App() {
         setToast({ severity: 'error', message: `読み込めませんでした: ${file.name} (${String(e)})` })
       }
     },
-    [history, pitchTarget],
+    [history, pitchTarget, cmd],
   )
   const dragOver = useFileDrop((f) => void loadFile(f))
 
@@ -140,45 +139,6 @@ export default function App() {
       pitchTarget.clear()
     })
 
-  const copy = () => {
-    if (edited && selection) setClipboard(sliceClip(edited, selection))
-  }
-  const cut = () => {
-    if (!edited || !selection) return
-    setClipboard(sliceClip(edited, selection))
-    commit(removeRange(edited, selection))
-    player.seek(selection.start)
-    setSelection(null)
-  }
-  const paste = () => {
-    if (!edited || !clipboard) return
-    const at = player.position
-    commit(insertAt(edited, clipboard, at))
-    setSelection({ start: at, end: at + clipDuration(clipboard) })
-  }
-  const trim = () => {
-    if (!edited || !selection) return
-    commit(sliceClip(edited, selection))
-    player.seek(0)
-    setSelection(null)
-  }
-
-  const applyGain = (db: number) => {
-    if (edited && editRange) commit(gainRange(edited, editRange, db))
-  }
-  const applyVolumeAction = (action: VolumeAction) => {
-    if (!edited || !editRange) return
-    if (action === 'normalize') {
-      const next = normalizeRange(edited, editRange)
-      if (next) commit(next)
-      else setToast({ severity: 'info', message: '無音のためノーマライズできません' })
-    } else if (action === 'silence') {
-      commit(silenceRange(edited, editRange))
-    } else {
-      commit(fadeRange(edited, editRange, action === 'fadeIn' ? 'in' : 'out'))
-    }
-  }
-
   const exportWav = (format: WavFormat) => {
     if (edited) downloadWav(edited, `${fileName.replace(/\.[^.]+$/, '') || 'audio'}_wevocal.wav`, format)
   }
@@ -198,7 +158,7 @@ export default function App() {
     }
   }
 
-  useShortcuts({ togglePlay, undo: history.undo, redo: history.redo, cut, copy, paste })
+  useShortcuts({ togglePlay, undo: history.undo, redo: history.redo, cut: cmd.cut, copy: cmd.copy, paste: cmd.paste })
   const openFile = () => inputRef.current?.click()
 
   return (
@@ -262,7 +222,7 @@ export default function App() {
                     selection={selection}
                     editable={editing}
                     busy={busy}
-                    hasClipboard={!!clipboard}
+                    hasClipboard={cmd.hasClipboard}
                     onTogglePlay={togglePlay}
                     onStop={() => {
                       player.pause()
@@ -274,10 +234,10 @@ export default function App() {
                       void player.play(selection.start, selection.end)
                     }}
                     onSelectionChange={setSelection}
-                    onCut={cut}
-                    onCopy={copy}
-                    onPaste={paste}
-                    onTrim={trim}
+                    onCut={cmd.cut}
+                    onCopy={cmd.copy}
+                    onPaste={cmd.paste}
+                    onTrim={cmd.trim}
                   />
                 </Stack>
               </CardContent>
@@ -298,7 +258,7 @@ export default function App() {
               />
             )}
             {editing && (
-              <VolumePanel hasSelection={!!selection} busy={busy} onGain={applyGain} onAction={applyVolumeAction} />
+              <VolumePanel hasSelection={!!selection} busy={busy} onGain={cmd.gain} onAction={cmd.volume} />
             )}
           </Stack>
         )}

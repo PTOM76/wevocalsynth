@@ -19,7 +19,7 @@ import {
 import type { Algorithm } from '../dsp/engine'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRotateLeft, faHeadphones, faStop, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
-import { formatTime } from './Waveform'
+import { formatTime } from '../audio/types'
 
 export interface EditParams {
   semitones: number
