@@ -6,26 +6,6 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   // GitHub Pages ではリポジトリ名のサブパスで配信されるため、CI から BASE_PATH で指定する
   base: process.env.BASE_PATH ?? '/',
-  // ビルド成果物のファイル名からハッシュを外して固定する
-  // キャッシュ更新は Service Worker のプリキャッシュ(revision)で行う
-  build: {
-    rolldownOptions: {
-      output: {
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
-      },
-    },
-  },
-  worker: {
-    rolldownOptions: {
-      output: {
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
-      },
-    },
-  },
   plugins: [
     react(),
     VitePWA({
