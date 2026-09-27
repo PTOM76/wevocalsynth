@@ -64,11 +64,7 @@ pub fn estimate(x: &[f32], sample_rate: f32, progress: &mut dyn FnMut(f64)) -> V
         d[0] = 1.0;
         let mut running = 0.0f32;
         for tau in 1..=tau_max {
-            let mut s = 0.0f32;
-            for j in 0..w {
-                let diff = frame[j] - frame[j + tau];
-                s += diff * diff;
-            }
+            let s = sq_diff_sum(&frame[..w], &frame[tau..tau + w]);
             running += s;
             d[tau] = if running > 0.0 {
                 s * tau as f32 / running
@@ -112,4 +108,23 @@ pub fn estimate(x: &[f32], sample_rate: f32, progress: &mut dyn FnMut(f64)) -> V
     }
     progress(1.0);
     out
+}
+
+/// Σ(a[i] - b[i])²。8本の部分和に分けて足し込み、コンパイラが SIMD 命令に変換できるようにする
+/// （1本の足し込みだと浮動小数点の加算順序を変えられず、ベクトル化されない）。
+fn sq_diff_sum(a: &[f32], b: &[f32]) -> f32 {
+    let mut acc = [0.0f32; 8];
+    let (ca, cb) = (a.chunks_exact(8), b.chunks_exact(8));
+    let (ra, rb) = (ca.remainder(), cb.remainder());
+    for (x, y) in ca.zip(cb) {
+        for i in 0..8 {
+            let d = x[i] - y[i];
+            acc[i] += d * d;
+        }
+    }
+    let mut s: f32 = acc.iter().sum();
+    for (x, y) in ra.iter().zip(rb) {
+        s += (x - y) * (x - y);
+    }
+    s
 }
