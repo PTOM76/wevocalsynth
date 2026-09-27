@@ -2,7 +2,6 @@ import { useState, type ReactNode } from 'react'
 import {
   AppBar,
   Box,
-  ButtonBase,
   IconButton,
   ListSubheader,
   Menu,
@@ -16,6 +15,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEllipsisVertical, faRotateLeft, faRotateRight, faWaveSquare } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { renderEntries, type MenuGroup } from './menu/MenuList'
+import MenuBar, { BAR_TEXT_SX } from './menu/MenuBar'
 import { useT } from '../i18n/i18n'
 
 interface Props {
@@ -37,53 +37,6 @@ function HeaderIcon(p: { title: string; icon: IconDefinition; disabled?: boolean
         </IconButton>
       </span>
     </Tooltip>
-  )
-}
-
-/**
- * メニューバーの文字の並べ方。英字（Roboto）と日本語（システムのフォント）では文字の上下の余白が
- * 違うため、行の高さを固定して縦方向の中央にそろえ、フォントが混ざっても高さがずれないようにする
- */
-const BAR_TEXT_SX = {
-  height: 26,
-  lineHeight: '26px',
-  fontSize: 13,
-  display: 'inline-flex',
-  alignItems: 'center',
-} as const
-
-/** PC: Windows のアプリのような、高さを抑えた「ファイル・編集・表示…」のメニューバー */
-function MenuBar({ menus }: { menus: MenuGroup[] }) {
-  const [open, setOpen] = useState<{ index: number; anchor: HTMLElement } | null>(null)
-  const close = () => setOpen(null)
-  return (
-    <>
-      {menus.map((m, index) => (
-        <ButtonBase
-          key={m.label}
-          onClick={(e) => setOpen({ index, anchor: e.currentTarget })}
-          // 別のメニューを開いているときはマウスを乗せるだけで切り替える（デスクトップアプリと同じ操作感）
-          onMouseEnter={(e) => open && open.index !== index && setOpen({ index, anchor: e.currentTarget })}
-          sx={{
-            ...BAR_TEXT_SX,
-            px: 1.25,
-            borderRadius: 0.5,
-            bgcolor: open?.index === index ? 'action.selected' : undefined,
-            '&:hover': { bgcolor: 'action.hover' },
-          }}
-        >
-          {m.label}
-        </ButtonBase>
-      ))}
-      <Menu
-        anchorEl={open?.anchor}
-        open={!!open}
-        onClose={close}
-        slotProps={{ paper: { sx: { minWidth: 240 } }, list: { dense: true, sx: { py: 0.5 } } }}
-      >
-        {open && renderEntries(menus[open.index].entries, close)}
-      </Menu>
-    </>
   )
 }
 
