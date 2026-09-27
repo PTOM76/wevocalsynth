@@ -1,9 +1,10 @@
 import { SPEC_ROWS, type DspRequest, type DspResponse } from './worker'
 
 /** DSPエンジンの時間伸縮方式 */
-export type Algorithm = 'wsola' | 'pv'
+/** wsola / pv は従来の方式、psola はボーカル向けの新しい方式（Rust 側 `Algorithm::from_id` と対応） */
+export type Algorithm = 'wsola' | 'pv' | 'psola'
 
-const ALGORITHM_ID: Record<Algorithm, number> = { wsola: 0, pv: 1 }
+const ALGORITHM_ID: Record<Algorithm, number> = { wsola: 0, pv: 1, psola: 2 }
 
 type Pending = {
   resolve: (r: Float32Array[] | Uint8Array) => void

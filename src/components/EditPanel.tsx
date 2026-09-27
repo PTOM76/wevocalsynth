@@ -19,6 +19,7 @@ import { MODE_SETTINGS, type Mode } from '../audio/detectMode'
 import type { PreviewState } from '../hooks/usePreview'
 import { formatTime } from '../audio/types'
 import PitchControl from './PitchControl'
+import AlgorithmMenu from './AlgorithmMenu'
 import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow } from './inspector/Inspector'
 import { useT, type MessageKey } from '../i18n/i18n'
 
@@ -70,7 +71,7 @@ export default function EditPanel(p: Props) {
   const t = useT()
   const set = (patch: Partial<EditParams>) => onChange({ ...params, ...patch })
   const unchanged = semitones === 0 && stretch === 1 && !(preserveFormant && formantSemitones !== 0)
-  const mode: Mode = params.algorithm === 'wsola' ? 'vocal' : 'instrument'
+  const mode: Mode = params.algorithm === 'pv' ? 'instrument' : 'vocal'
 
   return (
     <InspectorSection
@@ -93,6 +94,7 @@ export default function EditPanel(p: Props) {
             </Tooltip>
           ))}
         </ToggleButtonGroup>
+        <AlgorithmMenu value={params.algorithm} onChange={(algorithm) => set({ algorithm, preserveFormant: algorithm !== 'pv' })} />
       </PropRow>
 
       <PitchControl semitones={semitones} onChange={(v) => set({ semitones: v })} currentMidi={p.currentMidi} />

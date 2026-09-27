@@ -47,7 +47,7 @@ export function useEditor(settings: Settings) {
   const selection = selections[selections.length - 1] ?? null
   const [params, setParams] = useState<EditParams>({
     ...NEUTRAL,
-    algorithm: 'wsola',
+    algorithm: 'psola',
     preserveFormant: false,
   })
   const [showPitch, setShowPitch] = useState(false)

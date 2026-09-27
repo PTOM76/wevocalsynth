@@ -1,7 +1,7 @@
 import type { Clip } from './types'
-import { analyzeF0, F0_HOP_SEC } from '../dsp/engine'
+import { analyzeF0, F0_HOP_SEC, type Algorithm } from '../dsp/engine'
 
-/** 処理モード。ボーカル = 単音向け（WSOLA＋フォルマント保持）、楽器 = 和音・打楽器向け（Phase Vocoder） */
+/** 処理モード。ボーカル = 単音向け（PSOLA＋フォルマント保持）、楽器 = 和音・打楽器向け（Phase Vocoder） */
 export type Mode = 'vocal' | 'instrument'
 
 /** 判定に使う長さ（先頭から、秒） */
@@ -40,7 +40,8 @@ export async function detectMode(clip: Clip): Promise<{ mode: Mode; voicedRatio:
 }
 
 /** モードに対応する処理方式とフォルマント保持の既定値 */
-export const MODE_SETTINGS: Record<Mode, { algorithm: 'wsola' | 'pv'; preserveFormant: boolean }> = {
-  vocal: { algorithm: 'wsola', preserveFormant: true },
+export const MODE_SETTINGS: Record<Mode, { algorithm: Algorithm; preserveFormant: boolean }> = {
+  // ボーカルは PSOLA が既定。従来の WSOLA も処理モードの「…」から選べる
+  vocal: { algorithm: 'psola', preserveFormant: true },
   instrument: { algorithm: 'pv', preserveFormant: false },
 }
