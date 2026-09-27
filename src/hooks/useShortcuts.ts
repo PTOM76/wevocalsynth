@@ -7,11 +7,16 @@ interface Handlers {
   cut: () => void
   copy: () => void
   paste: () => void
+  selectAll: () => void
+  clearSelection: () => void
+  open: () => void
+  save: () => void
 }
 
 /**
  * キーボード操作: Space = 再生/一時停止、Ctrl+Z / Ctrl+Y（Ctrl+Shift+Z）= 元に戻す/やり直す、
- * Ctrl+X/C/V = 切り取り/コピー/貼り付け。入力欄にフォーカスがあるときは何もしない。
+ * Ctrl+X/C/V = 切り取り/コピー/貼り付け、Ctrl+A / Esc = すべて選択 / 選択解除、
+ * Ctrl+O / Ctrl+S = 開く / 保存。入力欄にフォーカスがあるときは何もしない。
  */
 export function useShortcuts(handlers: Handlers) {
   const ref = useRef(handlers)
@@ -29,8 +34,12 @@ export function useShortcuts(handlers: Handlers) {
         v: h.paste,
         z: e.shiftKey ? h.redo : h.undo,
         y: h.redo,
+        a: h.selectAll,
+        o: h.open,
+        s: h.save,
       }
-      const action = mod ? withMod[k] : e.code === 'Space' ? h.togglePlay : undefined
+      const plain: Record<string, () => void> = { Space: h.togglePlay, Escape: h.clearSelection }
+      const action = mod ? withMod[k] : plain[e.code]
       if (!action) return
       e.preventDefault()
       action()

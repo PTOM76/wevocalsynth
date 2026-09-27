@@ -54,6 +54,8 @@ interface Props {
   onSelectionsChange: (rs: Range[]) => void
   /** Shift+右端ドラッグで、範囲 `range` を長さ `duration`（秒）に伸縮する */
   onStretchRange: (range: Range, duration: number) => void
+  /** 右クリック（画面上の位置） */
+  onContextMenu: (x: number, y: number) => void
   /** F0（Hz、`F0_HOP_SEC` 間隔、無声は 0）。解析中は null */
   pitch: Float32Array | null
   showPitch: boolean
@@ -195,7 +197,13 @@ export default function Waveform(props: Props) {
           display: 'block',
           cursor: penMode && showPitch ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
         }}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          props.onContextMenu(e.clientX, e.clientY)
+        }}
         onPointerDown={(e) => {
+          // 右クリックは範囲選択を始めない（コンテキストメニューに任せる）
+          if (e.button === 2) return
           e.currentTarget.setPointerCapture(e.pointerId)
           const p = drawPointAt(e)
           if (p) return drawTo(p)

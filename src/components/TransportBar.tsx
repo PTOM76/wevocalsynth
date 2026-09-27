@@ -65,6 +65,8 @@ interface Props {
   selection: Range | null
   /** 選択範囲の入力と編集ボタンを出すか（原音表示中は出さない） */
   editable: boolean
+  /** 再生操作を出さない（スマホでは画面下の再生バーに出すため） */
+  hidePlayback?: boolean
   busy: boolean
   hasClipboard: boolean
   onTogglePlay: () => void
@@ -101,7 +103,7 @@ export function TransportBar(p: Props) {
 
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', display: p.hidePlayback ? 'none' : 'flex' }}>
         <Tooltip title="再生 / 一時停止 (Space)">
           <IconButton aria-label="再生 / 一時停止" color="primary" onClick={p.onTogglePlay}>
             <FontAwesomeIcon icon={p.playing ? faPause : faPlay} />
@@ -121,7 +123,7 @@ export function TransportBar(p: Props) {
       </Stack>
       <Box sx={{ flexGrow: 1 }} />
       {p.editable && (
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
           {field('start', '開始')}
           {field('end', '終了')}
           <ToolButton title="切り取り (Ctrl+X)" label="切り取り" icon={faScissors} disabled={noSel} onClick={p.onCut} />

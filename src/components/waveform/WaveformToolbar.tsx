@@ -65,7 +65,7 @@ interface Props {
 /** 波形の下のツールバー（拡大縮小・表示切替・ピッチ描画・横スクロール） */
 export default function WaveformToolbar(p: Props) {
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 0.5 }}>
+    <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', mt: 0.5, flexWrap: 'wrap' }}>
       <SmallButton title="縮小 (Ctrl+ホイール)" label="縮小" icon={faMagnifyingGlassMinus} disabled={!p.zoomed} onClick={p.onZoomOut} />
       <SmallButton title="拡大 (Ctrl+ホイール)" label="拡大" icon={faMagnifyingGlassPlus} disabled={!p.canZoomIn} onClick={p.onZoomIn} />
       <SmallButton
@@ -116,7 +116,7 @@ export default function WaveformToolbar(p: Props) {
         max={Math.max(0, p.duration - p.view.dur)}
         step={p.view.dur / 100}
         onChange={(_, v) => p.onScroll(v as number)}
-        sx={{ mx: 1 }}
+        sx={{ mx: 1, flex: '1 1 120px', minWidth: 120 }}
       />
       <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
         {p.view.dur.toFixed(p.view.dur < 1 ? 3 : 1)}s
