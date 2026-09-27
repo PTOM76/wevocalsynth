@@ -10,13 +10,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.ico', 'icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'WeVocalSynth',
         short_name: 'WeVocalSynth',
         lang: 'ja',
         display: 'standalone',
-        theme_color: '#1976d2',
         background_color: '#ffffff',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

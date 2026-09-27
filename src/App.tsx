@@ -61,7 +61,13 @@ export default function App() {
   const [pitch, setPitch] = useState<{ clip: Clip; f0: Float32Array } | null>(null)
   const [penMode, setPenMode] = useState(false)
   // 描いた目標ピッチ（Hz、F0 と同じフレーム、0 は未編集）。描画中は中身を直接書き換える
-  const [target, setTarget] = useState<{ clip: Clip; hz: Float32Array } | null>(null)
+  const [target, setTargetState] = useState<{ clip: Clip; hz: Float32Array } | null>(null)
+  // 描画中は再レンダーを待たずに同じ配列へ書き込むため、最新値を ref にも持つ
+  const targetRef = useRef(target)
+  const setTarget = (t: typeof target) => {
+    targetRef.current = t
+    setTargetState(t)
+  }
   const [dragOver, setDragOver] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
@@ -149,7 +155,8 @@ export default function App() {
   // ピッチ帯に描いた線を目標ピッチに書き込む（フレーム間は音高を線形補間）
   const drawTarget = (from: DrawPoint, to: DrawPoint) => {
     if (!pitch || pitch.clip !== shown) return
-    let hz = target?.clip === shown ? target.hz : null
+    const cur = targetRef.current
+    let hz = cur?.clip === shown ? cur.hz : null
     if (!hz) {
       hz = new Float32Array(pitch.f0.length)
       setTarget({ clip: shown, hz })
