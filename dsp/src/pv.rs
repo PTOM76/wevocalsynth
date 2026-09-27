@@ -1,21 +1,21 @@
-//! Phase vocoder time stretch with identity phase locking (Laroche & Dolson).
+//! identity phase locking（Laroche & Dolson）付き Phase Vocoder による時間伸縮。
 //!
-//! Smoother than WSOLA on long stretches (no grain repetition), at the cost
-//! of some phasiness and softened transients.
+//! 大きな伸長でも WSOLA よりなめらか（断片の繰り返しがない）。その代わり
+//! 多少の残響感（フェージー感）が出て、アタックがにじむ。
 
 use crate::fft::Fft;
 use std::f64::consts::PI;
 
-/// Analysis/synthesis frame length in seconds; rounded up to a power of two.
+/// 分析・合成フレーム長（秒）。2のべき乗に切り上げる。
 const FRAME_SEC: f32 = 0.046;
-/// Synthesis hop as a fraction of the frame (75% overlap).
+/// 合成ホップ = フレーム長 / この値（75% オーバーラップ）。
 const OVERLAP: usize = 4;
 
 fn wrap(p: f64) -> f64 {
     p - 2.0 * PI * ((p + PI) / (2.0 * PI)).floor()
 }
 
-/// Time-stretch all channels by `alpha` (output length = input length * alpha).
+/// 全チャンネルを `alpha` 倍に時間伸縮する（出力長 = 入力長 × alpha）。
 pub fn stretch(
     channels: &[&[f32]],
     alpha: f64,
@@ -41,8 +41,8 @@ pub fn stretch(
         .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32)
         .collect();
 
-    // Same end handling as WSOLA: map the last output frame onto the last
-    // input frame so frames never read past the input.
+    // 末尾の扱いは WSOLA と同じ: 最後の出力フレームを最後の入力フレームに対応づけ、
+    // 入力の外を読まないようにする。
     let last_pos = len.saturating_sub(n) as f64;
     let span_out = out_len.saturating_sub(n).max(1) as f64;
     let frames = out_len / hs + 1;
@@ -66,8 +66,8 @@ pub fn stretch(
     let mut phase = vec![0.0f64; bins];
     let mut prev_phase = vec![0.0f64; bins];
     let mut out_phase = vec![0.0f64; bins];
-    // Last instantaneous frequency (rad/sample) per bin, reused when the
-    // analysis position does not move (clamped at the end of the input).
+    // ビンごとの直近の瞬時周波数（rad/sample）。入力の末尾で分析位置が
+    // 動かなくなったフレームで使い回す。
     let mut inst = vec![0.0f64; bins];
     let mut peaks: Vec<usize> = Vec::with_capacity(bins);
 
@@ -94,8 +94,8 @@ pub fn stretch(
             if k == 0 {
                 out_phase.copy_from_slice(&phase);
             } else {
-                // Instantaneous frequency from the actual analysis hop, then
-                // advance by the synthesis hop (peaks only).
+                // 実際の分析ホップから瞬時周波数を求め、合成ホップ分だけ位相を進める
+                // （ピークのビンのみ）。
                 let hop = pos - prev_pos;
                 peaks.clear();
                 for b in 1..bins - 1 {
@@ -115,8 +115,8 @@ pub fn stretch(
                     }
                     new_phase[p] = out_phase[p] + inst[p] * hs as f64;
                 }
-                // Identity phase locking: each bin keeps its phase offset to
-                // the nearest peak (boundary halfway between peaks).
+                // identity phase locking: 各ビンは最寄りのピークとの位相差を保つ
+                // （境界はピーク間の中点）。
                 let mut pi = 0;
                 for b in 0..bins {
                     while pi + 1 < peaks.len() && b > (peaks[pi] + peaks[pi + 1]) / 2 {
@@ -132,7 +132,7 @@ pub fn stretch(
             prev_phase.copy_from_slice(&phase);
             prev_pos = pos;
 
-            // Rebuild a Hermitian spectrum and inverse transform.
+            // エルミート対称なスペクトルを組み直して逆変換する。
             for b in 0..bins {
                 let (s, c) = out_phase[b].sin_cos();
                 re[b] = mag[b] * c as f32;

@@ -1,8 +1,8 @@
-//! Minimal radix-2 FFT shared by the spectral processors.
+//! スペクトル処理で共用する最小限の radix-2 FFT。
 
 use std::f64::consts::PI;
 
-/// In-place iterative radix-2 FFT over split real/imag arrays.
+/// 実部・虚部を分けた配列に対するインプレース反復型 radix-2 FFT。
 pub struct Fft {
     n: usize,
     cos: Vec<f32>,
@@ -25,7 +25,7 @@ impl Fft {
         Fft { n, cos, sin, rev }
     }
 
-    /// Forward transform when `inverse` is false; the inverse is unscaled.
+    /// `inverse` が false なら順変換。逆変換はスケーリングしない（呼び出し側で 1/n する）。
     pub fn run(&self, re: &mut [f32], im: &mut [f32], inverse: bool) {
         let n = self.n;
         for i in 0..n {

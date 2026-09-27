@@ -1,12 +1,12 @@
-//! WeVocalSynth DSP engine.
+//! WeVocalSynth の DSP エンジン。
 //!
-//! Time stretch: WSOLA (Waveform Similarity Overlap-Add) or a phase-locked
-//! phase vocoder (see `pv`), selected per call.
-//! Pitch shift: WSOLA stretch by the pitch ratio, then band-limited resampling
-//! back to the target length. Duration is therefore independent of pitch.
+//! 時間伸縮: WSOLA（Waveform Similarity Overlap-Add）または位相ロック付き
+//! Phase Vocoder（`pv`）を呼び出しごとに選択する。
+//! ピッチ変更: ピッチ比の分だけ伸縮してから、帯域制限付きリサンプルで目的の長さに戻す。
+//! そのため長さはピッチ変更の影響を受けない。必要ならリサンプル前にフォルマント補正（`formant`）を行う。
 //!
-//! The wasm build exposes a tiny C ABI (no wasm-bindgen) so it can be loaded
-//! with plain `WebAssembly.instantiate` inside a Web Worker.
+//! wasm ビルドは wasm-bindgen を使わず小さな C ABI だけを公開し、Web Worker 内で
+//! 素の `WebAssembly.instantiate` で読み込めるようにしている。
 
 mod fft;
 pub mod formant;
@@ -15,18 +15,18 @@ pub mod pv;
 use std::cell::RefCell;
 use std::f64::consts::PI;
 
-/// Analysis frame length in seconds (~46ms: long enough for low voices).
+/// 分析フレーム長（秒）。約46ms: 低い声でも十分な長さ。
 const FRAME_SEC: f32 = 0.046;
-/// Search tolerance in seconds (~12ms: covers one pitch period down to ~83Hz).
+/// 探索許容幅（秒）。約12ms: 約83Hz までのピッチ周期1つ分をカバーする。
 const TOLERANCE_SEC: f32 = 0.012;
 
-/// Time-stretch all channels by `alpha` (output length = input length * alpha).
-/// Channels share the same frame positions so the stereo image stays coherent.
+/// 全チャンネルを `alpha` 倍に時間伸縮する（出力長 = 入力長 × alpha）。
+/// 全チャンネルで同じフレーム位置を使い、ステレオ定位を崩さない。
 pub fn wsola(channels: &[&[f32]], alpha: f64, sample_rate: f32) -> Vec<Vec<f32>> {
     wsola_with_progress(channels, alpha, sample_rate, &mut |_| {})
 }
 
-/// `wsola` that reports progress in 0..=1 through `progress`.
+/// 進捗（0〜1）を `progress` に通知する版の `wsola`。
 pub fn wsola_with_progress(
     channels: &[&[f32]],
     alpha: f64,
@@ -46,12 +46,12 @@ pub fn wsola_with_progress(
     n += n % 2;
     let hs = n / 2;
     let delta = ((sample_rate * TOLERANCE_SEC) as i64).max(8);
-    // Periodic Hann: sums to exactly 1 at 50% overlap.
+    // periodic Hann 窓: 50% オーバーラップで総和がちょうど 1 になる。
     let window: Vec<f32> = (0..n)
         .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32)
         .collect();
 
-    // Zero-padded mono mix so correlation can use plain slices without bounds logic.
+    // ゼロ詰めしたモノラルミックス。相関計算で境界チェックなしにスライスを使えるようにする。
     let pad_l = delta as usize + 8;
     let pad_r = n + hs + delta as usize + 8;
     let mut mono = vec![0.0f32; pad_l + len + pad_r];
@@ -65,7 +65,7 @@ pub fn wsola_with_progress(
         let s = (p.clamp(-(delta + 4), max_pos) + pad_l as i64) as usize;
         &mono[s..s + n]
     };
-    // Similarity over the overlap region only (first half of each frame).
+    // 類似度は重なり部分（各フレームの前半）だけで計算する。
     let corr = |a: i64, b: i64, step: usize| -> f32 {
         seg(a)[..hs]
             .iter()
@@ -79,8 +79,8 @@ pub fn wsola_with_progress(
     let mut wsum = vec![0.0f32; out_len + n];
     let frames = out_len / hs + 1;
     let mut prev_pos: i64 = 0;
-    // Frames must lie fully inside the input: near the end a frame that runs
-    // past the last sample would overlap-add silence and make the tail choppy.
+    // フレームは入力の内側に収める。末尾で最後のサンプルをはみ出すと
+    // 無音を重ね合わせてしまい、末尾がギザギザになる。
     let last_pos = len.saturating_sub(n) as i64;
     let clamp_pos = |p: i64| p.clamp(0, last_pos);
 
@@ -92,16 +92,15 @@ pub fn wsola_with_progress(
         let pos = if k == 0 {
             0
         } else {
-            // Map output frame starts onto input frame starts so the last input
-            // frame is reached exactly at the last output frame. Plain
-            // `out_start / alpha` overshoots near the end, leaving frames stuck
-            // on the final grain and repeating it (an audible buzz).
+            // 出力フレームの開始位置を入力フレームの開始位置に対応づけ、最後の出力フレームで
+            // ちょうど最後の入力フレームに到達するようにする。単純な `out_start / alpha` だと
+            // 末尾で行き過ぎ、最後の断片に張り付いて同じ音を繰り返す（うなりとして聞こえる）。
             let span_out = out_len.saturating_sub(n).max(1) as f64;
             let nominal = ((out_start as f64 / span_out) * last_pos as f64).round() as i64;
-            // Natural continuation of the previous frame: the part that overlaps
-            // the new frame. prev_pos <= last_pos keeps it inside the input.
+            // 前フレームの自然な続き（新しいフレームと重なる部分）。
+            // prev_pos <= last_pos なので入力の内側に収まる。
             let natural = prev_pos + hs as i64;
-            // Coarse search, then refine around the best candidate.
+            // 粗く探索してから、最良候補の周辺を精密に探索する。
             let (mut best, mut best_c) = (nominal, f32::MIN);
             let mut off = -delta;
             while off <= delta {
@@ -148,8 +147,8 @@ pub fn wsola_with_progress(
     out
 }
 
-/// Read `x` with step `ratio` (ratio > 1 raises pitch) using a windowed-sinc
-/// interpolator whose cutoff drops below Nyquist when decimating.
+/// `x` を `ratio` 刻みで読み出す（ratio > 1 でピッチが上がる）。窓付き sinc 補間で、
+/// 間引き時はカットオフをナイキスト未満に下げて折り返しを防ぐ。
 pub fn resample(x: &[f32], ratio: f64, out_len: usize) -> Vec<f32> {
     const HALF: usize = 16;
     const PHASES: usize = 256;
@@ -157,7 +156,7 @@ pub fn resample(x: &[f32], ratio: f64, out_len: usize) -> Vec<f32> {
     let half = (HALF as f64 / cutoff).ceil() as usize;
     let taps = 2 * half;
 
-    // Kernel table: row p holds normalized tap weights for fractional offset p/PHASES.
+    // カーネル表: p 行目は小数オフセット p/PHASES に対する正規化済みタップ係数。
     let table: Vec<f32> = (0..=PHASES)
         .flat_map(|p| {
             let frac = p as f64 / PHASES as f64;
@@ -182,7 +181,7 @@ pub fn resample(x: &[f32], ratio: f64, out_len: usize) -> Vec<f32> {
         })
         .collect();
 
-    // Zero-pad the input so every tap window is a plain slice.
+    // 入力をゼロ詰めし、どのタップ窓も単純なスライスで取れるようにする。
     let mut padded = vec![0.0f32; x.len() + 2 * taps + 2];
     padded[half..half + x.len()].copy_from_slice(x);
     let max_center = x.len() + taps;
@@ -194,7 +193,7 @@ pub fn resample(x: &[f32], ratio: f64, out_len: usize) -> Vec<f32> {
             let pf = (t - t.floor()) * PHASES as f64;
             let p = (pf as usize).min(PHASES - 1);
             let g = (pf - p as f64) as f32;
-            // Taps cover input indices center-half+1 ..= center+half, i.e. padded[center+1 ..].
+            // タップは入力インデックス center-half+1 ..= center+half、つまり padded[center+1 ..] に対応する。
             let src = &padded[center + 1..center + 1 + taps];
             let (r0, r1) = (
                 &table[p * taps..(p + 1) * taps],
@@ -208,8 +207,8 @@ pub fn resample(x: &[f32], ratio: f64, out_len: usize) -> Vec<f32> {
         .collect()
 }
 
-/// Pitch shift by `semitones` and time-stretch by `stretch` in one pass.
-/// Output length = input length * stretch regardless of the pitch change.
+/// `semitones` 半音のピッチ変更と `stretch` 倍の時間伸縮を1パスで行う。
+/// 出力長はピッチ変更に関係なく 入力長 × stretch。
 pub fn process(
     channels: &[&[f32]],
     sample_rate: f32,
@@ -227,7 +226,7 @@ pub fn process(
     )
 }
 
-/// Time-stretch method used for both stretching and (before resampling) pitch shifting.
+/// 伸縮と、ピッチ変更（リサンプル前の伸縮）の両方に使う時間伸縮方式。
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Algorithm {
     Wsola,
@@ -257,16 +256,16 @@ impl Algorithm {
     }
 }
 
-/// Formant handling for `process_with_progress`.
+/// `process_with_progress` でのフォルマントの扱い。
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Formant {
-    /// Formants move with the pitch (plain resampling).
+    /// フォルマントはピッチと一緒に動く（単純なリサンプル）。
     Follow,
-    /// Keep formants, then shift them by this many semitones (0 = preserve).
+    /// フォルマントを保持し、さらにこの半音数だけ移動する（0 = 保持のみ）。
     Shift(f64),
 }
 
-/// `process` that reports overall progress in 0..=1 through `progress`.
+/// 全体の進捗（0〜1）を `progress` に通知する版の `process`。
 pub fn process_with_progress(
     channels: &[&[f32]],
     sample_rate: f32,
@@ -280,14 +279,14 @@ pub fn process_with_progress(
     let target_len = (len as f64 * stretch).round() as usize;
     let ratio = 2f64.powf(semitones / 12.0);
     let pitch = (ratio - 1.0).abs() > 1e-9;
-    // Envelope warp applied before resampling (see `formant`).
+    // リサンプル前に適用する包絡の変形率（`formant` 参照）。
     let warp = match formant {
         Formant::Follow => 1.0,
         Formant::Shift(st) => ratio / 2f64.powf(st / 12.0),
     };
     let correct = (warp - 1.0).abs() > 1e-9;
 
-    // Rough cost split of the stages, used only for progress reporting.
+    // 各段階の処理コストのおおよその比率。進捗表示にのみ使う。
     let stretch_share = if correct {
         0.5
     } else if pitch {
@@ -328,12 +327,12 @@ pub fn process_with_progress(
     out
 }
 
-// ---- C ABI for wasm -------------------------------------------------------
+// ---- wasm 向け C ABI -------------------------------------------------------
 
 #[cfg(target_arch = "wasm32")]
 #[link(wasm_import_module = "env")]
 extern "C" {
-    /// Provided by the host (worker) as `env.report_progress`.
+    /// ホスト（Worker）が `env.report_progress` として提供する。
     fn report_progress(p: f64);
 }
 
@@ -350,7 +349,7 @@ thread_local! {
     static OUTPUT: RefCell<Vec<f32>> = const { RefCell::new(Vec::new()) };
 }
 
-/// Allocate `len` f32 values in wasm memory and return the pointer.
+/// wasm メモリ上に f32 を `len` 個確保し、そのポインタを返す。
 #[no_mangle]
 pub extern "C" fn alloc_f32(len: usize) -> *mut f32 {
     let mut v = vec![0.0f32; len];
@@ -359,20 +358,20 @@ pub extern "C" fn alloc_f32(len: usize) -> *mut f32 {
     p
 }
 
-/// Free memory returned by `alloc_f32`.
+/// `alloc_f32` で確保したメモリを解放する。
 ///
 /// # Safety
-/// `ptr`/`len` must come from a single `alloc_f32` call.
+/// `ptr`/`len` は1回の `alloc_f32` 呼び出しで得たものであること。
 #[no_mangle]
 pub unsafe extern "C" fn free_f32(ptr: *mut f32, len: usize) {
     drop(Vec::from_raw_parts(ptr, len, len));
 }
 
-/// Process planar audio (`channels` blocks of `frames` samples) and return the
-/// output frame count. Fetch the planar result with `output_ptr`.
+/// プレーナー形式の音声（`frames` サンプルのブロックが `channels` 個）を処理し、
+/// 出力フレーム数を返す。結果（プレーナー形式）は `output_ptr` で取得する。
 ///
 /// # Safety
-/// `input` must point to `frames * channels` valid f32 values.
+/// `input` は `frames * channels` 個の有効な f32 を指していること。
 #[no_mangle]
 pub unsafe extern "C" fn process_planar(
     input: *const f32,
@@ -426,7 +425,7 @@ mod tests {
             .collect()
     }
 
-    /// Estimate frequency from positive-going zero crossings in the middle.
+    /// 中央部分の正方向ゼロクロス数から周波数を推定する。
     fn freq(x: &[f32], sr: f32) -> f32 {
         let m = &x[x.len() / 4..x.len() * 3 / 4];
         let crossings = m.windows(2).filter(|w| w[0] < 0.0 && w[1] >= 0.0).count();
@@ -470,8 +469,8 @@ mod tests {
         }
     }
 
-    /// Stretching must not make the end choppy: the envelope of a steady tone
-    /// should stay flat right up to the last frames.
+    /// 伸長で末尾がギザギザにならないこと: 定常音の振幅包絡が
+    /// 最後のフレーム付近まで平坦に保たれること。
     #[test]
     fn stretch_tail_is_steady() {
         let sr = 48000.0;
@@ -481,7 +480,7 @@ mod tests {
             .flat_map(|a| [2.0, 4.0, 8.0].map(|x| (a, x)))
         {
             let y = &run(&[&x], sr, 0.0, alpha, algo)[0];
-            // Peak level in 10ms blocks over the last 30% (excluding the final block).
+            // 末尾30%（最後のブロックを除く）の10msブロックごとのピーク値。
             let block = (sr * 0.01) as usize;
             let start = y.len() * 7 / 10;
             let peaks: Vec<f32> = y[start..y.len() - block]
@@ -496,7 +495,7 @@ mod tests {
         }
     }
 
-    /// 150Hz pulse train through a two-pole resonator at `formant` Hz.
+    /// 150Hz のパルス列を `formant` Hz の2次共振器に通した母音もどき。
     fn vowel(sr: f32, secs: f32, f0: f32, formant: f32) -> Vec<f32> {
         let period = (sr / f0) as usize;
         let r = (-std::f32::consts::PI * 120.0 / sr).exp();
@@ -514,7 +513,7 @@ mod tests {
             .collect()
     }
 
-    /// Magnitude-weighted spectral centroid below 4kHz of the middle 4096 samples.
+    /// 中央 4096 サンプルの、4kHz 未満の振幅重み付きスペクトル重心。
     fn centroid(x: &[f32], sr: f32) -> f32 {
         let n = 4096;
         let mid = x.len() / 2 - n / 2;
@@ -546,7 +545,7 @@ mod tests {
             println!("{algo:?}: original {base:.0}Hz, follow {cf:.0}Hz, preserve {ck:.0}Hz");
             assert!(cf > base * 1.5, "{algo:?}: follow should move formants up ({cf} vs {base})");
             assert!((ck - base).abs() < base * 0.25, "{algo:?}: preserve moved formants ({ck} vs {base})");
-            // Pitch must still be shifted with the formant kept.
+            // フォルマントを保持してもピッチ自体は変わっていること。
             assert_eq!(keep[0].len(), x.len());
         }
     }
@@ -563,7 +562,7 @@ mod tests {
         assert!(y[0].iter().all(|v| v.is_finite()));
     }
 
-    /// `cargo test --release -- --ignored --nocapture` to time 3 min of stereo audio.
+    /// `cargo test --release -- --ignored --nocapture` で3分のステレオ音声の処理時間を計測する。
     #[test]
     #[ignore]
     fn bench_three_minutes() {

@@ -1,30 +1,30 @@
-//! Spectral envelope (formant) correction.
+//! スペクトル包絡（フォルマント）補正。
 //!
-//! Pitch shifting here is "stretch, then resample by r", and resampling moves
-//! the whole spectrum — formants included — by r. To keep (or move) formants
-//! independently, the stretched signal is filtered frame by frame *before*
-//! resampling so that its envelope becomes E(c·f), where E is the frame's own
-//! envelope and c = pitch_ratio / formant_ratio. After resampling by r the
-//! envelope lands at E(f / formant_ratio): unchanged when formant_ratio = 1.
+//! 本エンジンのピッチ変更は「伸縮してから r 倍速でリサンプル」であり、リサンプルは
+//! フォルマントを含むスペクトル全体を r 倍に動かしてしまう。フォルマントを保持（または
+//! 独立に移動）するため、リサンプル *前* の伸縮済み信号をフレームごとにフィルタし、
+//! 包絡を E(c·f) に変形しておく。E はそのフレーム自身の包絡、
+//! c = ピッチ比 / フォルマント比。r 倍のリサンプル後、包絡は E(f / フォルマント比) となり、
+//! フォルマント比 = 1 なら元の包絡のまま保たれる。
 //!
-//! The envelope is a cepstrally smoothed log spectrum. The lifter cutoff
-//! follows the frame's pitch period (cepstral peak) so harmonics are smoothed
-//! away for both low and high voices.
+//! 包絡はケプストラムで平滑化した対数スペクトル。リフタのカットオフはフレームごとの
+//! ピッチ周期（ケプストラムのピーク）に追従させ、低い声でも高い声でも倍音成分を
+//! 取り除けるようにしている。
 
 use crate::fft::Fft;
 use std::f64::consts::PI;
 
 const FRAME_SEC: f32 = 0.046;
 const OVERLAP: usize = 4;
-/// Pitch search range for the lifter cutoff.
+/// リフタのカットオフを決めるためのピッチ探索範囲。
 const F0_MIN: f32 = 60.0;
 const F0_MAX: f32 = 1000.0;
-/// Lifter cutoff as a fraction of the pitch period.
+/// リフタのカットオフ（ピッチ周期に対する比率）。
 const LIFTER_RATIO: f32 = 0.6;
-/// Max correction per bin (natural log): about ±26 dB.
+/// ビンごとの最大補正量（自然対数）。約 ±26 dB。
 const MAX_LOG_GAIN: f32 = 3.0;
 
-/// Filter `x` so its spectral envelope becomes E(c·f). `c == 1` is a no-op.
+/// `x` のスペクトル包絡が E(c·f) になるようフィルタする。`c == 1` なら何もしない。
 pub fn correct(x: &[f32], c: f64, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<f32> {
     let len = x.len();
     if len == 0 || (c - 1.0).abs() < 1e-9 {
@@ -43,7 +43,7 @@ pub fn correct(x: &[f32], c: f64, sample_rate: f32, progress: &mut dyn FnMut(f64
     let q_max = ((sample_rate / F0_MIN) as usize).min(n / 2 - 1);
     let default_cut = (sample_rate * 0.0015) as usize;
 
-    // Frames start one frame before the signal so the edges get full overlap.
+    // 端でもオーバーラップが揃うよう、フレームは信号の1フレーム手前から始める。
     let frames = (len + n) / hs + 1;
     let mut out = vec![0.0f32; len + 2 * n];
     let mut norm = vec![0.0f32; len + 2 * n];
@@ -68,9 +68,9 @@ pub fn correct(x: &[f32], c: f64, sample_rate: f32, progress: &mut dyn FnMut(f64
             im[i] = 0.0;
             energy += re[i] * re[i];
         }
-        let o = (start + n as i64) as usize; // index into `out` (offset by n)
+        let o = (start + n as i64) as usize; // `out` 上の位置（n だけずらしてある）
         if energy < 1e-10 {
-            // Silence: nothing to correct, just keep the window sum consistent.
+            // 無音: 補正は不要。窓の総和だけは揃えておく。
             for i in 0..n {
                 out[o + i] += re[i] * window[i];
                 norm[o + i] += window[i] * window[i];
@@ -79,7 +79,7 @@ pub fn correct(x: &[f32], c: f64, sample_rate: f32, progress: &mut dyn FnMut(f64
         }
         fft.run(&mut re, &mut im, false);
 
-        // Real cepstrum of the log magnitude.
+        // 対数振幅の実ケプストラム。
         for b in 0..n {
             cre[b] = ((re[b] * re[b] + im[b] * im[b]).sqrt() + 1e-9).ln();
             cim[b] = 0.0;
@@ -87,7 +87,7 @@ pub fn correct(x: &[f32], c: f64, sample_rate: f32, progress: &mut dyn FnMut(f64
         fft.run(&mut cre, &mut cim, true);
         let scale = 1.0 / n as f32;
 
-        // Lifter cutoff from the pitch period (strongest cepstral peak).
+        // ピッチ周期（最も強いケプストラムのピーク）からリフタのカットオフを決める。
         let mut peak_q = 0;
         let mut peak_v = 0.0f32;
         for q in q_min..=q_max {
@@ -116,7 +116,7 @@ pub fn correct(x: &[f32], c: f64, sample_rate: f32, progress: &mut dyn FnMut(f64
         fft.run(&mut cre, &mut cim, false);
         env.copy_from_slice(&cre[..bins]);
 
-        // Gain that turns E(f) into E(c·f), linear interpolation between bins.
+        // E(f) を E(c·f) に変えるゲイン。ビン間は線形補間。
         for b in 0..bins {
             let t = b as f64 * c;
             let target = if t >= (bins - 1) as f64 {
