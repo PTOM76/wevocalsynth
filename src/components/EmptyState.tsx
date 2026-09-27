@@ -10,7 +10,7 @@ export function EmptyState({ onOpen }: { onOpen: () => void }) {
         <FontAwesomeIcon icon={faFileArrowUp} />
       </Box>
       <Typography variant="body2" color="text.secondary">
-        WAV / MP3 / FLAC など（ドロップ可）
+        WAV / MP3 など（D&D可）
       </Typography>
       <Button variant="contained" startIcon={<FontAwesomeIcon icon={faFolderOpen} />} onClick={onOpen}>
         ファイルを選択
