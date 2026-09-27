@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { decodeFile } from '../audio/decode'
@@ -23,6 +23,8 @@ import { useTask } from './useTask'
 import { useFilePicker } from './useFilePicker'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
+import { useAutosave } from './useAutosave'
+import type { Settings } from '../settings/settings'
 
 export type Toast = { severity: 'success' | 'error' | 'info'; message: string }
 
@@ -30,7 +32,7 @@ export type Toast = { severity: 'success' | 'error' | 'info'; message: string }
 const NEUTRAL = { semitones: 0, stretch: 1, formantSemitones: 0 }
 
 /** エディタ全体の状態と操作。画面の組み立て（App）から切り離してある */
-export function useEditor() {
+export function useEditor(settings: Settings) {
   const [fileName, setFileName] = useState('')
   const [original, setOriginal] = useState<Clip | null>(null)
   const history = useHistory()
@@ -111,7 +113,9 @@ export function useEditor() {
         setParams((p) => ({ ...(project ? project.params : p), ...NEUTRAL }))
         // 新しい素材ならボーカル／楽器を自動判定して初期値にする（プロジェクトは保存時の設定を使う）
         setAutoMode(null)
-        if (!project) {
+        if (!project && settings.initialMode !== 'auto') {
+          setParams((p) => ({ ...p, ...MODE_SETTINGS[settings.initialMode as Mode] }))
+        } else if (!project) {
           void detectMode(clip)
             .then(({ mode }) => {
               setAutoMode(mode)
@@ -123,7 +127,7 @@ export function useEditor() {
         setToast({ severity: 'error', message: `読み込めませんでした: ${file.name} (${String(e)})` })
       }
     },
-    [history, pitchTarget, cmd],
+    [history, pitchTarget, cmd, settings.initialMode],
   )
   const dragOver = useFileDrop((f) => void loadFile(f))
 
@@ -180,6 +184,21 @@ export function useEditor() {
   playbackRef.current = playback
 
   const picker = useFilePicker(`audio/*,.wav,${PROJECT_EXT}`, (f) => void loadFile(f))
+
+  // 作業状態の自動保存と、起動時の復元
+  const autosaveProject = useMemo(
+    () => (original && edited ? { fileName, original, edited, params } : null),
+    [fileName, original, edited, params],
+  )
+  useAutosave(
+    settings.autoRestore,
+    autosaveProject,
+    async (file) => {
+      await loadFile(file)
+      setToast({ severity: 'info', message: '前回の作業を復元しました' })
+    },
+    (e) => console.warn('自動保存に失敗しました', e),
+  )
 
   const selectAll = () => edited && setSelections([{ start: 0, end: clipDuration(edited) }])
   const clearSelection = () => setSelections([])

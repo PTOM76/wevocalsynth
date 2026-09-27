@@ -26,6 +26,7 @@ interface Actions {
   toggleSpectrogram: () => void
   togglePitch: () => void
   showShortcuts: () => void
+  showSettings: () => void
 }
 
 /** メニューバー（スマホではメニュー一覧）と、波形の右クリックメニューの中身 */
@@ -52,6 +53,8 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; context: MenuEntr
         { label: 'WAV出力（16-bit PCM）', disabled: noClip, onClick: () => a.exportWav('pcm16') },
         { label: 'WAV出力（24-bit PCM）', disabled: noClip, onClick: () => a.exportWav('pcm24') },
         { label: 'WAV出力（32-bit float）', disabled: noClip, onClick: () => a.exportWav('float32') },
+        { divider: true },
+        { label: '設定…', onClick: a.showSettings },
       ],
     },
     {

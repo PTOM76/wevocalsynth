@@ -11,16 +11,20 @@ import VolumePanel from './components/VolumePanel'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
 import { ContextMenu } from './components/menu/MenuList'
+import { useSettings } from './settings/settings'
+import SettingsDialog from './settings/SettingsDialog'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 const disabledSx = (disabled: boolean) => (disabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {})
 
 export default function App() {
-  const ed = useEditor()
+  const { settings, update: updateSettings } = useSettings()
+  const ed = useEditor(settings)
   const theme = useTheme()
   const mobile = useMediaQuery(theme.breakpoints.down('md'))
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
 
   const { menus, context } = useAppMenus({
@@ -48,6 +52,7 @@ export default function App() {
     toggleSpectrogram: () => ed.setShowSpec(!ed.showSpec),
     togglePitch: () => ed.setShowPitch(!ed.showPitch),
     showShortcuts: () => setShortcutsOpen(true),
+    showSettings: () => setSettingsOpen(true),
   })
 
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
@@ -176,6 +181,12 @@ export default function App() {
 
       <ContextMenu position={contextPos} entries={context} onClose={() => setContextPos(null)} />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={settings}
+        onChange={updateSettings}
+      />
       {ed.dragOver && <DropOverlay />}
 
       <Snackbar open={!!ed.toast} autoHideDuration={4000} onClose={() => ed.setToast(null)}>
