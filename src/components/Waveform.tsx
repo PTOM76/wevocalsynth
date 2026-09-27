@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Box, IconButton, Slider, Stack, Tooltip, Typography, alpha, useTheme } from '@mui/material'
+import { Box, IconButton, Slider, Stack, Tooltip, Typography, alpha, useMediaQuery, useTheme } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faExpand, faMagnifyingGlassMinus, faMagnifyingGlassPlus } from '@fortawesome/free-solid-svg-icons'
+import type { Theme } from '@mui/material'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 
@@ -60,6 +61,11 @@ export function formatTime(t: number) {
 
 export default function Waveform({ clip, position, playing, selection, onSeek, onSelect }: Props) {
   const theme = useTheme()
+  // Canvas は CSS 変数を使えないため、現在の配色（ライト/ダーク）のパレット値を直接使う
+  const dark = useMediaQuery('(prefers-color-scheme: dark)')
+  const schemes = (theme as Theme & { colorSchemes?: Partial<Record<'light' | 'dark', { palette: Theme['palette'] }>> })
+    .colorSchemes
+  const pal = schemes?.[dark ? 'dark' : 'light']?.palette ?? theme.palette
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const dragRef = useRef<{ x0: number; t0: number; dragging: boolean } | null>(null)
@@ -142,8 +148,8 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
     const toX = (t: number) => ((t - view.start) / view.dur) * width
 
     // 目盛り
-    g.fillStyle = theme.palette.text.secondary
-    g.strokeStyle = theme.palette.divider
+    g.fillStyle = pal.text.secondary
+    g.strokeStyle = pal.divider
     g.font = `11px ${theme.typography.fontFamily}`
     g.textBaseline = 'middle'
     const step = rulerStep(view.dur, width)
@@ -167,9 +173,9 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
     if (selection) {
       const x0 = toX(selection.start)
       const x1 = toX(selection.end)
-      g.fillStyle = alpha(theme.palette.primary.main, 0.16)
+      g.fillStyle = alpha(pal.primary.main, 0.16)
       g.fillRect(x0, RULER_HEIGHT, x1 - x0, WAVE_HEIGHT)
-      g.fillStyle = theme.palette.primary.main
+      g.fillStyle = pal.primary.main
       g.fillRect(x0 - 1, RULER_HEIGHT, 2, WAVE_HEIGHT)
       g.fillRect(x1 - 1, RULER_HEIGHT, 2, WAVE_HEIGHT)
     }
@@ -177,19 +183,19 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
     // 波形
     const mid = RULER_HEIGHT + WAVE_HEIGHT / 2
     const amp = WAVE_HEIGHT / 2 - 4
-    g.fillStyle = theme.palette.primary.dark
+    g.fillStyle = dark ? pal.primary.main : pal.primary.dark
     for (let x = 0; x < width; x++) {
       const y0 = mid - peaks.max[x] * amp
       const y1 = mid - peaks.min[x] * amp
       g.fillRect(x, y0, 1, Math.max(1, y1 - y0))
     }
-    g.fillStyle = theme.palette.divider
+    g.fillStyle = pal.divider
     g.fillRect(0, mid, width, 1)
 
     // 再生位置
-    g.fillStyle = theme.palette.secondary.main
+    g.fillStyle = pal.secondary.main
     g.fillRect(Math.round(toX(position)) - 1, 0, 2, h)
-  }, [peaks, width, view, position, selection, theme])
+  }, [peaks, width, view, position, selection, pal, dark, theme])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -264,7 +270,7 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
           sx={{ mx: 1 }}
         />
         <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
-          表示 {view.dur.toFixed(view.dur < 1 ? 3 : 1)}s
+          {view.dur.toFixed(view.dur < 1 ? 3 : 1)}s
         </Typography>
       </Stack>
     </Box>

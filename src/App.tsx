@@ -11,7 +11,6 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Paper,
   Snackbar,
   Stack,
   TextField,
@@ -112,7 +111,6 @@ export default function App() {
     setProgress(0)
     try {
       const range = selection ?? { start: 0, end: clipDuration(edited) }
-      const t0 = performance.now()
       const result = await applyEdit(edited, range, params, setProgress)
       setHistory((h) => ({
         past: [...h.past, edited].slice(-HISTORY_LIMIT),
@@ -122,7 +120,7 @@ export default function App() {
       setSource('edited')
       setSelection(selection ? result.range : null)
       setParams((p) => ({ ...p, semitones: 0, stretch: 1, formantSemitones: 0 }))
-      setToast({ severity: 'success', message: `適用しました（${((performance.now() - t0) / 1000).toFixed(2)}秒）` })
+      setToast({ severity: 'success', message: '適用しました' })
     } catch (e) {
       setToast({ severity: 'error', message: `処理に失敗しました: ${String(e)}` })
     } finally {
@@ -285,30 +283,21 @@ export default function App() {
 
       <Container maxWidth="lg" sx={{ py: 3 }}>
         {!shown ? (
-          <Paper
-            variant="outlined"
-            onClick={() => inputRef.current?.click()}
-            sx={{
-              p: 8,
-              textAlign: 'center',
-              cursor: 'pointer',
-              borderStyle: 'dashed',
-              borderWidth: 2,
-              borderRadius: 4,
-              borderColor: dragOver ? 'primary.main' : 'divider',
-              bgcolor: dragOver ? 'action.hover' : 'background.paper',
-            }}
-          >
-            <Box sx={{ color: 'primary.main', fontSize: 64 }}>
+          <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center', py: 12 }}>
+            <Box sx={{ color: 'text.secondary', fontSize: 40 }}>
               <FontAwesomeIcon icon={faFileArrowUp} />
             </Box>
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              音声ファイルをドロップ、またはクリックして選択
+            <Typography variant="body2" color="text.secondary">
+              WAV / MP3 / FLAC など（ドロップ可）
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              WAV推奨（MP3 / OGG / FLAC などブラウザが対応する形式も可）。ファイルはサーバーへ送信されません。
-            </Typography>
-          </Paper>
+            <Button
+              variant="contained"
+              startIcon={<FontAwesomeIcon icon={faFolderOpen} />}
+              onClick={() => inputRef.current?.click()}
+            >
+              ファイルを選択
+            </Button>
+          </Stack>
         ) : (
           <Stack spacing={3}>
             <Card>
@@ -346,7 +335,7 @@ export default function App() {
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>
                     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                       <Tooltip title="再生 / 一時停止 (Space)">
-                        <IconButton aria-label="再生 / 一時停止" color="primary" size="large" onClick={togglePlay} sx={{ bgcolor: 'action.selected' }}>
+                        <IconButton aria-label="再生 / 一時停止" color="primary" onClick={togglePlay}>
                           {player.playing ? <FontAwesomeIcon icon={faPause} /> : <FontAwesomeIcon icon={faPlay} />}
                         </IconButton>
                       </Tooltip>
@@ -365,7 +354,7 @@ export default function App() {
                         disabled={!selection || source !== 'edited'}
                         onClick={() => selection && void player.play(selection.start, selection.end)}
                       >
-                        選択範囲を試聴
+                        範囲を試聴
                       </Button>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace', minWidth: 170 }}>
                         {formatTime(player.position)} / {formatTime(duration)}
@@ -377,7 +366,7 @@ export default function App() {
                         <TextField
                           size="small"
                           type="number"
-                          label="開始 (秒)"
+                          label="開始"
                           value={selection ? +selection.start.toFixed(3) : ''}
                           onChange={(e) => setSelectionField('start', e.target.value)}
                           slotProps={{ htmlInput: { step: 0.01, min: 0 } }}
@@ -386,7 +375,7 @@ export default function App() {
                         <TextField
                           size="small"
                           type="number"
-                          label="終了 (秒)"
+                          label="終了"
                           value={selection ? +selection.end.toFixed(3) : ''}
                           onChange={(e) => setSelectionField('end', e.target.value)}
                           slotProps={{ htmlInput: { step: 0.01, min: 0 } }}
@@ -430,10 +419,6 @@ export default function App() {
                       </Stack>
                     )}
                   </Stack>
-                  <Typography variant="caption" color="text.secondary">
-                    波形をドラッグで範囲選択、クリックで再生位置を移動。ホイールで横スクロール、Ctrl+ホイールで拡大縮小。
-                    {source === 'original' && ' 原音表示中は比較試聴のみ可能です。'}
-                  </Typography>
                 </Stack>
               </CardContent>
             </Card>
@@ -452,6 +437,29 @@ export default function App() {
           </Stack>
         )}
       </Container>
+
+      {/* ドラッグ中は画面全体でドロップを受け付けることを示す */}
+      {dragOver && (
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 'modal',
+            pointerEvents: 'none',
+            bgcolor: 'action.hover',
+            outline: 2,
+            outlineColor: 'primary.main',
+            outlineOffset: -2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Typography variant="h6" color="primary">
+            ドロップして開く
+          </Typography>
+        </Box>
+      )}
 
       <Snackbar open={!!toast} autoHideDuration={4000} onClose={() => setToast(null)}>
         {toast ? (

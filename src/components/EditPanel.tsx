@@ -13,6 +13,7 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import type { Algorithm } from '../dsp/engine'
@@ -40,8 +41,8 @@ interface Props {
 }
 
 const ALGORITHM_HINT: Record<Algorithm, string> = {
-  wsola: '声・子音のアタックに強く高速。大きく伸ばすと周期の繰り返し感が出やすい。',
-  pv: '大きく伸ばしてもなめらか。やや残響感が出てアタックがにじむ。処理は遅め。',
+  wsola: '子音に強い・高速',
+  pv: '伸ばしてもなめらか・低速'
 }
 
 const STRETCH_PRESETS = [0.5, 0.75, 1, 1.5, 2, 4]
@@ -64,17 +65,18 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
               aria-label="処理方式"
               onChange={(_, v: Algorithm | null) => v && onChange({ ...params, algorithm: v })}
             >
-              <ToggleButton value="wsola">WSOLA</ToggleButton>
-              <ToggleButton value="pv">Phase Vocoder</ToggleButton>
+              <Tooltip title={ALGORITHM_HINT.wsola}>
+                <ToggleButton value="wsola">WSOLA</ToggleButton>
+              </Tooltip>
+              <Tooltip title={ALGORITHM_HINT.pv}>
+                <ToggleButton value="pv">Phase Vocoder</ToggleButton>
+              </Tooltip>
             </ToggleButtonGroup>
           </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: '8px !important' }}>
-            {ALGORITHM_HINT[params.algorithm]}
-          </Typography>
 
           <Box>
             <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="subtitle2">ピッチ（半音）</Typography>
+              <Typography variant="subtitle2">ピッチ</Typography>
               <TextField
                 size="small"
                 type="number"
@@ -110,7 +112,7 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
               <TextField
                 size="small"
                 type="number"
-                label="移動（半音）"
+                label="移動"
                 disabled={!preserveFormant}
                 value={formantSemitones}
                 onChange={(e) => onChange({ ...params, formantSemitones: clampNum(e.target.value, -12, 12, 0) })}
@@ -129,14 +131,11 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
               valueLabelDisplay="auto"
               onChange={(_, v) => onChange({ ...params, formantSemitones: v as number })}
             />
-            <Typography variant="caption" color="text.secondary">
-              ONでピッチを変えても声質（ケロ声・太い声化）を保つ。移動で声質だけを高く／低くできる。
-            </Typography>
           </Box>
 
           <Box>
             <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="subtitle2">時間伸縮（倍率）</Typography>
+              <Typography variant="subtitle2">長さ</Typography>
               <TextField
                 size="small"
                 type="number"
@@ -174,7 +173,7 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
           </Box>
 
           <Typography variant="body2" color="text.secondary">
-            {hasSelection ? '選択範囲' : '全体（範囲未選択）'}の長さ: {formatTime(targetDuration)} →{' '}
+            {hasSelection ? '選択範囲' : '全体'}: {formatTime(targetDuration)} →{' '}
             <b>{formatTime(targetDuration * stretch)}</b>
           </Typography>
 

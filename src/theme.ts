@@ -1,32 +1,62 @@
 import { createTheme } from '@mui/material'
 
-/** Material 3 inspired theme (baseline purple palette, rounded shapes). */
+/**
+ * Google 製品寄りの Material Design テーマ。
+ * 角丸は控えめ（4px）にして、ツールらしい落ち着いた見た目にする。
+ */
 export const theme = createTheme({
   cssVariables: { colorSchemeSelector: 'media' },
   colorSchemes: {
     light: {
       palette: {
-        primary: { main: '#6750A4' },
-        secondary: { main: '#B3261E' },
-        background: { default: '#FEF7FF', paper: '#FFFFFF' },
+        primary: { main: '#1A73E8' },
+        secondary: { main: '#D93025' },
+        background: { default: '#F8F9FA', paper: '#FFFFFF' },
+        divider: '#DADCE0',
       },
     },
     dark: {
       palette: {
-        primary: { main: '#D0BCFF' },
-        secondary: { main: '#F2B8B5' },
-        background: { default: '#141218', paper: '#211F26' },
+        primary: { main: '#8AB4F8' },
+        secondary: { main: '#F28B82' },
+        background: { default: '#202124', paper: '#292A2D' },
+        divider: '#3C4043',
       },
     },
   },
-  shape: { borderRadius: 12 },
+  shape: { borderRadius: 4 },
   typography: {
     fontFamily: 'Roboto, "Noto Sans JP", "Helvetica Neue", Arial, sans-serif',
     button: { textTransform: 'none', fontWeight: 500 },
   },
   components: {
-    MuiButton: { styleOverrides: { root: { borderRadius: 20, paddingInline: 20 } } },
-    MuiCard: { defaultProps: { variant: 'outlined' }, styleOverrides: { root: { borderRadius: 16 } } },
-    MuiToggleButton: { styleOverrides: { root: { borderRadius: 20, paddingInline: 16 } } },
+    MuiButton: { defaultProps: { disableElevation: true } },
+    MuiCard: { defaultProps: { variant: 'outlined' } },
+    MuiChip: { styleOverrides: { root: { borderRadius: 4 } } },
+    // 目盛りを黒系にしない: レール上は primary、バー上は白で描く
+    MuiSlider: {
+      styleOverrides: {
+        mark: ({ theme }) => ({
+          width: 2,
+          height: 8,
+          borderRadius: 0,
+          backgroundColor: theme.vars!.palette.primary.main,
+        }),
+        markActive: {
+          backgroundColor: '#FFFFFF',
+          opacity: 0.8,
+        },
+        // ライト/ダークで確実に切り替わるよう色を直接指定する
+        markLabel: ({ theme }) => ({
+          fontSize: 12,
+          color: '#5F6368',
+          ...theme.applyStyles('dark', { color: '#BDC1C6' }),
+        }),
+        markLabelActive: ({ theme }) => ({
+          color: '#3C4043',
+          ...theme.applyStyles('dark', { color: '#E8EAED' }),
+        }),
+      },
+    },
   },
 })
