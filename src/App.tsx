@@ -1,37 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  Alert,
-  AppBar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Container,
-  IconButton,
-  Menu,
-  MenuItem,
-  Snackbar,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Toolbar,
-  Tooltip,
-  Typography,
-} from '@mui/material'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCirclePlay, faDownload, faFileArrowUp, faFolderOpen, faPause, faPlay, faRotateLeft, faRotateRight, faStop, faWaveSquare, faXmark, faScissors, faCopy, faPaste, faCropSimple } from '@fortawesome/free-solid-svg-icons'
+import { useCallback, useRef, useState } from 'react'
+import { Alert, Box, Card, CardContent, Container, Snackbar, Stack } from '@mui/material'
 import type { Clip, Range } from './audio/types'
 import { clipDuration } from './audio/types'
 import { decodeFile } from './audio/decode'
-import { encodeWav, type WavFormat } from './audio/wav'
+import { downloadWav, type WavFormat } from './audio/wav'
 import {
   applyEdit,
   applyPitchCurve,
-  processRange,
-  spliceProcessed,
-  type ProcessedRange,
   fadeRange,
   gainRange,
   insertAt,
@@ -39,273 +14,131 @@ import {
   removeRange,
   silenceRange,
   sliceClip,
+  spliceProcessed,
 } from './audio/edit'
 import { usePlayer } from './audio/usePlayer'
-import { analyzeF0, analyzeSpectrogram, type Spectrogram } from './dsp/engine'
-import Waveform, { formatTime, type DrawPoint } from './components/Waveform'
+import { analyzeF0, analyzeSpectrogram } from './dsp/engine'
+import { useHistory } from './hooks/useHistory'
+import { useFileDrop } from './hooks/useFileDrop'
+import { useClipAnalysis } from './hooks/useClipAnalysis'
+import { usePreview } from './hooks/usePreview'
+import { usePitchTarget } from './hooks/usePitchTarget'
+import { useShortcuts } from './hooks/useShortcuts'
+import AppHeader from './components/AppHeader'
+import { DropOverlay, EmptyState } from './components/EmptyState'
+import { ClipInfo, TransportBar, type Source } from './components/TransportBar'
+import Waveform from './components/Waveform'
 import EditPanel, { type EditParams } from './components/EditPanel'
 import VolumePanel, { type VolumeAction } from './components/VolumePanel'
 
-const HISTORY_LIMIT = 20
-/** 自動プレビューする範囲の上限（秒） */
-const PREVIEW_MAX_SEC = 20
-/** パラメータ変更からプレビュー処理を始めるまでの待ち時間（ミリ秒） */
-const PREVIEW_DELAY_MS = 300
-
-const isNeutral = (p: EditParams) =>
-  p.semitones === 0 && p.stretch === 1 && !(p.preserveFormant && p.formantSemitones !== 0)
-
-const sameParams = (a: EditParams, b: EditParams) =>
-  a.semitones === b.semitones &&
-  a.stretch === b.stretch &&
-  a.algorithm === b.algorithm &&
-  a.preserveFormant === b.preserveFormant &&
-  a.formantSemitones === b.formantSemitones
-
-/** 加工済みプレビュー。どのクリップ・範囲・パラメータで作ったかを持ち、一致するときだけ使う */
-interface Preview {
-  clip: Clip
-  range: Range
-  params: EditParams
-  result: ProcessedRange
-}
-
-type Source = 'edited' | 'original'
 type Toast = { severity: 'success' | 'error' | 'info'; message: string }
+
+/** 加工パラメータのうち、適用後やファイルを開いたときに戻す値 */
+const NEUTRAL = { semitones: 0, stretch: 1, formantSemitones: 0 }
 
 export default function App() {
   const [fileName, setFileName] = useState('')
   const [original, setOriginal] = useState<Clip | null>(null)
-  const [history, setHistory] = useState<{ past: Clip[]; present: Clip | null; future: Clip[] }>({
-    past: [],
-    present: null,
-    future: [],
-  })
+  const history = useHistory()
   const [source, setSource] = useState<Source>('edited')
   const [selection, setSelection] = useState<Range | null>(null)
   const [params, setParams] = useState<EditParams>({
-    semitones: 0,
-    stretch: 1,
+    ...NEUTRAL,
     algorithm: 'wsola',
     preserveFormant: false,
-    formantSemitones: 0,
   })
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState(0)
   const [clipboard, setClipboard] = useState<Clip | null>(null)
   const [showPitch, setShowPitch] = useState(false)
-  const [pitch, setPitch] = useState<{ clip: Clip; f0: Float32Array } | null>(null)
-  const [penMode, setPenMode] = useState(false)
   const [showSpec, setShowSpec] = useState(false)
-  const [spec, setSpec] = useState<{ clip: Clip; data: Spectrogram } | null>(null)
-  // 描いた目標ピッチ（Hz、F0 と同じフレーム、0 は未編集）。描画中は中身を直接書き換える
-  const [target, setTargetState] = useState<{ clip: Clip; hz: Float32Array } | null>(null)
-  // 描画中は再レンダーを待たずに同じ配列へ書き込むため、最新値を ref にも持つ
-  const targetRef = useRef(target)
-  const setTarget = (t: typeof target) => {
-    targetRef.current = t
-    setTargetState(t)
-  }
-  const [dragOver, setDragOver] = useState(false)
+  const [penMode, setPenMode] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
-  const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const edited = history.present
   const shown = source === 'original' ? original : edited
-  const player = usePlayer(shown)
   const duration = shown ? clipDuration(shown) : 0
+  const editing = source === 'edited' && !!edited
+  const player = usePlayer(shown)
+  const pitchTarget = usePitchTarget()
 
-  // スペクトログラム表示中は、表示中のクリップが変わるたびに計算し直す
-  useEffect(() => {
-    if (!showSpec || !shown || spec?.clip === shown) return
-    let cancelled = false
-    analyzeSpectrogram(shown.channels, shown.sampleRate)
-      .then((data) => !cancelled && setSpec({ clip: shown, data }))
-      .catch((e) => !cancelled && setToast({ severity: 'error', message: `スペクトログラムの計算に失敗しました: ${String(e)}` }))
-    return () => {
-      cancelled = true
-    }
-  }, [showSpec, shown, spec])
+  const fail = (what: string) => (e: unknown) => setToast({ severity: 'error', message: `${what}: ${String(e)}` })
+  // ピッチ・スペクトログラムは表示を ON にしたときだけ解析する
+  const pitch = useClipAnalysis(showPitch, shown, (c) => analyzeF0(c.channels, c.sampleRate), fail('ピッチ解析に失敗しました'))
+  const spec = useClipAnalysis(showSpec, shown, (c) => analyzeSpectrogram(c.channels, c.sampleRate), fail('スペクトログラムの計算に失敗しました'))
 
-  // ピッチ表示中は、表示中のクリップが変わるたびに F0 を解析し直す
-  useEffect(() => {
-    if (!showPitch || !shown || pitch?.clip === shown) return
-    let cancelled = false
-    analyzeF0(shown.channels, shown.sampleRate)
-      .then((f0) => !cancelled && setPitch({ clip: shown, f0 }))
-      .catch((e) => !cancelled && setToast({ severity: 'error', message: `ピッチ解析に失敗しました: ${String(e)}` }))
-    return () => {
-      cancelled = true
-    }
-  }, [showPitch, shown, pitch])
-
-  const loadFile = useCallback(async (file: File) => {
-    try {
-      const clip = await decodeFile(file)
-      setFileName(file.name)
-      setOriginal(clip)
-      setHistory({ past: [], present: clip, future: [] })
-      setClipboard(null)
-      setSource('edited')
-      setSelection(null)
-    } catch (e) {
-      setToast({ severity: 'error', message: `読み込めませんでした: ${file.name} (${String(e)})` })
-    }
-  }, [])
-
-  // ページ上のどこにドロップしても読み込めるようにする
-  useEffect(() => {
-    const over = (e: DragEvent) => {
-      e.preventDefault()
-      setDragOver(true)
-    }
-    const leave = (e: DragEvent) => {
-      if (!e.relatedTarget) setDragOver(false)
-    }
-    const drop = (e: DragEvent) => {
-      e.preventDefault()
-      setDragOver(false)
-      const file = e.dataTransfer?.files[0]
-      if (file) void loadFile(file)
-    }
-    window.addEventListener('dragover', over)
-    window.addEventListener('dragleave', leave)
-    window.addEventListener('drop', drop)
-    return () => {
-      window.removeEventListener('dragover', over)
-      window.removeEventListener('dragleave', leave)
-      window.removeEventListener('drop', drop)
-    }
-  }, [loadFile])
-
-  // ---- プレビュー: パラメータを変えたら加工範囲を裏で処理しておく ----
-  const [preview, setPreview] = useState<Preview | null>(null)
-  const [previewBusy, setPreviewBusy] = useState(false)
+  // 加工・音量編集の対象（選択範囲、なければ全体）
   const editRange: Range | null = edited ? (selection ?? { start: 0, end: clipDuration(edited) }) : null
-  const previewTooLong = !!editRange && editRange.end - editRange.start > PREVIEW_MAX_SEC
-  const previewMatches =
-    !!preview &&
-    !!editRange &&
-    preview.clip === edited &&
-    preview.range.start === editRange.start &&
-    preview.range.end === editRange.end &&
-    sameParams(preview.params, params)
-  const previewClip = useMemo<Clip | null>(
-    () => (previewMatches && preview ? { sampleRate: preview.clip.sampleRate, channels: preview.result.channels } : null),
-    [previewMatches, preview],
-  )
-  const previewPlayer = usePlayer(previewClip)
+  const preview = usePreview(edited, editRange, params, editing && !busy)
 
-  useEffect(() => {
-    if (!edited || !editRange || source !== 'edited' || busy || isNeutral(params) || previewTooLong || previewMatches) return
-    let cancelled = false
-    const clip = edited
-    const range = editRange
-    const p = params
-    const timer = setTimeout(() => {
-      setPreviewBusy(true)
-      processRange(clip, range, p)
-        .then((result) => !cancelled && setPreview({ clip, range, params: p, result }))
-        .catch(() => {})
-        .finally(() => !cancelled && setPreviewBusy(false))
-    }, PREVIEW_DELAY_MS)
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-      setPreviewBusy(false)
-    }
-    // editRange はクリップと選択範囲から毎回作るため、元の値で依存を指定する
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [edited, selection, params, source, busy, previewTooLong, previewMatches])
-
-  const togglePreview = () => {
-    if (previewPlayer.playing) {
-      previewPlayer.pause()
-    } else {
-      player.pause()
-      void previewPlayer.play(0)
-    }
+  const commit = (clip: Clip) => {
+    history.commit(clip)
+    setSource('edited')
   }
 
-  const apply = async () => {
-    if (!edited) return
+  const loadFile = useCallback(
+    async (file: File) => {
+      try {
+        const clip = await decodeFile(file)
+        setFileName(file.name)
+        setOriginal(clip)
+        history.reset(clip)
+        setSource('edited')
+        setSelection(null)
+        setClipboard(null)
+        // 前のファイルの表示設定を持ち越すと、開いた直後に重い解析やプレビュー処理が走るため戻す
+        setShowPitch(false)
+        setShowSpec(false)
+        setPenMode(false)
+        pitchTarget.clear()
+        setParams((p) => ({ ...p, ...NEUTRAL }))
+      } catch (e) {
+        setToast({ severity: 'error', message: `読み込めませんでした: ${file.name} (${String(e)})` })
+      }
+    },
+    [history, pitchTarget],
+  )
+  const dragOver = useFileDrop((f) => void loadFile(f))
+
+  /** 時間のかかる処理を、処理中表示とエラー通知付きで実行する */
+  const runTask = async (task: () => Promise<void>) => {
     setBusy(true)
     setProgress(0)
-    previewPlayer.pause()
+    preview.player.pause()
     try {
-      const range = selection ?? { start: 0, end: clipDuration(edited) }
-      // 同じ設定のプレビューがあれば、それを差し込むだけで済ませる
-      const result =
-        previewMatches && preview
-          ? spliceProcessed(edited, preview.result)
-          : await applyEdit(edited, range, params, setProgress)
-      setHistory((h) => ({
-        past: [...h.past, edited].slice(-HISTORY_LIMIT),
-        present: result.clip,
-        future: [],
-      }))
-      setSource('edited')
-      setSelection(selection ? result.range : null)
-      setParams((p) => ({ ...p, semitones: 0, stretch: 1, formantSemitones: 0 }))
-      setToast({ severity: 'success', message: '適用しました' })
+      await task()
     } catch (e) {
-      setToast({ severity: 'error', message: `処理に失敗しました: ${String(e)}` })
+      fail('処理に失敗しました')(e)
     } finally {
       setBusy(false)
     }
   }
 
-  // ピッチ帯に描いた線を目標ピッチに書き込む（フレーム間は音高を線形補間）
-  const drawTarget = (from: DrawPoint, to: DrawPoint) => {
-    if (!pitch || pitch.clip !== shown) return
-    const cur = targetRef.current
-    let hz = cur?.clip === shown ? cur.hz : null
-    if (!hz) {
-      hz = new Float32Array(pitch.f0.length)
-      setTarget({ clip: shown, hz })
-    }
-    const [a, b] = from.k <= to.k ? [from, to] : [to, from]
-    for (let k = Math.max(0, a.k); k <= Math.min(hz.length - 1, b.k); k++) {
-      if (a.midi === null || b.midi === null) {
-        hz[k] = 0
-        continue
-      }
-      // 無声のフレームにはピッチを付けられない
-      if (!(pitch.f0[k] > 0)) continue
-      const g = b.k === a.k ? 1 : (k - a.k) / (b.k - a.k)
-      const m = a.midi + (b.midi - a.midi) * g
-      hz[k] = 440 * 2 ** ((m - 69) / 12)
-    }
-  }
+  const apply = () =>
+    runTask(async () => {
+      if (!edited || !editRange) return
+      // 同じ設定のプレビューがあれば、それを差し込むだけで済ませる
+      const result = preview.result
+        ? spliceProcessed(edited, preview.result)
+        : await applyEdit(edited, editRange, params, setProgress)
+      commit(result.clip)
+      setSelection(selection ? result.range : null)
+      setParams((p) => ({ ...p, ...NEUTRAL }))
+      setToast({ severity: 'success', message: '適用しました' })
+    })
 
-  const applyCurve = async () => {
-    if (!edited || !pitch || pitch.clip !== edited || target?.clip !== edited) return
-    setBusy(true)
-    setProgress(0)
-    try {
-      const next = await applyPitchCurve(edited, pitch.f0, target.hz, params, setProgress)
+  const applyCurve = () =>
+    runTask(async () => {
+      const target = pitchTarget.target
+      if (!edited || !pitch || shown !== edited || target?.clip !== edited) return
+      const next = await applyPitchCurve(edited, pitch, target.hz, params, setProgress)
       if (next) {
         commit(next)
         setToast({ severity: 'success', message: '適用しました' })
       }
-      setTarget(null)
-    } catch (e) {
-      setToast({ severity: 'error', message: `処理に失敗しました: ${String(e)}` })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  // 新しいクリップを履歴に積む（元に戻す用）
-  const commit = (clip: Clip) => {
-    setHistory((h) => ({
-      past: h.present ? [...h.past, h.present].slice(-HISTORY_LIMIT) : h.past,
-      present: clip,
-      future: [],
-    }))
-    setSource('edited')
-  }
+      pitchTarget.clear()
+    })
 
   const copy = () => {
     if (edited && selection) setClipboard(sliceClip(edited, selection))
@@ -330,350 +163,148 @@ export default function App() {
     setSelection(null)
   }
 
-  // 音量編集は選択範囲（なければ全体）に対して行う
-  const volumeRange = (): Range | null => (edited ? (selection ?? { start: 0, end: clipDuration(edited) }) : null)
   const applyGain = (db: number) => {
-    const r = volumeRange()
-    if (edited && r) commit(gainRange(edited, r, db))
+    if (edited && editRange) commit(gainRange(edited, editRange, db))
   }
   const applyVolumeAction = (action: VolumeAction) => {
-    const r = volumeRange()
-    if (!edited || !r) return
+    if (!edited || !editRange) return
     if (action === 'normalize') {
-      const next = normalizeRange(edited, r)
+      const next = normalizeRange(edited, editRange)
       if (next) commit(next)
       else setToast({ severity: 'info', message: '無音のためノーマライズできません' })
     } else if (action === 'silence') {
-      commit(silenceRange(edited, r))
+      commit(silenceRange(edited, editRange))
     } else {
-      commit(fadeRange(edited, r, action === 'fadeIn' ? 'in' : 'out'))
+      commit(fadeRange(edited, editRange, action === 'fadeIn' ? 'in' : 'out'))
     }
   }
 
-  const undo = () =>
-    setHistory((h) =>
-      h.past.length && h.present
-        ? { past: h.past.slice(0, -1), present: h.past[h.past.length - 1], future: [h.present, ...h.future] }
-        : h,
-    )
-  const redo = () =>
-    setHistory((h) =>
-      h.future.length && h.present
-        ? { past: [...h.past, h.present], present: h.future[0], future: h.future.slice(1) }
-        : h,
-    )
-
   const exportWav = (format: WavFormat) => {
-    setExportAnchor(null)
-    if (!edited) return
-    const url = URL.createObjectURL(encodeWav(edited, format))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${fileName.replace(/\.[^.]+$/, '') || 'audio'}_wevocal.wav`
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    if (edited) downloadWav(edited, `${fileName.replace(/\.[^.]+$/, '') || 'audio'}_wevocal.wav`, format)
   }
 
+  // 通常の再生と試聴は、片方を始めたらもう片方を止める
   const togglePlay = () => {
-    previewPlayer.pause()
+    preview.player.pause()
     if (player.playing) player.pause()
     else void player.play(player.position >= duration - 1e-3 ? 0 : player.position)
   }
-
-  // キーボード: Space = 再生/一時停止、Ctrl+Z / Ctrl+Y = 元に戻す/やり直す、Ctrl+X/C/V = 切り取り/コピー/貼り付け
-  const keyRef = useRef({ togglePlay, undo, redo, cut, copy, paste })
-  keyRef.current = { togglePlay, undo, redo, cut, copy, paste }
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).closest('input, textarea')) return
-      const mod = e.ctrlKey || e.metaKey
-      const k = e.key.toLowerCase()
-      if (mod && (k === 'x' || k === 'c' || k === 'v')) {
-        e.preventDefault()
-        if (k === 'x') keyRef.current.cut()
-        else if (k === 'c') keyRef.current.copy()
-        else keyRef.current.paste()
-      } else if (e.code === 'Space') {
-        e.preventDefault()
-        keyRef.current.togglePlay()
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault()
-        if (e.shiftKey) keyRef.current.redo()
-        else keyRef.current.undo()
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
-        e.preventDefault()
-        keyRef.current.redo()
-      }
+  const togglePreview = () => {
+    if (preview.player.playing) {
+      preview.player.pause()
+    } else {
+      player.pause()
+      void preview.player.play(0)
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
-  const setSelectionField = (key: keyof Range, value: string) => {
-    const v = Number(value)
-    if (!Number.isFinite(v)) return
-    const cur = selection ?? { start: 0, end: duration }
-    const next = { ...cur, [key]: Math.max(0, Math.min(duration, v)) }
-    setSelection(next.end > next.start ? next : null)
   }
+
+  useShortcuts({ togglePlay, undo: history.undo, redo: history.redo, cut, copy, paste })
+  const openFile = () => inputRef.current?.click()
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Toolbar sx={{ gap: 1 }}>
-          <Box component="span" sx={{ color: 'primary.main', display: 'flex' }}>
-            <FontAwesomeIcon icon={faWaveSquare} />
-          </Box>
-          <Typography variant="h6" sx={{ flexGrow: 1 }} noWrap>
-            WeVocalSynth
-          </Typography>
-          <Tooltip title="元に戻す (Ctrl+Z)">
-            <span>
-              <IconButton aria-label="元に戻す" onClick={undo} disabled={!history.past.length || busy}>
-                <FontAwesomeIcon icon={faRotateLeft} />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title="やり直す (Ctrl+Y)">
-            <span>
-              <IconButton aria-label="やり直す" onClick={redo} disabled={!history.future.length || busy}>
-                <FontAwesomeIcon icon={faRotateRight} />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Button variant="outlined" startIcon={<FontAwesomeIcon icon={faFolderOpen} />} onClick={() => inputRef.current?.click()}>
-            開く
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<FontAwesomeIcon icon={faDownload} />}
-            disabled={!edited || busy}
-            onClick={(e) => setExportAnchor(e.currentTarget)}
-          >
-            WAV出力
-          </Button>
-          <Menu anchorEl={exportAnchor} open={!!exportAnchor} onClose={() => setExportAnchor(null)}>
-            <MenuItem onClick={() => exportWav('pcm16')}>16-bit PCM</MenuItem>
-            <MenuItem onClick={() => exportWav('pcm24')}>24-bit PCM</MenuItem>
-            <MenuItem onClick={() => exportWav('float32')}>32-bit float</MenuItem>
-          </Menu>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="audio/*,.wav"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) void loadFile(f)
-              e.target.value = ''
-            }}
-          />
-        </Toolbar>
-      </AppBar>
+      <AppHeader
+        canUndo={history.canUndo}
+        canRedo={history.canRedo}
+        canExport={!!edited}
+        busy={busy}
+        onUndo={history.undo}
+        onRedo={history.redo}
+        onOpen={openFile}
+        onExport={exportWav}
+      />
+      <input
+        ref={inputRef}
+        type="file"
+        accept="audio/*,.wav"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) void loadFile(f)
+          e.target.value = ''
+        }}
+      />
 
       <Container maxWidth="lg" sx={{ py: 3 }}>
         {!shown ? (
-          <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center', py: 12 }}>
-            <Box sx={{ color: 'text.secondary', fontSize: 40 }}>
-              <FontAwesomeIcon icon={faFileArrowUp} />
-            </Box>
-            <Typography variant="body2" color="text.secondary">
-              WAV / MP3 / FLAC など（ドロップ可）
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<FontAwesomeIcon icon={faFolderOpen} />}
-              onClick={() => inputRef.current?.click()}
-            >
-              ファイルを選択
-            </Button>
-          </Stack>
+          <EmptyState onOpen={openFile} />
         ) : (
           <Stack spacing={3}>
             <Card>
               <CardContent>
                 <Stack spacing={2}>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
-                    <Typography variant="subtitle1" sx={{ flexGrow: 1, fontWeight: 500 }} noWrap>
-                      {fileName}
-                    </Typography>
-                    <Stack direction="row" spacing={1}>
-                      <Chip size="small" label={`${shown.sampleRate} Hz`} />
-                      <Chip size="small" label={shown.channels.length === 1 ? 'Mono' : `${shown.channels.length} ch`} />
-                      <Chip size="small" label={formatTime(duration)} />
-                    </Stack>
-                    <ToggleButtonGroup
-                      size="small"
-                      exclusive
-                      value={source}
-                      onChange={(_, v: Source | null) => v && setSource(v)}
-                    >
-                      <ToggleButton value="edited">加工後</ToggleButton>
-                      <ToggleButton value="original">原音</ToggleButton>
-                    </ToggleButtonGroup>
-                  </Stack>
-
+                  <ClipInfo fileName={fileName} clip={shown} duration={duration} source={source} onSourceChange={setSource} />
                   <Waveform
                     clip={shown}
                     position={player.position}
                     playing={player.playing}
-                    selection={source === 'edited' ? selection : null}
+                    selection={editing ? selection : null}
                     onSeek={player.seek}
-                    onSelect={source === 'edited' ? setSelection : () => {}}
-                    pitch={pitch?.clip === shown ? pitch.f0 : null}
+                    onSelect={editing ? setSelection : () => {}}
+                    pitch={pitch}
                     showPitch={showPitch}
                     onShowPitchChange={setShowPitch}
-                    target={target?.clip === shown ? target.hz : null}
-                    penMode={penMode && source === 'edited'}
+                    target={pitchTarget.target?.clip === shown ? pitchTarget.target.hz : null}
+                    penMode={penMode && editing}
                     onPenModeChange={setPenMode}
-                    onDraw={drawTarget}
+                    onDraw={(from, to) => shown && pitch && pitchTarget.draw(shown, pitch, from, to)}
                     onApplyCurve={applyCurve}
-                    onClearCurve={() => setTarget(null)}
+                    onClearCurve={pitchTarget.clear}
                     busy={busy}
-                    spectrogram={spec?.clip === shown ? spec.data : null}
+                    spectrogram={spec}
                     showSpectrogram={showSpec}
                     onShowSpectrogramChange={setShowSpec}
                   />
-
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                      <Tooltip title="再生 / 一時停止 (Space)">
-                        <IconButton aria-label="再生 / 一時停止" color="primary" onClick={togglePlay}>
-                          {player.playing ? <FontAwesomeIcon icon={faPause} /> : <FontAwesomeIcon icon={faPlay} />}
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="停止">
-                        <IconButton aria-label="停止"
-                          onClick={() => {
-                            player.pause()
-                            player.seek(0)
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faStop} />
-                        </IconButton>
-                      </Tooltip>
-                      <Button
-                        startIcon={<FontAwesomeIcon icon={faCirclePlay} />}
-                        disabled={!selection || source !== 'edited'}
-                        onClick={() => {
-                          if (!selection) return
-                          previewPlayer.pause()
-                          void player.play(selection.start, selection.end)
-                        }}
-                      >
-                        範囲を試聴
-                      </Button>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace', minWidth: 170 }}>
-                        {formatTime(player.position)} / {formatTime(duration)}
-                      </Typography>
-                    </Stack>
-                    <Box sx={{ flexGrow: 1 }} />
-                    {source === 'edited' && (
-                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                        <TextField
-                          size="small"
-                          type="number"
-                          label="開始"
-                          value={selection ? +selection.start.toFixed(3) : ''}
-                          onChange={(e) => setSelectionField('start', e.target.value)}
-                          slotProps={{ htmlInput: { step: 0.01, min: 0 } }}
-                          sx={{ width: 120 }}
-                        />
-                        <TextField
-                          size="small"
-                          type="number"
-                          label="終了"
-                          value={selection ? +selection.end.toFixed(3) : ''}
-                          onChange={(e) => setSelectionField('end', e.target.value)}
-                          slotProps={{ htmlInput: { step: 0.01, min: 0 } }}
-                          sx={{ width: 120 }}
-                        />
-                        <Tooltip title="切り取り (Ctrl+X)">
-                          <span>
-                            <IconButton aria-label="切り取り" disabled={!selection || busy} onClick={cut}>
-                              <FontAwesomeIcon icon={faScissors} />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                        <Tooltip title="コピー (Ctrl+C)">
-                          <span>
-                            <IconButton aria-label="コピー" disabled={!selection || busy} onClick={copy}>
-                              <FontAwesomeIcon icon={faCopy} />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                        <Tooltip title="再生位置に貼り付け (Ctrl+V)">
-                          <span>
-                            <IconButton aria-label="再生位置に貼り付け" disabled={!clipboard || busy} onClick={paste}>
-                              <FontAwesomeIcon icon={faPaste} />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                        <Tooltip title="選択範囲のみ残す">
-                          <span>
-                            <IconButton aria-label="選択範囲のみ残す" disabled={!selection || busy} onClick={trim}>
-                              <FontAwesomeIcon icon={faCropSimple} />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                        <Tooltip title="選択解除">
-                          <span>
-                            <IconButton aria-label="選択解除" disabled={!selection} onClick={() => setSelection(null)}>
-                              <FontAwesomeIcon icon={faXmark} />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      </Stack>
-                    )}
-                  </Stack>
+                  <TransportBar
+                    playing={player.playing}
+                    position={player.position}
+                    duration={duration}
+                    selection={selection}
+                    editable={editing}
+                    busy={busy}
+                    hasClipboard={!!clipboard}
+                    onTogglePlay={togglePlay}
+                    onStop={() => {
+                      player.pause()
+                      player.seek(0)
+                    }}
+                    onPlaySelection={() => {
+                      if (!selection) return
+                      preview.player.pause()
+                      void player.play(selection.start, selection.end)
+                    }}
+                    onSelectionChange={setSelection}
+                    onCut={cut}
+                    onCopy={copy}
+                    onPaste={paste}
+                    onTrim={trim}
+                  />
                 </Stack>
               </CardContent>
             </Card>
 
-            {source === 'edited' && edited && (
+            {editing && editRange && (
               <EditPanel
                 params={params}
                 onChange={setParams}
-                targetDuration={selection ? selection.end - selection.start : clipDuration(edited)}
+                targetDuration={editRange.end - editRange.start}
                 hasSelection={!!selection}
                 busy={busy}
                 progress={progress}
                 onApply={apply}
-                preview={previewTooLong ? 'tooLong' : previewClip ? 'ready' : previewBusy ? 'busy' : 'none'}
-                previewPlaying={previewPlayer.playing}
+                preview={preview.state}
+                previewPlaying={preview.player.playing}
                 onPreview={togglePreview}
               />
             )}
-
-            {source === 'edited' && edited && (
+            {editing && (
               <VolumePanel hasSelection={!!selection} busy={busy} onGain={applyGain} onAction={applyVolumeAction} />
             )}
           </Stack>
         )}
       </Container>
 
-      {/* ドラッグ中は画面全体でドロップを受け付けることを示す */}
-      {dragOver && (
-        <Box
-          sx={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 'modal',
-            pointerEvents: 'none',
-            bgcolor: 'action.hover',
-            outline: 2,
-            outlineColor: 'primary.main',
-            outlineOffset: -2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Typography variant="h6" color="primary">
-            ドロップして開く
-          </Typography>
-        </Box>
-      )}
+      {dragOver && <DropOverlay />}
 
       <Snackbar open={!!toast} autoHideDuration={4000} onClose={() => setToast(null)}>
         {toast ? (

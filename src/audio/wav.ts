@@ -50,3 +50,13 @@ export function encodeWav(clip: Clip, format: WavFormat = 'pcm16'): Blob {
   }
   return new Blob([buf], { type: 'audio/wav' })
 }
+
+/** クリップを WAV にしてブラウザからダウンロードさせる */
+export function downloadWav(clip: Clip, fileName: string, format: WavFormat) {
+  const url = URL.createObjectURL(encodeWav(clip, format))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
