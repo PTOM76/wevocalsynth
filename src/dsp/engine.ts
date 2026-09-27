@@ -37,17 +37,28 @@ function getWorker() {
   return worker
 }
 
-/** Pitch-shift (semitones) and time-stretch (factor) planar audio in the DSP worker. */
+export interface ProcessOptions {
+  semitones: number
+  stretch: number
+  algorithm: Algorithm
+  /** Keep formants when shifting pitch. */
+  preserveFormant: boolean
+  /** Extra formant shift in semitones (only with `preserveFormant`). */
+  formantSemitones: number
+}
+
+/** Pitch-shift / time-stretch planar audio in the DSP worker. */
 export function processAudio(
   channels: Float32Array[],
   sampleRate: number,
-  semitones: number,
-  stretch: number,
-  algorithm: Algorithm,
+  opts: ProcessOptions,
   onProgress?: (p: number) => void,
 ): Promise<Float32Array[]> {
   const id = nextId++
-  const req: DspRequest = { id, channels: channels.map((c) => c.slice()), sampleRate, semitones, stretch, algorithm: ALGORITHM_ID[algorithm] }
+  const req: DspRequest = { id, channels: channels.map((c) => c.slice()), sampleRate,
+    ...opts,
+    algorithm: ALGORITHM_ID[opts.algorithm],
+  }
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject, onProgress })
     getWorker().postMessage(req, req.channels.map((c) => c.buffer))

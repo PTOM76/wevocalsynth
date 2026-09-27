@@ -1,5 +1,5 @@
 import type { Clip, Range } from './types'
-import { processAudio, type Algorithm } from '../dsp/engine'
+import { processAudio, type ProcessOptions } from '../dsp/engine'
 
 /** Crossfade length where processed audio meets the untouched parts. */
 const FADE_SEC = 0.005
@@ -11,9 +11,7 @@ const FADE_SEC = 0.005
 export async function applyEdit(
   clip: Clip,
   range: Range,
-  semitones: number,
-  stretch: number,
-  algorithm: Algorithm,
+  opts: ProcessOptions,
   onProgress?: (p: number) => void,
 ): Promise<{ clip: Clip; range: Range }> {
   const sr = clip.sampleRate
@@ -23,9 +21,7 @@ export async function applyEdit(
   const processed = await processAudio(
     clip.channels.map((c) => c.subarray(s, e)),
     sr,
-    semitones,
-    stretch,
-    algorithm,
+    opts,
     onProgress,
   )
   const pLen = processed[0].length

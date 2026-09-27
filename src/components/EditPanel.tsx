@@ -4,10 +4,12 @@ import {
   Card,
   CardContent,
   Chip,
+  FormControlLabel,
   CircularProgress,
   LinearProgress,
   Slider,
   Stack,
+  Switch,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -22,6 +24,8 @@ export interface EditParams {
   semitones: number
   stretch: number
   algorithm: Algorithm
+  preserveFormant: boolean
+  formantSemitones: number
 }
 
 interface Props {
@@ -43,8 +47,9 @@ const ALGORITHM_HINT: Record<Algorithm, string> = {
 const STRETCH_PRESETS = [0.5, 0.75, 1, 1.5, 2, 4]
 
 export default function EditPanel({ params, onChange, targetDuration, hasSelection, busy, progress, onApply }: Props) {
-  const { semitones, stretch } = params
-  const unchanged = semitones === 0 && stretch === 1
+  const { semitones, stretch, preserveFormant, formantSemitones } = params
+  const formantShift = preserveFormant && formantSemitones !== 0
+  const unchanged = semitones === 0 && stretch === 1 && !formantShift
 
   return (
     <Card>
@@ -89,6 +94,44 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
               valueLabelDisplay="auto"
               onChange={(_, v) => onChange({ ...params, semitones: v as number })}
             />
+          </Box>
+
+          <Box>
+            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={preserveFormant}
+                    onChange={(e) => onChange({ ...params, preserveFormant: e.target.checked })}
+                  />
+                }
+                label={<Typography variant="subtitle2">フォルマント保持</Typography>}
+              />
+              <TextField
+                size="small"
+                type="number"
+                label="移動（半音）"
+                disabled={!preserveFormant}
+                value={formantSemitones}
+                onChange={(e) => onChange({ ...params, formantSemitones: clampNum(e.target.value, -12, 12, 0) })}
+                slotProps={{ htmlInput: { min: -12, max: 12, step: 0.5 } }}
+                sx={{ width: 110 }}
+              />
+            </Stack>
+            <Slider
+              aria-label="フォルマント移動（半音）"
+              disabled={!preserveFormant}
+              value={formantSemitones}
+              min={-12}
+              max={12}
+              step={0.5}
+              marks={[-12, -6, 0, 6, 12].map((v) => ({ value: v, label: v > 0 ? `+${v}` : `${v}` }))}
+              valueLabelDisplay="auto"
+              onChange={(_, v) => onChange({ ...params, formantSemitones: v as number })}
+            />
+            <Typography variant="caption" color="text.secondary">
+              ONでピッチを変えても声質（ケロ声・太い声化）を保つ。移動で声質だけを高く／低くできる。
+            </Typography>
           </Box>
 
           <Box>
@@ -141,7 +184,7 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
             <Button
               startIcon={<FontAwesomeIcon icon={faArrowRotateLeft} />}
               disabled={busy || unchanged}
-              onClick={() => onChange({ ...params, semitones: 0, stretch: 1 })}
+              onClick={() => onChange({ ...params, semitones: 0, stretch: 1, formantSemitones: 0 })}
             >
               リセット
             </Button>

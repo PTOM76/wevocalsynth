@@ -47,7 +47,13 @@ export default function App() {
   })
   const [source, setSource] = useState<Source>('edited')
   const [selection, setSelection] = useState<Range | null>(null)
-  const [params, setParams] = useState<EditParams>({ semitones: 0, stretch: 1, algorithm: 'wsola' })
+  const [params, setParams] = useState<EditParams>({
+    semitones: 0,
+    stretch: 1,
+    algorithm: 'wsola',
+    preserveFormant: false,
+    formantSemitones: 0,
+  })
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState(0)
   const [clipboard, setClipboard] = useState<Clip | null>(null)
@@ -107,7 +113,7 @@ export default function App() {
     try {
       const range = selection ?? { start: 0, end: clipDuration(edited) }
       const t0 = performance.now()
-      const result = await applyEdit(edited, range, params.semitones, params.stretch, params.algorithm, setProgress)
+      const result = await applyEdit(edited, range, params, setProgress)
       setHistory((h) => ({
         past: [...h.past, edited].slice(-HISTORY_LIMIT),
         present: result.clip,
@@ -115,7 +121,7 @@ export default function App() {
       }))
       setSource('edited')
       setSelection(selection ? result.range : null)
-      setParams((p) => ({ ...p, semitones: 0, stretch: 1 }))
+      setParams((p) => ({ ...p, semitones: 0, stretch: 1, formantSemitones: 0 }))
       setToast({ severity: 'success', message: `適用しました（${((performance.now() - t0) / 1000).toFixed(2)}秒）` })
     } catch (e) {
       setToast({ severity: 'error', message: `処理に失敗しました: ${String(e)}` })

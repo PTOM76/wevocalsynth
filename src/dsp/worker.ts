@@ -13,6 +13,8 @@ interface DspExports {
     semitones: number,
     stretch: number,
     algorithm: number,
+    preserveFormant: number,
+    formantSemitones: number,
   ): number
   output_ptr(): number
 }
@@ -25,6 +27,9 @@ export interface DspRequest {
   stretch: number
   /** 0 = WSOLA, 1 = phase vocoder (matches `Algorithm::from_id`). */
   algorithm: number
+  /** Keep formants when shifting pitch, then move them by `formantSemitones`. */
+  preserveFormant: boolean
+  formantSemitones: number
 }
 
 export type DspResponse =
@@ -61,7 +66,12 @@ function run(dsp: DspExports, req: DspRequest): Float32Array[] {
   try {
     const view = new Float32Array(dsp.memory.buffer, input, total)
     req.channels.forEach((c, i) => view.set(c, i * frames))
-    const outFrames = dsp.process_planar(input, frames, count, req.sampleRate, req.semitones, req.stretch, req.algorithm)
+    const outFrames = dsp.process_planar(input, frames, count, req.sampleRate, req.semitones,
+      req.stretch,
+      req.algorithm,
+      req.preserveFormant ? 1 : 0,
+      req.formantSemitones,
+    )
     // Memory may have grown during processing, so create the view afterwards.
     const out = new Float32Array(dsp.memory.buffer, dsp.output_ptr(), outFrames * count)
     return Array.from({ length: count }, (_, i) => out.slice(i * outFrames, (i + 1) * outFrames))
