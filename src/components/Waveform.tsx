@@ -15,6 +15,7 @@ import {
   drawRuler,
   drawSelection,
   drawSpectrogram,
+  spectrogramLayer,
   drawWave,
   pitchRange,
   type DrawContext,
@@ -73,6 +74,8 @@ export default function Waveform(props: Props) {
   const lang = useLang()
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // 再生位置の線だけを描く、上に重ねた Canvas（再生中に波形全体を描き直さないため）
+  const overlayRef = useRef<HTMLCanvasElement>(null)
   // base: ドラッグ開始時に残す範囲（追加選択なら既存の範囲、通常は空）
   const dragRef = useRef<{ x0: number; t0: number; dragging: boolean; base: Range[]; edge?: EdgeDrag } | null>(null)
   const [edgeHover, setEdgeHover] = useState(false)
@@ -89,9 +92,12 @@ export default function Waveform(props: Props) {
   useEffect(() => {
     const el = boxRef.current
     if (!el) return
-    const ro = new ResizeObserver(([e]) =>
-      setSize({ width: Math.floor(e.contentRect.width), height: Math.floor(e.contentRect.height) }),
-    )
+    // 大きさが実際に変わったときだけ更新する（同じ値でも新しいオブジェクトを渡すと描き直しが走るため）
+    const ro = new ResizeObserver(([e]) => {
+      const width = Math.floor(e.contentRect.width)
+      const height = Math.floor(e.contentRect.height)
+      setSize((s) => (s.width === width && s.height === height ? s : { width, height }))
+    })
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
@@ -115,6 +121,10 @@ export default function Waveform(props: Props) {
   const { waveH, pitchH, height } = laneHeights(size.height, showPitch, props.pitchPercent)
   const divider = useLaneDivider(canvasRef, { waveH, pitchH }, showPitch, props.onPitchPercentChange)
   const [dividerHover, setDividerHover] = useState(false)
+  const specLayer = useMemo(
+    () => (showSpectrogram && spectrogram && width > 0 ? spectrogramLayer(spectrogram, width, waveH, view) : null),
+    [showSpectrogram, spectrogram, width, waveH, view],
+  )
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -131,12 +141,26 @@ export default function Waveform(props: Props) {
 
     drawRuler(c)
     // スペクトログラムは波形の代わりに表示し、選択範囲はその上に重ねる
-    if (showSpectrogram) drawSpectrogram(c, spectrogram)
+    if (showSpectrogram) drawSpectrogram(c, spectrogram, specLayer)
     for (const r of selections) drawSelection(c, r, height)
     if (!showSpectrogram) drawWave(c, peaks)
     if (showPitch) drawPitchLane(c, pitch, range, target)
-    drawPlayhead(c, position, height)
-  }, [lang, peaks, width, height, waveH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, showPitch, pitch, range, target, drawVersion, position])
+  }, [lang, peaks, width, height, waveH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
+
+  // 再生位置の線（再生中は毎フレーム変わるので、こちらだけを描き直す）
+  useEffect(() => {
+    const canvas = overlayRef.current
+    if (!canvas || width <= 0) return
+    const dpr = window.devicePixelRatio || 1
+    if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+    }
+    const g = canvas.getContext('2d')!
+    g.setTransform(dpr, 0, 0, dpr, 0, 0)
+    g.clearRect(0, 0, width, height)
+    drawPlayhead({ g, width, view, pal, dark, waveH, pitchH }, position, height)
+  }, [position, width, height, view, pal, dark, waveH, pitchH])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -172,7 +196,12 @@ export default function Waveform(props: Props) {
   return (
     <Stack sx={{ width: '100%', height: '100%', minHeight: 0, userSelect: 'none' }}>
       {/* Canvas はこの箱の大きさいっぱいに描く */}
-      <Box ref={boxRef} sx={{ flex: 1, minHeight: 0, touchAction: 'none', overflow: 'hidden' }}>
+      <Box ref={boxRef} sx={{ flex: 1, minHeight: 0, touchAction: 'none', overflow: 'hidden', position: 'relative' }}>
+      <canvas
+        ref={overlayRef}
+        aria-hidden
+        style={{ position: 'absolute', inset: 0, width: '100%', height, pointerEvents: 'none' }}
+      />
       <canvas
         ref={canvasRef}
         role="img"

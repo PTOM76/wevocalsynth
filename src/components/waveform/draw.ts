@@ -119,17 +119,25 @@ export function drawRuler(c: DrawContext) {
   g.stroke()
 }
 
-/** 波形の欄にスペクトログラムを描く（解析中はその旨を表示） */
-export function drawSpectrogram(c: DrawContext, spec: Spectrogram | null) {
-  const { g, width, view, pal, waveH } = c
-  if (!spec) {
+/**
+ * 表示範囲のスペクトログラムの画像。作るのが重いため、表示範囲・大きさ・データが変わったときだけ作り、
+ * 選択範囲の変更などでの描き直しでは使い回す
+ */
+export function spectrogramLayer(spec: Spectrogram, width: number, waveH: number, view: View) {
+  const off = new OffscreenCanvas(Math.max(1, width), Math.max(1, waveH))
+  off.getContext('2d')!.putImageData(renderSpectrogram(spec, width, waveH, view.start, view.dur), 0, 0)
+  return off
+}
+
+/** 波形の欄にスペクトログラムを描く（解析中はその旨を表示）。`layer` は `spectrogramLayer` で作った画像 */
+export function drawSpectrogram(c: DrawContext, spec: Spectrogram | null, layer: OffscreenCanvas | null) {
+  const { g, pal, waveH } = c
+  if (!spec || !layer) {
     g.fillStyle = pal.text.secondary
     g.fillText(t('common.analyzing'), 8, RULER_HEIGHT + waveH / 2)
     return
   }
-  const off = new OffscreenCanvas(width, waveH)
-  off.getContext('2d')!.putImageData(renderSpectrogram(spec, width, waveH, view.start, view.dur), 0, 0)
-  g.drawImage(off, 0, RULER_HEIGHT)
+  g.drawImage(layer, 0, RULER_HEIGHT)
   // 周波数の目盛り
   g.fillStyle = 'rgba(255, 255, 255, 0.85)'
   const logSpan = Math.log(spec.maxHz / spec.minHz)
