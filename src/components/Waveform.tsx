@@ -34,9 +34,11 @@ interface Props {
   clip: Clip
   position: number
   playing: boolean
-  selection: Range | null
+  /** 選択範囲（複数可、開始位置順） */
+  selections: Range[]
   onSeek: (t: number) => void
-  onSelect: (r: Range | null) => void
+  /** ドラッグで範囲を選ぶ。Ctrl/⌘ を押しながらなら既存の範囲に追加する */
+  onSelectionsChange: (rs: Range[]) => void
   /** F0（Hz、`F0_HOP_SEC` 間隔、無声は 0）。解析中は null */
   pitch: Float32Array | null
   showPitch: boolean
@@ -66,11 +68,12 @@ function usePalette() {
 }
 
 export default function Waveform(props: Props) {
-  const { clip, position, playing, selection, pitch, showPitch, target, penMode, spectrogram, showSpectrogram } = props
+  const { clip, position, playing, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram } = props
   const { pal, dark, font } = usePalette()
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const dragRef = useRef<{ x0: number; t0: number; dragging: boolean } | null>(null)
+  // base: ドラッグ開始時に残す範囲（追加選択なら既存の範囲、通常は空）
+  const dragRef = useRef<{ x0: number; t0: number; dragging: boolean; base: Range[] } | null>(null)
   const drawRef = useRef<DrawPoint | null>(null)
   const [width, setWidth] = useState(0)
   // `target` は描画中に中身だけが書き換わるため、再描画のきっかけに使うカウンタ
@@ -106,11 +109,11 @@ export default function Waveform(props: Props) {
     drawRuler(c)
     // スペクトログラムは波形の代わりに表示し、選択範囲はその上に重ねる
     if (showSpectrogram) drawSpectrogram(c, spectrogram)
-    if (selection) drawSelection(c, selection, height)
+    for (const r of selections) drawSelection(c, r, height)
     if (!showSpectrogram) drawWave(c, peaks)
     if (showPitch) drawPitchLane(c, pitch, range, target)
     drawPlayhead(c, position, height)
-  }, [peaks, width, height, view, pal, dark, font, selection, showSpectrogram, spectrogram, showPitch, pitch, range, target, drawVersion, position])
+  }, [peaks, width, height, view, pal, dark, font, selections, showSpectrogram, spectrogram, showPitch, pitch, range, target, drawVersion, position])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -137,19 +140,21 @@ export default function Waveform(props: Props) {
   }
 
   const center = view.start + view.dur / 2
+  const active = selections[selections.length - 1]
 
   return (
     <Box ref={boxRef} sx={{ width: '100%', userSelect: 'none', touchAction: 'none' }}>
       <canvas
         ref={canvasRef}
         role="img"
-        aria-label="音声波形（ドラッグで範囲選択、クリックで再生位置を移動）"
+        aria-label="音声波形（ドラッグで範囲選択、Ctrl+ドラッグで範囲を追加、クリックで再生位置を移動）"
         style={{ width: '100%', height, display: 'block', cursor: penMode && showPitch ? 'crosshair' : 'text' }}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
           const p = drawPointAt(e)
           if (p) return drawTo(p)
-          dragRef.current = { x0: e.clientX, t0: timeAt(e.clientX), dragging: false }
+          const add = e.ctrlKey || e.metaKey
+          dragRef.current = { x0: e.clientX, t0: timeAt(e.clientX), dragging: false, base: add ? selections : [] }
         }}
         onPointerMove={(e) => {
           if (drawRef.current) {
@@ -162,7 +167,7 @@ export default function Waveform(props: Props) {
           if (!d.dragging && Math.abs(e.clientX - d.x0) < DRAG_THRESHOLD_PX) return
           d.dragging = true
           const t = timeAt(e.clientX)
-          props.onSelect({ start: Math.min(d.t0, t), end: Math.max(d.t0, t) })
+          props.onSelectionsChange([...d.base, { start: Math.min(d.t0, t), end: Math.max(d.t0, t) }])
         }}
         onPointerUp={(e) => {
           if (drawRef.current) {
@@ -180,7 +185,7 @@ export default function Waveform(props: Props) {
         zoomed={zoomed}
         canZoomIn={view.dur > MIN_VIEW_SEC}
         onZoomOut={() => zoomAround(1 / ZOOM_STEP, center)}
-        onZoomIn={() => zoomAround(ZOOM_STEP, selection ? (selection.start + selection.end) / 2 : center)}
+        onZoomIn={() => zoomAround(ZOOM_STEP, active ? (active.start + active.end) / 2 : center)}
         onShowAll={showAll}
         onScroll={scrollTo}
         showSpectrogram={showSpectrogram}

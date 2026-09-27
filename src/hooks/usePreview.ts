@@ -28,11 +28,11 @@ interface Preview {
   result: ProcessedRange
 }
 
-export type PreviewState = 'none' | 'busy' | 'ready' | 'tooLong'
+export type PreviewState = 'none' | 'busy' | 'ready' | 'tooLong' | 'multi'
 
 /**
  * パラメータを変えたら加工範囲を裏で処理しておき、すぐ試聴できるようにする。
- * `enabled` が false の間（処理中・原音表示中など）は処理しない。
+ * `enabled` が false の間（処理中・原音表示中など）や、`range` が null（複数範囲など）のときは処理しない。
  */
 export function usePreview(clip: Clip | null, range: Range | null, params: EditParams, enabled: boolean) {
   const [preview, setPreview] = useState<Preview | null>(null)

@@ -5,7 +5,8 @@ import { clipDuration } from './audio/types'
 import { decodeFile } from './audio/decode'
 import { downloadBlob, downloadWav, type WavFormat } from './audio/wav'
 import { PROJECT_EXT, isProjectFile, loadProject, saveProject } from './project/projectFile'
-import { applyEdit, applyPitchCurve, spliceProcessed } from './audio/edit'
+import { applyPitchCurve, spliceProcessed } from './audio/edit'
+import { applyEditToRanges, normalizeRanges } from './audio/multiRange'
 import { usePlayer } from './audio/usePlayer'
 import { analyzeF0, analyzeSpectrogram } from './dsp/engine'
 import { useHistory } from './hooks/useHistory'
@@ -32,7 +33,10 @@ export default function App() {
   const [original, setOriginal] = useState<Clip | null>(null)
   const history = useHistory()
   const [source, setSource] = useState<Source>('edited')
-  const [selection, setSelection] = useState<Range | null>(null)
+  // 選択範囲（複数可、開始位置順に正規化）。開始・終了の入力欄は一番後ろの範囲を編集する
+  const [selections, setSelectionsState] = useState<Range[]>([])
+  const setSelections = (rs: Range[]) => setSelectionsState(normalizeRanges(rs))
+  const selection = selections[selections.length - 1] ?? null
   const [params, setParams] = useState<EditParams>({
     ...NEUTRAL,
     algorithm: 'wsola',
@@ -59,8 +63,9 @@ export default function App() {
   const spec = useClipAnalysis(showSpec, shown, (c) => analyzeSpectrogram(c.channels, c.sampleRate), fail('スペクトログラムの計算に失敗しました'))
 
   // 加工・音量編集の対象（選択範囲、なければ全体）
-  const editRange: Range | null = edited ? (selection ?? { start: 0, end: clipDuration(edited) }) : null
-  const preview = usePreview(edited, editRange, params, editing && !busy)
+  const editRanges: Range[] = edited ? (selections.length ? selections : [{ start: 0, end: clipDuration(edited) }]) : []
+  const multi = editRanges.length > 1
+  const preview = usePreview(edited, multi ? null : (editRanges[0] ?? null), params, editing && !busy)
 
   const commit = (clip: Clip) => {
     history.commit(clip)
@@ -68,9 +73,9 @@ export default function App() {
   }
   const cmd = useClipCommands({
     edited,
-    selection,
-    setSelection,
-    editRange,
+    selections,
+    setSelections,
+    editRanges,
     position: player.position,
     seek: player.seek,
     commit,
@@ -87,7 +92,7 @@ export default function App() {
         setOriginal(project ? project.original : clip)
         history.reset(clip)
         setSource('edited')
-        setSelection(null)
+        setSelectionsState([])
         cmd.clearClipboard()
         // 前のファイルの表示設定を持ち越すと、開いた直後に重い解析やプレビュー処理が走るため戻す
         setShowPitch(false)
@@ -119,13 +124,14 @@ export default function App() {
 
   const apply = () =>
     runTask(async () => {
-      if (!edited || !editRange) return
+      if (!edited || !editRanges.length) return
       // 同じ設定のプレビューがあれば、それを差し込むだけで済ませる
-      const result = preview.result
-        ? spliceProcessed(edited, preview.result)
-        : await applyEdit(edited, editRange, params, setProgress)
+      const spliced = preview.result && !multi ? spliceProcessed(edited, preview.result) : null
+      const result = spliced
+        ? { clip: spliced.clip, ranges: [spliced.range] }
+        : await applyEditToRanges(edited, editRanges, params, setProgress)
       commit(result.clip)
-      setSelection(selection ? result.range : null)
+      setSelections(selections.length ? result.ranges : [])
       setParams((p) => ({ ...p, ...NEUTRAL }))
       setToast({ severity: 'success', message: '適用しました' })
     })
@@ -210,9 +216,9 @@ export default function App() {
                     clip={shown}
                     position={player.position}
                     playing={player.playing}
-                    selection={editing ? selection : null}
+                    selections={editing ? selections : []}
                     onSeek={player.seek}
-                    onSelect={editing ? setSelection : () => {}}
+                    onSelectionsChange={editing ? setSelections : () => {}}
                     pitch={pitch}
                     showPitch={showPitch}
                     onShowPitchChange={setShowPitch}
@@ -245,7 +251,7 @@ export default function App() {
                       preview.player.pause()
                       void player.play(selection.start, selection.end)
                     }}
-                    onSelectionChange={setSelection}
+                    onSelectionChange={(r) => setSelections(r ? [...selections.slice(0, -1), r] : [])}
                     onCut={cmd.cut}
                     onCopy={cmd.copy}
                     onPaste={cmd.paste}
@@ -255,16 +261,16 @@ export default function App() {
               </CardContent>
             </Card>
 
-            {editing && editRange && (
+            {editing && editRanges.length > 0 && (
               <EditPanel
                 params={params}
                 onChange={setParams}
-                targetDuration={editRange.end - editRange.start}
+                targetDuration={editRanges.reduce((s, r) => s + r.end - r.start, 0)}
                 hasSelection={!!selection}
                 busy={busy}
                 progress={progress}
                 onApply={apply}
-                preview={preview.state}
+                preview={multi ? 'multi' : preview.state}
                 previewPlaying={preview.player.playing}
                 onPreview={togglePreview}
               />

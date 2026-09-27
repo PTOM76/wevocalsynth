@@ -17,6 +17,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { Algorithm } from '../dsp/engine'
+import type { PreviewState } from '../hooks/usePreview'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRotateLeft, faHeadphones, faStop, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { formatTime } from '../audio/types'
@@ -39,7 +40,7 @@ interface Props {
   progress: number
   onApply: () => void
   /** プレビューの状態。tooLong は範囲が長すぎて自動処理しない */
-  preview: 'none' | 'busy' | 'ready' | 'tooLong'
+  preview: PreviewState
   previewPlaying: boolean
   onPreview: () => void
 }
@@ -184,9 +185,9 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
           {busy && <LinearProgress variant="determinate" value={progress * 100} aria-label="処理の進捗" />}
 
           <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
-            {preview === 'tooLong' && !unchanged && (
+            {(preview === 'tooLong' || preview === 'multi') && !unchanged && (
               <Typography variant="caption" color="text.secondary" sx={{ mr: 'auto' }}>
-                試聴は20秒まで
+                {preview === 'tooLong' ? '試聴は20秒まで' : '試聴は1範囲のみ'}
               </Typography>
             )}
             <Button

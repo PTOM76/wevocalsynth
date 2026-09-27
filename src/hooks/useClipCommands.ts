@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
-import { fadeRange, gainRange, insertAt, normalizeRange, removeRange, silenceRange, sliceClip } from '../audio/edit'
+import { fadeRange, gainRange, insertAt, normalizeRange, silenceRange } from '../audio/edit'
+import { mapRanges, normalizeRanges, removeRanges, sliceRanges } from '../audio/multiRange'
 import type { VolumeAction } from '../components/VolumePanel'
 
 interface Deps {
   /** 編集中のクリップ */
   edited: Clip | null
-  selection: Range | null
-  setSelection: (r: Range | null) => void
+  /** 選択範囲（複数可、空なら未選択） */
+  selections: Range[]
+  setSelections: (rs: Range[]) => void
   /** 音量編集の対象（選択範囲、なければ全体） */
-  editRange: Range | null
+  editRanges: Range[]
   /** 再生位置（貼り付け先） */
   position: number
   seek: (t: number) => void
@@ -18,47 +20,54 @@ interface Deps {
   notify: (message: string) => void
 }
 
-/** 切り取り・コピー・貼り付け・トリミングと音量編集。どれも即座に終わり、履歴に積む */
+/**
+ * 切り取り・コピー・貼り付け・トリミングと音量編集。どれも即座に終わり、履歴に積む。
+ * 複数範囲を選んでいる場合は全範囲が対象で、コピー・トリミングは範囲をつなげたものになる。
+ */
 export function useClipCommands(d: Deps) {
   const [clipboard, setClipboard] = useState<Clip | null>(null)
-  const { edited, selection, editRange } = d
+  const { edited, selections, editRanges } = d
+  const hasSel = selections.length > 0
 
   const copy = () => {
-    if (edited && selection) setClipboard(sliceClip(edited, selection))
+    if (edited && hasSel) setClipboard(sliceRanges(edited, selections))
   }
   const cut = () => {
-    if (!edited || !selection) return
-    setClipboard(sliceClip(edited, selection))
-    d.commit(removeRange(edited, selection))
-    d.seek(selection.start)
-    d.setSelection(null)
+    if (!edited || !hasSel) return
+    setClipboard(sliceRanges(edited, selections))
+    d.commit(removeRanges(edited, selections))
+    d.seek(normalizeRanges(selections)[0].start)
+    d.setSelections([])
   }
   const paste = () => {
     if (!edited || !clipboard) return
     const at = d.position
     d.commit(insertAt(edited, clipboard, at))
-    d.setSelection({ start: at, end: at + clipDuration(clipboard) })
+    d.setSelections([{ start: at, end: at + clipDuration(clipboard) }])
   }
   const trim = () => {
-    if (!edited || !selection) return
-    d.commit(sliceClip(edited, selection))
+    if (!edited || !hasSel) return
+    d.commit(sliceRanges(edited, selections))
     d.seek(0)
-    d.setSelection(null)
+    d.setSelections([])
   }
 
   const gain = (db: number) => {
-    if (edited && editRange) d.commit(gainRange(edited, editRange, db))
+    if (edited && editRanges.length) d.commit(mapRanges(edited, editRanges, (c, r) => gainRange(c, r, db)))
   }
   const volume = (action: VolumeAction) => {
-    if (!edited || !editRange) return
+    if (!edited || !editRanges.length) return
     if (action === 'normalize') {
-      const next = normalizeRange(edited, editRange)
-      if (next) d.commit(next)
+      // 範囲ごとにピークを揃える。無音の範囲はそのまま残す
+      let fails = 0
+      const next = mapRanges(edited, editRanges, (c, r) => normalizeRange(c, r) ?? (fails++, c))
+      if (fails < editRanges.length) d.commit(next)
       else d.notify('無音のためノーマライズできません')
     } else if (action === 'silence') {
-      d.commit(silenceRange(edited, editRange))
+      d.commit(mapRanges(edited, editRanges, silenceRange))
     } else {
-      d.commit(fadeRange(edited, editRange, action === 'fadeIn' ? 'in' : 'out'))
+      const dir = action === 'fadeIn' ? 'in' : 'out'
+      d.commit(mapRanges(edited, editRanges, (c, r) => fadeRange(c, r, dir)))
     }
   }
 
