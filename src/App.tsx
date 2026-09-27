@@ -28,6 +28,7 @@ import { decodeFile } from './audio/decode'
 import { encodeWav, type WavFormat } from './audio/wav'
 import { applyEdit, insertAt, removeRange, sliceClip } from './audio/edit'
 import { usePlayer } from './audio/usePlayer'
+import { analyzeF0 } from './dsp/engine'
 import Waveform, { formatTime } from './components/Waveform'
 import EditPanel, { type EditParams } from './components/EditPanel'
 
@@ -56,6 +57,8 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState(0)
   const [clipboard, setClipboard] = useState<Clip | null>(null)
+  const [showPitch, setShowPitch] = useState(false)
+  const [pitch, setPitch] = useState<{ clip: Clip; f0: Float32Array } | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
@@ -65,6 +68,18 @@ export default function App() {
   const shown = source === 'original' ? original : edited
   const player = usePlayer(shown)
   const duration = shown ? clipDuration(shown) : 0
+
+  // ピッチ表示中は、表示中のクリップが変わるたびに F0 を解析し直す
+  useEffect(() => {
+    if (!showPitch || !shown || pitch?.clip === shown) return
+    let cancelled = false
+    analyzeF0(shown.channels, shown.sampleRate)
+      .then((f0) => !cancelled && setPitch({ clip: shown, f0 }))
+      .catch((e) => !cancelled && setToast({ severity: 'error', message: `ピッチ解析に失敗しました: ${String(e)}` }))
+    return () => {
+      cancelled = true
+    }
+  }, [showPitch, shown, pitch])
 
   const loadFile = useCallback(async (file: File) => {
     try {
@@ -330,6 +345,9 @@ export default function App() {
                     selection={source === 'edited' ? selection : null}
                     onSeek={player.seek}
                     onSelect={source === 'edited' ? setSelection : () => {}}
+                    pitch={pitch?.clip === shown ? pitch.f0 : null}
+                    showPitch={showPitch}
+                    onShowPitchChange={setShowPitch}
                   />
 
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>

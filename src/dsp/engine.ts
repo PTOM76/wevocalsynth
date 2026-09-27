@@ -37,6 +37,27 @@ function getWorker() {
   return worker
 }
 
+/** リクエストを Worker に送り、結果（チャンネル配列）を待つ */
+function send(req: DspRequest, onProgress?: (p: number) => void): Promise<Float32Array[]> {
+  return new Promise((resolve, reject) => {
+    pending.set(req.id, { resolve, reject, onProgress })
+    const buffers = req.kind === 'f0' ? [req.samples.buffer] : req.channels.map((c) => c.buffer)
+    getWorker().postMessage(req, buffers)
+  })
+}
+
+/** F0 の推定間隔（秒）。Rust 側 `f0::HOP_SEC` と一致させる */
+export const F0_HOP_SEC = 0.01
+
+/** 全チャンネルを平均したモノラル信号の F0 を推定する（Hz、無声は 0） */
+export async function analyzeF0(channels: Float32Array[], sampleRate: number): Promise<Float32Array> {
+  const len = channels[0]?.length ?? 0
+  const samples = new Float32Array(len)
+  for (const c of channels) for (let i = 0; i < len; i++) samples[i] += c[i] / channels.length
+  const [f0] = await send({ kind: 'f0', id: nextId++, samples, sampleRate })
+  return f0
+}
+
 export interface ProcessOptions {
   semitones: number
   stretch: number
@@ -54,13 +75,15 @@ export function processAudio(
   opts: ProcessOptions,
   onProgress?: (p: number) => void,
 ): Promise<Float32Array[]> {
-  const id = nextId++
-  const req: DspRequest = { id, channels: channels.map((c) => c.slice()), sampleRate,
-    ...opts,
-    algorithm: ALGORITHM_ID[opts.algorithm],
-  }
-  return new Promise((resolve, reject) => {
-    pending.set(id, { resolve, reject, onProgress })
-    getWorker().postMessage(req, req.channels.map((c) => c.buffer))
-  })
+  return send(
+    {
+      kind: 'process',
+      id: nextId++,
+      channels: channels.map((c) => c.slice()),
+      sampleRate,
+      ...opts,
+      algorithm: ALGORITHM_ID[opts.algorithm],
+    },
+    onProgress,
+  )
 }

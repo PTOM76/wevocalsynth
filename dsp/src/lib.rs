@@ -8,6 +8,7 @@
 //! wasm ビルドは wasm-bindgen を使わず小さな C ABI だけを公開し、Web Worker 内で
 //! 素の `WebAssembly.instantiate` で読み込めるようにしている。
 
+pub mod f0;
 mod fft;
 pub mod formant;
 pub mod pv;
@@ -410,6 +411,20 @@ pub unsafe extern "C" fn process_planar(
     out_frames
 }
 
+/// モノラル音声 `input`（`frames` サンプル）の F0 を `f0::HOP_SEC` 間隔で推定し、
+/// 値の個数を返す。結果（Hz、無声は 0）は `output_ptr` で取得する。
+///
+/// # Safety
+/// `input` は `frames` 個の有効な f32 を指していること。
+#[no_mangle]
+pub unsafe extern "C" fn analyze_f0(input: *const f32, frames: usize, sample_rate: f32) -> usize {
+    let x = std::slice::from_raw_parts(input, frames);
+    let out = f0::estimate(x, sample_rate, &mut host_progress);
+    let n = out.len();
+    OUTPUT.with(|o| *o.borrow_mut() = out);
+    n
+}
+
 #[no_mangle]
 pub extern "C" fn output_ptr() -> *const f32 {
     OUTPUT.with(|o| o.borrow().as_ptr())
@@ -560,6 +575,27 @@ mod tests {
         println!("formant +7: {base:.0}Hz -> {c:.0}Hz");
         assert!(c > base * 1.2, "formant shift +7 should raise the centroid ({c} vs {base})");
         assert!(y[0].iter().all(|v| v.is_finite()));
+    }
+
+    #[test]
+    fn f0_detects_pitch() {
+        for sr in [44100.0, 48000.0] {
+            for (x, expect) in [(sine(220.0, sr, 0.5), 220.0), (vowel(sr, 0.5, 150.0, 800.0), 150.0)] {
+                let f = f0::estimate(&x, sr, &mut |_| {});
+                assert_eq!(f.len(), (x.len() as f32 / sr / f0::HOP_SEC) as usize + 1);
+                // 端を除いた中央部分がすべて有声で、期待値の ±2% 以内であること。
+                let mid = &f[5..f.len() - 5];
+                for &v in mid {
+                    assert!((v - expect).abs() < expect * 0.02, "sr {sr}: expected {expect}Hz, got {v}Hz");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn f0_silence_is_unvoiced() {
+        let f = f0::estimate(&vec![0.0; 48000], 48000.0, &mut |_| {});
+        assert!(f.iter().all(|&v| v == 0.0));
     }
 
     /// `cargo test --release -- --ignored --nocapture` で3分のステレオ音声の処理時間を計測する。

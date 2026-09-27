@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, IconButton, Slider, Stack, Tooltip, Typography, alpha, useMediaQuery, useTheme } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faExpand, faMagnifyingGlassMinus, faMagnifyingGlassPlus } from '@fortawesome/free-solid-svg-icons'
+import { faExpand, faMagnifyingGlassMinus, faMagnifyingGlassPlus, faMusic } from '@fortawesome/free-solid-svg-icons'
 import type { Theme } from '@mui/material'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
+import { F0_HOP_SEC } from '../dsp/engine'
 
 const WAVE_HEIGHT = 200
 const RULER_HEIGHT = 24
+const PITCH_HEIGHT = 140
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 const DRAG_THRESHOLD_PX = 3
 /** 表示できる最小の時間幅（秒） */
 const MIN_VIEW_SEC = 0.02
@@ -20,6 +23,33 @@ interface Props {
   selection: Range | null
   onSeek: (t: number) => void
   onSelect: (r: Range | null) => void
+  /** F0（Hz、`F0_HOP_SEC` 間隔、無声は 0）。解析中は null */
+  pitch: Float32Array | null
+  showPitch: boolean
+  onShowPitchChange: (show: boolean) => void
+}
+
+const hzToMidi = (hz: number) => 69 + 12 * Math.log2(hz / 440)
+
+/** ピッチ帯の縦軸（MIDIノート番号）。有声部分の範囲に余白を足し、最低1オクターブにする */
+function pitchRange(pitch: Float32Array) {
+  let lo = Infinity
+  let hi = -Infinity
+  for (const hz of pitch) {
+    if (hz <= 0) continue
+    const m = hzToMidi(hz)
+    if (m < lo) lo = m
+    if (m > hi) hi = m
+  }
+  if (!Number.isFinite(lo)) return { lo: 48, hi: 72 }
+  lo = Math.floor(lo) - 2
+  hi = Math.ceil(hi) + 2
+  if (hi - lo < 12) {
+    const c = (lo + hi) / 2
+    lo = Math.floor(c - 6)
+    hi = lo + 12
+  }
+  return { lo, hi }
 }
 
 /** 表示範囲について、全チャンネルを通した1ピクセル列ごとの最小値・最大値を求める */
@@ -59,7 +89,17 @@ export function formatTime(t: number) {
   return `${m}:${s.toFixed(3).padStart(6, '0')}`
 }
 
-export default function Waveform({ clip, position, playing, selection, onSeek, onSelect }: Props) {
+export default function Waveform({
+  clip,
+  position,
+  playing,
+  selection,
+  onSeek,
+  onSelect,
+  pitch,
+  showPitch,
+  onShowPitchChange,
+}: Props) {
   const theme = useTheme()
   // Canvas は CSS 変数を使えないため、現在の配色（ライト/ダーク）のパレット値を直接使う
   const dark = useMediaQuery('(prefers-color-scheme: dark)')
@@ -135,11 +175,14 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
     [clip, width, view],
   )
 
+  const range = useMemo(() => (pitch ? pitchRange(pitch) : null), [pitch])
+  const height = RULER_HEIGHT + WAVE_HEIGHT + (showPitch ? PITCH_HEIGHT : 0)
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !peaks) return
     const dpr = window.devicePixelRatio || 1
-    const h = WAVE_HEIGHT + RULER_HEIGHT
+    const h = height
     canvas.width = width * dpr
     canvas.height = h * dpr
     const g = canvas.getContext('2d')!
@@ -174,10 +217,10 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
       const x0 = toX(selection.start)
       const x1 = toX(selection.end)
       g.fillStyle = alpha(pal.primary.main, 0.16)
-      g.fillRect(x0, RULER_HEIGHT, x1 - x0, WAVE_HEIGHT)
+      g.fillRect(x0, RULER_HEIGHT, x1 - x0, h - RULER_HEIGHT)
       g.fillStyle = pal.primary.main
-      g.fillRect(x0 - 1, RULER_HEIGHT, 2, WAVE_HEIGHT)
-      g.fillRect(x1 - 1, RULER_HEIGHT, 2, WAVE_HEIGHT)
+      g.fillRect(x0 - 1, RULER_HEIGHT, 2, h - RULER_HEIGHT)
+      g.fillRect(x1 - 1, RULER_HEIGHT, 2, h - RULER_HEIGHT)
     }
 
     // 波形
@@ -192,10 +235,55 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
     g.fillStyle = pal.divider
     g.fillRect(0, mid, width, 1)
 
+    // ピッチ帯: 音名のグリッドと F0 曲線
+    if (showPitch) {
+      const top = RULER_HEIGHT + WAVE_HEIGHT
+      g.fillStyle = pal.divider
+      g.fillRect(0, top, width, 1)
+      if (!pitch || !range) {
+        g.fillStyle = pal.text.secondary
+        g.fillText('解析中…', 8, top + PITCH_HEIGHT / 2)
+      } else {
+        const toY = (m: number) => top + ((range.hi - m) / (range.hi - range.lo)) * PITCH_HEIGHT
+        const perSemitone = PITCH_HEIGHT / (range.hi - range.lo)
+        for (let m = Math.ceil(range.lo); m <= range.hi; m++) {
+          const isC = m % 12 === 0
+          if (!isC && perSemitone < 6) continue
+          g.fillStyle = isC ? pal.divider : alpha(pal.divider, 0.4)
+          g.fillRect(0, Math.round(toY(m)), width, 1)
+          if (isC || perSemitone >= 12) {
+            g.fillStyle = pal.text.secondary
+            g.fillText(`${NOTE_NAMES[m % 12]}${m / 12 - 1 | 0}`, 4, toY(m) - 7)
+          }
+        }
+        g.strokeStyle = pal.secondary.main
+        g.lineWidth = 2
+        g.lineJoin = 'round'
+        g.beginPath()
+        const k0 = Math.max(0, Math.floor(view.start / F0_HOP_SEC) - 1)
+        const k1 = Math.min(pitch.length - 1, Math.ceil((view.start + view.dur) / F0_HOP_SEC) + 1)
+        let drawing = false
+        for (let k = k0; k <= k1; k++) {
+          const hz = pitch[k]
+          if (hz <= 0) {
+            drawing = false
+            continue
+          }
+          const x = toX(k * F0_HOP_SEC)
+          const y = toY(hzToMidi(hz))
+          if (drawing) g.lineTo(x, y)
+          else g.moveTo(x, y)
+          drawing = true
+        }
+        g.stroke()
+        g.lineWidth = 1
+      }
+    }
+
     // 再生位置
-    g.fillStyle = pal.secondary.main
+    g.fillStyle = pal.text.primary
     g.fillRect(Math.round(toX(position)) - 1, 0, 2, h)
-  }, [peaks, width, view, position, selection, pal, dark, theme])
+  }, [peaks, width, view, position, selection, pal, dark, theme, height, showPitch, pitch, range])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -212,7 +300,7 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
         ref={canvasRef}
         role="img"
         aria-label="音声波形（ドラッグで範囲選択、クリックで再生位置を移動）"
-        style={{ width: '100%', height: WAVE_HEIGHT + RULER_HEIGHT, display: 'block', cursor: 'text' }}
+        style={{ width: '100%', height, display: 'block', cursor: 'text' }}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
           dragRef.current = { x0: e.clientX, t0: timeAt(e.clientX), dragging: false }
@@ -249,6 +337,17 @@ export default function Waveform({ clip, position, playing, selection, onSeek, o
               <FontAwesomeIcon icon={faMagnifyingGlassPlus} />
             </IconButton>
           </span>
+        </Tooltip>
+        <Tooltip title="ピッチ表示">
+          <IconButton
+            aria-label="ピッチ表示"
+            aria-pressed={showPitch}
+            size="small"
+            color={showPitch ? 'primary' : 'default'}
+            onClick={() => onShowPitchChange(!showPitch)}
+          >
+            <FontAwesomeIcon icon={faMusic} />
+          </IconButton>
         </Tooltip>
         <Tooltip title="全体表示">
           <span>
