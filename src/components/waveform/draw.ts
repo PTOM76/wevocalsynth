@@ -5,9 +5,16 @@ import { renderSpectrogram } from './spectrogramImage'
 import { hzToMidi, noteName } from '../../audio/notes'
 import { t } from '../../i18n/i18n'
 
-export const WAVE_HEIGHT = 200
 export const RULER_HEIGHT = 24
-export const PITCH_HEIGHT = 140
+/** 波形の欄の最低の高さ（画面が低くても、これより小さくしない） */
+const MIN_WAVE_HEIGHT = 80
+
+/** Canvas 全体の高さ `total` を、時間軸・波形・ピッチ帯に割り振る。`pitchPercent` は時間軸を除いた高さに対するピッチ帯の割合 */
+export function laneHeights(total: number, showPitch: boolean, pitchPercent: number) {
+  const body = Math.max(MIN_WAVE_HEIGHT, total - RULER_HEIGHT)
+  const pitchH = showPitch ? Math.round((body * pitchPercent) / 100) : 0
+  return { waveH: body - pitchH, pitchH, height: RULER_HEIGHT + body }
+}
 
 export { hzToMidi }
 
@@ -82,6 +89,9 @@ export interface DrawContext {
   view: View
   pal: Theme['palette']
   dark: boolean
+  /** 波形の欄とピッチ帯の高さ（`laneHeights` で決める） */
+  waveH: number
+  pitchH: number
 }
 
 const toX = ({ width, view }: DrawContext, t: number) => ((t - view.start) / view.dur) * width
@@ -111,21 +121,21 @@ export function drawRuler(c: DrawContext) {
 
 /** 波形の欄にスペクトログラムを描く（解析中はその旨を表示） */
 export function drawSpectrogram(c: DrawContext, spec: Spectrogram | null) {
-  const { g, width, view, pal } = c
+  const { g, width, view, pal, waveH } = c
   if (!spec) {
     g.fillStyle = pal.text.secondary
-    g.fillText(t('common.analyzing'), 8, RULER_HEIGHT + WAVE_HEIGHT / 2)
+    g.fillText(t('common.analyzing'), 8, RULER_HEIGHT + waveH / 2)
     return
   }
-  const off = new OffscreenCanvas(width, WAVE_HEIGHT)
-  off.getContext('2d')!.putImageData(renderSpectrogram(spec, width, WAVE_HEIGHT, view.start, view.dur), 0, 0)
+  const off = new OffscreenCanvas(width, waveH)
+  off.getContext('2d')!.putImageData(renderSpectrogram(spec, width, waveH, view.start, view.dur), 0, 0)
   g.drawImage(off, 0, RULER_HEIGHT)
   // 周波数の目盛り
   g.fillStyle = 'rgba(255, 255, 255, 0.85)'
   const logSpan = Math.log(spec.maxHz / spec.minHz)
   for (const hz of [100, 1000, 10000]) {
     if (hz >= spec.maxHz) continue
-    const y = RULER_HEIGHT + WAVE_HEIGHT - (Math.log(hz / spec.minHz) / logSpan) * WAVE_HEIGHT
+    const y = RULER_HEIGHT + waveH - (Math.log(hz / spec.minHz) / logSpan) * waveH
     g.fillRect(0, Math.round(y), 6, 1)
     g.fillText(hz >= 1000 ? `${hz / 1000}k` : `${hz}`, 8, y)
   }
@@ -145,9 +155,9 @@ export function drawSelection(c: DrawContext, selection: Range, h: number) {
 
 /** 波形（1ピクセル列ごとの最小値〜最大値の縦線）と中央線 */
 export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }) {
-  const { g, width, pal, dark } = c
-  const mid = RULER_HEIGHT + WAVE_HEIGHT / 2
-  const amp = WAVE_HEIGHT / 2 - 4
+  const { g, width, pal, dark, waveH } = c
+  const mid = RULER_HEIGHT + waveH / 2
+  const amp = waveH / 2 - 4
   g.fillStyle = dark ? pal.primary.main : pal.primary.dark
   for (let x = 0; x < width; x++) {
     const y0 = mid - peaks.max[x] * amp
@@ -160,17 +170,17 @@ export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float3
 
 /** ピッチ帯: 音名のグリッドと F0 曲線。描いた目標ピッチがあれば元の曲線を薄くして重ねる */
 export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range: PitchRange | null, target: Float32Array | null) {
-  const { g, width, view, pal } = c
-  const top = RULER_HEIGHT + WAVE_HEIGHT
+  const { g, width, view, pal, waveH, pitchH } = c
+  const top = RULER_HEIGHT + waveH
   g.fillStyle = pal.divider
   g.fillRect(0, top, width, 1)
   if (!pitch || !range) {
     g.fillStyle = pal.text.secondary
-    g.fillText(t('common.analyzing'), 8, top + PITCH_HEIGHT / 2)
+    g.fillText(t('common.analyzing'), 8, top + pitchH / 2)
     return
   }
-  const toY = (m: number) => top + ((range.hi - m) / (range.hi - range.lo)) * PITCH_HEIGHT
-  const perSemitone = PITCH_HEIGHT / (range.hi - range.lo)
+  const toY = (m: number) => top + ((range.hi - m) / (range.hi - range.lo)) * pitchH
+  const perSemitone = pitchH / (range.hi - range.lo)
   for (let m = Math.ceil(range.lo); m <= range.hi; m++) {
     const isC = m % 12 === 0
     if (!isC && perSemitone < 6) continue

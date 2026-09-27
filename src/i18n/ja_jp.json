@@ -71,6 +71,7 @@
   "process.instrumentHint": "和音・打楽器向け。大きく伸ばしてもなめらか（Phase Vocoder）",
   "process.pitch": "ピッチ",
   "process.pitchAria": "ピッチ（半音）",
+  "process.semitoneUnit": "半音",
   "process.noteAnalyzing": "音程を解析中…",
   "process.noteUnknown": "音程: —",
   "process.note": "音程: {note}",
@@ -86,6 +87,7 @@
   "process.processing": "処理中… {percent}%",
 
   "volume.title": "音量",
+  "volume.gain": "ゲイン",
   "volume.gainAria": "ゲイン（dB）",
   "volume.fadeIn": "フェードイン",
   "volume.fadeOut": "フェードアウト",

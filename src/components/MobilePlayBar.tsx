@@ -16,14 +16,14 @@ interface Props {
   onLoop: () => void
 }
 
-/** スマホ用: 画面下に固定する再生バー（親指で押しやすい位置に大きめのボタンを置く） */
+/** スマホ用: 画面下の再生バー（親指で押しやすい位置に大きめのボタンを置く）。画面の縦の並びの最後に置く */
 export default function MobilePlayBar(p: Props) {
   const t = useT()
   return (
     <Paper
       square
-      elevation={3}
-      sx={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 'appBar', pb: 'env(safe-area-inset-bottom)' }}
+      elevation={0}
+      sx={{ pb: 'env(safe-area-inset-bottom)', borderTop: 1, borderColor: 'divider' }}
     >
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1, py: 0.5 }}>
         <IconButton aria-label={t('play.playPause')} color="primary" size="large" onClick={p.onTogglePlay}>

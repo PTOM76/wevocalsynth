@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Button, Card, CardContent, Slider, Stack, TextField, Typography } from '@mui/material'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck } from '@fortawesome/free-solid-svg-icons'
+import { Box, Button, Slider } from '@mui/material'
+import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow } from './inspector/Inspector'
 import { useT, type MessageKey } from '../i18n/i18n'
 
 export type VolumeAction = 'fadeIn' | 'fadeOut' | 'normalize' | 'silence'
@@ -20,68 +19,53 @@ const ACTIONS: { action: VolumeAction; label: MessageKey }[] = [
   { action: 'silence', label: 'volume.silence' },
 ]
 
+const SMALL_BUTTON_SX = { minWidth: 0, height: 26, px: 1, fontSize: 12 } as const
+
+/** インスペクタの「音量」。ゲインの行と、フェードなどの操作 */
 export default function VolumePanel({ hasSelection, busy, onGain, onAction }: Props) {
   const [db, setDb] = useState(0)
   const t = useT()
 
   return (
-    <Card>
-      <CardContent>
-        <Stack spacing={2}>
-          <Stack direction="row" sx={{ alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <Typography variant="h6">{t('volume.title')}</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t(hasSelection ? 'common.selection' : 'common.whole')}
-            </Typography>
-          </Stack>
-
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-            <Slider
-              aria-label={t('volume.gainAria')}
-              value={db}
-              min={-24}
-              max={12}
-              step={0.5}
-              marks={[-24, -12, -6, 0, 6, 12].map((v) => ({ value: v, label: v > 0 ? `+${v}` : `${v}` }))}
-              valueLabelDisplay="auto"
-              valueLabelFormat={(v) => `${v > 0 ? '+' : ''}${v} dB`}
-              onChange={(_, v) => setDb(v as number)}
-              sx={{ flexGrow: 1 }}
-            />
-            <TextField
-              size="small"
-              type="number"
-              label="dB"
-              value={db}
-              onChange={(e) => {
-                const v = Number(e.target.value)
-                if (Number.isFinite(v)) setDb(Math.min(12, Math.max(-24, v)))
-              }}
-              slotProps={{ htmlInput: { min: -24, max: 12, step: 0.5 } }}
-              sx={{ width: 90 }}
-            />
-            <Button
-              variant="contained"
-              startIcon={<FontAwesomeIcon icon={faCheck} />}
-              disabled={busy || db === 0}
-              onClick={() => {
-                onGain(db)
-                setDb(0)
-              }}
-            >
-              {t('common.apply')}
-            </Button>
-          </Stack>
-
-          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-            {ACTIONS.map(({ action, label }) => (
-              <Button key={action} variant="outlined" size="small" disabled={busy} onClick={() => onAction(action)}>
-                {t(label)}
-              </Button>
-            ))}
-          </Stack>
-        </Stack>
-      </CardContent>
-    </Card>
+    <InspectorSection title={t('volume.title')} extra={t(hasSelection ? 'common.selection' : 'common.whole')}>
+      <PropRow label={t('volume.gain')}>
+        <Slider
+          aria-label={t('volume.gainAria')}
+          value={db}
+          min={-24}
+          max={12}
+          step={0.5}
+          marks={[-12, 0].map((value) => ({ value }))}
+          valueLabelDisplay="auto"
+          valueLabelFormat={(v) => `${v > 0 ? '+' : ''}${v} dB`}
+          onChange={(_, v) => setDb(v as number)}
+          sx={COMPACT_SLIDER_SX}
+        />
+        <NumberInput value={db} onChange={setDb} min={-24} max={12} step={0.5} unit="dB" ariaLabel={t('volume.gainAria')} />
+      </PropRow>
+      <PropRow>
+        <Box sx={{ flexGrow: 1 }} />
+        <Button
+          size="small"
+          variant="contained"
+          disabled={busy || db === 0}
+          onClick={() => {
+            onGain(db)
+            setDb(0)
+          }}
+          sx={{ ...SMALL_BUTTON_SX, px: 1.5 }}
+        >
+          {t('common.apply')}
+        </Button>
+      </PropRow>
+      {/* 2列に並べる（横幅の狭いインスペクタでも折り返しで崩れないように） */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5 }}>
+        {ACTIONS.map(({ action, label }) => (
+          <Button key={action} size="small" variant="outlined" disabled={busy} onClick={() => onAction(action)} sx={SMALL_BUTTON_SX}>
+            {t(label)}
+          </Button>
+        ))}
+      </Box>
+    </InspectorSection>
   )
 }

@@ -66,3 +66,18 @@ export const theme = createTheme({
     },
   },
 })
+
+/**
+ * PC のときだけ当てる、デスクトップアプリらしい見た目。
+ * 押したときの波紋（ripple）は Web・Android 由来の動きなので消し、アイコンボタンは角ばらせる。
+ * 波紋が無いとキーボード操作の位置が分からなくなるため、フォーカス枠を代わりに出す
+ */
+export const desktopStyles = {
+  '.MuiTouchRipple-root': { display: 'none' },
+  '.MuiIconButton-root': { borderRadius: 4 },
+  '.MuiButton-root, .MuiButton-root:hover': { boxShadow: 'none' },
+  '.MuiButtonBase-root.Mui-focusVisible': {
+    outline: '2px solid var(--mui-palette-primary-main)',
+    outlineOffset: -2,
+  },
+} as const

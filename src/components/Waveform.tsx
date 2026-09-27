@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Box, useMediaQuery, useTheme, type Theme } from '@mui/material'
+import { Box, Slider, Stack, Typography } from '@mui/material'
+import { usePalette } from './waveform/usePalette'
+import { useLaneDivider } from './waveform/useLaneDivider'
+import { useRangeEdges, type EdgeDrag } from './waveform/useRangeEdges'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { F0_HOP_SEC, type Spectrogram } from '../dsp/engine'
 import {
-  PITCH_HEIGHT,
   RULER_HEIGHT,
-  WAVE_HEIGHT,
   computePeaks,
+  laneHeights,
   drawPitchLane,
   drawPlayhead,
   drawRuler,
@@ -17,26 +19,15 @@ import {
   pitchRange,
   type DrawContext,
 } from './waveform/draw'
-import { MIN_VIEW_SEC, ZOOM_STEP, useWaveformView } from './waveform/useWaveformView'
-import WaveformToolbar from './waveform/WaveformToolbar'
+import type { useWaveformView } from './waveform/useWaveformView'
 import { useLang, useT } from '../i18n/i18n'
 
 export { hzToMidi } from './waveform/draw'
 
 const DRAG_THRESHOLD_PX = 3
-/** 範囲の端をつかめる距離（px） */
-const EDGE_GRAB_PX = 6
-/** 端のドラッグで縮められる最小の範囲（秒） */
-const MIN_RANGE_SEC = 0.01
-
-/** 範囲の端のドラッグ。stretch なら離したときにその長さまで伸縮する */
-interface EdgeDrag {
-  index: number
-  side: 'start' | 'end'
-  stretch: boolean
-  orig: Range
-  last: Range
-}
+/** 長押しでメニューを出すまでの時間（ミリ秒）と、その間に動いてよい距離（px） */
+const LONG_PRESS_MS = 500
+const LONG_PRESS_SLOP_PX = 8
 
 /** ピッチ帯に描く点。`midi` が null なら消しゴム */
 export interface DrawPoint {
@@ -47,7 +38,6 @@ export interface DrawPoint {
 interface Props {
   clip: Clip
   position: number
-  playing: boolean
   /** 選択範囲（複数可、開始位置順） */
   selections: Range[]
   onSeek: (t: number) => void
@@ -55,38 +45,28 @@ interface Props {
   onSelectionsChange: (rs: Range[]) => void
   /** Shift+右端ドラッグで、範囲 `range` を長さ `duration`（秒）に伸縮する */
   onStretchRange: (range: Range, duration: number) => void
-  /** 右クリック（画面上の位置） */
+  /** 右クリック、またはタッチの長押し（画面上の位置） */
   onContextMenu: (x: number, y: number) => void
+  /** 表示範囲（拡大縮小・スクロール）。ツールバーと共有するため画面側で持つ */
+  viewCtl: ReturnType<typeof useWaveformView>
   /** F0（Hz、`F0_HOP_SEC` 間隔、無声は 0）。解析中は null */
   pitch: Float32Array | null
   showPitch: boolean
-  onShowPitchChange: (show: boolean) => void
   /** 描いた目標ピッチ（`pitch` と同じ長さ、0 は未編集） */
   target: Float32Array | null
   penMode: boolean
-  onPenModeChange: (pen: boolean) => void
   /** フレーム `from.k` から `to.k` までを描く（`midi` が null なら消す） */
   onDraw: (from: DrawPoint, to: DrawPoint) => void
-  onApplyCurve: () => void
-  onClearCurve: () => void
-  busy: boolean
   /** スペクトログラム。解析中は null */
   spectrogram: Spectrogram | null
   showSpectrogram: boolean
-  onShowSpectrogramChange: (show: boolean) => void
-}
-
-/** Canvas は CSS 変数を使えないため、現在の配色（ライト/ダーク）のパレット値を直接取り出す */
-function usePalette() {
-  const theme = useTheme()
-  const dark = useMediaQuery('(prefers-color-scheme: dark)')
-  const schemes = (theme as Theme & { colorSchemes?: Partial<Record<'light' | 'dark', { palette: Theme['palette'] }>> })
-    .colorSchemes
-  return { pal: schemes?.[dark ? 'dark' : 'light']?.palette ?? theme.palette, dark, font: theme.typography.fontFamily }
+  /** ピッチ帯の割合（%）。境目のドラッグで変わる */
+  pitchPercent: number
+  onPitchPercentChange: (percent: number) => void
 }
 
 export default function Waveform(props: Props) {
-  const { clip, position, playing, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram } = props
+  const { clip, position, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram } = props
   const { pal, dark, font } = usePalette()
   const t = useT()
   // 言語が変わったら Canvas の文字（「解析中…」）も描き直す
@@ -97,23 +77,44 @@ export default function Waveform(props: Props) {
   const dragRef = useRef<{ x0: number; t0: number; dragging: boolean; base: Range[]; edge?: EdgeDrag } | null>(null)
   const [edgeHover, setEdgeHover] = useState(false)
   const drawRef = useRef<DrawPoint | null>(null)
-  const [width, setWidth] = useState(0)
+  const [size, setSize] = useState({ width: 0, height: 0 })
+  const width = size.width
+  const longPressRef = useRef<{ timer: number; x: number; y: number } | null>(null)
   // `target` は描画中に中身だけが書き換わるため、再描画のきっかけに使うカウンタ
   const [drawVersion, setDrawVersion] = useState(0)
   const duration = clipDuration(clip)
-  const { view, zoomAround, scrollTo, showAll, zoomed } = useWaveformView(duration, position, playing, canvasRef)
+  const { view, scrollTo, zoomed, wheel } = props.viewCtl
 
+  // 置き場所の大きさに合わせて Canvas を伸び縮みさせる（高さも画面に合わせる）
   useEffect(() => {
     const el = boxRef.current
     if (!el) return
-    const ro = new ResizeObserver(([e]) => setWidth(Math.floor(e.contentRect.width)))
+    const ro = new ResizeObserver(([e]) =>
+      setSize({ width: Math.floor(e.contentRect.width), height: Math.floor(e.contentRect.height) }),
+    )
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
 
+  // ページ自体がスクロール・拡大しないよう、ホイールは non-passive で登録する
+  const wheelRef = useRef(wheel)
+  wheelRef.current = wheel
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      wheelRef.current(e, canvas.getBoundingClientRect())
+    }
+    canvas.addEventListener('wheel', onWheel, { passive: false })
+    return () => canvas.removeEventListener('wheel', onWheel)
+  }, [])
+
   const peaks = useMemo(() => (width > 0 ? computePeaks(clip, width, view) : null), [clip, width, view])
   const range = useMemo(() => (pitch ? pitchRange(pitch) : null), [pitch])
-  const height = RULER_HEIGHT + WAVE_HEIGHT + (showPitch ? PITCH_HEIGHT : 0)
+  const { waveH, pitchH, height } = laneHeights(size.height, showPitch, props.pitchPercent)
+  const divider = useLaneDivider(canvasRef, { waveH, pitchH }, showPitch, props.onPitchPercentChange)
+  const [dividerHover, setDividerHover] = useState(false)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -126,7 +127,7 @@ export default function Waveform(props: Props) {
     g.clearRect(0, 0, width, height)
     g.font = `11px ${font}`
     g.textBaseline = 'middle'
-    const c: DrawContext = { g, width, view, pal, dark }
+    const c: DrawContext = { g, width, view, pal, dark, waveH, pitchH }
 
     drawRuler(c)
     // スペクトログラムは波形の代わりに表示し、選択範囲はその上に重ねる
@@ -135,7 +136,7 @@ export default function Waveform(props: Props) {
     if (!showSpectrogram) drawWave(c, peaks)
     if (showPitch) drawPitchLane(c, pitch, range, target)
     drawPlayhead(c, position, height)
-  }, [lang, peaks, width, height, view, pal, dark, font, selections, showSpectrogram, spectrogram, showPitch, pitch, range, target, drawVersion, position])
+  }, [lang, peaks, width, height, waveH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, showPitch, pitch, range, target, drawVersion, position])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -143,40 +144,17 @@ export default function Waveform(props: Props) {
     return Math.max(0, Math.min(duration, t))
   }
 
-  /** `clientX` の近くにある範囲の端（なければ null） */
-  const edgeAt = (clientX: number): { index: number; side: 'start' | 'end' } | null => {
-    const rect = canvasRef.current!.getBoundingClientRect()
-    const xOf = (t: number) => rect.left + ((t - view.start) / view.dur) * rect.width
-    let best: { index: number; side: 'start' | 'end'; d: number } | null = null
-    selections.forEach((r, index) => {
-      for (const side of ['start', 'end'] as const) {
-        const d = Math.abs(xOf(r[side]) - clientX)
-        if (d <= EDGE_GRAB_PX && (!best || d < best.d)) best = { index, side, d }
-      }
-    })
-    return best
-  }
-
-  /** 端のドラッグ中の範囲を更新する */
-  const dragEdge = (edge: EdgeDrag, clientX: number) => {
-    const t = timeAt(clientX)
-    const { orig } = edge
-    edge.last =
-      edge.side === 'start'
-        ? { start: Math.min(t, orig.end - MIN_RANGE_SEC), end: orig.end }
-        : { start: orig.start, end: Math.max(t, orig.start + MIN_RANGE_SEC) }
-    props.onSelectionsChange(selections.map((r, i) => (i === edge.index ? edge.last : r)))
-  }
+  const { edgeAt, dragEdge } = useRangeEdges(canvasRef, view, selections, timeAt, props.onSelectionsChange)
 
   /** ピッチ帯上の点（Shift で半音に吸着、Alt で消しゴム）。描画中でなく帯の外なら null */
   const drawPointAt = (e: React.PointerEvent): DrawPoint | null => {
     if (!penMode || !showPitch || !range) return null
     const rect = canvasRef.current!.getBoundingClientRect()
-    const y = e.clientY - rect.top - RULER_HEIGHT - WAVE_HEIGHT
-    if (drawRef.current === null && (y < 0 || y > PITCH_HEIGHT)) return null
+    const y = e.clientY - rect.top - RULER_HEIGHT - waveH
+    if (drawRef.current === null && (y < 0 || y > pitchH)) return null
     const k = Math.round(timeAt(e.clientX) / F0_HOP_SEC)
     if (e.altKey) return { k, midi: null }
-    const m = range.hi - (Math.min(Math.max(y, 0), PITCH_HEIGHT) / PITCH_HEIGHT) * (range.hi - range.lo)
+    const m = range.hi - (Math.min(Math.max(y, 0), pitchH) / pitchH) * (range.hi - range.lo)
     return { k, midi: e.shiftKey ? Math.round(m) : m }
   }
 
@@ -186,11 +164,15 @@ export default function Waveform(props: Props) {
     setDrawVersion((v) => v + 1)
   }
 
-  const center = view.start + view.dur / 2
-  const active = selections[selections.length - 1]
+  const cancelLongPress = () => {
+    if (longPressRef.current) clearTimeout(longPressRef.current.timer)
+    longPressRef.current = null
+  }
 
   return (
-    <Box ref={boxRef} sx={{ width: '100%', userSelect: 'none', touchAction: 'none' }}>
+    <Stack sx={{ width: '100%', height: '100%', minHeight: 0, userSelect: 'none' }}>
+      {/* Canvas はこの箱の大きさいっぱいに描く */}
+      <Box ref={boxRef} sx={{ flex: 1, minHeight: 0, touchAction: 'none', overflow: 'hidden' }}>
       <canvas
         ref={canvasRef}
         role="img"
@@ -199,7 +181,7 @@ export default function Waveform(props: Props) {
           width: '100%',
           height,
           display: 'block',
-          cursor: penMode && showPitch ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
+          cursor: dividerHover ? 'row-resize' : penMode && showPitch ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
         }}
         onContextMenu={(e) => {
           e.preventDefault()
@@ -209,6 +191,17 @@ export default function Waveform(props: Props) {
           // 右クリックは範囲選択を始めない（コンテキストメニューに任せる）
           if (e.button === 2) return
           e.currentTarget.setPointerCapture(e.pointerId)
+          if (divider.start(e)) return
+          // タッチの長押しは右クリックの代わり（離すか動かすと取り消す）
+          if (e.pointerType === 'touch') {
+            const { clientX: x, clientY: y } = e
+            const timer = window.setTimeout(() => {
+              longPressRef.current = null
+              dragRef.current = null
+              props.onContextMenu(x, y)
+            }, LONG_PRESS_MS)
+            longPressRef.current = { timer, x, y }
+          }
           const p = drawPointAt(e)
           if (p) return drawTo(p)
           const t0 = timeAt(e.clientX)
@@ -223,6 +216,9 @@ export default function Waveform(props: Props) {
           dragRef.current = { x0: e.clientX, t0, dragging: false, base: add ? selections : [] }
         }}
         onPointerMove={(e) => {
+          const lp = longPressRef.current
+          if (lp && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > LONG_PRESS_SLOP_PX) cancelLongPress()
+          if (divider.dragging()) return divider.move(e)
           if (drawRef.current) {
             const p = drawPointAt(e)
             if (p) drawTo(p)
@@ -230,6 +226,7 @@ export default function Waveform(props: Props) {
           }
           const d = dragRef.current
           if (!d) {
+            setDividerHover(divider.hit(e))
             setEdgeHover(!penMode && !!edgeAt(e.clientX))
             return
           }
@@ -240,6 +237,8 @@ export default function Waveform(props: Props) {
           props.onSelectionsChange([...d.base, { start: Math.min(d.t0, t), end: Math.max(d.t0, t) }])
         }}
         onPointerUp={(e) => {
+          cancelLongPress()
+          if (divider.dragging()) return divider.end()
           if (drawRef.current) {
             drawRef.current = null
             return
@@ -254,26 +253,23 @@ export default function Waveform(props: Props) {
           }
         }}
       />
-      <WaveformToolbar
-        view={view}
-        duration={duration}
-        zoomed={zoomed}
-        canZoomIn={view.dur > MIN_VIEW_SEC}
-        onZoomOut={() => zoomAround(1 / ZOOM_STEP, center)}
-        onZoomIn={() => zoomAround(ZOOM_STEP, active ? (active.start + active.end) / 2 : center)}
-        onShowAll={showAll}
-        onScroll={scrollTo}
-        showSpectrogram={showSpectrogram}
-        onShowSpectrogramChange={props.onShowSpectrogramChange}
-        showPitch={showPitch}
-        onShowPitchChange={props.onShowPitchChange}
-        penMode={penMode}
-        onPenModeChange={props.onPenModeChange}
-        hasCurve={!!target && target.some((v) => v > 0)}
-        busy={props.busy}
-        onApplyCurve={props.onApplyCurve}
-        onClearCurve={props.onClearCurve}
-      />
-    </Box>
+      </Box>
+      {/* 表示範囲の横スクロールバー */}
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1 }}>
+        <Slider
+          size="small"
+          aria-label={t('wave.scroll')}
+          disabled={!zoomed}
+          value={view.start}
+          min={0}
+          max={Math.max(0, duration - view.dur)}
+          step={view.dur / 100}
+          onChange={(_, v) => scrollTo(v as number)}
+        />
+        <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+          {view.dur.toFixed(view.dur < 1 ? 3 : 1)}s
+        </Typography>
+      </Stack>
+    </Stack>
   )
 }

@@ -1,19 +1,28 @@
 import { useState } from 'react'
-import { Alert, Box, Card, CardContent, Container, Snackbar, Stack, useMediaQuery, useTheme } from '@mui/material'
+import { Alert, Box, GlobalStyles, Snackbar, useMediaQuery, useTheme } from '@mui/material'
+import { desktopStyles } from './theme'
+import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
 import { useAppMenus } from './hooks/useAppMenus'
+import { useWaveformView, ZOOM_STEP } from './components/waveform/useWaveformView'
 import AppHeader from './components/AppHeader'
 import { DropOverlay, EmptyState } from './components/EmptyState'
-import { ClipInfo, TransportBar } from './components/TransportBar'
 import Waveform from './components/Waveform'
+import WaveformToolbar from './components/waveform/WaveformToolbar'
+import Toolbar from './components/Toolbar'
+import StatusBar from './components/StatusBar'
+import SelectionField from './components/SelectionField'
+import DesktopLayout from './components/layout/DesktopLayout'
+import MobileLayout from './components/layout/MobileLayout'
+import { usePersistentNumber } from './components/layout/Splitter'
 import EditPanel from './components/EditPanel'
 import VolumePanel from './components/VolumePanel'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
+import ExportDialog from './components/ExportDialog'
 import { ContextMenu } from './components/menu/MenuList'
 import { useSettings } from './settings/settings'
 import SettingsDialog from './settings/SettingsDialog'
-import ExportDialog from './components/ExportDialog'
 import { LangContext, resolveLang, setLang } from './i18n/i18n'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
@@ -31,6 +40,11 @@ export default function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
+  // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
+  const viewCtl = useWaveformView(ed.duration, player.position, player.playing)
+  const [pitchPercent, setPitchPercent] = usePersistentNumber('wevocalsynth.pitchPercent', 40)
+  const { view } = viewCtl
+  const center = view.start + view.dur / 2
 
   const { menus, context } = useAppMenus({
     hasClip: !!edited,
@@ -63,10 +77,84 @@ export default function App() {
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
   const panelsDisabled = !editing || !edited
   const totalDuration = ed.editRanges.reduce((s, r) => s + r.end - r.start, 0)
+  const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
+
+  const editor = shown ? (
+    <Waveform
+      clip={shown}
+      position={player.position}
+      selections={editing ? ed.selections : []}
+      onSeek={player.seek}
+      onSelectionsChange={editing ? ed.setSelections : () => {}}
+      onStretchRange={ed.stretchRange}
+      onContextMenu={(x, y) => setContextPos({ x, y })}
+      viewCtl={viewCtl}
+      pitch={ed.pitch}
+      showPitch={ed.showPitch}
+      target={ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null}
+      penMode={ed.penMode && editing}
+      onDraw={(from, to) => ed.pitch && ed.pitchTarget.draw(shown, ed.pitch, from, to)}
+      spectrogram={ed.spec}
+      showSpectrogram={ed.showSpec}
+      pitchPercent={pitchPercent}
+      onPitchPercentChange={setPitchPercent}
+    />
+  ) : (
+    <EmptyState onOpen={ed.picker.open} />
+  )
+
+  const viewTools = (
+    <WaveformToolbar
+      disabled={!shown}
+      zoomed={viewCtl.zoomed}
+      canZoomIn={viewCtl.canZoomIn}
+      onZoomOut={() => viewCtl.zoomAround(1 / ZOOM_STEP, center)}
+      onZoomIn={() => viewCtl.zoomAround(ZOOM_STEP, selection ? (selection.start + selection.end) / 2 : center)}
+      onShowAll={viewCtl.showAll}
+      showSpectrogram={ed.showSpec}
+      onShowSpectrogramChange={ed.setShowSpec}
+      showPitch={ed.showPitch}
+      onShowPitchChange={ed.setShowPitch}
+      penMode={ed.penMode}
+      onPenModeChange={ed.setPenMode}
+      hasCurve={!!ed.pitchTarget.target && ed.pitchTarget.target.hz.some((v) => v > 0)}
+      busy={busy}
+      onApplyCurve={ed.applyCurve}
+      onClearCurve={ed.pitchTarget.clear}
+    />
+  )
+
+  const editPanel = (
+    <Box sx={disabledSx(panelsDisabled)} aria-disabled={panelsDisabled}>
+      <EditPanel
+        params={ed.params}
+        onChange={ed.setParams}
+        targetDuration={totalDuration}
+        hasSelection={!!selection}
+        busy={busy || panelsDisabled}
+        progress={ed.progress}
+        onApply={ed.apply}
+        preview={ed.multi ? 'multi' : ed.preview.state}
+        previewPlaying={ed.preview.player.playing}
+        onPreview={playback.togglePreview}
+        loopPlaying={loop.playing}
+        onLoop={playback.toggleLoop}
+        currentMidi={ed.rangeNote}
+        autoMode={ed.autoMode}
+      />
+    </Box>
+  )
+  const volumePanel = (
+    <Box sx={disabledSx(panelsDisabled)} aria-disabled={panelsDisabled}>
+      <VolumePanel hasSelection={!!selection} busy={busy || panelsDisabled} onGain={ed.cmd.gain} onAction={ed.cmd.volume} />
+    </Box>
+  )
 
   return (
     <LangContext.Provider value={lang}>
-      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: mobile ? 10 : 0 }}>
+      {!mobile && <GlobalStyles styles={desktopStyles} />}
+      {/* アプリとして画面の高さにぴったり収め、ページ全体はスクロールさせない */}
+      <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.default' }}>
         <AppHeader
           menus={menus}
           canUndo={ed.history.canUndo}
@@ -76,117 +164,80 @@ export default function App() {
           onRedo={ed.history.redo}
         />
         {ed.picker.input}
-
-        {/* PC は画面幅を活かして広く、スマホは余白を詰める */}
-        <Container maxWidth={mobile ? false : 'xl'} sx={{ py: mobile ? 1 : 3, px: mobile ? 1 : 3 }}>
-          <Stack spacing={mobile ? 1 : 3}>
-            <Card>
-              <CardContent sx={{ p: mobile ? 1.5 : 2 }}>
-                {!shown ? (
-                  <EmptyState onOpen={ed.picker.open} />
-                ) : (
-                  <Stack spacing={2}>
-                    <ClipInfo
-                      fileName={ed.fileName}
-                      clip={shown}
-                      duration={ed.duration}
-                      source={ed.source}
-                      onSourceChange={ed.setSource}
-                    />
-                    <Waveform
-                      clip={shown}
-                      position={player.position}
-                      playing={player.playing}
-                      selections={editing ? ed.selections : []}
-                      onSeek={player.seek}
-                      onSelectionsChange={editing ? ed.setSelections : () => {}}
-                      onStretchRange={ed.stretchRange}
-                      onContextMenu={(x, y) => setContextPos({ x, y })}
-                      pitch={ed.pitch}
-                      showPitch={ed.showPitch}
-                      onShowPitchChange={ed.setShowPitch}
-                      target={ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null}
-                      penMode={ed.penMode && editing}
-                      onPenModeChange={ed.setPenMode}
-                      onDraw={(from, to) => ed.pitch && ed.pitchTarget.draw(shown, ed.pitch, from, to)}
-                      onApplyCurve={ed.applyCurve}
-                      onClearCurve={ed.pitchTarget.clear}
-                      busy={busy}
-                      spectrogram={ed.spec}
-                      showSpectrogram={ed.showSpec}
-                      onShowSpectrogramChange={ed.setShowSpec}
-                    />
-                    <TransportBar
-                      playing={player.playing}
-                      position={player.position}
-                      duration={ed.duration}
-                      selection={selection}
-                      editable={editing}
-                      hidePlayback={mobile}
-                      busy={busy}
-                      hasClipboard={ed.cmd.hasClipboard}
-                      onTogglePlay={playback.togglePlay}
-                      onStop={playback.stop}
-                      onPlaySelection={playback.playSelection}
-                      onSelectionChange={(r) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])}
-                      onCut={ed.cmd.cut}
-                      onCopy={ed.cmd.copy}
-                      onPaste={ed.cmd.paste}
-                      onTrim={ed.cmd.trim}
-                    />
-                  </Stack>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* PC は「加工」と「音量」を横に並べ、スマホは縦に積む */}
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={mobile ? 1 : 3} sx={{ alignItems: 'flex-start' }}>
-              <Box sx={{ flex: { md: '7 1 0' }, width: '100%', ...disabledSx(panelsDisabled) }} aria-disabled={panelsDisabled}>
-                <EditPanel
-                  params={ed.params}
-                  onChange={ed.setParams}
-                  targetDuration={totalDuration}
-                  hasSelection={!!selection}
-                  busy={busy || panelsDisabled}
-                  progress={ed.progress}
-                  onApply={ed.apply}
-                  preview={ed.multi ? 'multi' : ed.preview.state}
-                  previewPlaying={ed.preview.player.playing}
-                  onPreview={playback.togglePreview}
-                  loopPlaying={loop.playing}
-                  onLoop={playback.toggleLoop}
-                  currentMidi={ed.rangeNote}
-                  autoMode={ed.autoMode}
-                />
-              </Box>
-              <Box sx={{ flex: { md: '5 1 0' }, width: '100%', ...disabledSx(panelsDisabled) }} aria-disabled={panelsDisabled}>
-                <VolumePanel
-                  hasSelection={!!selection}
-                  busy={busy || panelsDisabled}
-                  onGain={ed.cmd.gain}
-                  onAction={ed.cmd.volume}
-                />
-              </Box>
-            </Stack>
-          </Stack>
-        </Container>
-
-        {mobile && shown && (
-          <MobilePlayBar
-            playing={player.playing}
-            position={player.position}
-            duration={ed.duration}
-            hasSelection={!!selection}
-            loopPlaying={loop.playing}
-            onTogglePlay={playback.togglePlay}
-            onStop={playback.stop}
-            onPlaySelection={playback.playSelection}
-            onLoop={playback.toggleLoop}
+        {mobile ? (
+          <MobileLayout
+            editor={editor}
+            editorFooter={
+              <SelectionField
+                duration={ed.duration}
+                selection={selection}
+                selectionCount={ed.selections.length}
+                onSelectionChange={setActiveSelection}
+                disabled={!editing}
+                fontSize={13}
+              />
+            }
+            process={editPanel}
+            volume={volumePanel}
+            view={viewTools}
+            playBar={
+              <MobilePlayBar
+                playing={player.playing}
+                position={player.position}
+                duration={ed.duration}
+                hasSelection={!!selection}
+                loopPlaying={loop.playing}
+                onTogglePlay={playback.togglePlay}
+                onStop={playback.stop}
+                onPlaySelection={playback.playSelection}
+                onLoop={playback.toggleLoop}
+              />
+            }
+          />
+        ) : (
+          <DesktopLayout
+            toolbar={
+              <Toolbar
+                playing={player.playing}
+                position={player.position}
+                duration={ed.duration}
+                hasSelection={!!selection}
+                loopPlaying={loop.playing}
+                disabled={!shown}
+                onTogglePlay={playback.togglePlay}
+                onStop={playback.stop}
+                onPlaySelection={playback.playSelection}
+                onLoop={playback.toggleLoop}
+                viewTools={viewTools}
+              />
+            }
+            editor={editor}
+            inspector={
+              <>
+                {editPanel}
+                {volumePanel}
+              </>
+            }
+            statusBar={
+              <StatusBar
+                fileName={ed.fileName}
+                clip={shown}
+                duration={ed.duration}
+                selection={selection}
+                selectionCount={ed.selections.length}
+                onSelectionChange={setActiveSelection}
+                busy={busy}
+                progress={ed.progress}
+                source={ed.source}
+                onSourceChange={ed.setSource}
+              />
+            }
           />
         )}
+      </Box>
 
-        <ContextMenu position={contextPos} entries={context} onClose={() => setContextPos(null)} />
-        {edited && (
+      <ContextMenu position={contextPos} entries={context} onClose={() => setContextPos(null)} />
+      {edited && (
         <ExportDialog
           open={ed.exportOpen}
           onClose={() => ed.setExportOpen(false)}
@@ -200,22 +251,16 @@ export default function App() {
         />
       )}
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-        <SettingsDialog
-          open={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
-          settings={settings}
-          onChange={updateSettings}
-        />
-        {ed.dragOver && <DropOverlay />}
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} onChange={updateSettings} />
+      {ed.dragOver && <DropOverlay />}
 
-        <Snackbar open={!!ed.toast} autoHideDuration={4000} onClose={() => ed.setToast(null)}>
-          {ed.toast ? (
-            <Alert severity={ed.toast.severity} variant="filled" onClose={() => ed.setToast(null)}>
-              {ed.toast.message}
-            </Alert>
-          ) : undefined}
-        </Snackbar>
-      </Box>
+      <Snackbar open={!!ed.toast} autoHideDuration={4000} onClose={() => ed.setToast(null)}>
+        {ed.toast ? (
+          <Alert severity={ed.toast.severity} variant="filled" onClose={() => ed.setToast(null)}>
+            {ed.toast.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </LangContext.Provider>
   )
 }

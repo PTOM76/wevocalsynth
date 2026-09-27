@@ -71,6 +71,7 @@
   "process.instrumentHint": "For chords and percussion. Smooth even when stretched a lot (Phase Vocoder)",
   "process.pitch": "Pitch",
   "process.pitchAria": "Pitch (semitones)",
+  "process.semitoneUnit": "st",
   "process.noteAnalyzing": "Analyzing pitch…",
   "process.noteUnknown": "Note: —",
   "process.note": "Note: {note}",
@@ -86,6 +87,7 @@
   "process.processing": "Processing… {percent}%",
 
   "volume.title": "Volume",
+  "volume.gain": "Gain",
   "volume.gainAria": "Gain (dB)",
   "volume.fadeIn": "Fade in",
   "volume.fadeOut": "Fade out",

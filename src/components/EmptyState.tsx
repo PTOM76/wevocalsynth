@@ -7,7 +7,7 @@ import { useT } from '../i18n/i18n'
 export function EmptyState({ onOpen }: { onOpen: () => void }) {
   const t = useT()
   return (
-    <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center', py: 12 }}>
+    <Stack spacing={2} sx={{ height: '100%', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
       <Box sx={{ color: 'text.secondary', fontSize: 40 }}>
         <FontAwesomeIcon icon={faFileArrowUp} />
       </Box>

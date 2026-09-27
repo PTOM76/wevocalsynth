@@ -1,7 +1,8 @@
-import { Box, Button, Slider, Stack, TextField, Tooltip, Typography } from '@mui/material'
+import { IconButton, Slider, Tooltip, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnet } from '@fortawesome/free-solid-svg-icons'
 import { describePitch } from '../audio/notes'
+import { COMPACT_SLIDER_SX, NumberInput, PropRow } from './inspector/Inspector'
 import { useT } from '../i18n/i18n'
 
 interface Props {
@@ -14,40 +15,30 @@ interface Props {
 
 const round2 = (v: number) => Math.round(v * 100) / 100
 
-/** ピッチ変更量の指定。今の音程と変更後の音程を表示し、最寄りの音名に合わせられる */
+/** ピッチ変更量の行と、今の音程→変更後の音程の行。最寄りの音名に合わせるボタン付き */
 export default function PitchControl({ semitones, onChange, currentMidi }: Props) {
   const t = useT()
   const target = currentMidi != null ? currentMidi + semitones : null
 
   return (
-    <Box>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="subtitle2">{t('process.pitch')}</Typography>
-        <TextField
-          size="small"
-          type="number"
+    <>
+      <PropRow label={t('process.pitch')}>
+        <Slider
+          aria-label={t('process.pitchAria')}
           value={semitones}
-          onChange={(e) => {
-            const v = Number(e.target.value)
-            if (Number.isFinite(v)) onChange(Math.min(24, Math.max(-24, v)))
-          }}
-          slotProps={{ htmlInput: { min: -24, max: 24, step: 0.01, 'aria-label': t('process.pitchAria') } }}
-          sx={{ width: 96 }}
+          min={-24}
+          max={24}
+          step={0.1}
+          marks={[-12, 0, 12].map((value) => ({ value }))}
+          valueLabelDisplay="auto"
+          valueLabelFormat={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}`}
+          onChange={(_, v) => onChange(round2(v as number))}
+          sx={COMPACT_SLIDER_SX}
         />
-      </Stack>
-      <Slider
-        aria-label={t('process.pitchAria')}
-        value={semitones}
-        min={-24}
-        max={24}
-        step={0.1}
-        marks={[-24, -12, 0, 12, 24].map((v) => ({ value: v, label: v > 0 ? `+${v}` : `${v}` }))}
-        valueLabelDisplay="auto"
-        valueLabelFormat={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}`}
-        onChange={(_, v) => onChange(round2(v as number))}
-      />
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: 32 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
+        <NumberInput value={semitones} onChange={onChange} min={-24} max={24} step={0.01} unit={t('process.semitoneUnit')} ariaLabel={t('process.pitchAria')} />
+      </PropRow>
+      <PropRow>
+        <Typography sx={{ flex: 1, fontSize: 12, color: 'text.secondary' }} noWrap>
           {currentMidi === undefined
             ? t('process.noteAnalyzing')
             : currentMidi === null || target === null
@@ -58,17 +49,17 @@ export default function PitchControl({ semitones, onChange, currentMidi }: Props
         </Typography>
         <Tooltip title={t('process.snapTooltip')}>
           <span>
-            <Button
+            <IconButton
               size="small"
-              startIcon={<FontAwesomeIcon icon={faMagnet} />}
+              aria-label={t('process.snap')}
               disabled={target === null}
               onClick={() => target !== null && onChange(round2(semitones + Math.round(target) - target))}
             >
-              {t('process.snap')}
-            </Button>
+              <FontAwesomeIcon icon={faMagnet} fontSize={12} />
+            </IconButton>
           </span>
         </Tooltip>
-      </Stack>
-    </Box>
+      </PropRow>
+    </>
   )
 }
