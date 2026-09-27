@@ -33,6 +33,12 @@ export const theme = createTheme({
     MuiButton: { defaultProps: { disableElevation: true } },
     MuiCard: { defaultProps: { variant: 'outlined' } },
     MuiChip: { styleOverrides: { root: { borderRadius: 4 } } },
+    // メニュー・ダイアログ類の開閉アニメーションは短くする（ツールでは待たされる感じが重さになるため）
+    MuiMenu: { defaultProps: { transitionDuration: { enter: 110, exit: 70 } } },
+    MuiPopover: { defaultProps: { transitionDuration: { enter: 110, exit: 70 } } },
+    MuiDialog: { defaultProps: { transitionDuration: { enter: 140, exit: 90 } } },
+    MuiDrawer: { defaultProps: { transitionDuration: { enter: 160, exit: 110 } } },
+    MuiTooltip: { defaultProps: { enterDelay: 400, slotProps: { transition: { timeout: 100 } } } },
     // 目盛りを黒系にしない: レール上は primary、バー上は白で描く
     MuiSlider: {
       styleOverrides: {

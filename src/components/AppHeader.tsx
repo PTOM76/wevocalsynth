@@ -1,11 +1,9 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   AppBar,
   Box,
-  Button,
-  Drawer,
+  ButtonBase,
   IconButton,
-  List,
   ListSubheader,
   Menu,
   Toolbar,
@@ -15,7 +13,8 @@ import {
   useTheme,
 } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBars, faRotateLeft, faRotateRight, faWaveSquare } from '@fortawesome/free-solid-svg-icons'
+import { faEllipsisVertical, faRotateLeft, faRotateRight, faWaveSquare } from '@fortawesome/free-solid-svg-icons'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { renderEntries, type MenuGroup } from './menu/MenuList'
 import { useT } from '../i18n/i18n'
 
@@ -28,89 +27,122 @@ interface Props {
   onRedo: () => void
 }
 
-/** PC: 「ファイル・編集・表示…」のメニューバー */
+/** 元に戻す・やり直すなどのアイコンボタン（無効時もツールチップを出すため span で包む） */
+function HeaderIcon(p: { title: string; icon: IconDefinition; disabled?: boolean; small?: boolean; onClick: () => void }) {
+  return (
+    <Tooltip title={p.title}>
+      <span>
+        <IconButton aria-label={p.title} size={p.small ? 'small' : 'medium'} disabled={p.disabled} onClick={p.onClick}>
+          <FontAwesomeIcon icon={p.icon} fontSize={p.small ? 13 : undefined} />
+        </IconButton>
+      </span>
+    </Tooltip>
+  )
+}
+
+/** PC: Windows のアプリのような、高さを抑えた「ファイル・編集・表示…」のメニューバー */
 function MenuBar({ menus }: { menus: MenuGroup[] }) {
   const [open, setOpen] = useState<{ index: number; anchor: HTMLElement } | null>(null)
   const close = () => setOpen(null)
   return (
     <>
       {menus.map((m, index) => (
-        <Button
+        <ButtonBase
           key={m.label}
-          color="inherit"
-          size="small"
           onClick={(e) => setOpen({ index, anchor: e.currentTarget })}
           // 別のメニューを開いているときはマウスを乗せるだけで切り替える（デスクトップアプリと同じ操作感）
           onMouseEnter={(e) => open && open.index !== index && setOpen({ index, anchor: e.currentTarget })}
+          sx={{
+            px: 1.25,
+            height: 26,
+            borderRadius: 0.5,
+            fontSize: 13,
+            bgcolor: open?.index === index ? 'action.selected' : undefined,
+            '&:hover': { bgcolor: 'action.hover' },
+          }}
         >
           {m.label}
-        </Button>
+        </ButtonBase>
       ))}
-      <Menu anchorEl={open?.anchor} open={!!open} onClose={close}>
+      <Menu
+        anchorEl={open?.anchor}
+        open={!!open}
+        onClose={close}
+        slotProps={{ paper: { sx: { minWidth: 240 } }, list: { dense: true, sx: { py: 0.5 } } }}
+      >
         {open && renderEntries(menus[open.index].entries, close)}
       </Menu>
     </>
   )
 }
 
-/** スマホ: 下から出るメニュー一覧 */
-function MobileMenu({ menus }: { menus: MenuGroup[] }) {
+/** スマホ: Android の上部バーにある ⋮（その他）メニュー */
+function OverflowMenu({ menus }: { menus: MenuGroup[] }) {
   const t = useT()
-  const [open, setOpen] = useState(false)
-  const close = () => setOpen(false)
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const close = () => setAnchor(null)
   return (
     <>
-      <IconButton aria-label={t('app.menu')} onClick={() => setOpen(true)}>
-        <FontAwesomeIcon icon={faBars} />
+      <IconButton aria-label={t('app.menu')} edge="end" onClick={(e) => setAnchor(e.currentTarget)}>
+        <FontAwesomeIcon icon={faEllipsisVertical} />
       </IconButton>
-      <Drawer anchor="bottom" open={open} onClose={close}>
-        <List sx={{ pb: 2, maxHeight: '80vh', overflowY: 'auto' }}>
-          {menus.map((m) => (
-            <Box key={m.label}>
-              <ListSubheader>{m.label}</ListSubheader>
-              {renderEntries(
-                m.entries.map((e) => ('divider' in e ? e : { ...e, shortcut: undefined })),
-                close,
-              )}
-            </Box>
-          ))}
-        </List>
-      </Drawer>
+      <Menu
+        anchorEl={anchor}
+        open={!!anchor}
+        onClose={close}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{ paper: { sx: { minWidth: 220, maxHeight: '80vh' } } }}
+      >
+        {menus.flatMap((m): ReactNode[] => [
+          <ListSubheader key={`h-${m.label}`} sx={{ lineHeight: '32px' }}>
+            {m.label}
+          </ListSubheader>,
+          // スマホではショートカット表記は出さない
+          ...renderEntries(
+            m.entries.map((e) => ('divider' in e ? e : { ...e, shortcut: undefined })),
+            close,
+          ),
+        ])}
+      </Menu>
     </>
   )
 }
 
-/** 上部のアプリバー。PC ではメニューバー、スマホではメニューボタンにする */
+/** 上部のバー。PC は Windows 風の低いメニューバー、スマホは Android 風の上部バー */
 export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRedo }: Props) {
   const t = useT()
   const theme = useTheme()
   const mobile = useMediaQuery(theme.breakpoints.down('md'))
+
+  if (mobile) {
+    return (
+      <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Toolbar sx={{ minHeight: 56, gap: 0.5 }}>
+          <Typography variant="h6" sx={{ flexGrow: 1, fontSize: 22, fontWeight: 400 }} noWrap>
+            WeVocalSynth
+          </Typography>
+          <HeaderIcon title={t('common.undo')} icon={faRotateLeft} disabled={!canUndo || busy} onClick={onUndo} />
+          <HeaderIcon title={t('common.redo')} icon={faRotateRight} disabled={!canRedo || busy} onClick={onRedo} />
+          <OverflowMenu menus={menus} />
+        </Toolbar>
+      </AppBar>
+    )
+  }
+
   return (
     <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-      <Toolbar variant="dense" sx={{ gap: 1 }}>
-        <Box component="span" sx={{ color: 'primary.main', display: 'flex' }}>
+      <Toolbar disableGutters sx={{ minHeight: '32px !important', height: 32, px: 1, gap: 0.25 }}>
+        <Box component="span" sx={{ color: 'primary.main', display: 'flex', fontSize: 14, mx: 0.75 }}>
           <FontAwesomeIcon icon={faWaveSquare} />
         </Box>
-        <Typography variant="subtitle1" sx={{ fontWeight: 500, mr: 1 }} noWrap>
+        <Typography sx={{ fontSize: 13, fontWeight: 500, mr: 1 }} noWrap>
           WeVocalSynth
         </Typography>
-        {!mobile && <MenuBar menus={menus} />}
+        <MenuBar menus={menus} />
         <Box sx={{ flexGrow: 1 }} />
-        <Tooltip title={`${t('common.undo')} (Ctrl+Z)`}>
-          <span>
-            <IconButton aria-label={t('common.undo')} onClick={onUndo} disabled={!canUndo || busy}>
-              <FontAwesomeIcon icon={faRotateLeft} />
-            </IconButton>
-          </span>
-        </Tooltip>
-        <Tooltip title={`${t('common.redo')} (Ctrl+Y)`}>
-          <span>
-            <IconButton aria-label={t('common.redo')} onClick={onRedo} disabled={!canRedo || busy}>
-              <FontAwesomeIcon icon={faRotateRight} />
-            </IconButton>
-          </span>
-        </Tooltip>
-        {mobile && <MobileMenu menus={menus} />}
+        <HeaderIcon small title={`${t('common.undo')} (Ctrl+Z)`} icon={faRotateLeft} disabled={!canUndo || busy} onClick={onUndo} />
+        <HeaderIcon small title={`${t('common.redo')} (Ctrl+Y)`} icon={faRotateRight} disabled={!canRedo || busy} onClick={onRedo} />
       </Toolbar>
     </AppBar>
   )
