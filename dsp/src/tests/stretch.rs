@@ -85,3 +85,61 @@ fn combined_and_stereo() {
     assert_eq!(y[0].len(), l.len() * 2);
     assert!(y.iter().flatten().all(|v| v.is_finite()));
 }
+
+/// ビブラート付きの母音もどき（倍音 + 5Hz・±3% のビブラート）
+fn vibrato_vowel(sr: f32, secs: f32, f0: f32) -> Vec<f32> {
+    let mut phase = 0.0f32;
+    (0..(sr * secs) as usize)
+        .map(|i| {
+            let t = i as f32 / sr;
+            let f = f0 * (1.0 + 0.03 * (2.0 * std::f32::consts::PI * 5.0 * t).sin());
+            phase += 2.0 * std::f32::consts::PI * f / sr;
+            (1..=6).map(|h| (phase * h as f32).sin() / h as f32).sum::<f32>() * 0.3
+        })
+        .collect()
+}
+
+/// 周期性: 40ms ごとの区間で、1周期ずらした波形との正規化相関の最大値を平均する（1 に近いほど周期がきれい）
+fn periodicity(y: &[f32], sr: f32, f0: f32) -> f32 {
+    let win = (sr * 0.04) as usize;
+    let (lo, hi) = ((sr / (f0 * 1.1)) as usize, (sr / (f0 * 0.9)) as usize);
+    let mut total = 0.0;
+    let mut count = 0;
+    let mut s = win;
+    while s + win + hi < y.len() - win {
+        let a = &y[s..s + win];
+        let best = (lo..=hi)
+            .map(|lag| {
+                let b = &y[s + lag..s + lag + win];
+                let (mut ab, mut aa, mut bb) = (0.0f32, 0.0f32, 0.0f32);
+                for i in 0..win {
+                    ab += a[i] * b[i];
+                    aa += a[i] * a[i];
+                    bb += b[i] * b[i];
+                }
+                ab / (aa * bb).sqrt().max(1e-9)
+            })
+            .fold(f32::MIN, f32::max);
+        total += best;
+        count += 1;
+        s += win;
+    }
+    total / count as f32
+}
+
+/// ボーカルを大きく伸ばしたときの周期のきれいさを方式ごとに比べる。PSOLA は WSOLA 以上であること
+#[test]
+fn vocal_stretch_periodicity() {
+    let sr = 48000.0;
+    let x = vibrato_vowel(sr, 1.0, 180.0);
+    let mut scores = Vec::new();
+    for algo in ALGOS {
+        let y = &run(&[&x], sr, 0.0, 4.0, algo)[0];
+        let p = periodicity(y, sr, 180.0);
+        println!("{algo:?}: periodicity {p:.4}");
+        scores.push((algo, p));
+    }
+    let score = |a: Algorithm| scores.iter().find(|(x, _)| *x == a).unwrap().1;
+    assert!(score(Algorithm::Psola) >= score(Algorithm::Wsola) - 0.005, "{scores:?}");
+    assert!(score(Algorithm::Psola) > 0.95, "{scores:?}");
+}

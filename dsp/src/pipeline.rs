@@ -1,6 +1,6 @@
 //! ピッチ変更・時間伸縮・フォルマント補正をまとめた処理の流れ。
 
-use crate::{formant, pv, resample, wsola_map, wsola_with_progress, TimeMap};
+use crate::{formant, psola, pv, resample, wsola_map, wsola_with_progress, TimeMap};
 
 /// `semitones` 半音のピッチ変更と `stretch` 倍の時間伸縮を1パスで行う。
 /// 出力長はピッチ変更に関係なく 入力長 × stretch。
@@ -26,14 +26,16 @@ pub fn process(
 pub enum Algorithm {
     Wsola,
     PhaseVocoder,
+    /// ボーカル向け（ピッチの周期に合わせて切り貼りする）
+    Psola,
 }
 
 impl Algorithm {
     pub fn from_id(id: u32) -> Self {
-        if id == 1 {
-            Algorithm::PhaseVocoder
-        } else {
-            Algorithm::Wsola
+        match id {
+            1 => Algorithm::PhaseVocoder,
+            2 => Algorithm::Psola,
+            _ => Algorithm::Wsola,
         }
     }
 
@@ -47,6 +49,7 @@ impl Algorithm {
         match self {
             Algorithm::Wsola => wsola_with_progress(channels, alpha, sr, progress),
             Algorithm::PhaseVocoder => pv::stretch(channels, alpha, sr, progress),
+            Algorithm::Psola => psola::stretch(channels, alpha, sr, progress),
         }
     }
 
@@ -60,6 +63,7 @@ impl Algorithm {
         match self {
             Algorithm::Wsola => wsola_map(channels, map, sr, progress),
             Algorithm::PhaseVocoder => pv::stretch_map(channels, map, sr, progress),
+            Algorithm::Psola => psola::stretch_map(channels, map, sr, progress),
         }
     }
 }

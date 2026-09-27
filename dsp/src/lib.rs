@@ -14,6 +14,7 @@ mod ffi;
 mod fft;
 pub mod formant;
 mod pipeline;
+pub mod psola;
 pub mod pv;
 mod resample;
 pub mod spec;

@@ -28,7 +28,8 @@ impl<'a> TimeMap<'a> {
         }
     }
 
-    fn input_at(&self, t: f64) -> f64 {
+    /// 出力位置 `t`（サンプル）に対応する入力位置
+    pub(crate) fn input_at(&self, t: f64) -> f64 {
         match self.linear {
             Some(k) => t * k,
             None => (self.to_input)(t),
