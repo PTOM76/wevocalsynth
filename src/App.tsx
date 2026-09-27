@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   AppBar,
@@ -29,6 +29,9 @@ import { encodeWav, type WavFormat } from './audio/wav'
 import {
   applyEdit,
   applyPitchCurve,
+  processRange,
+  spliceProcessed,
+  type ProcessedRange,
   fadeRange,
   gainRange,
   insertAt,
@@ -44,6 +47,28 @@ import EditPanel, { type EditParams } from './components/EditPanel'
 import VolumePanel, { type VolumeAction } from './components/VolumePanel'
 
 const HISTORY_LIMIT = 20
+/** 自動プレビューする範囲の上限（秒） */
+const PREVIEW_MAX_SEC = 20
+/** パラメータ変更からプレビュー処理を始めるまでの待ち時間（ミリ秒） */
+const PREVIEW_DELAY_MS = 300
+
+const isNeutral = (p: EditParams) =>
+  p.semitones === 0 && p.stretch === 1 && !(p.preserveFormant && p.formantSemitones !== 0)
+
+const sameParams = (a: EditParams, b: EditParams) =>
+  a.semitones === b.semitones &&
+  a.stretch === b.stretch &&
+  a.algorithm === b.algorithm &&
+  a.preserveFormant === b.preserveFormant &&
+  a.formantSemitones === b.formantSemitones
+
+/** 加工済みプレビュー。どのクリップ・範囲・パラメータで作ったかを持ち、一致するときだけ使う */
+interface Preview {
+  clip: Clip
+  range: Range
+  params: EditParams
+  result: ProcessedRange
+}
 
 type Source = 'edited' | 'original'
 type Toast = { severity: 'success' | 'error' | 'info'; message: string }
@@ -154,13 +179,67 @@ export default function App() {
     }
   }, [loadFile])
 
+  // ---- プレビュー: パラメータを変えたら加工範囲を裏で処理しておく ----
+  const [preview, setPreview] = useState<Preview | null>(null)
+  const [previewBusy, setPreviewBusy] = useState(false)
+  const editRange: Range | null = edited ? (selection ?? { start: 0, end: clipDuration(edited) }) : null
+  const previewTooLong = !!editRange && editRange.end - editRange.start > PREVIEW_MAX_SEC
+  const previewMatches =
+    !!preview &&
+    !!editRange &&
+    preview.clip === edited &&
+    preview.range.start === editRange.start &&
+    preview.range.end === editRange.end &&
+    sameParams(preview.params, params)
+  const previewClip = useMemo<Clip | null>(
+    () => (previewMatches && preview ? { sampleRate: preview.clip.sampleRate, channels: preview.result.channels } : null),
+    [previewMatches, preview],
+  )
+  const previewPlayer = usePlayer(previewClip)
+
+  useEffect(() => {
+    if (!edited || !editRange || source !== 'edited' || busy || isNeutral(params) || previewTooLong || previewMatches) return
+    let cancelled = false
+    const clip = edited
+    const range = editRange
+    const p = params
+    const timer = setTimeout(() => {
+      setPreviewBusy(true)
+      processRange(clip, range, p)
+        .then((result) => !cancelled && setPreview({ clip, range, params: p, result }))
+        .catch(() => {})
+        .finally(() => !cancelled && setPreviewBusy(false))
+    }, PREVIEW_DELAY_MS)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+      setPreviewBusy(false)
+    }
+    // editRange はクリップと選択範囲から毎回作るため、元の値で依存を指定する
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edited, selection, params, source, busy, previewTooLong, previewMatches])
+
+  const togglePreview = () => {
+    if (previewPlayer.playing) {
+      previewPlayer.pause()
+    } else {
+      player.pause()
+      void previewPlayer.play(0)
+    }
+  }
+
   const apply = async () => {
     if (!edited) return
     setBusy(true)
     setProgress(0)
+    previewPlayer.pause()
     try {
       const range = selection ?? { start: 0, end: clipDuration(edited) }
-      const result = await applyEdit(edited, range, params, setProgress)
+      // 同じ設定のプレビューがあれば、それを差し込むだけで済ませる
+      const result =
+        previewMatches && preview
+          ? spliceProcessed(edited, preview.result)
+          : await applyEdit(edited, range, params, setProgress)
       setHistory((h) => ({
         past: [...h.past, edited].slice(-HISTORY_LIMIT),
         present: result.clip,
@@ -296,6 +375,7 @@ export default function App() {
   }
 
   const togglePlay = () => {
+    previewPlayer.pause()
     if (player.playing) player.pause()
     else void player.play(player.position >= duration - 1e-3 ? 0 : player.position)
   }
@@ -475,7 +555,11 @@ export default function App() {
                       <Button
                         startIcon={<FontAwesomeIcon icon={faCirclePlay} />}
                         disabled={!selection || source !== 'edited'}
-                        onClick={() => selection && void player.play(selection.start, selection.end)}
+                        onClick={() => {
+                          if (!selection) return
+                          previewPlayer.pause()
+                          void player.play(selection.start, selection.end)
+                        }}
                       >
                         範囲を試聴
                       </Button>
@@ -555,6 +639,9 @@ export default function App() {
                 busy={busy}
                 progress={progress}
                 onApply={apply}
+                preview={previewTooLong ? 'tooLong' : previewClip ? 'ready' : previewBusy ? 'busy' : 'none'}
+                previewPlaying={previewPlayer.playing}
+                onPreview={togglePreview}
               />
             )}
 

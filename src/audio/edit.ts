@@ -14,17 +14,37 @@ export async function applyEdit(
   opts: ProcessOptions,
   onProgress?: (p: number) => void,
 ): Promise<{ clip: Clip; range: Range }> {
-  const sr = clip.sampleRate
-  const len = clip.channels[0].length
-  const s = Math.max(0, Math.min(len, Math.round(range.start * sr)))
-  const e = Math.max(s, Math.min(len, Math.round(range.end * sr)))
-  const processed = await processAudio(
+  const r = await processRange(clip, range, opts, onProgress)
+  return spliceProcessed(clip, r)
+}
+
+/** `clip` の `range` を加工した結果。差し戻す位置（サンプル区間 [s, e)）も持つ */
+export interface ProcessedRange {
+  s: number
+  e: number
+  channels: Float32Array[]
+}
+
+/** `clip` の `range` を加工する（差し戻しはしない）。プレビューにも使う */
+export async function processRange(
+  clip: Clip,
+  range: Range,
+  opts: ProcessOptions,
+  onProgress?: (p: number) => void,
+): Promise<ProcessedRange> {
+  const [s, e] = toFrames(clip, range)
+  const channels = await processAudio(
     clip.channels.map((c) => c.subarray(s, e)),
-    sr,
+    clip.sampleRate,
     opts,
     onProgress,
   )
-  return splice(clip, s, e, processed)
+  return { s, e, channels }
+}
+
+/** `processRange` の結果を元の位置に差し戻す。新しいクリップと、加工後の音声が占める範囲を返す */
+export function spliceProcessed(clip: Clip, r: ProcessedRange): { clip: Clip; range: Range } {
+  return splice(clip, r.s, r.e, r.channels)
 }
 
 /**

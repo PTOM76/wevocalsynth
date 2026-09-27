@@ -18,7 +18,7 @@ import {
 } from '@mui/material'
 import type { Algorithm } from '../dsp/engine'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRotateLeft, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRotateLeft, faHeadphones, faStop, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { formatTime } from './Waveform'
 
 export interface EditParams {
@@ -38,6 +38,10 @@ interface Props {
   /** 処理中の進捗（0〜1） */
   progress: number
   onApply: () => void
+  /** プレビューの状態。tooLong は範囲が長すぎて自動処理しない */
+  preview: 'none' | 'busy' | 'ready' | 'tooLong'
+  previewPlaying: boolean
+  onPreview: () => void
 }
 
 const ALGORITHM_HINT: Record<Algorithm, string> = {
@@ -47,7 +51,7 @@ const ALGORITHM_HINT: Record<Algorithm, string> = {
 
 const STRETCH_PRESETS = [0.5, 0.75, 1, 1.5, 2, 4]
 
-export default function EditPanel({ params, onChange, targetDuration, hasSelection, busy, progress, onApply }: Props) {
+export default function EditPanel({ params, onChange, targetDuration, hasSelection, busy, progress, onApply, preview, previewPlaying, onPreview }: Props) {
   const { semitones, stretch, preserveFormant, formantSemitones } = params
   const formantShift = preserveFormant && formantSemitones !== 0
   const unchanged = semitones === 0 && stretch === 1 && !formantShift
@@ -179,7 +183,26 @@ export default function EditPanel({ params, onChange, targetDuration, hasSelecti
 
           {busy && <LinearProgress variant="determinate" value={progress * 100} aria-label="処理の進捗" />}
 
-          <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
+          <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
+            {preview === 'tooLong' && !unchanged && (
+              <Typography variant="caption" color="text.secondary" sx={{ mr: 'auto' }}>
+                試聴は20秒まで
+              </Typography>
+            )}
+            <Button
+              variant="outlined"
+              startIcon={
+                preview === 'busy' ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <FontAwesomeIcon icon={previewPlaying ? faStop : faHeadphones} />
+                )
+              }
+              disabled={busy || unchanged || preview !== 'ready'}
+              onClick={onPreview}
+            >
+              {previewPlaying ? '停止' : '試聴'}
+            </Button>
             <Button
               startIcon={<FontAwesomeIcon icon={faArrowRotateLeft} />}
               disabled={busy || unchanged}
