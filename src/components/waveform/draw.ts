@@ -1,5 +1,5 @@
 import { alpha, type Theme } from '@mui/material'
-import type { Clip, Range } from '../../audio/types'
+import type { Range } from '../../audio/types'
 import { F0_HOP_SEC, type Spectrogram } from '../../dsp/engine'
 import { renderSpectrogram } from './spectrogramImage'
 import { hzToMidi, noteName } from '../../audio/notes'
@@ -49,30 +49,6 @@ export function pitchRange(pitch: Float32Array): PitchRange {
     hi = lo + 12
   }
   return { lo, hi }
-}
-
-/** 表示範囲について、全チャンネルを通した1ピクセル列ごとの最小値・最大値を求める */
-export function computePeaks(clip: Clip, width: number, view: View) {
-  const len = clip.channels[0].length
-  const sr = clip.sampleRate
-  const min = new Float32Array(width)
-  const max = new Float32Array(width)
-  for (let x = 0; x < width; x++) {
-    const a = Math.floor((view.start + (x / width) * view.dur) * sr)
-    const b = Math.max(a + 1, Math.floor((view.start + ((x + 1) / width) * view.dur) * sr))
-    let lo = 0
-    let hi = 0
-    for (const ch of clip.channels) {
-      for (let i = Math.max(0, a); i < b && i < len; i++) {
-        const v = ch[i]
-        if (v < lo) lo = v
-        if (v > hi) hi = v
-      }
-    }
-    min[x] = lo
-    max[x] = hi
-  }
-  return { min, max }
 }
 
 /** ラベル間隔が約80px以上になるよう、きりのよい目盛り間隔を選ぶ */

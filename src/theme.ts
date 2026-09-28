@@ -38,6 +38,14 @@ export const createAppTheme = (desktop: boolean) => createTheme({
     button: { textTransform: 'none', fontWeight: 500 },
   },
   components: {
+    // アプリとして、ボタンやラベルの文字をドラッグで選択してしまわないようにする。
+    // 入力欄と、選べた方がよいもの（`.selectable`: ファイル名・リンクなど）だけは選択できる
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: { userSelect: 'none', WebkitUserSelect: 'none' },
+        'input, textarea, [contenteditable="true"], .selectable': { userSelect: 'text', WebkitUserSelect: 'text' },
+      },
+    },
     MuiButton: { defaultProps: { disableElevation: true } },
     MuiCard: { defaultProps: { variant: 'outlined' } },
     MuiChip: { styleOverrides: { root: { borderRadius: 4 } } },

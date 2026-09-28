@@ -8,7 +8,6 @@ import { clipDuration } from '../audio/types'
 import { F0_HOP_SEC, type Spectrogram } from '../dsp/engine'
 import {
   RULER_HEIGHT,
-  computePeaks,
   laneHeights,
   drawPitchLane,
   drawPlayhead,
@@ -21,6 +20,7 @@ import {
   type DrawContext,
 } from './waveform/draw'
 import type { useWaveformView } from './waveform/useWaveformView'
+import { computePeaks } from './waveform/peaks'
 import { useLang, useT } from '../i18n/i18n'
 
 export { hzToMidi } from './waveform/draw'
@@ -78,6 +78,10 @@ export default function Waveform(props: Props) {
   const overlayRef = useRef<HTMLCanvasElement>(null)
   // base: ドラッグ開始時に残す範囲（追加選択なら既存の範囲、通常は空）
   const dragRef = useRef<{ x0: number; t0: number; dragging: boolean; base: Range[]; edge?: EdgeDrag } | null>(null)
+  // 上の時間目盛りの上では、範囲選択ではなく再生位置を動かす（押したまま動かすと付いてくる）
+  const scrubRef = useRef(false)
+  const [rulerHover, setRulerHover] = useState(false)
+  const onRuler = (e: React.PointerEvent) => e.clientY - canvasRef.current!.getBoundingClientRect().top < RULER_HEIGHT
   const [edgeHover, setEdgeHover] = useState(false)
   const drawRef = useRef<DrawPoint | null>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -210,7 +214,7 @@ export default function Waveform(props: Props) {
           width: '100%',
           height,
           display: 'block',
-          cursor: dividerHover ? 'row-resize' : penMode && showPitch ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
+          cursor: rulerHover ? 'pointer' : dividerHover ? 'row-resize' : penMode && showPitch ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
         }}
         onContextMenu={(e) => {
           e.preventDefault()
@@ -221,6 +225,11 @@ export default function Waveform(props: Props) {
           if (e.button === 2) return
           e.currentTarget.setPointerCapture(e.pointerId)
           if (divider.start(e)) return
+          if (onRuler(e)) {
+            scrubRef.current = true
+            props.onSeek(timeAt(e.clientX))
+            return
+          }
           // タッチの長押しは右クリックの代わり（離すか動かすと取り消す）
           if (e.pointerType === 'touch') {
             const { clientX: x, clientY: y } = e
@@ -248,6 +257,7 @@ export default function Waveform(props: Props) {
           const lp = longPressRef.current
           if (lp && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > LONG_PRESS_SLOP_PX) cancelLongPress()
           if (divider.dragging()) return divider.move(e)
+          if (scrubRef.current) return props.onSeek(timeAt(e.clientX))
           if (drawRef.current) {
             const p = drawPointAt(e)
             if (p) drawTo(p)
@@ -255,6 +265,7 @@ export default function Waveform(props: Props) {
           }
           const d = dragRef.current
           if (!d) {
+            setRulerHover(onRuler(e))
             setDividerHover(divider.hit(e))
             setEdgeHover(!penMode && !!edgeAt(e.clientX))
             return
@@ -268,6 +279,10 @@ export default function Waveform(props: Props) {
         onPointerUp={(e) => {
           cancelLongPress()
           if (divider.dragging()) return divider.end()
+          if (scrubRef.current) {
+            scrubRef.current = false
+            return
+          }
           if (drawRef.current) {
             drawRef.current = null
             return

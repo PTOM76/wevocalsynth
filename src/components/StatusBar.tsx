@@ -33,7 +33,7 @@ export default function StatusBar(p: Props) {
       direction="row"
       sx={{ height: 24, fontSize: 12, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper', alignItems: 'center' }}
     >
-      <Box sx={{ ...ITEM_SX, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', lineHeight: '24px' }}>
+      <Box className="selectable" sx={{ ...ITEM_SX, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', lineHeight: '24px' }}>
         {p.fileName || '—'}
       </Box>
       {p.clip && (

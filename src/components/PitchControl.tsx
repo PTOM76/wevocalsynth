@@ -14,6 +14,8 @@ interface Props {
 }
 
 const round2 = (v: number) => Math.round(v * 100) / 100
+/** 数値入力と同じ 0.001 単位に丸める（「音程を合わせる」の結果用） */
+const round3 = (v: number) => Math.round(v * 1000) / 1000
 
 /** ピッチ変更量の行と、今の音程→変更後の音程の行。最寄りの音名に合わせるボタン付き */
 export default function PitchControl({ semitones, onChange, currentMidi }: Props) {
@@ -53,7 +55,7 @@ export default function PitchControl({ semitones, onChange, currentMidi }: Props
               size="small"
               aria-label={t('process.snap')}
               disabled={target === null}
-              onClick={() => target !== null && onChange(round2(semitones + Math.round(target) - target))}
+              onClick={() => target !== null && onChange(round3(semitones + Math.round(target) - target))}
             >
               <FontAwesomeIcon icon={faMagnet} fontSize={12} />
             </IconButton>

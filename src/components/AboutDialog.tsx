@@ -13,7 +13,7 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
     [t('about.author'), AUTHOR],
     [
       'GitHub',
-      <Link href={REPOSITORY_URL} target="_blank" rel="noopener noreferrer">
+      <Link className="selectable" href={REPOSITORY_URL} target="_blank" rel="noopener noreferrer">
         {REPOSITORY_URL.replace('https://', '')}
       </Link>,
     ],
