@@ -1,6 +1,7 @@
 # WeVocalSynth ドキュメント
 
 ## 目次
+- [使い方](MANUAL.md) (利用者向け)
 - [開発環境構築](SETUP.md)
 - [要件定義](REQUIREMENT.md)
 - [決定事項](DECISIONS.md)
