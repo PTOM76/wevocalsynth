@@ -39,7 +39,10 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
       <Typography component="legend" sx={{ px: 0.5, fontSize: 12, color: 'text.secondary' }}>
         {title}
       </Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>{children}</Box>
+      {/* ラベル列は一番長いラベルに合わせ、入力列は残りの幅に収める（長い選択肢は省略表示） */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'max-content minmax(0, 360px)', alignItems: 'center', columnGap: 2, rowGap: 1 }}>
+        {children}
+      </Box>
     </Box>
   )
 }
@@ -47,16 +50,16 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 /** 左にラベル、右に入力欄の1行 */
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-      <Typography sx={{ fontSize: 13, width: 140, flexShrink: 0 }}>{label}</Typography>
-      <Box sx={{ flex: 1, minWidth: 0 }}>{children}</Box>
-    </Box>
+    <>
+      <Typography sx={{ fontSize: 13, whiteSpace: 'nowrap' }}>{label}</Typography>
+      <Box sx={{ minWidth: 0 }}>{children}</Box>
+    </>
   )
 }
 
 function Choice<T extends string>(p: { value: T; onChange: (v: T) => void; options: [T, string][] }) {
   return (
-    <Select size="small" fullWidth value={p.value} onChange={(e) => p.onChange(e.target.value as T)} sx={{ fontSize: 13, '& .MuiSelect-select': { py: 0.5 } }}>
+    <Select size="small" fullWidth value={p.value} onChange={(e) => p.onChange(e.target.value as T)} sx={{ fontSize: 13, minWidth: 0, '& .MuiSelect-select': { py: 0.5 } }}>
       {p.options.map(([v, label]) => (
         <MenuItem key={v} value={v} sx={{ fontSize: 13 }}>
           {label}
@@ -68,7 +71,7 @@ function Choice<T extends string>(p: { value: T; onChange: (v: T) => void; optio
 
 function Check(p: { checked: boolean; onChange: (v: boolean) => void; label: string; help?: string }) {
   return (
-    <Box>
+    <Box sx={{ gridColumn: '1 / -1' }}>
       <FormControlLabel
         control={<Checkbox size="small" checked={p.checked} onChange={(e) => p.onChange(e.target.checked)} />}
         label={p.label}
@@ -182,7 +185,8 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
   const label = (c: Category) => t(`settings.cat.${c}`)
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" fullScreen={narrow}>
+    // PC ではカテゴリの一覧と項目を並べても窮屈にならない大きさにする
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth={false} fullScreen={narrow} slotProps={{ paper: { sx: narrow ? {} : { maxWidth: 720, height: 'min(600px, calc(100% - 64px))' } } }}>
       <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('settings.title')}</DialogTitle>
       {narrow && (
         <Tabs value={category} onChange={(_, v: Category) => setCategory(v)} variant="scrollable" sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -193,7 +197,7 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
       )}
       <DialogContent dividers sx={{ display: 'flex', gap: 2, p: narrow ? 2 : 0, minHeight: 320 }}>
         {!narrow && (
-          <List dense sx={{ width: 150, flexShrink: 0, borderRight: 1, borderColor: 'divider', py: 0.5 }}>
+          <List dense sx={{ width: 180, flexShrink: 0, borderRight: 1, borderColor: 'divider', py: 0.5 }}>
             {CATEGORIES.map((c) => (
               <ListItemButton key={c} selected={c === category} onClick={() => setCategory(c)} sx={{ fontSize: 13 }}>
                 {label(c)}
@@ -201,7 +205,7 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
             ))}
           </List>
         )}
-        <Box sx={{ flex: 1, minWidth: 0, py: narrow ? 0 : 2, pr: narrow ? 0 : 2 }}>{pages[category]}</Box>
+        <Box sx={{ flex: 1, minWidth: 0, overflowX: 'hidden', py: narrow ? 0 : 2, pr: narrow ? 0 : 2 }}>{pages[category]}</Box>
       </DialogContent>
       <DialogActions>
         <Button size="small" onClick={() => setDraft(DEFAULT_SETTINGS)} sx={{ mr: 'auto' }}>
