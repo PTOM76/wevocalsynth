@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Box, ButtonBase, InputBase, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { useNumberDraft } from '../../hooks/useNumberDraft'
 
 /**
  * インスペクタ（右パネル）の部品。DAW や Unity のインスペクタのように、
@@ -49,7 +50,7 @@ export function PropRow(p: { label?: string; children: ReactNode }) {
   )
 }
 
-/** 単位付きの小さな数値入力（範囲外の値は丸める） */
+/** 単位付きの小さな数値入力（確定時に範囲外の値は丸める） */
 export function NumberInput(p: {
   value: number
   onChange: (v: number) => void
@@ -61,6 +62,7 @@ export function NumberInput(p: {
   disabled?: boolean
   ariaLabel?: string
 }) {
+  const field = useNumberDraft(p.value, p.onChange, p.min, p.max)
   return (
     <Stack
       direction="row"
@@ -80,12 +82,8 @@ export function NumberInput(p: {
     >
       <InputBase
         type="number"
-        value={p.value}
+        {...field}
         disabled={p.disabled}
-        onChange={(e) => {
-          const v = Number(e.target.value)
-          if (Number.isFinite(v)) p.onChange(Math.min(p.max, Math.max(p.min, v)))
-        }}
         inputProps={{ min: p.min, max: p.max, step: p.step, 'aria-label': p.ariaLabel }}
         sx={{
           flex: 1,

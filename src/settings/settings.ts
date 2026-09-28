@@ -34,7 +34,7 @@ export const DEFAULT_SETTINGS: Settings = {
   language: 'auto',
   theme: 'system',
   ctrlS: 'project',
-  showBeatGrid: false,
+  showBeatGrid: true,
   bpm: 120,
   beatsPerBar: 4,
   beatOffset: 0,
