@@ -14,6 +14,8 @@ interface Handlers {
   save: () => void
   saveAlt: () => void
   exportAudio: () => void
+  /** ピッチ帯で曲線を編集できるときだけ渡す: ↑↓ = 半音、Shift+↑↓ = 0.1 半音 */
+  pitchShift?: (semitones: number) => void
 }
 
 /**
@@ -43,7 +45,13 @@ export function useShortcuts(handlers: Handlers) {
         s: e.shiftKey ? h.saveAlt : h.save,
         e: h.exportAudio,
       }
-      const plain: Record<string, () => void> = { Space: h.togglePlay, Escape: h.clearSelection }
+      const plain: Record<string, (() => void) | undefined> = { Space: h.togglePlay, Escape: h.clearSelection }
+      if (h.pitchShift) {
+        const step = e.shiftKey ? 0.1 : 1
+        const shift = h.pitchShift
+        plain.ArrowUp = () => shift(step)
+        plain.ArrowDown = () => shift(-step)
+      }
       const action = mod ? withMod[k] : plain[e.code]
       if (!action) return
       e.preventDefault()

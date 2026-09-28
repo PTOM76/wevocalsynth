@@ -86,6 +86,9 @@
   "algorithm.pvHint": "For chords and percussion. Smooth when stretched",
   "process.pitch": "Pitch",
   "process.pitchAria": "Pitch (semitones)",
+  "pitchTool.up": "Raise pitch a semitone (↑, Shift+↑ for 0.1)",
+  "pitchTool.down": "Lower pitch a semitone (↓, Shift+↓ for 0.1)",
+  "pitchTool.preview": "Preview before applying (curve part)",
   "pitchTool.target": "Target: {range}",
   "pitchTool.hint": "The curve appears as a blue line in the pitch lane. Press Apply in the toolbar to render it",
   "pitchTool.create": "Create",
@@ -141,6 +144,8 @@
   "wave.showAll": "Show all",
   "wave.scroll": "View position",
 
+  "shortcuts.pitchShift": "With pitch shown: shift selection pitch by a semitone (Shift: 0.1)",
+  "shortcuts.noSnap": "Hold while dragging to not snap to beat lines",
   "shortcuts.drag": "Drag",
   "shortcuts.ctrlDrag": "Ctrl+drag",
   "shortcuts.edgeDrag": "Drag a range edge",

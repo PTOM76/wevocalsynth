@@ -19,16 +19,19 @@ interface Loop {
  * 通常再生・試聴（加工済みプレビュー）・ループ（リアルタイム試聴）の切り替え。
  * どれか1つを始めたら、ほかは止める。
  */
-export function usePlayback(main: Player, preview: Player, loop: Loop, duration: number, selection: Range | null) {
+/** `curve` はピッチ曲線の試聴。ここからは止めるだけ（始めるのは usePitchTools） */
+export function usePlayback(main: Player, preview: Player, loop: Loop, curve: { pause: () => void }, duration: number, selection: Range | null) {
   const stopAll = () => {
     main.pause()
     preview.pause()
     loop.stop()
+    curve.pause()
   }
   const only = (keep: 'main' | 'preview' | 'loop') => {
     if (keep !== 'main') main.pause()
     if (keep !== 'preview') preview.pause()
     if (keep !== 'loop') loop.stop()
+    curve.pause()
   }
 
   return {

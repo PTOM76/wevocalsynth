@@ -28,6 +28,8 @@ import { useLang, useT } from '../i18n/i18n'
 export { hzToMidi } from './waveform/draw'
 
 const DRAG_THRESHOLD_PX = 3
+/** 拍の線へ吸着する距離（px） */
+const SNAP_PX = 6
 /** 長押しでメニューを出すまでの時間（ミリ秒）と、その間に動いてよい距離（px） */
 const LONG_PRESS_MS = 500
 const LONG_PRESS_SLOP_PX = 8
@@ -177,7 +179,18 @@ export default function Waveform(props: Props) {
     return Math.max(0, Math.min(duration, t))
   }
 
-  const { edgeAt, dragEdge } = useRangeEdges(canvasRef, view, selections, timeAt, props.onSelectionsChange)
+  // 拍の線を出しているときは、選択範囲の端・再生位置を近くの拍に吸着させる（Alt を押している間はしない）
+  const altRef = useRef(false)
+  const snapTime = (clientX: number) => {
+    const t = timeAt(clientX)
+    if (!beatGrid || altRef.current) return t
+    const beat = 60 / beatGrid.bpm
+    const b = beatGrid.offset + Math.round((t - beatGrid.offset) / beat) * beat
+    const px = (Math.abs(b - t) / view.dur) * width
+    return px <= SNAP_PX ? Math.max(0, Math.min(duration, b)) : t
+  }
+
+  const { edgeAt, dragEdge } = useRangeEdges(canvasRef, view, selections, snapTime, props.onSelectionsChange)
 
   /** ピッチ帯上の点（Shift で半音に吸着、Alt で消しゴム）。描画中でなく帯の外なら null */
   const drawPointAt = (e: React.PointerEvent): DrawPoint | null => {
@@ -228,11 +241,12 @@ export default function Waveform(props: Props) {
         onPointerDown={(e) => {
           // 右クリックは範囲選択を始めない（コンテキストメニューに任せる）
           if (e.button === 2) return
+          altRef.current = e.altKey
           e.currentTarget.setPointerCapture(e.pointerId)
           if (divider.start(e)) return
           if (onRuler(e)) {
             scrubRef.current = true
-            props.onSeek(timeAt(e.clientX))
+            props.onSeek(snapTime(e.clientX))
             return
           }
           // タッチの長押しは右クリックの代わり（離すか動かすと取り消す）
@@ -247,7 +261,7 @@ export default function Waveform(props: Props) {
           }
           const p = drawPointAt(e)
           if (p) return drawTo(p)
-          const t0 = timeAt(e.clientX)
+          const t0 = snapTime(e.clientX)
           const hit = edgeAt(e.clientX)
           if (hit) {
             const orig = selections[hit.index]
@@ -259,10 +273,11 @@ export default function Waveform(props: Props) {
           dragRef.current = { x0: e.clientX, t0, dragging: false, base: add ? selections : [] }
         }}
         onPointerMove={(e) => {
+          altRef.current = e.altKey
           const lp = longPressRef.current
           if (lp && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > LONG_PRESS_SLOP_PX) cancelLongPress()
           if (divider.dragging()) return divider.move(e)
-          if (scrubRef.current) return props.onSeek(timeAt(e.clientX))
+          if (scrubRef.current) return props.onSeek(snapTime(e.clientX))
           if (drawRef.current) {
             const p = drawPointAt(e)
             if (p) drawTo(p)
@@ -278,7 +293,7 @@ export default function Waveform(props: Props) {
           if (d.edge) return dragEdge(d.edge, e.clientX)
           if (!d.dragging && Math.abs(e.clientX - d.x0) < DRAG_THRESHOLD_PX) return
           d.dragging = true
-          const t = timeAt(e.clientX)
+          const t = snapTime(e.clientX)
           props.onSelectionsChange([...d.base, { start: Math.min(d.t0, t), end: Math.max(d.t0, t) }])
         }}
         onPointerUp={(e) => {
@@ -298,7 +313,7 @@ export default function Waveform(props: Props) {
           if (edge?.stretch && edge.last.end !== edge.orig.end) {
             props.onStretchRange(edge.orig, edge.last.end - edge.last.start)
           } else if (d && !d.dragging) {
-            props.onSeek(timeAt(e.clientX))
+            props.onSeek(snapTime(e.clientX))
           }
         }}
       />

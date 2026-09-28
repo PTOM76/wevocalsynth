@@ -21,6 +21,7 @@ import { useClipAnalysis } from './useClipAnalysis'
 import { usePreview } from './usePreview'
 import { usePitchTarget } from './usePitchTarget'
 import { usePitchVoicing } from './usePitchVoicing'
+import { usePitchTools } from './usePitchTools'
 import { useShortcuts } from './useShortcuts'
 import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
@@ -208,7 +209,18 @@ export function useEditor(settings: Settings) {
     })
 
   // 通常の再生と試聴は、片方を始めたらもう片方を止める
-  const playback = usePlayback(player, preview.player, loop, duration, selection)
+  // ピッチ曲線の加工と試聴（試聴を始めるときはほかの再生を止める）
+  const pitchTools = usePitchTools({
+    shown,
+    edited,
+    pitch,
+    pitchTarget,
+    selections,
+    opts: params,
+    setShowPitch,
+    stopOthers: () => playbackRef.current?.stopAll(),
+  })
+  const playback = usePlayback(player, preview.player, loop, pitchTools.preview, duration, selection)
   playbackRef.current = playback
 
   const picker = useFilePicker(`${AUDIO_ACCEPT},${PROJECT_EXT}`, (f) => void loadFile(f))
@@ -244,6 +256,7 @@ export function useEditor(settings: Settings) {
     save: settings.ctrlS === 'export' ? openExport : saveProjectFile,
     saveAlt: settings.ctrlS === 'export' ? saveProjectFile : openExport,
     exportAudio: openExport,
+    pitchShift: showPitch && editing && pitchTools.ready && !busy ? pitchTools.shift : undefined,
   })
 
   return {
@@ -258,7 +271,7 @@ export function useEditor(settings: Settings) {
     // 再生
     player, preview, loop, playback,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
-    showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget,
+    showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools,
     // 操作
     cmd, apply, stretchRange, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
   }

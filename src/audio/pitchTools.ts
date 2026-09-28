@@ -62,6 +62,16 @@ export function addVibrato(target: Float32Array | null, f0: Float32Array, k0: nu
   return out
 }
 
+/** フレーム k0〜k1 のピッチを `semitones` 半音まとめて上下した目標ピッチを返す（描いた線があればそれを動かす） */
+export function shiftPitch(target: Float32Array | null, f0: Float32Array, k0: number, k1: number, semitones: number): Float32Array {
+  const out = target ? target.slice() : new Float32Array(f0.length)
+  for (let k = Math.max(0, k0); k <= Math.min(f0.length - 1, k1); k++) {
+    if (!(f0[k] > 0)) continue
+    out[k] = midiToHz(hzToMidi(out[k] > 0 ? out[k] : f0[k]) + semitones)
+  }
+  return out
+}
+
 /** 音程に揃える設定 */
 export interface SnapOptions {
   /** nearest: 音ごとに一番近い半音へ / note: すべて `note` へ */

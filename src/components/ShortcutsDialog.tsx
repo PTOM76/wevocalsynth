@@ -14,6 +14,8 @@ const SHORTCUTS: [string | MessageKey, MessageKey][] = [
   ['shortcuts.rightClick', 'shortcuts.contextMenu'],
   ['shortcuts.wheel', 'shortcuts.scrollZoom'],
   ['shortcuts.penKeys', 'shortcuts.penModifiers'],
+  ['↑ / ↓ (Shift)', 'shortcuts.pitchShift'],
+  ['Alt', 'shortcuts.noSnap'],
 ]
 
 /** キーボード・マウス操作の一覧 */

@@ -86,6 +86,9 @@
   "algorithm.pvHint": "和音、打楽器向け。滑らかに伸ばす",
   "process.pitch": "ピッチ",
   "process.pitchAria": "ピッチ（半音）",
+  "pitchTool.up": "ピッチを半音上げる（↑、Shift+↑ で 0.1 半音）",
+  "pitchTool.down": "ピッチを半音下げる（↓、Shift+↓ で 0.1 半音）",
+  "pitchTool.preview": "適用前に試聴（曲線のある部分）",
   "pitchTool.target": "対象: {range}",
   "pitchTool.hint": "作った曲線はピッチ帯に青い線で出ます。ツールバーの「適用」で音に反映します",
   "pitchTool.create": "作成",
@@ -141,6 +144,8 @@
   "wave.showAll": "全体表示",
   "wave.scroll": "表示位置",
 
+  "shortcuts.pitchShift": "ピッチ表示中: 選択範囲のピッチを半音（Shift で 0.1 半音）上下",
+  "shortcuts.noSnap": "押しながらドラッグすると拍の線に吸着しない",
   "shortcuts.drag": "ドラッグ",
   "shortcuts.ctrlDrag": "Ctrl+ドラッグ",
   "shortcuts.edgeDrag": "範囲の端をドラッグ",

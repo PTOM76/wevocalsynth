@@ -2,16 +2,21 @@ import { Button, IconButton, Tooltip } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
+  faArrowDown,
+  faArrowUp,
   faChartColumn,
   faCheck,
   faExpand,
   faGripLines,
+  faHeadphones,
   faMagnet,
   faWaveSquare,
   faMagnifyingGlassMinus,
   faMagnifyingGlassPlus,
   faMusic,
   faPen,
+  faSpinner,
+  faStop,
   faTrashCan,
 } from '@fortawesome/free-solid-svg-icons'
 import { useT } from '../../i18n/i18n'
@@ -62,6 +67,12 @@ interface Props {
   onClearCurve: () => void
   /** ピッチ（F0）を解析済みか */
   pitchReady: boolean
+  /** 選択範囲（なければ全体）のピッチをまとめて上下する（半音） */
+  onShift: (semitones: number) => void
+  /** 曲線を適用前に試聴しているか・準備中か */
+  curvePreviewPlaying: boolean
+  curvePreviewBusy: boolean
+  onCurvePreview: () => void
   /** 選択範囲（なければ全体）のピッチの揺れを平らにする */
   onFlatten: () => void
   /** 「音程に揃える」ダイアログを開く */
@@ -107,11 +118,21 @@ export default function WaveformToolbar(p: Props) {
         disabled={off || !p.showPitch}
         onClick={() => p.onPenModeChange(!p.penMode)}
       />
+      <SmallButton title={t('pitchTool.up')} label={t('pitchTool.up')} icon={faArrowUp} disabled={pitchOff} onClick={() => p.onShift(1)} />
+      <SmallButton title={t('pitchTool.down')} label={t('pitchTool.down')} icon={faArrowDown} disabled={pitchOff} onClick={() => p.onShift(-1)} />
       <SmallButton title={t('pitchTool.flatten')} label={t('pitchTool.flatten')} icon={faGripLines} disabled={pitchOff} onClick={p.onFlatten} />
       <SmallButton title={t('snap.title')} label={t('snap.title')} icon={faMagnet} disabled={pitchOff} onClick={p.onSnap} />
       <SmallButton title={t('vibrato.title')} label={t('vibrato.title')} icon={faWaveSquare} disabled={pitchOff} onClick={p.onVibrato} />
       {p.showPitch && p.hasCurve && (
         <>
+          <SmallButton
+            title={t('pitchTool.preview')}
+            label={t('pitchTool.preview')}
+            icon={p.curvePreviewPlaying ? faStop : p.curvePreviewBusy ? faSpinner : faHeadphones}
+            pressed={p.curvePreviewPlaying}
+            disabled={p.busy || p.curvePreviewBusy}
+            onClick={p.onCurvePreview}
+          />
           <Button
             size="small"
             variant="contained"
