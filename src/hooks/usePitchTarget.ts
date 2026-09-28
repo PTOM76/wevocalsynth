@@ -42,5 +42,8 @@ export function usePitchTarget() {
 
   const clear = useCallback(() => set(null), [set])
 
-  return { target, draw, clear }
+  /** 目標ピッチを丸ごと置き換える（ビブラートを加える・平らにするなど、まとめて作った曲線用） */
+  const replace = useCallback((clip: Clip, hz: Float32Array) => set({ clip, hz }), [set])
+
+  return { target, draw, clear, replace }
 }

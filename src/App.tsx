@@ -17,6 +17,9 @@ import MobileLayout from './components/layout/MobileLayout'
 import { usePersistentNumber } from './components/layout/Splitter'
 import EditPanel from './components/EditPanel'
 import VolumePanel from './components/VolumePanel'
+import VibratoPanel from './components/VibratoPanel'
+import { addVibrato, flattenPitch } from './audio/vibrato'
+import { F0_HOP_SEC } from './dsp/engine'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
 import ExportDialog from './components/ExportDialog'
@@ -83,6 +86,7 @@ export default function App() {
 
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
   const panelsDisabled = !editing || !edited
+  const hasCurve = !!ed.pitchTarget.target && ed.pitchTarget.target.hz.some((v) => v > 0)
   const totalDuration = ed.editRanges.reduce((s, r) => s + r.end - r.start, 0)
   const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
 
@@ -124,7 +128,7 @@ export default function App() {
       onShowPitchChange={ed.setShowPitch}
       penMode={ed.penMode}
       onPenModeChange={ed.setPenMode}
-      hasCurve={!!ed.pitchTarget.target && ed.pitchTarget.target.hz.some((v) => v > 0)}
+      hasCurve={hasCurve}
       busy={busy}
       onApplyCurve={ed.applyCurve}
       onClearCurve={ed.pitchTarget.clear}
@@ -148,6 +152,35 @@ export default function App() {
         onLoop={playback.toggleLoop}
         currentMidi={ed.rangeNote}
         autoMode={ed.autoMode}
+      />
+    </Box>
+  )
+  // ビブラート: 選択範囲（なければ全体）の F0 フレーム範囲に曲線を作り、ピッチ帯に出す
+  const withPitchRange = (fn: (cur: Float32Array | null, f0: Float32Array, k0: number, k1: number) => Float32Array) => {
+    if (!shown) return
+    if (!ed.pitch) {
+      // まだ解析していなければピッチ表示を点けて解析を始める
+      ed.setShowPitch(true)
+      return
+    }
+    const r = selection ?? { start: 0, end: shown.channels[0].length / shown.sampleRate }
+    const k0 = Math.floor(r.start / F0_HOP_SEC)
+    const k1 = Math.ceil(r.end / F0_HOP_SEC)
+    const cur = ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null
+    ed.pitchTarget.replace(shown, fn(cur, ed.pitch, k0, k1))
+    ed.setShowPitch(true)
+  }
+  const vibratoPanel = (
+    <Box sx={disabledSx(panelsDisabled)} aria-disabled={panelsDisabled}>
+      <VibratoPanel
+        hasSelection={!!selection}
+        pitchReady={!!ed.pitch}
+        hasCurve={hasCurve}
+        busy={busy || panelsDisabled}
+        onAdd={(o) => withPitchRange((cur, f0, k0, k1) => addVibrato(cur, f0, k0, k1, o))}
+        onFlatten={() => withPitchRange(flattenPitch)}
+        onApply={ed.applyCurve}
+        onDiscard={ed.pitchTarget.clear}
       />
     </Box>
   )
@@ -184,7 +217,12 @@ export default function App() {
                 fontSize={13}
               />
             }
-            process={editPanel}
+            process={
+              <>
+                {editPanel}
+                {vibratoPanel}
+              </>
+            }
             volume={volumePanel}
             view={viewTools}
             playBar={
@@ -229,6 +267,7 @@ export default function App() {
             inspector={
               <>
                 {editPanel}
+                {vibratoPanel}
                 {volumePanel}
               </>
             }
