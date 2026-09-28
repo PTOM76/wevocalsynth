@@ -93,7 +93,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
   ]
 
   // スマホの ⋮ は短くする。切り取りなどは長押しメニュー、元に戻すは上部バー、
-  // 表示の切替は「表示」タブにあるので入れない。キーボードがないのでショートカット一覧も出さない
+  // 表示の切替は波形の下にあるので入れない。キーボードがないのでショートカット一覧も出さない
   const mobileMenus: MenuGroup[] = [
     {
       label: t('menu.file'),
