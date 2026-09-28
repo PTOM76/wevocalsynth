@@ -3,6 +3,7 @@ import type { Clip, Range } from '../audio/types'
 import { processRange, type ProcessedRange } from '../audio/edit'
 import { usePlayer } from '../audio/usePlayer'
 import type { EditParams } from '../components/EditPanel'
+import { clipBytes, reportMemory } from '../debug/debugStats'
 
 /** 自動プレビューする範囲の上限（秒） */
 const PREVIEW_MAX_SEC = 20
@@ -51,6 +52,8 @@ export function usePreview(clip: Clip | null, range: Range | null, params: EditP
     [matches, preview],
   )
   const player = usePlayer(previewClip)
+  // デバッグ表示: 試聴用に加工した音声の量
+  useEffect(() => reportMemory('preview', clipBytes(preview?.result)), [preview])
 
   const start = range?.start
   const end = range?.end

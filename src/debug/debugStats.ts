@@ -15,6 +15,23 @@ export function renderCounts(): ReadonlyMap<string, number> {
   return renders
 }
 
+/** 持っている音声データの量（バイト）。何がメモリを使っているかの内訳を出すため */
+const memory = new Map<string, number>()
+
+/** `name` が今持っている音声データの量を記録する（0 なら消す） */
+export function reportMemory(name: string, bytes: number) {
+  if (bytes > 0) memory.set(name, bytes)
+  else memory.delete(name)
+}
+
+export function memoryUsage(): ReadonlyMap<string, number> {
+  return memory
+}
+
+/** クリップの音声データの量（バイト） */
+export const clipBytes = (clip: { channels: Float32Array[] } | null | undefined) =>
+  clip ? clip.channels.reduce((s, c) => s + c.byteLength, 0) : 0
+
 /** DSP（Worker）の処理の記録 */
 export interface DspJob {
   kind: string

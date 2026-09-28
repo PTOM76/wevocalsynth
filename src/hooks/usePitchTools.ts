@@ -6,6 +6,7 @@ import { shiftPitch } from '../audio/pitchTools'
 import { usePlayer } from '../audio/usePlayer'
 import { F0_HOP_SEC, type ProcessOptions } from '../dsp/engine'
 import type { usePitchTarget } from './usePitchTarget'
+import { clipBytes, reportMemory } from '../debug/debugStats'
 
 /** 試聴で、曲線の前後に含める長さ（秒）。つながりも聴けるようにする */
 const PREVIEW_MARGIN_SEC = 0.3
@@ -55,6 +56,8 @@ export function usePitchTools(d: Deps) {
   const [preview, setPreview] = useState<{ clip: Clip; range: Range } | null>(null)
   const [previewBusy, setPreviewBusy] = useState(false)
   const player = usePlayer(preview?.clip ?? null)
+  // デバッグ表示: 試聴用に作ったクリップの量
+  useEffect(() => reportMemory('curvePreview', clipBytes(preview?.clip)), [preview])
   // 曲線を変えたり破棄したりしたら、古い試聴は使わない
   useEffect(() => setPreview(null), [pitchTarget.target])
 

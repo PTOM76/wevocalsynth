@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Box } from '@mui/material'
-import { recentDspJobs, renderCounts } from './debugStats'
+import { memoryUsage, recentDspJobs, renderCounts } from './debugStats'
 
 /** 表示を更新する間隔（ミリ秒）。数字が読める速さにする */
 const UPDATE_MS = 500
@@ -118,6 +118,7 @@ export default function DebugOverlay() {
       {`long tasks ${stats.longTasks}${stats.longTasks ? ` (max ${stats.longestTask.toFixed(0)}ms)` : ''}\n`}
       {stats.heapMb !== null && `heap ${stats.heapMb.toFixed(0)}MB\n`}
       {stats.renders.map(([k, v]) => `render ${k} ${v.toFixed(1)}/s\n`).join('')}
+      {[...memoryUsage()].map(([k, v]) => `mem ${k} ${(v / 2 ** 20).toFixed(0)}MB\n`).join('')}
       {jobs.map((j) => `dsp ${j.kind} ${j.ms.toFixed(0)}ms\n`).join('')}
     </Box>
   )

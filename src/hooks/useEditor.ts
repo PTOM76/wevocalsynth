@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { AUDIO_ACCEPT, decodeFile } from '../audio/decode'
@@ -22,6 +22,7 @@ import { usePreview } from './usePreview'
 import { usePitchTarget } from './usePitchTarget'
 import { usePitchVoicing } from './usePitchVoicing'
 import { usePitchTools } from './usePitchTools'
+import { clipBytes, reportMemory } from '../debug/debugStats'
 import { useShortcuts } from './useShortcuts'
 import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
@@ -67,6 +68,11 @@ export function useEditor(settings: Settings) {
   )
   const { busy, progress, setProgress } = task
   const edited = history.present
+  // デバッグ表示: 原音と加工後の音声データの量（同じものなら1つ分）
+  useEffect(() => {
+    reportMemory('original', clipBytes(original))
+    reportMemory('edited', edited === original ? 0 : clipBytes(edited))
+  }, [original, edited])
   const shown = source === 'original' ? original : edited
   const duration = shown ? clipDuration(shown) : 0
   const editing = source === 'edited' && !!edited

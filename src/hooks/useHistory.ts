@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { reportMemory } from '../debug/debugStats'
 import type { Clip } from '../audio/types'
 
 
@@ -92,6 +93,8 @@ export function useHistory(limits: HistoryLimits) {
   const limitsRef = useRef(limits)
   limitsRef.current = limits
   const [history, setHistory] = useState<History>({ past: [], present: null, future: [] })
+  // デバッグ表示: 履歴が持っている音声データの量
+  useEffect(() => reportMemory('history', [...history.past, ...history.future].reduce((s, p) => s + patchBytes(p), 0)), [history])
 
   /** 新しいクリップを履歴に積む */
   const commit = useCallback((clip: Clip) => {
