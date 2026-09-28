@@ -9,6 +9,7 @@ import { F0_HOP_SEC, type Spectrogram } from '../dsp/engine'
 import {
   RULER_HEIGHT,
   laneHeights,
+  drawBeatGrid,
   drawPitchLane,
   drawPlayhead,
   drawRuler,
@@ -17,6 +18,7 @@ import {
   spectrogramLayer,
   drawWave,
   pitchRange,
+  type BeatGrid,
   type DrawContext,
 } from './waveform/draw'
 import type { useWaveformView } from './waveform/useWaveformView'
@@ -64,10 +66,12 @@ interface Props {
   /** ピッチ帯の割合（%）。境目のドラッグで変わる */
   pitchPercent: number
   onPitchPercentChange: (percent: number) => void
+  /** 拍の目安線（null なら描かない） */
+  beatGrid: BeatGrid | null
 }
 
 export default function Waveform(props: Props) {
-  const { clip, position, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram } = props
+  const { clip, position, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram, beatGrid } = props
   const { pal, dark, font } = usePalette()
   const t = useT()
   // 言語が変わったら Canvas の文字（「解析中…」）も描き直す
@@ -149,7 +153,8 @@ export default function Waveform(props: Props) {
     for (const r of selections) drawSelection(c, r, height)
     if (!showSpectrogram) drawWave(c, peaks)
     if (showPitch) drawPitchLane(c, pitch, range, target)
-  }, [lang, peaks, width, height, waveH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
+    if (beatGrid) drawBeatGrid(c, beatGrid, height)
+  }, [beatGrid, lang,peaks, width, height, waveH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
 
   // 再生位置の線（再生中は毎フレーム変わるので、こちらだけを描き直す）
   useEffect(() => {

@@ -14,7 +14,13 @@ export function useRealtimePreview(clip: Clip | null, range: Range | null, semit
 
   const post = (m: GranularMessage, transfer: Transferable[] = []) => nodeRef.current?.port.postMessage(m, transfer)
 
+  // start の await 中に stop・再 start されたら、古い start はノードを作らずに抜ける。
+  // 作ってしまうと nodeRef から外れたノードが鳴り続け、止められなくなる
+  const genRef = useRef(0)
+  const readyRef = useRef<Promise<void>>(Promise.resolve())
+
   const stop = useCallback(() => {
+    genRef.current++
     nodeRef.current?.disconnect()
     nodeRef.current = null
     setPlaying(false)
@@ -23,15 +29,22 @@ export function useRealtimePreview(clip: Clip | null, range: Range | null, semit
   const start = useCallback(async () => {
     if (!clip || !range) return
     stop()
+    const gen = genRef.current
+    // 開始待ちの間も「再生中」として見せ、もう一度押したら止められるようにする
+    setPlaying(true)
     // 元音声と同じサンプルレートのコンテキストを使い、ブラウザ側のリサンプルを避ける
     let ctx = ctxRef.current
     if (!ctx || ctx.sampleRate !== clip.sampleRate) {
-      await ctx?.close()
+      ctxRef.current = null
+      void ctx?.close()
       ctx = new AudioContext({ sampleRate: clip.sampleRate })
-      await ctx.audioWorklet.addModule(processorUrl)
       ctxRef.current = ctx
+      readyRef.current = ctx.audioWorklet.addModule(processorUrl)
     }
+    // 読み込み中に別の start が来ても、同じ読み込みの完了を待つ
+    await readyRef.current
     if (ctx.state === 'suspended') await ctx.resume()
+    if (gen !== genRef.current) return
     const s = Math.floor(range.start * clip.sampleRate)
     const e = Math.max(s + 1, Math.floor(range.end * clip.sampleRate))
     const channels = clip.channels.map((c) => c.slice(s, e))

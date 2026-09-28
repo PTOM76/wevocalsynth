@@ -18,9 +18,28 @@ export interface Settings {
   language: LangSetting
   theme: ThemeSetting
   ctrlS: CtrlSAction
+  /** 拍の目安線を波形に出す */
+  showBeatGrid: boolean
+  /** テンポ（BPM） */
+  bpm: number
+  /** 1小節の拍数 */
+  beatsPerBar: number
+  /** 1拍目の位置（秒）。曲の頭に無音があるときに合わせる */
+  beatOffset: number
 }
 
-const DEFAULTS: Settings = { autoRestore: true, initialMode: 'auto', language: 'auto', theme: 'system', ctrlS: 'project' }
+export const DEFAULT_SETTINGS: Settings = {
+  autoRestore: true,
+  initialMode: 'auto',
+  language: 'auto',
+  theme: 'system',
+  ctrlS: 'project',
+  showBeatGrid: false,
+  bpm: 120,
+  beatsPerBar: 4,
+  beatOffset: 0,
+}
+const DEFAULTS = DEFAULT_SETTINGS
 const STORAGE_KEY = 'wevocalsynth.settings'
 
 /** localStorage から読む。使えない環境（プライベートモードなど）や壊れた値では既定値を使う */

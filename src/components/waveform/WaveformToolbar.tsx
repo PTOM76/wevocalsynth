@@ -5,6 +5,9 @@ import {
   faChartColumn,
   faCheck,
   faExpand,
+  faGripLines,
+  faMagnet,
+  faWaveSquare,
   faMagnifyingGlassMinus,
   faMagnifyingGlassPlus,
   faMusic,
@@ -57,6 +60,14 @@ interface Props {
   busy: boolean
   onApplyCurve: () => void
   onClearCurve: () => void
+  /** ピッチ（F0）を解析済みか */
+  pitchReady: boolean
+  /** 選択範囲（なければ全体）のピッチの揺れを平らにする */
+  onFlatten: () => void
+  /** 「音程に揃える」ダイアログを開く */
+  onSnap: () => void
+  /** 「ビブラート」ダイアログを開く */
+  onVibrato: () => void
   /** ファイルを開く前など、すべて操作できないとき */
   disabled?: boolean
 }
@@ -65,6 +76,8 @@ interface Props {
 export default function WaveformToolbar(p: Props) {
   const t = useT()
   const off = !!p.disabled
+  // ピッチの加工は、ピッチを表示して解析が済んでから
+  const pitchOff = off || !p.showPitch || !p.pitchReady || p.busy
   return (
     <>
       <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomOut') })} label={t('wave.zoomOut')} icon={faMagnifyingGlassMinus} disabled={off || !p.zoomed} onClick={p.onZoomOut} />
@@ -94,6 +107,9 @@ export default function WaveformToolbar(p: Props) {
         disabled={off || !p.showPitch}
         onClick={() => p.onPenModeChange(!p.penMode)}
       />
+      <SmallButton title={t('pitchTool.flatten')} label={t('pitchTool.flatten')} icon={faGripLines} disabled={pitchOff} onClick={p.onFlatten} />
+      <SmallButton title={t('snap.title')} label={t('snap.title')} icon={faMagnet} disabled={pitchOff} onClick={p.onSnap} />
+      <SmallButton title={t('vibrato.title')} label={t('vibrato.title')} icon={faWaveSquare} disabled={pitchOff} onClick={p.onVibrato} />
       {p.showPitch && p.hasCurve && (
         <>
           <Button

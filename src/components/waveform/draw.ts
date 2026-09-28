@@ -95,6 +95,36 @@ export function drawRuler(c: DrawContext) {
   g.stroke()
 }
 
+/** 拍の目安線の設定 */
+export interface BeatGrid {
+  bpm: number
+  /** 1小節の拍数 */
+  beatsPerBar: number
+  /** 1拍目の位置（秒） */
+  offset: number
+}
+
+/** 拍の目安線。小節の頭は濃く、拍は薄く描く（拍が詰まりすぎる倍率では小節だけ） */
+export function drawBeatGrid(c: DrawContext, grid: BeatGrid, h: number) {
+  const { g, width, view, pal } = c
+  const beat = 60 / grid.bpm
+  const pxPerBeat = (beat / view.dur) * width
+  const barOnly = pxPerBeat < 8
+  if (barOnly && pxPerBeat * grid.beatsPerBar < 8) return
+  const first = Math.ceil((view.start - grid.offset) / beat)
+  for (let i = first; grid.offset + i * beat <= view.start + view.dur; i++) {
+    const isBar = ((i % grid.beatsPerBar) + grid.beatsPerBar) % grid.beatsPerBar === 0
+    if (barOnly && !isBar) continue
+    const x = Math.round(toX(c, grid.offset + i * beat))
+    g.fillStyle = alpha(pal.warning.main, isBar ? 0.5 : 0.2)
+    g.fillRect(x, RULER_HEIGHT, 1, h - RULER_HEIGHT)
+    if (isBar && pxPerBeat * grid.beatsPerBar >= 24) {
+      g.fillStyle = pal.warning.main
+      g.fillText(String(Math.floor(i / grid.beatsPerBar) + 1), x + 3, RULER_HEIGHT - 5)
+    }
+  }
+}
+
 /**
  * 表示範囲のスペクトログラムの画像。作るのが重いため、表示範囲・大きさ・データが変わったときだけ作り、
  * 選択範囲の変更などでの描き直しでは使い回す

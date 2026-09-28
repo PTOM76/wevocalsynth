@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Alert, Box, GlobalStyles, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
 import { desktopStyles } from './theme'
 import type { Range } from './audio/types'
@@ -17,8 +17,8 @@ import MobileLayout from './components/layout/MobileLayout'
 import { usePersistentNumber } from './components/layout/Splitter'
 import EditPanel from './components/EditPanel'
 import VolumePanel from './components/VolumePanel'
-import VibratoPanel from './components/VibratoPanel'
-import { addVibrato, flattenPitch } from './audio/vibrato'
+import { SnapDialog, VibratoDialog } from './components/PitchToolDialogs'
+import { addVibrato, flattenPitch, snapPitch } from './audio/pitchTools'
 import { F0_HOP_SEC } from './dsp/engine'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
@@ -47,6 +47,7 @@ export default function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [pitchDialog, setPitchDialog] = useState<'snap' | 'vibrato' | null>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
   const viewCtl = useWaveformView(ed.duration, player.position, player.playing)
@@ -86,6 +87,11 @@ export default function App() {
 
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
   const panelsDisabled = !editing || !edited
+  const { showBeatGrid, bpm, beatsPerBar, beatOffset } = settings
+  const beatGrid = useMemo(
+    () => (showBeatGrid && bpm > 0 ? { bpm, beatsPerBar: Math.max(1, beatsPerBar), offset: beatOffset } : null),
+    [showBeatGrid, bpm, beatsPerBar, beatOffset],
+  )
   const hasCurve = !!ed.pitchTarget.target && ed.pitchTarget.target.hz.some((v) => v > 0)
   const totalDuration = ed.editRanges.reduce((s, r) => s + r.end - r.start, 0)
   const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
@@ -109,6 +115,7 @@ export default function App() {
       showSpectrogram={ed.showSpec}
       pitchPercent={pitchPercent}
       onPitchPercentChange={setPitchPercent}
+      beatGrid={beatGrid}
     />
   ) : (
     <EmptyState onOpen={ed.picker.open} />
@@ -132,6 +139,10 @@ export default function App() {
       busy={busy}
       onApplyCurve={ed.applyCurve}
       onClearCurve={ed.pitchTarget.clear}
+      pitchReady={!!ed.pitch && editing}
+      onFlatten={() => withPitchRange(flattenPitch)}
+      onSnap={() => setPitchDialog('snap')}
+      onVibrato={() => setPitchDialog('vibrato')}
     />
   )
 
@@ -155,7 +166,7 @@ export default function App() {
       />
     </Box>
   )
-  // ビブラート: 選択範囲（なければ全体）の F0 フレーム範囲に曲線を作り、ピッチ帯に出す
+  // ピッチの加工（平らにする・音程に揃える・ビブラート）: 選択範囲（なければ全体）の F0 フレーム範囲に曲線を作り、ピッチ帯に出す
   const withPitchRange = (fn: (cur: Float32Array | null, f0: Float32Array, k0: number, k1: number) => Float32Array) => {
     if (!shown) return
     if (!ed.pitch) {
@@ -170,20 +181,6 @@ export default function App() {
     ed.pitchTarget.replace(shown, fn(cur, ed.pitch, k0, k1))
     ed.setShowPitch(true)
   }
-  const vibratoPanel = (
-    <Box sx={disabledSx(panelsDisabled)} aria-disabled={panelsDisabled}>
-      <VibratoPanel
-        hasSelection={!!selection}
-        pitchReady={!!ed.pitch}
-        hasCurve={hasCurve}
-        busy={busy || panelsDisabled}
-        onAdd={(o) => withPitchRange((cur, f0, k0, k1) => addVibrato(cur, f0, k0, k1, o))}
-        onFlatten={() => withPitchRange(flattenPitch)}
-        onApply={ed.applyCurve}
-        onDiscard={ed.pitchTarget.clear}
-      />
-    </Box>
-  )
   const volumePanel = (
     <Box sx={disabledSx(panelsDisabled)} aria-disabled={panelsDisabled}>
       <VolumePanel hasSelection={!!selection} busy={busy || panelsDisabled} onGain={ed.cmd.gain} onAction={ed.cmd.volume} />
@@ -217,12 +214,7 @@ export default function App() {
                 fontSize={13}
               />
             }
-            process={
-              <>
-                {editPanel}
-                {vibratoPanel}
-              </>
-            }
+            process={editPanel}
             volume={volumePanel}
             view={viewTools}
             playBar={
@@ -267,7 +259,6 @@ export default function App() {
             inspector={
               <>
                 {editPanel}
-                {vibratoPanel}
                 {volumePanel}
               </>
             }
@@ -303,6 +294,19 @@ export default function App() {
           onExport={ed.exportFile}
         />
       )}
+      <SnapDialog
+        open={pitchDialog === 'snap'}
+        hasSelection={!!selection}
+        onClose={() => setPitchDialog(null)}
+        onRun={(o) => withPitchRange((cur, f0, k0, k1) => snapPitch(cur, f0, k0, k1, o))}
+      />
+      <VibratoDialog
+        open={pitchDialog === 'vibrato'}
+        hasSelection={!!selection}
+        bpm={settings.bpm}
+        onClose={() => setPitchDialog(null)}
+        onRun={(o) => withPitchRange((cur, f0, k0, k1) => addVibrato(cur, f0, k0, k1, o))}
+      />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} onChange={updateSettings} />
