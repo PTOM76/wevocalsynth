@@ -65,7 +65,7 @@ export default function App() {
   const [pitchDialog, setPitchDialog] = useState<'snap' | 'vibrato' | null>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
-  const viewCtl = useWaveformView(ed.duration, player.position, player.playing)
+  const viewCtl = useWaveformView(ed.duration, player.livePosition, player.playing)
   const [pitchPercent, setPitchPercent] = usePersistentNumber('wevocalsynth.pitchPercent', 40)
   const { view } = viewCtl
   const center = view.start + view.dur / 2
@@ -229,6 +229,7 @@ export default function App() {
               <MobilePlayBar
                 playing={player.playing}
                 position={player.position}
+                livePosition={player.livePosition}
                 duration={ed.duration}
                 hasSelection={!!selection}
                 loopPlaying={loop.playing}
@@ -245,6 +246,7 @@ export default function App() {
               <Toolbar
                 playing={player.playing}
                 position={player.position}
+                livePosition={player.livePosition}
                 duration={ed.duration}
                 hasSelection={!!selection}
                 loopPlaying={loop.playing}

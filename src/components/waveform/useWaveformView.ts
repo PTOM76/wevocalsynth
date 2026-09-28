@@ -5,12 +5,14 @@ import type { View } from './draw'
 export const MIN_VIEW_SEC = 0.02
 /** ボタン・ホイール1回あたりの拡大率 */
 export const ZOOM_STEP = 1.5
+/** 再生中に、再生位置が画面の外に出たか調べる間隔（ミリ秒） */
+const FOLLOW_CHECK_MS = 50
 
 /**
  * 波形の表示範囲（拡大縮小・スクロール）。クリップの長さ変更への追従と、再生中の自動スクロールを扱う。
  * ツールバーと波形の両方から操作するため、画面側（App）で持つ。
  */
-export function useWaveformView(duration: number, position: number, playing: boolean) {
+export function useWaveformView(duration: number, livePosition: () => number, playing: boolean) {
   const [view, setView] = useState<View>({ start: 0, dur: duration })
 
   // 表示範囲をクリップ内に収める
@@ -53,10 +55,15 @@ export function useWaveformView(duration: number, position: number, playing: boo
   }, [duration, fit])
 
   // 再生中は再生位置が画面内に収まるようにする
+  // （今の位置を定期的に読み、画面の外に出たときだけ表示範囲を変える。中にいる間は描き直さない）
   useEffect(() => {
     if (!playing) return
-    setView((v) => (position < v.start || position > v.start + v.dur ? fit(position, v.dur) : v))
-  }, [position, playing, fit])
+    const timer = window.setInterval(() => {
+      const position = livePosition()
+      setView((v) => (position < v.start || position > v.start + v.dur ? fit(position, v.dur) : v))
+    }, FOLLOW_CHECK_MS)
+    return () => clearInterval(timer)
+  }, [livePosition, playing, fit])
 
   return {
     view,

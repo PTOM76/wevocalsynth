@@ -15,7 +15,8 @@ interface Deps {
   /** 音量編集の対象（選択範囲、なければ全体） */
   editRanges: Range[]
   /** 再生位置（貼り付け先） */
-  position: number
+  /** 今の再生位置（貼り付け先）。再生中も正しい位置を返す */
+  getPosition: () => number
   seek: (t: number) => void
   commit: (clip: Clip) => void
   notify: (message: string) => void
@@ -42,7 +43,7 @@ export function useClipCommands(d: Deps) {
   }
   const paste = () => {
     if (!edited || !clipboard) return
-    const at = d.position
+    const at = d.getPosition()
     d.commit(insertAt(edited, clipboard, at))
     d.setSelections([{ start: at, end: at + clipDuration(clipboard) }])
   }

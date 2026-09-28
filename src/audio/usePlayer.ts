@@ -3,9 +3,6 @@ import type { Clip } from './types'
 import { clipDuration } from './types'
 
 /** メモリ上のクリップを Web Audio で再生する */
-/** 再生中に position（React の状態）を更新する間隔（ミリ秒） */
-const POSITION_UPDATE_MS = 100
-
 export function usePlayer(clip: Clip | null) {
   const ctxRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
@@ -80,23 +77,8 @@ export function usePlayer(clip: Clip | null) {
     [play],
   )
 
-  // 再生中は再生位置を追従する。position は画面全体の描き直しを起こすので間引き、
-  // 滑らかに動かしたい再生位置の線は livePosition を毎フレーム読んで描く
-  useEffect(() => {
-    if (!playing) return
-    let raf = 0
-    let last = 0
-    const tick = (now: number) => {
-      const t = currentTime()
-      if (t !== null && now - last >= POSITION_UPDATE_MS) {
-        last = now
-        setPosition(t)
-      }
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [playing, currentTime])
+  // 再生中は position（React の状態）を更新しない。更新すると画面全体が描き直され、再生中に重くなるため。
+  // 今の位置が要る部品（時間表示・再生位置の線・自動スクロール）は `livePosition` を自分で読む
 
   // クリップが切り替わったら再生を止め、再生位置を範囲内に収める
   useEffect(() => {

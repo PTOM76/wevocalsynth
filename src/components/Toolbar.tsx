@@ -2,13 +2,15 @@ import type { ReactNode } from 'react'
 import { Box, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCirclePlay, faCopy, faCropSimple, faPaste, faPause, faPlay, faRepeat, faScissors, faStop, faXmark } from '@fortawesome/free-solid-svg-icons'
-import { formatTime } from '../audio/types'
 import { SmallButton } from './waveform/WaveformToolbar'
 import { useT } from '../i18n/i18n'
+import LiveTime from './LiveTime'
 
 interface Props {
   playing: boolean
   position: number
+  /** 再生中の今の位置（時間表示が自分で読む） */
+  livePosition: () => number
   duration: number
   hasSelection: boolean
   loopPlaying: boolean
@@ -51,7 +53,7 @@ export default function Toolbar(p: Props) {
         <SmallButton title={t('play.playSelection')} label={t('play.playSelection')} icon={faCirclePlay} disabled={p.disabled || !p.hasSelection} onClick={p.onPlaySelection} />
         <SmallButton title={t('play.loopTooltip')} label={t('play.loopPreview')} icon={faRepeat} pressed={p.loopPlaying} disabled={p.disabled} onClick={p.onLoop} />
         <Typography variant="body2" sx={{ fontFamily: 'monospace', ml: 1, minWidth: 150 }}>
-          {formatTime(p.position)} / {formatTime(p.duration)}
+          <LiveTime position={p.position} playing={p.playing} livePosition={p.livePosition} duration={p.duration} />
         </Typography>
       </Stack>
       <Stack direction="row" sx={{ alignItems: 'center' }}>

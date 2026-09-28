@@ -97,7 +97,7 @@ export function useEditor(settings: Settings) {
     selections,
     setSelections,
     editRanges,
-    position: player.position,
+    getPosition: player.livePosition,
     seek: player.seek,
     commit,
     notify: (message) => setToast({ severity: 'info', message }),
