@@ -9,15 +9,16 @@ interface Props {
   editorFooter: ReactNode
   process: ReactNode
   volume: ReactNode
-  /** 「表示」タブの中身（拡大縮小・表示の切替・ピッチ描画） */
+  /** 波形の表示ツール（拡大縮小・表示の切替・ピッチ描画）。波形のすぐ下に常に出す */
   view: ReactNode
   playBar: ReactNode
 }
 
-type TabKey = 'process' | 'volume' | 'view'
+type TabKey = 'process' | 'volume'
 
 /**
- * スマホの配置。編集領域 / タブ（加工・音量・表示）とパネル / 再生バー。
+ * スマホの配置。編集領域 / 表示ツール / タブ（加工・音量）とパネル / 再生バー。
+ * 表示ツールは波形を見ながら使うため、タブに入れず常に出しておく。
  * ページ全体はスクロールさせず、パネルの中だけをスクロールする
  */
 export default function MobileLayout(p: Props) {
@@ -26,6 +27,13 @@ export default function MobileLayout(p: Props) {
   return (
     <>
       <Box sx={{ flex: '0 0 42%', minHeight: 180, p: 0.5, bgcolor: 'background.paper' }}>{p.editor}</Box>
+      <Stack
+        direction="row"
+        useFlexGap
+        sx={{ flexWrap: 'wrap', alignItems: 'center', gap: 0.5, px: 0.5, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
+      >
+        {p.view}
+      </Stack>
       <Box sx={{ borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>{p.editorFooter}</Box>
       <Tabs
         value={tab}
@@ -35,14 +43,9 @@ export default function MobileLayout(p: Props) {
       >
         <Tab value="process" label={t('process.title')} />
         <Tab value="volume" label={t('volume.title')} />
-        <Tab value="view" label={t('menu.view')} />
       </Tabs>
       <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 1 }}>
-        {tab === 'process' ? p.process : tab === 'volume' ? p.volume : (
-          <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
-            {p.view}
-          </Stack>
-        )}
+        {tab === 'process' ? p.process : p.volume}
       </Box>
       {p.playBar}
     </>

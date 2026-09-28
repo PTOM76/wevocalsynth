@@ -61,7 +61,7 @@ interface Props {
   disabled?: boolean
 }
 
-/** 波形の表示ツール（拡大縮小・表示の切替・ピッチ描画）。PC はツールバー、スマホは「表示」タブに置く */
+/** 波形の表示ツール（拡大縮小・表示の切替・ピッチ描画）。PC はツールバー、スマホは波形のすぐ下に置く */
 export default function WaveformToolbar(p: Props) {
   const t = useT()
   const off = !!p.disabled
