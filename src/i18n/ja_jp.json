@@ -174,6 +174,7 @@
   "settings.beatsPerBar": "1小節の拍数",
   "settings.beatOffset": "1拍目の位置",
   "settings.resetAll": "すべて既定値に戻す",
+  "settings.back": "戻る",
   "settings.title": "設定",
   "settings.autoRestore": "作業を自動保存し、次回開いたときに復元する",
   "settings.autoRestoreHelp": "音声はこのブラウザ内（IndexedDB）にだけ保存され、送信されません",

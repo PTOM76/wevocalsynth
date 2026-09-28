@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import {
   Box,
   Button,
@@ -8,16 +8,18 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
   List,
   ListItemButton,
   MenuItem,
   Select,
-  Tab,
-  Tabs,
+  Switch,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { DEFAULT_SETTINGS, type CtrlSAction, type InitialMode, type Settings, type ThemeSetting } from './settings'
 import { NumberInput } from '../components/inspector/Inspector'
 import { useT, type LangSetting } from '../i18n/i18n'
@@ -32,8 +34,18 @@ interface Props {
 type Category = 'general' | 'display' | 'tempo' | 'keys'
 const CATEGORIES: Category[] = ['general', 'display', 'tempo', 'keys']
 
-/** 枠線と見出しで項目をまとめる（Windows のグループボックス風） */
+/** スマホ向けの表示か（項目を縦に積み、文字と操作を大きくする） */
+const NarrowContext = createContext(false)
+
+/** 枠線と見出しで項目をまとめる（PC は Windows のグループボックス風、スマホは Android の設定風の見出し） */
 function Group({ title, children }: { title: string; children: ReactNode }) {
+  if (useContext(NarrowContext))
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'primary.main', mb: 1 }}>{title}</Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{children}</Box>
+      </Box>
+    )
   return (
     <Box component="fieldset" sx={{ m: 0, mb: 2, px: 1.5, pt: 0.5, pb: 1.5, border: 1, borderColor: 'divider', borderRadius: 0.5 }}>
       <Typography component="legend" sx={{ px: 0.5, fontSize: 12, color: 'text.secondary' }}>
@@ -47,8 +59,15 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-/** 左にラベル、右に入力欄の1行 */
+/** 左にラベル、右に入力欄の1行（スマホはラベルの下に入力欄） */
 function Row({ label, children }: { label: string; children: ReactNode }) {
+  if (useContext(NarrowContext))
+    return (
+      <Box>
+        <Typography sx={{ fontSize: 14, mb: 0.75 }}>{label}</Typography>
+        {children}
+      </Box>
+    )
   return (
     <>
       <Typography sx={{ fontSize: 13, whiteSpace: 'nowrap' }}>{label}</Typography>
@@ -58,10 +77,12 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function Choice<T extends string>(p: { value: T; onChange: (v: T) => void; options: [T, string][] }) {
+  const narrow = useContext(NarrowContext)
+  const fontSize = narrow ? 15 : 13
   return (
-    <Select size="small" fullWidth value={p.value} onChange={(e) => p.onChange(e.target.value as T)} sx={{ fontSize: 13, minWidth: 0, '& .MuiSelect-select': { py: 0.5 } }}>
+    <Select size="small" fullWidth value={p.value} onChange={(e) => p.onChange(e.target.value as T)} sx={{ fontSize, minWidth: 0, '& .MuiSelect-select': { py: narrow ? 1.25 : 0.5 } }}>
       {p.options.map(([v, label]) => (
-        <MenuItem key={v} value={v} sx={{ fontSize: 13 }}>
+        <MenuItem key={v} value={v} sx={{ fontSize }}>
           {label}
         </MenuItem>
       ))}
@@ -70,6 +91,17 @@ function Choice<T extends string>(p: { value: T; onChange: (v: T) => void; optio
 }
 
 function Check(p: { checked: boolean; onChange: (v: boolean) => void; label: string; help?: string }) {
+  // スマホは Android の設定と同じく、行全体を押せる右寄せのスイッチにする
+  if (useContext(NarrowContext))
+    return (
+      <Box component="label" sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
+        <Box sx={{ flex: 1 }}>
+          <Typography sx={{ fontSize: 14 }}>{p.label}</Typography>
+          {p.help && <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{p.help}</Typography>}
+        </Box>
+        <Switch checked={p.checked} onChange={(e) => p.onChange(e.target.checked)} />
+      </Box>
+    )
   return (
     <Box sx={{ gridColumn: '1 / -1' }}>
       <FormControlLabel
@@ -83,8 +115,8 @@ function Check(p: { checked: boolean; onChange: (v: boolean) => void; label: str
 }
 
 /**
- * 設定画面。左の分類から選んで右で変える。
- * 変更は「OK」「適用」で反映・保存し、「キャンセル」なら捨てる
+ * 設定画面。PC は左の分類から選んで右で変え、「OK」「適用」で反映・保存、「キャンセル」なら捨てる。
+ * スマホは分類の一覧から各画面へ進み、変更はその場で反映する
  */
 export default function SettingsDialog({ open, onClose, settings, onChange }: Props) {
   const t = useT()
@@ -94,10 +126,18 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
   const [draft, setDraft] = useState(settings)
   // 開くたびに今の設定から始める
   useEffect(() => {
-    if (open) setDraft(settings)
+    if (open) {
+      setDraft(settings)
+      setPage(null)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
-  const set = (patch: Partial<Settings>) => setDraft((d) => ({ ...d, ...patch }))
+  // スマホで開いている分類の画面（null なら一覧）
+  const [page, setPage] = useState<Category | null>(null)
+  const set = (patch: Partial<Settings>) => {
+    setDraft((d) => ({ ...d, ...patch }))
+    if (narrow) onChange(patch)
+  }
   const dirty = (Object.keys(draft) as (keyof Settings)[]).some((k) => draft[k] !== settings[k])
 
   const pages: Record<Category, ReactNode> = {
@@ -184,28 +224,51 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
 
   const label = (c: Category) => t(`settings.cat.${c}`)
 
+  // スマホ: Android の設定と同じく、分類の一覧 → 各画面へ進む形。変更はその場で反映し、OK・キャンセルは置かない
+  if (narrow)
+    return (
+      <NarrowContext.Provider value>
+        <Dialog open={open} onClose={onClose} fullScreen>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 56, px: 0.5, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
+            <IconButton aria-label={t('settings.back')} onClick={() => (page ? setPage(null) : onClose())}>
+              <FontAwesomeIcon icon={faArrowLeft} />
+            </IconButton>
+            <Typography sx={{ fontSize: 18, fontWeight: 500 }}>{page ? label(page) : t('settings.title')}</Typography>
+          </Box>
+          <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+            {page ? (
+              <Box sx={{ p: 2 }}>{pages[page]}</Box>
+            ) : (
+              <List>
+                {CATEGORIES.map((c) => (
+                  <ListItemButton key={c} onClick={() => setPage(c)} sx={{ py: 1.5 }}>
+                    <Typography sx={{ flex: 1, fontSize: 15 }}>{label(c)}</Typography>
+                    <FontAwesomeIcon icon={faChevronRight} style={{ opacity: 0.5 }} />
+                  </ListItemButton>
+                ))}
+                <ListItemButton onClick={() => set(DEFAULT_SETTINGS)} sx={{ py: 1.5, mt: 1, borderTop: 1, borderColor: 'divider' }}>
+                  <Typography sx={{ fontSize: 15, color: 'error.main' }}>{t('settings.resetAll')}</Typography>
+                </ListItemButton>
+              </List>
+            )}
+          </Box>
+        </Dialog>
+      </NarrowContext.Provider>
+    )
+
   return (
     // PC ではカテゴリの一覧と項目を並べても窮屈にならない大きさにする
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth={false} fullScreen={narrow} slotProps={{ paper: { sx: narrow ? {} : { maxWidth: 720, height: 'min(600px, calc(100% - 64px))' } } }}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth={false} slotProps={{ paper: { sx: { maxWidth: 720, height: 'min(600px, calc(100% - 64px))' } } }}>
       <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('settings.title')}</DialogTitle>
-      {narrow && (
-        <Tabs value={category} onChange={(_, v: Category) => setCategory(v)} variant="scrollable" sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <DialogContent dividers sx={{ display: 'flex', gap: 2, p: 0 }}>
+        <List dense sx={{ width: 180, flexShrink: 0, borderRight: 1, borderColor: 'divider', py: 0.5 }}>
           {CATEGORIES.map((c) => (
-            <Tab key={c} value={c} label={label(c)} />
+            <ListItemButton key={c} selected={c === category} onClick={() => setCategory(c)} sx={{ fontSize: 13 }}>
+              {label(c)}
+            </ListItemButton>
           ))}
-        </Tabs>
-      )}
-      <DialogContent dividers sx={{ display: 'flex', gap: 2, p: narrow ? 2 : 0, minHeight: 320 }}>
-        {!narrow && (
-          <List dense sx={{ width: 180, flexShrink: 0, borderRight: 1, borderColor: 'divider', py: 0.5 }}>
-            {CATEGORIES.map((c) => (
-              <ListItemButton key={c} selected={c === category} onClick={() => setCategory(c)} sx={{ fontSize: 13 }}>
-                {label(c)}
-              </ListItemButton>
-            ))}
-          </List>
-        )}
-        <Box sx={{ flex: 1, minWidth: 0, overflowX: 'hidden', py: narrow ? 0 : 2, pr: narrow ? 0 : 2 }}>{pages[category]}</Box>
+        </List>
+        <Box sx={{ flex: 1, minWidth: 0, overflowX: 'hidden', py: 2, pr: 2 }}>{pages[category]}</Box>
       </DialogContent>
       <DialogActions>
         <Button size="small" onClick={() => setDraft(DEFAULT_SETTINGS)} sx={{ mr: 'auto' }}>
