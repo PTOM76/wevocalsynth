@@ -101,6 +101,8 @@ export default function App() {
     <Waveform
       clip={shown}
       position={player.position}
+      playing={player.playing}
+      livePosition={player.livePosition}
       selections={editing ? ed.selections : []}
       onSeek={player.seek}
       onSelectionsChange={editing ? ed.setSelections : () => {}}

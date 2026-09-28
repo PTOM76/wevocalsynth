@@ -3,6 +3,9 @@ import type { Clip } from './types'
 import { clipDuration } from './types'
 
 /** メモリ上のクリップを Web Audio で再生する */
+/** 再生中に position（React の状態）を更新する間隔（ミリ秒） */
+const POSITION_UPDATE_MS = 100
+
 export function usePlayer(clip: Clip | null) {
   const ctxRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
@@ -77,13 +80,18 @@ export function usePlayer(clip: Clip | null) {
     [play],
   )
 
-  // 再生中は再生位置を追従する
+  // 再生中は再生位置を追従する。position は画面全体の描き直しを起こすので間引き、
+  // 滑らかに動かしたい再生位置の線は livePosition を毎フレーム読んで描く
   useEffect(() => {
     if (!playing) return
     let raf = 0
-    const tick = () => {
+    let last = 0
+    const tick = (now: number) => {
       const t = currentTime()
-      if (t !== null) setPosition(t)
+      if (t !== null && now - last >= POSITION_UPDATE_MS) {
+        last = now
+        setPosition(t)
+      }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -99,5 +107,10 @@ export function usePlayer(clip: Clip | null) {
 
   useEffect(() => () => void ctxRef.current?.close(), [])
 
-  return { playing, position, play, pause, seek }
+  /** 今の再生位置（再生中は毎回 AudioContext から求める。描画のループから呼ぶ） */
+  const positionRef = useRef(position)
+  positionRef.current = position
+  const livePosition = useCallback(() => currentTime() ?? positionRef.current, [currentTime])
+
+  return { playing, position, livePosition, play, pause, seek }
 }

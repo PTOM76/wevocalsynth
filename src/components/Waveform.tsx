@@ -43,6 +43,9 @@ export interface DrawPoint {
 interface Props {
   clip: Clip
   position: number
+  /** 再生中か。再生中は `livePosition` で毎フレーム再生位置の線を描く */
+  playing?: boolean
+  livePosition?: () => number
   /** 選択範囲（複数可、開始位置順） */
   selections: Range[]
   onSeek: (t: number) => void
@@ -73,7 +76,7 @@ interface Props {
 }
 
 export default function Waveform(props: Props) {
-  const { clip, position, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram, beatGrid } = props
+  const { clip, position, playing, livePosition, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram, beatGrid } = props
   const { pal, dark, font } = usePalette()
   const t = useT()
   // 言語が変わったら Canvas の文字（「解析中…」）も描き直す
@@ -168,10 +171,22 @@ export default function Waveform(props: Props) {
       canvas.height = height * dpr
     }
     const g = canvas.getContext('2d')!
-    g.setTransform(dpr, 0, 0, dpr, 0, 0)
-    g.clearRect(0, 0, width, height)
-    drawPlayhead({ g, width, view, pal, dark, waveH, pitchH }, position, height)
-  }, [position, width, height, view, pal, dark, waveH, pitchH])
+    const draw = (t: number) => {
+      g.setTransform(dpr, 0, 0, dpr, 0, 0)
+      g.clearRect(0, 0, width, height)
+      drawPlayhead({ g, width, view, pal, dark, waveH, pitchH }, t, height)
+    }
+    draw(position)
+    // 再生中は React の再描画（position は間引いて更新）を待たず、毎フレーム今の位置で描く
+    if (!playing || !livePosition) return
+    let raf = 0
+    const tick = () => {
+      draw(livePosition())
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, pitchH])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
