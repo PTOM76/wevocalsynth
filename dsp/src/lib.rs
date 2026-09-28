@@ -17,6 +17,7 @@ mod pipeline;
 pub mod psola;
 pub mod pv;
 mod resample;
+pub mod sola;
 pub mod spec;
 mod timemap;
 mod wsola;

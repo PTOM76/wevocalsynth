@@ -79,6 +79,8 @@ export default function App() {
     toggleLoop: playback.toggleLoop,
     toggleSpectrogram: () => ed.setShowSpec(!ed.showSpec),
     togglePitch: () => ed.setShowPitch(!ed.showPitch),
+    pitchReady: ed.showPitch && !!ed.pitch,
+    setVoicing: (v) => ed.voicing.set(ed.selections, v),
     showShortcuts: () => setShortcutsOpen(true),
     showSettings: () => setSettingsOpen(true),
     showAbout: () => setAboutOpen(true),

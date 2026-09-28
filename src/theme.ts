@@ -20,7 +20,8 @@ export const createAppTheme = (desktop: boolean) => createTheme({
         primary: { main: '#1A73E8' },
         secondary: { main: '#D93025' },
         background: { default: '#F8F9FA', paper: '#FFFFFF' },
-        divider: '#DADCE0',
+        // 白地のメニューでも区切り線が見える濃さにする
+        divider: '#C4C7CA',
       },
     },
     dark: {
@@ -28,7 +29,8 @@ export const createAppTheme = (desktop: boolean) => createTheme({
         primary: { main: '#8AB4F8' },
         secondary: { main: '#F28B82' },
         background: { default: '#202124', paper: '#292A2D' },
-        divider: '#3C4043',
+        // 背景（#292A2D、メニューは影で少し明るい）に埋もれない明るさにする
+        divider: '#5F6368',
       },
     },
   },
@@ -56,8 +58,6 @@ export const createAppTheme = (desktop: boolean) => createTheme({
     MuiDialog: { defaultProps: { disableScrollLock: true, ...(desktop && { transitionDuration: DESKTOP_TRANSITIONS.dialog }) } },
     MuiDrawer: { defaultProps: { disableScrollLock: true, ...(desktop && { transitionDuration: DESKTOP_TRANSITIONS.drawer }) } },
     MuiTooltip: { defaultProps: { enterDelay: 400, ...(desktop && { slotProps: { transition: { timeout: 100 } } }) } },
-    // メニューの区切り線は既定の divider 色だと白地で見えないため、濃いめにする
-    MuiDivider: { styleOverrides: { root: ({ theme }) => ({ '.MuiMenu-list &, .MuiMenuList-root &': { borderColor: theme.vars!.palette.text.disabled } }) } },
     // 目盛りを黒系にしない: レール上は primary、バー上は白で描く
     MuiSlider: {
       styleOverrides: {

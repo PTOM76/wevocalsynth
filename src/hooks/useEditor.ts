@@ -20,6 +20,7 @@ import { useFileDrop } from './useFileDrop'
 import { useClipAnalysis } from './useClipAnalysis'
 import { usePreview } from './usePreview'
 import { usePitchTarget } from './usePitchTarget'
+import { usePitchVoicing } from './usePitchVoicing'
 import { useShortcuts } from './useShortcuts'
 import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
@@ -73,7 +74,10 @@ export function useEditor(settings: Settings) {
 
   const fail = (key: MessageKey) => (e: unknown) => setToast({ severity: 'error', message: t(key, { error: String(e) }) })
   // ピッチ・スペクトログラムは表示を ON にしたときだけ解析する
-  const pitch = useClipAnalysis(showPitch, shown, (c) => analyzeF0(c.channels, c.sampleRate), fail('toast.pitchFailed'))
+  const rawPitch = useClipAnalysis(showPitch, shown, (c) => analyzeF0(c.channels, c.sampleRate), fail('toast.pitchFailed'))
+  // 強制表示・非表示の指定を反映したピッチ。表示・ピッチの加工・適用のすべてでこれを使う
+  const voicing = usePitchVoicing(shown, rawPitch)
+  const pitch = voicing.pitch
   const spec = useClipAnalysis(showSpec, shown, (c) => analyzeSpectrogram(c.channels, c.sampleRate), fail('toast.specFailed'))
 
   // 加工・音量編集の対象（選択範囲、なければ全体）
@@ -254,7 +258,7 @@ export function useEditor(settings: Settings) {
     // 再生
     player, preview, loop, playback,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
-    showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, spec, pitchTarget,
+    showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget,
     // 操作
     cmd, apply, stretchRange, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
   }

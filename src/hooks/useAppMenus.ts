@@ -25,6 +25,10 @@ interface Actions {
   toggleLoop: () => void
   toggleSpectrogram: () => void
   togglePitch: () => void
+  /** ピッチを表示していて解析済みか */
+  pitchReady: boolean
+  /** 選択範囲のピッチを強制表示（1）・強制非表示（-1）・解析のまま（0）にする */
+  setVoicing: (value: 1 | -1 | 0) => void
   showShortcuts: () => void
   showSettings: () => void
   showAbout: () => void
@@ -37,6 +41,8 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
   const t = useT()
   const noClip = !a.hasClip || a.busy
   const noSel = noClip || !a.hasSelection
+  // ピッチの強制表示・非表示は、ピッチを表示して解析が済んでから
+  const noVoicing = noSel || !a.pitchReady
   const edit: MenuEntry[] = [
     { label: t('edit.cut'), shortcut: 'Ctrl+X', disabled: noSel, onClick: a.cut },
     { label: t('edit.copy'), shortcut: 'Ctrl+C', disabled: noSel, onClick: a.copy },
@@ -90,6 +96,10 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('play.loopPreview'), disabled: noClip, onClick: a.toggleLoop },
     { divider: true },
     ...edit,
+    { divider: true },
+    { label: t('voicing.force'), disabled: noVoicing, onClick: () => a.setVoicing(1) },
+    { label: t('voicing.mute'), disabled: noVoicing, onClick: () => a.setVoicing(-1) },
+    { label: t('voicing.reset'), disabled: noVoicing, onClick: () => a.setVoicing(0) },
   ]
 
   // スマホの ⋮ は短くする。切り取りなどは長押しメニュー、元に戻すは上部バー、
