@@ -26,6 +26,10 @@ export interface Settings {
   beatsPerBar: number
   /** 1拍目の位置（秒）。曲の頭に無音があるときに合わせる */
   beatOffset: number
+  /** 元に戻せる段数 */
+  historyLimit: number
+  /** 元に戻す履歴が使うメモリの上限（MB）。超えたら古い段から捨てる */
+  historyMemoryMb: number
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
 }
@@ -41,6 +45,8 @@ export const DEFAULT_SETTINGS: Settings = {
   beatsPerBar: 4,
   beatOffset: 0,
   showDebug: false,
+  historyLimit: 50,
+  historyMemoryMb: 512,
 }
 const DEFAULTS = DEFAULT_SETTINGS
 const STORAGE_KEY = 'wevocalsynth.settings'

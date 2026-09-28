@@ -151,6 +151,14 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
             help={t('settings.autoRestoreHelp')}
           />
         </Group>
+        <Group title={t('settings.groupHistory')}>
+          <Row label={t('settings.historyLimit')}>
+            <NumberInput value={draft.historyLimit} onChange={(v) => set({ historyLimit: Math.round(v) })} min={1} max={500} step={1} width={110} />
+          </Row>
+          <Row label={t('settings.historyMemory')}>
+            <NumberInput value={draft.historyMemoryMb} onChange={(v) => set({ historyMemoryMb: Math.round(v) })} min={64} max={4096} step={64} unit="MB" width={110} />
+          </Row>
+        </Group>
         <Group title={t('settings.groupProcess')}>
           <Row label={t('settings.initialMode')}>
             <Choice<InitialMode>

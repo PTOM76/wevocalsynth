@@ -41,7 +41,7 @@ const NEUTRAL = { semitones: 0, stretch: 1, formantSemitones: 0 }
 export function useEditor(settings: Settings) {
   const [fileName, setFileName] = useState('')
   const [original, setOriginal] = useState<Clip | null>(null)
-  const history = useHistory()
+  const history = useHistory({ limit: settings.historyLimit, budgetBytes: settings.historyMemoryMb * 2 ** 20 })
   const [source, setSource] = useState<Source>('edited')
   // 選択範囲（複数可、開始位置順に正規化）。開始・終了の入力欄は一番後ろの範囲を編集する
   const [selections, setSelectionsState] = useState<Range[]>([])
