@@ -26,6 +26,8 @@ export interface Settings {
   beatsPerBar: number
   /** 1拍目の位置（秒）。曲の頭に無音があるときに合わせる */
   beatOffset: number
+  /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
+  showDebug: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -38,6 +40,7 @@ export const DEFAULT_SETTINGS: Settings = {
   bpm: 120,
   beatsPerBar: 4,
   beatOffset: 0,
+  showDebug: false,
 }
 const DEFAULTS = DEFAULT_SETTINGS
 const STORAGE_KEY = 'wevocalsynth.settings'

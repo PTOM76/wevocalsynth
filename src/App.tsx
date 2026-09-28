@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, GlobalStyles, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
 import { desktopStyles } from './theme'
 import type { Range } from './audio/types'
@@ -26,13 +26,29 @@ import AboutDialog from './components/AboutDialog'
 import { ContextMenu } from './components/menu/MenuList'
 import { useSettings } from './settings/settings'
 import SettingsDialog from './settings/SettingsDialog'
+import DebugOverlay from './debug/DebugOverlay'
+import { countRender } from './debug/debugStats'
 import { LangContext, resolveLang, setLang } from './i18n/i18n'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 const disabledSx = (disabled: boolean) => (disabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {})
 
 export default function App() {
+  countRender('App')
   const { settings, update: updateSettings } = useSettings()
+  // Ctrl+Shift+D でデバッグ表示を切り替える
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyD') {
+        e.preventDefault()
+        updateSettings({ showDebug: !settingsRef.current.showDebug })
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [updateSettings])
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
   // 子の描画より先に言語を切り替えておく（t() は描画中に参照される）
   const lang = resolveLang(settings.language)
   setLang(lang)
@@ -303,6 +319,7 @@ export default function App() {
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} onChange={updateSettings} />
       {ed.dragOver && <DropOverlay />}
+      {settings.showDebug && <DebugOverlay />}
 
       <Snackbar open={!!ed.toast} autoHideDuration={4000} onClose={() => ed.setToast(null)}>
         {ed.toast ? (

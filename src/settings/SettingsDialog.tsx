@@ -31,8 +31,8 @@ interface Props {
   onChange: (patch: Partial<Settings>) => void
 }
 
-type Category = 'general' | 'display' | 'tempo' | 'keys'
-const CATEGORIES: Category[] = ['general', 'display', 'tempo', 'keys']
+type Category = 'general' | 'display' | 'tempo' | 'keys' | 'debug'
+const CATEGORIES: Category[] = ['general', 'display', 'tempo', 'keys', 'debug']
 
 /** スマホ向けの表示か（項目を縦に積み、文字と操作を大きくする） */
 const NarrowContext = createContext(false)
@@ -190,6 +190,11 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
             ]}
           />
         </Row>
+      </Group>
+    ),
+    debug: (
+      <Group title={t('settings.groupDebug')}>
+        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
       </Group>
     ),
     tempo: (

@@ -1,4 +1,5 @@
 import { SPEC_ROWS, type DspRequest, type DspResponse } from './worker'
+import { recordDspJob } from '../debug/debugStats'
 
 /** DSPエンジンの時間伸縮方式 */
 /** wsola / pv は従来の方式、psola はボーカル向けの新しい方式（Rust 側 `Algorithm::from_id` と対応） */
@@ -51,8 +52,18 @@ function send(req: DspRequest, onProgress?: (p: number) => void): Promise<Float3
 }
 
 function sendRaw(req: DspRequest, onProgress?: (p: number) => void): Promise<Float32Array[] | Uint8Array> {
+  const t0 = performance.now()
+  // デバッグ表示用に、処理の種類と所要時間を記録する
+  const done = () => recordDspJob({ kind: req.kind, ms: performance.now() - t0 })
   return new Promise((resolve, reject) => {
-    pending.set(req.id, { resolve, reject, onProgress })
+    pending.set(req.id, {
+      resolve: (v) => {
+        done()
+        resolve(v)
+      },
+      reject,
+      onProgress,
+    })
     const buffers = 'samples' in req ? [req.samples.buffer] : req.channels.map((c) => c.buffer)
     if (req.kind === 'curve') buffers.push(req.ratios.buffer)
     getWorker().postMessage(req, buffers)

@@ -24,6 +24,7 @@ import {
 import type { useWaveformView } from './waveform/useWaveformView'
 import { computePeaks } from './waveform/peaks'
 import { useLang, useT } from '../i18n/i18n'
+import { countRender } from '../debug/debugStats'
 
 export { hzToMidi } from './waveform/draw'
 
@@ -76,6 +77,7 @@ interface Props {
 }
 
 export default function Waveform(props: Props) {
+  countRender('Waveform')
   const { clip, position, playing, livePosition, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram, beatGrid } = props
   const { pal, dark, font } = usePalette()
   const t = useT()
