@@ -24,6 +24,7 @@ import {
 import type { useWaveformView } from './waveform/useWaveformView'
 import { computePeaks } from './waveform/peaks'
 import { useTouchGestures } from './waveform/useTouchGestures'
+import { useEdgeScroll } from './waveform/useEdgeScroll'
 import { useLang, useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 
@@ -209,7 +210,13 @@ export default function Waveform(props: Props) {
   }
 
   // スマホのタッチ操作（ピンチで横の拡大縮小、目盛りの長押しで横移動）
-  const touch = useTouchGestures({ canvasRef, view, setRange: props.viewCtl.setRange, seekAt: (x) => props.onSeek(snapTime(x)) })
+  // 目盛りのドラッグで端に来たら表示範囲を流す（端で止まって先へ進めなくならないように）
+  const edgeScroll = useEdgeScroll({ canvasRef, view, duration, setRange: props.viewCtl.setRange, seek: props.onSeek })
+  const scrubTo = (x: number) => {
+    props.onSeek(snapTime(x))
+    edgeScroll.update(x)
+  }
+  const touch = useTouchGestures({ canvasRef, view, setRange: props.viewCtl.setRange, seekAt: scrubTo })
   // タッチし始めたときの選択範囲。ピンチになったら、1本目の指で始まりかけた選択を取り消してここに戻す
   const selectionsAtTouch = useRef<Range[]>(selections)
 
@@ -313,7 +320,7 @@ export default function Waveform(props: Props) {
           if (lp && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > LONG_PRESS_SLOP_PX) cancelLongPress()
           if (touch.move(e)) return
           if (divider.dragging()) return divider.move(e)
-          if (scrubRef.current) return props.onSeek(snapTime(e.clientX))
+          if (scrubRef.current) return scrubTo(e.clientX)
           if (drawRef.current) {
             const p = drawPointAt(e)
             if (p) drawTo(p)
@@ -334,10 +341,12 @@ export default function Waveform(props: Props) {
         }}
         onPointerCancel={(e) => {
           cancelLongPress()
+          edgeScroll.stop()
           touch.up(e)
         }}
         onPointerUp={(e) => {
           cancelLongPress()
+          edgeScroll.stop()
           if (touch.up(e)) return
           if (divider.dragging()) return divider.end()
           if (scrubRef.current) {
