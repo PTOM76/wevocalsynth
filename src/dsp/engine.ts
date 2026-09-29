@@ -94,7 +94,6 @@ export interface TempoCandidate {
   offset: number
 }
 
-/** 全チャンネルを平均したモノラル信号のテンポ（BPM）を解析する */
 /** 全チャンネルを平均したモノラル信号のテンポ（BPM）の候補を、強い順に返す */
 export async function analyzeTempo(channels: Float32Array[], sampleRate: number): Promise<TempoCandidate[]> {
   const [raw] = await send({ kind: 'tempo', id: nextId++, samples: mixDown(channels), sampleRate })

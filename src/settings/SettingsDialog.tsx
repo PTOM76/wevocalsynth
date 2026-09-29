@@ -207,6 +207,7 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
     ),
     tempo: (
       <Group title={t('settings.groupTempo')}>
+        <Check checked={draft.autoTempo} onChange={(v) => set({ autoTempo: v })} label={t('settings.autoTempo')} help={t('settings.autoTempoHelp')} />
         <Check checked={draft.showBeatGrid} onChange={(v) => set({ showBeatGrid: v })} label={t('settings.showBeatGrid')} />
         <Row label={t('settings.bpm')}>
           <NumberInput value={draft.bpm} onChange={(v) => set({ bpm: v })} min={20} max={400} step={0.01} unit="BPM" width={110} ariaLabel="BPM" />

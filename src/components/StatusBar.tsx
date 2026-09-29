@@ -2,6 +2,7 @@ import { Box, LinearProgress, Stack, ToggleButton, ToggleButtonGroup, Typography
 import type { Clip, Range } from '../audio/types'
 import { formatTime } from '../audio/types'
 import { useT } from '../i18n/i18n'
+import type { ReactNode } from 'react'
 import SelectionField from './SelectionField'
 
 export type Source = 'edited' | 'original'
@@ -18,6 +19,8 @@ interface Props {
   progress: number
   source: Source
   onSourceChange: (s: Source) => void
+  /** BPM の表示（押すとテンポのパネル） */
+  tempo: ReactNode
 }
 
 const ITEM_SX = { px: 1, height: '100%', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' } as const
@@ -48,6 +51,7 @@ export default function StatusBar(p: Props) {
         onSelectionChange={p.onSelectionChange}
         disabled={!p.clip}
       />
+      {p.tempo}
       <Box sx={{ flexGrow: 1 }} />
       {p.busy && (
         <Box sx={{ ...ITEM_SX, gap: 1, width: 180 }}>

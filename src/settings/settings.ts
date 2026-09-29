@@ -18,6 +18,8 @@ export interface Settings {
   language: LangSetting
   theme: ThemeSetting
   ctrlS: CtrlSAction
+  /** ファイルを開いたときにテンポを自動解析し、BPM・1拍目の位置を入れる */
+  autoTempo: boolean
   /** 拍の目安線を波形に出す */
   showBeatGrid: boolean
   /** テンポ（BPM） */
@@ -40,6 +42,7 @@ export const DEFAULT_SETTINGS: Settings = {
   language: 'auto',
   theme: 'system',
   ctrlS: 'project',
+  autoTempo: true,
   showBeatGrid: true,
   bpm: 120,
   beatsPerBar: 4,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, Box, GlobalStyles, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
+import { Alert, Box, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
 import { desktopStyles } from './theme'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -12,6 +12,7 @@ import WaveformToolbar from './components/waveform/WaveformToolbar'
 import Toolbar from './components/Toolbar'
 import StatusBar from './components/StatusBar'
 import SelectionField from './components/SelectionField'
+import TempoField from './components/TempoField'
 import DesktopLayout from './components/layout/DesktopLayout'
 import MobileLayout from './components/layout/MobileLayout'
 import { usePersistentNumber } from './components/layout/Splitter'
@@ -28,7 +29,7 @@ import { useSettings } from './settings/settings'
 import SettingsDialog from './settings/SettingsDialog'
 import DebugOverlay from './debug/DebugOverlay'
 import { countRender } from './debug/debugStats'
-import { LangContext, resolveLang, setLang } from './i18n/i18n'
+import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 const disabledSx = (disabled: boolean) => (disabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {})
@@ -52,7 +53,8 @@ export default function App() {
   // 子の描画より先に言語を切り替えておく（t() は描画中に参照される）
   const lang = resolveLang(settings.language)
   setLang(lang)
-  const ed = useEditor(settings)
+  // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
+  const ed = useEditor(settings, (c) => updateSettings({ bpm: c.bpm, beatOffset: c.offset }))
   // 設定のテーマ（既定 / ライト / ダーク）を反映する
   const { setMode } = useColorScheme()
   useEffect(() => setMode(settings.theme), [settings.theme, setMode])
@@ -112,6 +114,25 @@ export default function App() {
   const hasCurve = !!ed.pitchTarget.target && ed.pitchTarget.target.hz.some((v) => v > 0)
   const totalDuration = ed.editRanges.reduce((s, r) => s + r.end - r.start, 0)
   const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
+
+  const tempoField = (fontSize?: number) => (
+    <TempoField
+      bpm={settings.bpm}
+      candidates={ed.tempo.candidates}
+      analyzing={ed.tempo.analyzing}
+      disabled={!shown}
+      fontSize={fontSize}
+      onChange={(bpm, offset) => updateSettings(offset === undefined ? { bpm } : { bpm, beatOffset: offset })}
+      onAnalyze={() =>
+        shown &&
+        void ed.tempo.analyze(
+          shown,
+          (c) => updateSettings({ bpm: c.bpm, beatOffset: c.offset }),
+          (e) => ed.setToast({ severity: 'error', message: t('toast.tempoFailed', { error: String(e) }) }),
+        )
+      }
+    />
+  )
 
   const editor = shown ? (
     <Waveform
@@ -213,14 +234,17 @@ export default function App() {
           <MobileLayout
             editor={editor}
             editorFooter={
-              <SelectionField
-                duration={ed.duration}
-                selection={selection}
-                selectionCount={ed.selections.length}
-                onSelectionChange={setActiveSelection}
-                disabled={!editing}
-                fontSize={13}
-              />
+              <Stack direction="row" sx={{ alignItems: 'center' }}>
+                <SelectionField
+                  duration={ed.duration}
+                  selection={selection}
+                  selectionCount={ed.selections.length}
+                  onSelectionChange={setActiveSelection}
+                  disabled={!editing}
+                  fontSize={13}
+                />
+                {tempoField(13)}
+              </Stack>
             }
             process={editPanel}
             volume={volumePanel}
@@ -284,6 +308,7 @@ export default function App() {
                 progress={ed.progress}
                 source={ed.source}
                 onSourceChange={ed.setSource}
+                tempo={tempoField()}
               />
             }
           />

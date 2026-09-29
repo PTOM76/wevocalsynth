@@ -11,7 +11,7 @@ import { applyPitchCurve, spliceProcessed } from '../audio/edit'
 import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
-import { analyzeF0, analyzeSpectrogram } from '../dsp/engine'
+import { analyzeF0, analyzeSpectrogram, type TempoCandidate } from '../dsp/engine'
 import { MODE_SETTINGS, detectMode, type Mode } from '../audio/detectMode'
 import type { EditParams } from '../components/EditPanel'
 import type { Source } from '../components/StatusBar'
@@ -22,6 +22,7 @@ import { usePreview } from './usePreview'
 import { usePitchTarget } from './usePitchTarget'
 import { usePitchVoicing } from './usePitchVoicing'
 import { usePitchTools } from './usePitchTools'
+import { useTempo } from './useTempo'
 import { clipBytes, reportMemory } from '../debug/debugStats'
 import { useShortcuts } from './useShortcuts'
 import { useClipCommands } from './useClipCommands'
@@ -39,7 +40,12 @@ export type Toast = { severity: 'success' | 'error' | 'info'; message: string }
 const NEUTRAL = { semitones: 0, stretch: 1, formantSemitones: 0 }
 
 /** エディタ全体の状態と操作。画面の組み立て（App）から切り離してある */
-export function useEditor(settings: Settings) {
+/** `onTempo` はテンポを解析できたときに呼ぶ（BPM・1拍目の位置を設定に入れる） */
+export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => void) {
+  // テンポの自動解析（ファイルを開いた直後）。openClip から最新の関数を呼べるよう ref にも持つ
+  const tempo = useTempo()
+  const tempoRef = useRef({ tempo, onTempo })
+  tempoRef.current = { tempo, onTempo }
   const [fileName, setFileName] = useState('')
   const [original, setOriginal] = useState<Clip | null>(null)
   const history = useHistory({ limit: settings.historyLimit, budgetBytes: settings.historyMemoryMb * 2 ** 20 })
@@ -126,6 +132,18 @@ export function useEditor(settings: Settings) {
       setParams((p) => ({ ...(project ? project.params : p), ...NEUTRAL }))
       // 新しい素材ならボーカル／楽器を自動判定して初期値にする（プロジェクトは保存時の設定を使う）
       setAutoMode(null)
+      tempoRef.current.tempo.reset()
+      // 新しい素材ならテンポを解析して、BPM と1拍目の位置を設定に入れる（プロジェクトは今の設定のまま）
+      if (!project && settings.autoTempo) {
+        void tempoRef.current.tempo.analyze(
+          clip,
+          (best) => {
+            tempoRef.current.onTempo(best)
+            setToast({ severity: 'info', message: t('toast.tempoDetected', { bpm: best.bpm }) })
+          },
+          fail('toast.tempoFailed'),
+        )
+      }
       if (!project && settings.initialMode !== 'auto') {
         setParams((p) => ({ ...p, ...MODE_SETTINGS[settings.initialMode as Mode] }))
       } else if (!project) {
@@ -137,7 +155,7 @@ export function useEditor(settings: Settings) {
           .catch(() => {})
       }
     },
-    [history, pitchTarget, cmd, settings.initialMode],
+    [history, pitchTarget, cmd, settings.initialMode, settings.autoTempo],
   )
 
   const loadFile = useCallback(
@@ -277,7 +295,7 @@ export function useEditor(settings: Settings) {
     // 再生
     player, preview, loop, playback,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
-    showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools,
+    showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     cmd, apply, stretchRange, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
   }
