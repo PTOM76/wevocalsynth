@@ -28,6 +28,7 @@ import { ContextMenu } from './components/menu/MenuList'
 import { useSettings } from './settings/settings'
 import SettingsDialog from './settings/SettingsDialog'
 import DebugOverlay from './debug/DebugOverlay'
+import UpdatePrompt from './components/UpdatePrompt'
 import { countRender } from './debug/debugStats'
 import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 
@@ -347,6 +348,7 @@ export default function App() {
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} onChange={updateSettings} />
       {ed.dragOver && <DropOverlay />}
       {settings.showDebug && <DebugOverlay />}
+      <UpdatePrompt />
 
       <Snackbar open={!!ed.toast} autoHideDuration={4000} onClose={() => ed.setToast(null)}>
         {ed.toast ? (

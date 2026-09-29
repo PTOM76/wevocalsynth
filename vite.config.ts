@@ -12,7 +12,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 新しい版は利用者が「更新」を押したときに切り替える（作業中に勝手に再読み込みしない。UpdatePrompt 参照）
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'WeVocalSynth',

@@ -195,6 +195,8 @@
   "toast.tempoFailed": "テンポを解析できませんでした: {error}",
   "settings.autoTempo": "ファイルを開いたときにテンポを自動解析する",
   "settings.autoTempoHelp": "BPM と1拍目を自動で入れます。2倍、半分に出たら、下の BPM 表示から直せます",
+  "update.available": "新しいバージョンがあります",
+  "update.reload": "更新",
   "settings.title": "設定",
   "settings.autoRestore": "作業を自動保存し、次回開いたときに復元する",
   "settings.autoRestoreHelp": "音声はこのブラウザ内にだけ保存され、外部には送信されません",

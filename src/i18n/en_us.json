@@ -195,6 +195,8 @@
   "toast.tempoFailed": "Could not analyze tempo: {error}",
   "settings.autoTempo": "Analyze tempo when opening a file",
   "settings.autoTempoHelp": "Sets BPM and the first beat. If doubled or halved, fix it from the BPM display",
+  "update.available": "A new version is available",
+  "update.reload": "Update",
   "settings.title": "Settings",
   "settings.autoRestore": "Autosave work and restore it next time",
   "settings.autoRestoreHelp": "Audio is stored only in this browser and never uploaded",
