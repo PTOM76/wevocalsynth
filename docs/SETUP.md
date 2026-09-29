@@ -40,6 +40,10 @@ npm run build:wasm   # DSP を変えたあと
 npm run preview      # ビルド結果の確認
 ```
 
+PWA（Service Worker）は開発サーバー（`npm run dev`）では動かない。オフライン動作・新しい版の通知・設定の「今すぐ確認」「オフライン用キャッシュを削除」は、`npm run build` のあと `npm run preview` で確かめる。
+
+画面の重さを調べるときは Ctrl+Shift+D（または設定 → 開発者向け）でデバッグ表示を出す。FPS・一番重かったフレーム・長いタスク・部品の描画回数・音声データの内訳・DSP の処理時間が見られる。部品の描画回数を数えたいときは、その部品の先頭で `countRender('名前')` を呼ぶ。
+
 3分の音声での処理時間は、`dsp/` で `cargo test --release -- --ignored --nocapture` を実行すると測れる。
 
 ### タスクランナー (任意)
