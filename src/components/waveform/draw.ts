@@ -170,7 +170,7 @@ export function drawSelection(c: DrawContext, selection: Range, h: number) {
 
 /** 波形（1ピクセル列ごとの最小値〜最大値の縦線）と中央線 */
 export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }) {
-  const { g, width, pal, dark, waveH } = c
+  const { g, width, pal, waveH } = c
   const mid = RULER_HEIGHT + waveH / 2
   const amp = waveH / 2 - 4
   // ダークでは primary（明るい水色）のままだとまぶしく、選択範囲の白い線も埋もれるため、少し沈める。
