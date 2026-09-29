@@ -14,11 +14,10 @@ interface Deps {
   setSelections: (rs: Range[]) => void
   /** 音量編集の対象（選択範囲、なければ全体） */
   editRanges: Range[]
-  /** 再生位置（貼り付け先） */
   /** 今の再生位置（貼り付け先）。再生中も正しい位置を返す */
   getPosition: () => number
   seek: (t: number) => void
-  commit: (clip: Clip) => void
+  commit: (clip: Clip, label: string) => void
   notify: (message: string) => void
 }
 
@@ -37,25 +36,27 @@ export function useClipCommands(d: Deps) {
   const cut = () => {
     if (!edited || !hasSel) return
     setClipboard(sliceRanges(edited, selections))
-    d.commit(removeRanges(edited, selections))
+    d.commit(removeRanges(edited, selections), t('edit.cut'))
     d.seek(normalizeRanges(selections)[0].start)
     d.setSelections([])
   }
   const paste = () => {
     if (!edited || !clipboard) return
     const at = d.getPosition()
-    d.commit(insertAt(edited, clipboard, at))
+    d.commit(insertAt(edited, clipboard, at), t('history.paste'))
     d.setSelections([{ start: at, end: at + clipDuration(clipboard) }])
   }
   const trim = () => {
     if (!edited || !hasSel) return
-    d.commit(sliceRanges(edited, selections))
+    d.commit(sliceRanges(edited, selections), t('edit.trim'))
     d.seek(0)
     d.setSelections([])
   }
 
   const gain = (db: number) => {
-    if (edited && editRanges.length) d.commit(mapRanges(edited, editRanges, (c, r) => gainRange(c, r, db)))
+    if (edited && editRanges.length) {
+      d.commit(mapRanges(edited, editRanges, (c, r) => gainRange(c, r, db)), `${t('volume.gain')} ${db > 0 ? '+' : ''}${db.toFixed(1)}dB`)
+    }
   }
   const volume = (action: VolumeAction) => {
     if (!edited || !editRanges.length) return
@@ -63,13 +64,13 @@ export function useClipCommands(d: Deps) {
       // 範囲ごとにピークを揃える。無音の範囲はそのまま残す
       let fails = 0
       const next = mapRanges(edited, editRanges, (c, r) => normalizeRange(c, r) ?? (fails++, c))
-      if (fails < editRanges.length) d.commit(next)
+      if (fails < editRanges.length) d.commit(next, t('volume.normalize'))
       else d.notify(t('toast.silentNormalize'))
     } else if (action === 'silence') {
-      d.commit(mapRanges(edited, editRanges, silenceRange))
+      d.commit(mapRanges(edited, editRanges, silenceRange), t('volume.silence'))
     } else {
       const dir = action === 'fadeIn' ? 'in' : 'out'
-      d.commit(mapRanges(edited, editRanges, (c, r) => fadeRange(c, r, dir)))
+      d.commit(mapRanges(edited, editRanges, (c, r) => fadeRange(c, r, dir)), t(dir === 'in' ? 'volume.fadeIn' : 'volume.fadeOut'))
     }
   }
 

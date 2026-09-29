@@ -31,7 +31,7 @@ interface DspExports {
     preserveFormant: number,
     formantSemitones: number,
   ): number
-  analyze_f0(input: number, frames: number, sampleRate: number): number
+  analyze_f0(input: number, frames: number, sampleRate: number, minHz: number, maxHz: number, voicedLimit: number, silenceRms: number): number
   analyze_spectrogram(input: number, frames: number, sampleRate: number): number
   analyze_tempo(input: number, frames: number, sampleRate: number): number
   output_u8_ptr(): number
@@ -59,6 +59,8 @@ export interface F0Request {
   id: number
   samples: Float32Array
   sampleRate: number
+  /** F0 解析の設定（kind が f0 のとき） */
+  f0?: { minHz: number; maxHz: number; voicedLimit: number; silenceRms: number }
 }
 
 /** ピッチカーブ編集のリクエスト。`ratios[k]` は時刻 k × `hopSamples` のピッチ比 */
@@ -174,7 +176,11 @@ function analyzeF0(dsp: DspExports, req: F0Request): Float32Array {
   const input = dsp.alloc_f32(n)
   try {
     new Float32Array(dsp.memory.buffer, input, n).set(req.samples)
-    const count = (req.kind === 'tempo' ? dsp.analyze_tempo : dsp.analyze_f0)(input, n, req.sampleRate)
+    const p = req.f0
+    const count =
+      req.kind === 'tempo'
+        ? dsp.analyze_tempo(input, n, req.sampleRate)
+        : dsp.analyze_f0(input, n, req.sampleRate, p?.minHz ?? 60, p?.maxHz ?? 1000, p?.voicedLimit ?? 0.35, p?.silenceRms ?? 0.003)
     return new Float32Array(dsp.memory.buffer, dsp.output_ptr(), count).slice()
   } finally {
     dsp.free_f32(input, n)

@@ -20,7 +20,7 @@ import {
 } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
-import { DEFAULT_SETTINGS, type CtrlSAction, type InitialMode, type Settings, type ThemeSetting } from './settings'
+import { DEFAULT_SETTINGS, type CtrlSAction, type F0Voicing, type InitialMode, type Settings, type ThemeSetting } from './settings'
 import { NumberInput } from '../components/inspector/Inspector'
 import UpdateSection from './UpdateSection'
 import { useT, type LangSetting } from '../i18n/i18n'
@@ -32,8 +32,8 @@ interface Props {
   onChange: (patch: Partial<Settings>) => void
 }
 
-type Category = 'general' | 'display' | 'tempo' | 'keys' | 'debug'
-const CATEGORIES: Category[] = ['general', 'display', 'tempo', 'keys', 'debug']
+type Category = 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'debug'
+const CATEGORIES: Category[] = ['general', 'display', 'pitch', 'tempo', 'keys', 'debug']
 
 /** スマホ向けの表示か（項目を縦に積み、文字と操作を大きくする） */
 const NarrowContext = createContext(false)
@@ -208,6 +208,30 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
     debug: (
       <Group title={t('settings.groupDebug')}>
         <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
+      </Group>
+    ),
+    pitch: (
+      <Group title={t('settings.groupPitch')}>
+        <Row label={t('settings.f0MinHz')}>
+          <NumberInput value={draft.f0MinHz} onChange={(v) => set({ f0MinHz: Math.round(v) })} min={40} max={400} step={1} unit="Hz" width={110} />
+        </Row>
+        <Row label={t('settings.f0MaxHz')}>
+          <NumberInput value={draft.f0MaxHz} onChange={(v) => set({ f0MaxHz: Math.round(v) })} min={200} max={2000} step={10} unit="Hz" width={110} />
+        </Row>
+        <Row label={t('settings.f0Voicing')}>
+          <Choice<F0Voicing>
+            value={draft.f0Voicing}
+            onChange={(v) => set({ f0Voicing: v })}
+            options={[
+              ['strict', t('settings.f0Strict')],
+              ['normal', t('settings.f0Normal')],
+              ['loose', t('settings.f0Loose')],
+            ]}
+          />
+        </Row>
+        <Row label={t('settings.f0SilenceDb')}>
+          <NumberInput value={draft.f0SilenceDb} onChange={(v) => set({ f0SilenceDb: Math.round(v) })} min={-80} max={-20} step={1} unit="dB" width={110} />
+        </Row>
       </Group>
     ),
     tempo: (

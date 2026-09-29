@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { LangSetting } from '../i18n/i18n'
+import type { F0Params } from '../dsp/engine'
 
 /** ファイルを開いたときの処理モード。auto は素材から自動判定する */
 export type InitialMode = 'auto' | 'vocal' | 'instrument'
@@ -9,6 +10,22 @@ export type ThemeSetting = 'system' | 'light' | 'dark'
 
 /** Ctrl+S で行うこと。もう一方は Ctrl+Shift+S になる */
 export type CtrlSAction = 'project' | 'export'
+
+/** ピッチ解析で声とみなす判定の厳しさ。ゆるいほど、かすれた声も拾うが、雑音も拾いやすい */
+export type F0Voicing = 'strict' | 'normal' | 'loose'
+
+/** 判定の厳しさごとの、有声とみなす谷の深さの上限（Rust 側 `f0::Params::voiced_limit`） */
+const VOICED_LIMIT: Record<F0Voicing, number> = { strict: 0.25, normal: 0.35, loose: 0.5 }
+
+/** 設定から F0 解析の設定を作る */
+export function f0ParamsFrom(s: Settings): F0Params {
+  return {
+    minHz: s.f0MinHz,
+    maxHz: s.f0MaxHz,
+    voicedLimit: VOICED_LIMIT[s.f0Voicing] ?? VOICED_LIMIT.normal,
+    silenceRms: 10 ** (s.f0SilenceDb / 20),
+  }
+}
 
 export interface Settings {
   /** 作業状態を自動保存し、次に開いたとき復元する */
@@ -32,6 +49,13 @@ export interface Settings {
   historyLimit: number
   /** 元に戻す履歴が使うメモリの上限（MB）。超えたら古い段から捨てる */
   historyMemoryMb: number
+  /** ピッチ解析: 探す音の範囲（Hz） */
+  f0MinHz: number
+  f0MaxHz: number
+  /** ピッチ解析: 声とみなす判定の厳しさ */
+  f0Voicing: F0Voicing
+  /** ピッチ解析: これより小さい音量（dB）は無音とみなす */
+  f0SilenceDb: number
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
 }
@@ -48,6 +72,10 @@ export const DEFAULT_SETTINGS: Settings = {
   beatsPerBar: 4,
   beatOffset: 0,
   showDebug: false,
+  f0MinHz: 60,
+  f0MaxHz: 1000,
+  f0Voicing: 'normal',
+  f0SilenceDb: -50,
   historyLimit: 50,
   historyMemoryMb: 512,
 }

@@ -24,6 +24,7 @@ import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
 import ExportDialog from './components/ExportDialog'
 import AboutDialog from './components/AboutDialog'
+import HistoryDialog from './components/HistoryDialog'
 import { ContextMenu } from './components/menu/MenuList'
 import { useSettings } from './settings/settings'
 import SettingsDialog from './settings/SettingsDialog'
@@ -65,6 +66,7 @@ export default function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [pitchDialog, setPitchDialog] = useState<'snap' | 'vibrato' | null>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
@@ -101,6 +103,7 @@ export default function App() {
     setVoicing: (v) => ed.voicing.set(ed.selections, v),
     showShortcuts: () => setShortcutsOpen(true),
     showSettings: () => setSettingsOpen(true),
+    showHistory: () => setHistoryOpen(true),
     showAbout: () => setAboutOpen(true),
     ctrlS: settings.ctrlS,
   })
@@ -342,6 +345,13 @@ export default function App() {
         bpm={settings.bpm}
         onClose={() => setPitchDialog(null)}
         onRun={(o) => ed.pitchTools.edit((cur, f0, k0, k1) => addVibrato(cur, f0, k0, k1, o))}
+      />
+      <HistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        labels={ed.history.labels}
+        done={ed.history.done}
+        onJump={(n) => !busy && ed.history.jumpTo(n)}
       />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />

@@ -31,6 +31,7 @@ interface Actions {
   setVoicing: (value: 1 | -1 | 0) => void
   showShortcuts: () => void
   showSettings: () => void
+  showHistory: () => void
   showAbout: () => void
   /** Ctrl+S をどちらに割り当てているか（メニューの表記用） */
   ctrlS: 'project' | 'export'
@@ -70,6 +71,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       entries: [
         { label: t('common.undo'), shortcut: 'Ctrl+Z', disabled: !a.canUndo || a.busy, onClick: a.undo },
         { label: t('common.redo'), shortcut: 'Ctrl+Y', disabled: !a.canRedo || a.busy, onClick: a.redo },
+        { label: t('history.menu'), disabled: noClip, onClick: a.showHistory },
         { divider: true },
         ...edit,
       ],
@@ -118,6 +120,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       entries: [
         { label: t('edit.selectAll'), disabled: noClip, onClick: a.selectAll },
         { label: t('edit.clearSelection'), disabled: noSel, onClick: a.clearSelection },
+        { label: t('history.menu'), disabled: noClip, onClick: a.showHistory },
       ],
     },
     {

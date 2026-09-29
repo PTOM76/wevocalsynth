@@ -64,12 +64,35 @@ function applyPatch(clip: Clip, p: Patch): Clip {
   }
 }
 
+/** 履歴の1段: 差分と、その段で行った操作の名前（一覧に出す） */
+interface Step {
+  patch: Patch
+  label: string
+}
+
 interface History {
-  /** 元に戻す差分（古い順）。最後のものを今のクリップに当てると1つ前に戻る */
-  past: Patch[]
+  /** 元に戻す段（古い順）。最後の差分を今のクリップに当てると1つ前に戻る */
+  past: Step[]
   present: Clip | null
-  /** やり直す差分（次に進む順） */
-  future: Patch[]
+  /** やり直す段（次に進む順） */
+  future: Step[]
+}
+
+/** 1段戻す（戻せなければそのまま） */
+function stepBack(h: History): History {
+  const s = h.past[h.past.length - 1]
+  if (!s || !h.present) return h
+  const prev = applyPatch(h.present, s.patch)
+  return { past: h.past.slice(0, -1), present: prev, future: [{ patch: diff(prev, h.present).forward, label: s.label }, ...h.future] }
+}
+
+/** 1段進む（進めなければそのまま） */
+function stepForward(h: History, l: HistoryLimits): History {
+  const s = h.future[0]
+  if (!s || !h.present) return h
+  const next = applyPatch(h.present, s.patch)
+  const future = h.future.slice(1)
+  return { past: trim([...h.past, { patch: diff(next, h.present).forward, label: s.label }], future, l), present: next, future }
 }
 
 /** 履歴の上限。limit は元に戻せる段数、udgetBytes は履歴が持つ音声データの量 */
@@ -79,11 +102,11 @@ export interface HistoryLimits {
 }
 
 /** 上限（段数・メモリ）に収まるよう、古い元に戻す差分から捨てる */
-function trim(past: Patch[], future: Patch[], l: HistoryLimits): Patch[] {
-  let bytes = [...past, ...future].reduce((s, p) => s + patchBytes(p), 0)
+function trim(past: Step[], future: Step[], l: HistoryLimits): Step[] {
+  let bytes = [...past, ...future].reduce((s, p) => s + patchBytes(p.patch), 0)
   let start = Math.max(0, past.length - l.limit)
-  for (let i = 0; i < start; i++) bytes -= patchBytes(past[i])
-  while (start < past.length && bytes > l.budgetBytes) bytes -= patchBytes(past[start++])
+  for (let i = 0; i < start; i++) bytes -= patchBytes(past[i].patch)
+  while (start < past.length && bytes > l.budgetBytes) bytes -= patchBytes(past[start++].patch)
   return start ? past.slice(start) : past
 }
 
@@ -94,38 +117,31 @@ export function useHistory(limits: HistoryLimits) {
   limitsRef.current = limits
   const [history, setHistory] = useState<History>({ past: [], present: null, future: [] })
   // デバッグ表示: 履歴が持っている音声データの量
-  useEffect(() => reportMemory('history', [...history.past, ...history.future].reduce((s, p) => s + patchBytes(p), 0)), [history])
+  useEffect(() => reportMemory('history', [...history.past, ...history.future].reduce((s, p) => s + patchBytes(p.patch), 0)), [history])
 
-  /** 新しいクリップを履歴に積む */
-  const commit = useCallback((clip: Clip) => {
+  /** 新しいクリップを、操作の名前 `label` を付けて履歴に積む */
+  const commit = useCallback((clip: Clip, label: string) => {
     setHistory((h) => {
       if (!h.present) return { past: [], present: clip, future: [] }
       const { backward } = diff(h.present, clip)
-      return { past: trim([...h.past, backward], [], limitsRef.current), present: clip, future: [] }
+      return { past: trim([...h.past, { patch: backward, label }], [], limitsRef.current), present: clip, future: [] }
     })
   }, [])
 
   /** 履歴を捨てて `clip` から始め直す（ファイルを開いたとき） */
   const reset = useCallback((clip: Clip) => setHistory({ past: [], present: clip, future: [] }), [])
 
-  const undo = useCallback(
-    () =>
-      setHistory((h) => {
-        const p = h.past[h.past.length - 1]
-        if (!p || !h.present) return h
-        const prev = applyPatch(h.present, p)
-        return { past: h.past.slice(0, -1), present: prev, future: [diff(prev, h.present).forward, ...h.future] }
-      }),
-    [],
-  )
+  const undo = useCallback(() => setHistory(stepBack), [])
+  const redo = useCallback(() => setHistory((h) => stepForward(h, limitsRef.current)), [])
 
-  const redo = useCallback(
-    () =>
+  /** 操作を `done` 個行った時点（0 なら開いた直後）へ、まとめて戻る・進む */
+  const jumpTo = useCallback(
+    (done: number) =>
       setHistory((h) => {
-        const p = h.future[0]
-        if (!p || !h.present) return h
-        const next = applyPatch(h.present, p)
-        return { past: trim([...h.past, diff(next, h.present).forward], h.future.slice(1), limitsRef.current), present: next, future: h.future.slice(1) }
+        let cur = h
+        while (cur.past.length > done && cur.past.length > 0) cur = stepBack(cur)
+        while (cur.past.length < done && cur.future.length > 0) cur = stepForward(cur, limitsRef.current)
+        return cur
       }),
     [],
   )
@@ -134,6 +150,10 @@ export function useHistory(limits: HistoryLimits) {
     present: history.present,
     canUndo: history.past.length > 0,
     canRedo: history.future.length > 0,
+    /** 操作の名前の一覧（行った順）と、そのうち今までに行った数（残りはやり直せる操作） */
+    labels: [...history.past, ...history.future].map((s) => s.label),
+    done: history.past.length,
+    jumpTo,
     commit,
     reset,
     undo,

@@ -31,7 +31,7 @@ import { useFilePicker } from './useFilePicker'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
-import type { Settings } from '../settings/settings'
+import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
 
 export type Toast = { severity: 'success' | 'error' | 'info'; message: string }
@@ -40,6 +40,16 @@ export type Toast = { severity: 'success' | 'error' | 'info'; message: string }
 const NEUTRAL = { semitones: 0, stretch: 1, formantSemitones: 0 }
 
 /** エディタ全体の状態と操作。画面の組み立て（App）から切り離してある */
+/** 加工を適用したときの、操作履歴に出す名前（変えた項目だけを並べる） */
+function applyLabel(p: EditParams): string {
+  const parts: string[] = []
+  const signed = (v: number) => `${v > 0 ? '+' : ''}${+v.toFixed(3)}`
+  if (p.semitones !== 0) parts.push(`${t('process.pitch')} ${signed(p.semitones)}`)
+  if (p.stretch !== 1) parts.push(`${t('process.length')} ×${+p.stretch.toFixed(3)}`)
+  if (p.preserveFormant && p.formantSemitones !== 0) parts.push(`${t('process.formantShift')} ${signed(p.formantSemitones)}`)
+  return parts.join('・') || t('common.apply')
+}
+
 /** `onTempo` はテンポを解析できたときに呼ぶ（BPM・1拍目の位置を設定に入れる） */
 export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => void) {
   // テンポの自動解析（ファイルを開いた直後）。openClip から最新の関数を呼べるよう ref にも持つ
@@ -87,7 +97,15 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   const fail = (key: MessageKey) => (e: unknown) => setToast({ severity: 'error', message: t(key, { error: String(e) }) })
   // ピッチ・スペクトログラムは表示を ON にしたときだけ解析する
-  const rawPitch = useClipAnalysis(showPitch, shown, (c) => analyzeF0(c.channels, c.sampleRate), fail('toast.pitchFailed'))
+  // ピッチ解析の設定。変えたら解析し直す（key が変わる）
+  const f0Params = f0ParamsFrom(settings)
+  const rawPitch = useClipAnalysis(
+    showPitch,
+    shown,
+    (c) => analyzeF0(c.channels, c.sampleRate, f0Params),
+    fail('toast.pitchFailed'),
+    JSON.stringify(f0Params),
+  )
   // 強制表示・非表示の指定を反映したピッチ。表示・ピッチの加工・適用のすべてでこれを使う
   const voicing = usePitchVoicing(shown, rawPitch)
   const pitch = voicing.pitch
@@ -100,8 +118,8 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const rangeNote = useRangeNote(editing && !multi ? edited : null, editRanges[0] ?? null)
   const loop = useRealtimePreview(edited, multi ? null : (editRanges[0] ?? null), params.semitones, params.stretch)
 
-  const commit = (clip: Clip) => {
-    history.commit(clip)
+  const commit = (clip: Clip, label: string) => {
+    history.commit(clip, label)
     setSource('edited')
   }
   const cmd = useClipCommands({
@@ -181,7 +199,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
       const result = spliced
         ? { clip: spliced.clip, ranges: [spliced.range] }
         : await applyEditToRanges(edited, editRanges, params, setProgress)
-      commit(result.clip)
+      commit(result.clip, applyLabel(params))
       setSelections(selections.length ? result.ranges : [])
       setParams((p) => ({ ...p, ...NEUTRAL }))
       setToast({ severity: 'success', message: t('toast.applied') })
@@ -193,7 +211,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
       if (!edited) return
       const opts = { ...params, ...NEUTRAL, stretch: dur / (r.end - r.start) }
       const result = await applyEditToRanges(edited, [r], opts, setProgress)
-      commit(result.clip)
+      commit(result.clip, t('history.stretch', { ratio: opts.stretch.toFixed(2) }))
       setSelections(result.ranges)
     })
 
@@ -203,7 +221,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
       if (!edited || !pitch || shown !== edited || target?.clip !== edited) return
       const next = await applyPitchCurve(edited, pitch, target.hz, params, setProgress)
       if (next) {
-        commit(next)
+        commit(next, t('history.curve'))
         setToast({ severity: 'success', message: t('toast.applied') })
       }
       pitchTarget.clear()

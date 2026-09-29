@@ -131,15 +131,24 @@ pub unsafe extern "C" fn process_curve_planar(
     out_frames
 }
 
-/// モノラル音声 `input`（`frames` サンプル）の F0 を `f0::HOP_SEC` 間隔で推定し、
+/// モノラル音声 `input`（`frames` サンプル）の F0 を `f0::HOP_SEC` 間隔で、設定（`f0::Params` の各値）に従って推定し、
 /// 値の個数を返す。結果（Hz、無声は 0）は `output_ptr` で取得する。
 ///
 /// # Safety
 /// `input` は `frames` 個の有効な f32 を指していること。
 #[no_mangle]
-pub unsafe extern "C" fn analyze_f0(input: *const f32, frames: usize, sample_rate: f32) -> usize {
+pub unsafe extern "C" fn analyze_f0(
+    input: *const f32,
+    frames: usize,
+    sample_rate: f32,
+    min_hz: f32,
+    max_hz: f32,
+    voiced_limit: f32,
+    silence_rms: f32,
+) -> usize {
     let x = std::slice::from_raw_parts(input, frames);
-    let out = f0::estimate(x, sample_rate, &mut host_progress);
+    let params = f0::Params { min_hz, max_hz, voiced_limit, silence_rms };
+    let out = f0::estimate_with(x, sample_rate, &params, &mut host_progress);
     let n = out.len();
     OUTPUT.with(|o| *o.borrow_mut() = out);
     n

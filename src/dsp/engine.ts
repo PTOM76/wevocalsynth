@@ -81,9 +81,22 @@ function mixDown(channels: Float32Array[]): Float32Array {
   return samples
 }
 
+/** F0 解析の設定（Rust 側 `f0::Params` と対応） */
+export interface F0Params {
+  minHz: number
+  maxHz: number
+  /** 有声とみなす谷の深さの上限（大きいほどゆるい） */
+  voicedLimit: number
+  /** 無音とみなす音量（RMS） */
+  silenceRms: number
+}
+
+/** 既定の F0 解析の設定。自動判定・範囲の音程表示はいつもこれを使う */
+export const DEFAULT_F0_PARAMS: F0Params = { minHz: 60, maxHz: 1000, voicedLimit: 0.35, silenceRms: 0.003 }
+
 /** 全チャンネルを平均したモノラル信号の F0 を推定する（Hz、無声は 0） */
-export async function analyzeF0(channels: Float32Array[], sampleRate: number): Promise<Float32Array> {
-  const [f0] = await send({ kind: 'f0', id: nextId++, samples: mixDown(channels), sampleRate })
+export async function analyzeF0(channels: Float32Array[], sampleRate: number, params: F0Params = DEFAULT_F0_PARAMS): Promise<Float32Array> {
+  const [f0] = await send({ kind: 'f0', id: nextId++, samples: mixDown(channels), sampleRate, f0: params })
   return f0
 }
 
