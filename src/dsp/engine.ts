@@ -87,6 +87,22 @@ export async function analyzeF0(channels: Float32Array[], sampleRate: number): P
   return f0
 }
 
+/** テンポの候補。強さは一番強い候補を 1 とした比、`offset` はその BPM での1拍目の位置（秒） */
+export interface TempoCandidate {
+  bpm: number
+  strength: number
+  offset: number
+}
+
+/** 全チャンネルを平均したモノラル信号のテンポ（BPM）を解析する */
+/** 全チャンネルを平均したモノラル信号のテンポ（BPM）の候補を、強い順に返す */
+export async function analyzeTempo(channels: Float32Array[], sampleRate: number): Promise<TempoCandidate[]> {
+  const [raw] = await send({ kind: 'tempo', id: nextId++, samples: mixDown(channels), sampleRate })
+  const out: TempoCandidate[] = []
+  for (let i = 0; i + 2 < raw.length; i += 3) out.push({ bpm: raw[i], strength: raw[i + 1], offset: raw[i + 2] })
+  return out
+}
+
 /** スペクトログラム。`data[k * rows + r]`（r = 0 が最低周波数）が 0〜255 の明るさ */
 export interface Spectrogram {
   data: Uint8Array

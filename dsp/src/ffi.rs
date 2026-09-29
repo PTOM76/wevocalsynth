@@ -1,6 +1,6 @@
 //! wasm 向け C ABI。wasm-bindgen を使わず、Worker から素の `WebAssembly.instantiate` で呼べる関数だけを公開する。
 
-use crate::{curve, f0, process_with_progress, spec, Algorithm, Formant};
+use crate::{curve, f0, process_with_progress, spec, tempo, Algorithm, Formant};
 use std::cell::RefCell;
 
 #[cfg(target_arch = "wasm32")]
@@ -160,6 +160,24 @@ pub unsafe extern "C" fn analyze_spectrogram(
     let out = spec::compute(x, sample_rate, &mut host_progress);
     let n = out.len() / spec::ROWS;
     OUTPUT_U8.with(|o| *o.borrow_mut() = out);
+    n
+}
+
+/// モノラル音声のテンポを解析し、結果の値の個数を返す。結果は `output_ptr` で取得する:
+/// [候補1の BPM, 強さ, 1拍目の位置（秒）, 候補2の BPM, …]（強い順）
+///
+/// # Safety
+/// `input` は `frames` 個の有効な f32 を指していること。
+#[no_mangle]
+pub unsafe extern "C" fn analyze_tempo(input: *const f32, frames: usize, sample_rate: f32) -> usize {
+    let x = std::slice::from_raw_parts(input, frames);
+    let env = tempo::onset_envelope(x, sample_rate, &mut host_progress);
+    let out: Vec<f32> = tempo::estimate(&env, &mut host_progress)
+        .iter()
+        .flat_map(|c| [c.bpm as f32, c.strength as f32, c.offset as f32])
+        .collect();
+    let n = out.len();
+    OUTPUT.with(|o| *o.borrow_mut() = out);
     n
 }
 

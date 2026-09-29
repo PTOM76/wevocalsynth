@@ -19,6 +19,7 @@ pub mod pv;
 mod resample;
 pub mod sola;
 pub mod spec;
+pub mod tempo;
 mod timemap;
 mod wsola;
 

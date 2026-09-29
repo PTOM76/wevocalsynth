@@ -33,6 +33,7 @@ interface DspExports {
   ): number
   analyze_f0(input: number, frames: number, sampleRate: number): number
   analyze_spectrogram(input: number, frames: number, sampleRate: number): number
+  analyze_tempo(input: number, frames: number, sampleRate: number): number
   output_u8_ptr(): number
   output_ptr(): number
 }
@@ -52,9 +53,9 @@ export interface ProcessRequest {
   formantSemitones: number
 }
 
-/** F0 解析・スペクトログラムのリクエスト（モノラル） */
+/** F0 解析・スペクトログラム・テンポ解析のリクエスト（モノラル） */
 export interface F0Request {
-  kind: 'f0' | 'spec'
+  kind: 'f0' | 'spec' | 'tempo'
   id: number
   samples: Float32Array
   sampleRate: number
@@ -167,12 +168,13 @@ function analyzeSpectrogram(dsp: DspExports, req: F0Request): Uint8Array {
   }
 }
 
+/** F0 解析とテンポ解析（どちらも結果は f32 の並び） */
 function analyzeF0(dsp: DspExports, req: F0Request): Float32Array {
   const n = req.samples.length
   const input = dsp.alloc_f32(n)
   try {
     new Float32Array(dsp.memory.buffer, input, n).set(req.samples)
-    const count = dsp.analyze_f0(input, n, req.sampleRate)
+    const count = (req.kind === 'tempo' ? dsp.analyze_tempo : dsp.analyze_f0)(input, n, req.sampleRate)
     return new Float32Array(dsp.memory.buffer, dsp.output_ptr(), count).slice()
   } finally {
     dsp.free_f32(input, n)
