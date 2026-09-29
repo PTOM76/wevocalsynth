@@ -173,7 +173,8 @@ export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float3
   const { g, width, pal, dark, waveH } = c
   const mid = RULER_HEIGHT + waveH / 2
   const amp = waveH / 2 - 4
-  g.fillStyle = dark ? pal.primary.main : pal.primary.dark
+  // ダークでは primary（明るい水色）のままだとまぶしく、選択範囲の白い線も埋もれるため、少し沈める
+  g.fillStyle = dark ? alpha(pal.primary.main, 0.85) : pal.primary.dark
   for (let x = 0; x < width; x++) {
     const y0 = mid - peaks.max[x] * amp
     const y1 = mid - peaks.min[x] * amp
