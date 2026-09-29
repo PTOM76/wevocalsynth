@@ -156,14 +156,19 @@ export function drawSpectrogram(c: DrawContext, spec: Spectrogram | null, layer:
 }
 
 /** 選択範囲の塗りと両端の線（高さ `h` まで） */
+/** 選択範囲の色（ライト / ダーク） */
+const SELECTION_LIGHT = '#0097A7'
+const SELECTION_DARK = '#4DD0E1'
+
 export function drawSelection(c: DrawContext, selection: Range, h: number) {
-  const { g, pal } = c
+  const { g, dark } = c
   const x0 = toX(c, selection.start)
   const x1 = toX(c, selection.end)
-  // 波形が primary（青）なので、選択範囲は文字色（ライトは黒、ダークは白）で描き分ける
-  g.fillStyle = alpha(pal.text.primary, 0.1)
+  // 波形は青、再生位置の線は文字色なので、選択範囲はそのどちらとも違うシアンで描き分ける
+  const color = dark ? SELECTION_DARK : SELECTION_LIGHT
+  g.fillStyle = alpha(color, 0.14)
   g.fillRect(x0, RULER_HEIGHT, x1 - x0, h - RULER_HEIGHT)
-  g.fillStyle = pal.text.primary
+  g.fillStyle = color
   g.fillRect(x0 - 1, RULER_HEIGHT, 2, h - RULER_HEIGHT)
   g.fillRect(x1 - 1, RULER_HEIGHT, 2, h - RULER_HEIGHT)
 }
