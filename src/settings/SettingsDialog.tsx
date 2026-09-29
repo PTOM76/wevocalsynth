@@ -103,7 +103,8 @@ function Check(p: { checked: boolean; onChange: (v: boolean) => void; label: str
       </Box>
     )
   return (
-    <Box sx={{ gridColumn: '1 / -1' }}>
+    // 幅 0 + 最小幅 100%: 長い説明文で項目名の列が広がらないようにしつつ、行の幅いっぱいで折り返す
+    <Box sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%' }}>
       <FormControlLabel
         control={<Checkbox size="small" checked={p.checked} onChange={(e) => p.onChange(e.target.checked)} />}
         label={p.label}

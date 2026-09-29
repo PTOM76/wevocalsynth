@@ -46,6 +46,8 @@ export const createAppTheme = (desktop: boolean) => createTheme({
       styleOverrides: {
         // ダブルタップ・ピンチでのページ拡大もさせない（波形のピンチは波形側で扱う）
         body: { userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'pan-x pan-y' },
+        // 日本語を文節の切れ目で折り返す（未対応のブラウザは今までどおり文字単位）。html の lang が ja のときに効く
+        'html:lang(ja) body': { wordBreak: 'auto-phrase' },
         'input, textarea, [contenteditable="true"], .selectable': { userSelect: 'text', WebkitUserSelect: 'text' },
       },
     },
