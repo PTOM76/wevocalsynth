@@ -28,3 +28,5 @@ async function withStore<T>(mode: IDBTransactionMode, op: (s: IDBObjectStore) =>
 export const idbGet = (key: string) => withStore<unknown>('readonly', (s) => s.get(key))
 export const idbPut = (key: string, value: unknown) => withStore('readwrite', (s) => s.put(value, key)).then(() => {})
 export const idbDelete = (key: string) => withStore('readwrite', (s) => s.delete(key)).then(() => {})
+/** 保存したものをすべて消す（設定の「作業データを削除」） */
+export const idbClear = () => withStore('readwrite', (s) => s.clear()).then(() => {})

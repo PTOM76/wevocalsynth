@@ -1,0 +1,57 @@
+import { idbClear } from './idb'
+
+/**
+ * ブラウザ内に保存しているデータの確認と削除（設定の「データ」）。
+ * - 作業データ: 自動保存した音声と作業状態（IndexedDB）
+ * - オフライン用キャッシュ: PWA がオフラインで開けるように保存したアプリ本体（Cache Storage と Service Worker）
+ * - 設定と画面の状態: localStorage の `wevocalsynth.` で始まる項目
+ */
+
+/** localStorage のうち、このアプリが使う項目の接頭辞 */
+const LOCAL_PREFIX = 'wevocalsynth.'
+
+/** 使用量と上限（バイト）。ブラウザが対応していなければ null */
+export async function storageUsage(): Promise<{ usage: number; quota: number } | null> {
+  if (!navigator.storage?.estimate) return null
+  const e = await navigator.storage.estimate()
+  return { usage: e.usage ?? 0, quota: e.quota ?? 0 }
+}
+
+/** 自動保存した作業データを消す */
+export const clearWorkData = () => idbClear()
+
+/**
+ * オフライン用キャッシュを消し、Service Worker の登録を外す。
+ * 次にページを開いたときに、アプリ本体をサーバーから取り直して登録し直す
+ */
+export async function clearOfflineCache() {
+  if ('caches' in window) {
+    for (const key of await caches.keys()) await caches.delete(key)
+  }
+  if (navigator.serviceWorker) {
+    for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister()
+  }
+}
+
+/** 設定と画面の状態（パネルの幅など）を消す */
+export function clearLocalSettings() {
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith(LOCAL_PREFIX)) localStorage.removeItem(key)
+    }
+  } catch {
+    // localStorage が使えない環境では、もともと何も保存されていない
+  }
+}
+
+/** ブラウザが容量不足のときに自動で消さないようにする申請が通っているか（対応していなければ null） */
+export async function isPersisted(): Promise<boolean | null> {
+  if (!navigator.storage?.persisted) return null
+  return navigator.storage.persisted()
+}
+
+/** 自動で消さないよう申請する。通ったかを返す（ブラウザが断ることもある） */
+export async function requestPersist(): Promise<boolean> {
+  if (!navigator.storage?.persist) return false
+  return navigator.storage.persist()
+}
