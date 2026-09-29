@@ -28,6 +28,12 @@ function Root() {
   )
 }
 
+// アプリとして、スマホでページ全体が拡大縮小されないようにする。
+// viewport の user-scalable=no を無視する iOS Safari では、ピンチ操作（gesture*）を打ち消す
+for (const type of ['gesturestart', 'gesturechange']) {
+  document.addEventListener(type, (e) => e.preventDefault(), { passive: false })
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Root />

@@ -44,7 +44,8 @@ export const createAppTheme = (desktop: boolean) => createTheme({
     // 入力欄と、選べた方がよいもの（`.selectable`: ファイル名・リンクなど）だけは選択できる
     MuiCssBaseline: {
       styleOverrides: {
-        body: { userSelect: 'none', WebkitUserSelect: 'none' },
+        // ダブルタップ・ピンチでのページ拡大もさせない（波形のピンチは波形側で扱う）
+        body: { userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'pan-x pan-y' },
         'input, textarea, [contenteditable="true"], .selectable': { userSelect: 'text', WebkitUserSelect: 'text' },
       },
     },
