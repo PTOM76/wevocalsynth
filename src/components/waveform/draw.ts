@@ -160,9 +160,10 @@ export function drawSelection(c: DrawContext, selection: Range, h: number) {
   const { g, pal } = c
   const x0 = toX(c, selection.start)
   const x1 = toX(c, selection.end)
-  g.fillStyle = alpha(pal.primary.main, 0.16)
+  // 波形が primary（青）なので、選択範囲は文字色（ライトは黒、ダークは白）で描き分ける
+  g.fillStyle = alpha(pal.text.primary, 0.1)
   g.fillRect(x0, RULER_HEIGHT, x1 - x0, h - RULER_HEIGHT)
-  g.fillStyle = pal.primary.main
+  g.fillStyle = pal.text.primary
   g.fillRect(x0 - 1, RULER_HEIGHT, 2, h - RULER_HEIGHT)
   g.fillRect(x1 - 1, RULER_HEIGHT, 2, h - RULER_HEIGHT)
 }

@@ -157,12 +157,12 @@ export default function Waveform(props: Props) {
     const c: DrawContext = { g, width, view, pal, dark, waveH, pitchH }
 
     drawRuler(c)
-    // スペクトログラムは波形の代わりに表示し、選択範囲はその上に重ねる
+    // スペクトログラムは波形の代わりに表示する。選択範囲は波形などに隠れないよう、最後に重ねる
     if (showSpectrogram) drawSpectrogram(c, spectrogram, specLayer)
-    for (const r of selections) drawSelection(c, r, height)
-    if (!showSpectrogram) drawWave(c, peaks)
+    else drawWave(c, peaks)
     if (showPitch) drawPitchLane(c, pitch, range, target)
     if (beatGrid) drawBeatGrid(c, beatGrid, height)
+    for (const r of selections) drawSelection(c, r, height)
   }, [beatGrid, lang,peaks, width, height, waveH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
 
   // 再生位置の線（再生中は毎フレーム変わるので、こちらだけを描き直す）
