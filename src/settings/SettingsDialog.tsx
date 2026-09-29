@@ -22,6 +22,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { DEFAULT_SETTINGS, type CtrlSAction, type InitialMode, type Settings, type ThemeSetting } from './settings'
 import { NumberInput } from '../components/inspector/Inspector'
+import UpdateSection from './UpdateSection'
 import { useT, type LangSetting } from '../i18n/i18n'
 
 interface Props {
@@ -172,6 +173,9 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
               ]}
             />
           </Row>
+        </Group>
+        <Group title={t('settings.groupUpdate')}>
+          <UpdateSection />
         </Group>
       </>
     ),

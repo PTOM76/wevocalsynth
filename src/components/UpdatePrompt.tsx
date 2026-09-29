@@ -1,6 +1,7 @@
 import { Alert, Button, Snackbar } from '@mui/material'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useT } from '../i18n/i18n'
+import { setRegistration } from '../pwa/updateCheck'
 
 /** 開いたままでも新しい版に気づけるよう、更新を確認する間隔（ミリ秒） */
 const CHECK_INTERVAL_MS = 60 * 60 * 1000
@@ -17,7 +18,14 @@ export default function UpdatePrompt() {
   } = useRegisterSW({
     onRegisteredSW(_url, registration) {
       if (!registration) return
-      setInterval(() => void registration.update(), CHECK_INTERVAL_MS)
+      setRegistration(registration)
+      const check = () => void registration.update().catch(() => {})
+      setInterval(check, CHECK_INTERVAL_MS)
+      // iPad などのホーム画面の PWA は、開き直しても読み込み直さず続きから表示されることが多く、
+      // 裏にいる間はタイマーも止まる。画面に戻ってきたときにも確認する
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') check()
+      })
     },
   })
 
