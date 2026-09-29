@@ -23,6 +23,7 @@ import {
 } from './waveform/draw'
 import type { useWaveformView } from './waveform/useWaveformView'
 import { computePeaks } from './waveform/peaks'
+import { useTouchGestures } from './waveform/useTouchGestures'
 import { useLang, useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 
@@ -207,6 +208,11 @@ export default function Waveform(props: Props) {
     return px <= SNAP_PX ? Math.max(0, Math.min(duration, b)) : t
   }
 
+  // スマホのタッチ操作（ピンチで横の拡大縮小、目盛りの長押しで横移動）
+  const touch = useTouchGestures({ canvasRef, view, setRange: props.viewCtl.setRange, seekAt: (x) => props.onSeek(snapTime(x)) })
+  // タッチし始めたときの選択範囲。ピンチになったら、1本目の指で始まりかけた選択を取り消してここに戻す
+  const selectionsAtTouch = useRef<Range[]>(selections)
+
   const { edgeAt, dragEdge } = useRangeEdges(canvasRef, view, selections, snapTime, props.onSelectionsChange)
 
   /** ピッチ帯上の点（Shift で半音に吸着、Alt で消しゴム）。描画中でなく帯の外なら null */
@@ -260,8 +266,20 @@ export default function Waveform(props: Props) {
           if (e.button === 2) return
           altRef.current = e.altKey
           e.currentTarget.setPointerCapture(e.pointerId)
+          if (e.pointerType === 'touch' && !dragRef.current && !drawRef.current) selectionsAtTouch.current = selections
+          if (touch.down(e)) {
+            // 2本目の指が触れたらピンチ。進行中の選択・長押し・再生位置のドラッグはやめる
+            cancelLongPress()
+            if (dragRef.current?.dragging) props.onSelectionsChange(selectionsAtTouch.current)
+            dragRef.current = null
+            drawRef.current = null
+            scrubRef.current = false
+            return
+          }
           if (divider.start(e)) return
           if (onRuler(e)) {
+            // タッチはタップ・ドラッグ・長押し（横移動）を見分けてから動かす
+            if (e.pointerType === 'touch') return touch.rulerDown(e)
             scrubRef.current = true
             props.onSeek(snapTime(e.clientX))
             return
@@ -293,6 +311,7 @@ export default function Waveform(props: Props) {
           altRef.current = e.altKey
           const lp = longPressRef.current
           if (lp && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > LONG_PRESS_SLOP_PX) cancelLongPress()
+          if (touch.move(e)) return
           if (divider.dragging()) return divider.move(e)
           if (scrubRef.current) return props.onSeek(snapTime(e.clientX))
           if (drawRef.current) {
@@ -313,8 +332,13 @@ export default function Waveform(props: Props) {
           const t = snapTime(e.clientX)
           props.onSelectionsChange([...d.base, { start: Math.min(d.t0, t), end: Math.max(d.t0, t) }])
         }}
+        onPointerCancel={(e) => {
+          cancelLongPress()
+          touch.up(e)
+        }}
         onPointerUp={(e) => {
           cancelLongPress()
+          if (touch.up(e)) return
           if (divider.dragging()) return divider.end()
           if (scrubRef.current) {
             scrubRef.current = false

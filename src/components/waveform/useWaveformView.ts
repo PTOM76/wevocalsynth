@@ -70,6 +70,8 @@ export function useWaveformView(duration: number, livePosition: () => number, pl
     zoomAround,
     wheel,
     canZoomIn: view.dur > MIN_VIEW_SEC,
+    /** 表示範囲を直接決める（ピンチ操作用。クリップ内に収める） */
+    setRange: (start: number, dur: number) => setView(fit(start, dur)),
     /** 表示開始位置を変える（スクロールバー用） */
     scrollTo: (start: number) => setView((v) => fit(start, v.dur)),
     showAll: () => setView({ start: 0, dur: duration }),
