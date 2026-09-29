@@ -5,6 +5,8 @@ use std::f64::consts::PI;
 /// 実部・虚部を分けた配列に対するインプレース反復型 radix-2 FFT。
 pub struct Fft {
     n: usize,
+    /// 回転因子 e^{-2πik/size}。段（size = 2, 4, …, n）ごとに k = 0..size/2 を連続して並べる
+    /// （段の半分の長さ half から始まる）。内側のループで連続して読めるので、SIMD 命令に変換されやすい
     cos: Vec<f32>,
     sin: Vec<f32>,
     rev: Vec<usize>,
@@ -16,12 +18,17 @@ impl Fft {
         let rev = (0..n)
             .map(|i| i.reverse_bits() >> (usize::BITS - bits))
             .collect();
-        let cos = (0..n / 2)
-            .map(|i| (2.0 * PI * i as f64 / n as f64).cos() as f32)
-            .collect();
-        let sin = (0..n / 2)
-            .map(|i| (2.0 * PI * i as f64 / n as f64).sin() as f32)
-            .collect();
+        let mut cos = vec![0.0f32; n.max(1)];
+        let mut sin = vec![0.0f32; n.max(1)];
+        let mut half = 1;
+        while half < n {
+            for k in 0..half {
+                let a = PI * k as f64 / half as f64;
+                cos[half + k] = a.cos() as f32;
+                sin[half + k] = a.sin() as f32;
+            }
+            half *= 2;
+        }
         Fft { n, cos, sin, rev }
     }
 
@@ -36,23 +43,40 @@ impl Fft {
             }
         }
         let sign = if inverse { 1.0 } else { -1.0 };
-        let mut size = 2;
-        while size <= n {
-            let half = size / 2;
-            let step = n / size;
+        let mut half = 1;
+        while half < n {
+            let size = half * 2;
+            let (wc, ws) = (&self.cos[half..size], &self.sin[half..size]);
             for start in (0..n).step_by(size) {
+                // 前半 a と後半 b を別々のスライスにして、境界チェックなしで並べて回す
+                let (ra, rb) = re[start..start + size].split_at_mut(half);
+                let (ia, ib) = im[start..start + size].split_at_mut(half);
                 for k in 0..half {
-                    let (wr, wi) = (self.cos[k * step], sign * self.sin[k * step]);
-                    let (a, b) = (start + k, start + k + half);
-                    let tr = re[b] * wr - im[b] * wi;
-                    let ti = re[b] * wi + im[b] * wr;
-                    re[b] = re[a] - tr;
-                    im[b] = im[a] - ti;
-                    re[a] += tr;
-                    im[a] += ti;
+                    let (wr, wi) = (wc[k], sign * ws[k]);
+                    let tr = rb[k] * wr - ib[k] * wi;
+                    let ti = rb[k] * wi + ib[k] * wr;
+                    rb[k] = ra[k] - tr;
+                    ib[k] = ia[k] - ti;
+                    ra[k] += tr;
+                    ia[k] += ti;
                 }
             }
-            size *= 2;
+            half = size;
         }
+    }
+}
+
+#[cfg(test)]
+mod bench {
+    /// `cargo test --release fft_speed -- --ignored --nocapture` で FFT の速さを測る
+    #[test]
+    #[ignore]
+    fn fft_speed() {
+        let n = 2048;
+        let f = super::Fft::new(n);
+        let (mut re, mut im) = (vec![0.1f32; n], vec![0.0f32; n]);
+        let t = std::time::Instant::now();
+        for _ in 0..67500 { f.run(&mut re, &mut im, false); }
+        println!("67500 x FFT2048: {:?}", t.elapsed());
     }
 }
