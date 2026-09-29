@@ -30,7 +30,8 @@ export default function MobileLayout(p: Props) {
       <Stack
         direction="row"
         useFlexGap
-        sx={{ flexWrap: 'wrap', alignItems: 'center', gap: 0.5, px: 0.5, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
+        // ボタンが増えても1段に収め、はみ出した分は横にスクロールする（折り返すと波形の高さが削られる）
+        sx={{ flexWrap: 'nowrap', overflowX: 'auto', flexShrink: 0, alignItems: 'center', gap: 0.5, px: 0.5, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper', scrollbarWidth: 'none', '& > *': { flexShrink: 0 } }}
       >
         {p.view}
       </Stack>

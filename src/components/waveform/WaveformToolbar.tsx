@@ -110,19 +110,24 @@ export default function WaveformToolbar(p: Props) {
         disabled={off}
         onClick={() => p.onShowPitchChange(!p.showPitch)}
       />
-      <SmallButton
-        title={t('wave.drawPitchTooltip')}
-        label={t('wave.drawPitch')}
-        icon={faPen}
-        pressed={p.penMode}
-        disabled={off || !p.showPitch}
-        onClick={() => p.onPenModeChange(!p.penMode)}
-      />
-      <SmallButton title={t('pitchTool.up')} label={t('pitchTool.up')} icon={faArrowUp} disabled={pitchOff} onClick={() => p.onShift(1)} />
-      <SmallButton title={t('pitchTool.down')} label={t('pitchTool.down')} icon={faArrowDown} disabled={pitchOff} onClick={() => p.onShift(-1)} />
-      <SmallButton title={t('pitchTool.flatten')} label={t('pitchTool.flatten')} icon={faGripLines} disabled={pitchOff} onClick={p.onFlatten} />
-      <SmallButton title={t('snap.title')} label={t('snap.title')} icon={faMagnet} disabled={pitchOff} onClick={p.onSnap} />
-      <SmallButton title={t('vibrato.title')} label={t('vibrato.title')} icon={faWaveSquare} disabled={pitchOff} onClick={p.onVibrato} />
+      {/* ピッチを表示しているときだけ使えるボタンは、そのときだけ出す（使えないボタンでツールバーを埋めない） */}
+      {p.showPitch && (
+        <>
+          <SmallButton
+            title={t('wave.drawPitchTooltip')}
+            label={t('wave.drawPitch')}
+            icon={faPen}
+            pressed={p.penMode}
+            disabled={off || !p.showPitch}
+            onClick={() => p.onPenModeChange(!p.penMode)}
+          />
+          <SmallButton title={t('pitchTool.up')} label={t('pitchTool.up')} icon={faArrowUp} disabled={pitchOff} onClick={() => p.onShift(1)} />
+          <SmallButton title={t('pitchTool.down')} label={t('pitchTool.down')} icon={faArrowDown} disabled={pitchOff} onClick={() => p.onShift(-1)} />
+          <SmallButton title={t('pitchTool.flatten')} label={t('pitchTool.flatten')} icon={faGripLines} disabled={pitchOff} onClick={p.onFlatten} />
+          <SmallButton title={t('snap.title')} label={t('snap.title')} icon={faMagnet} disabled={pitchOff} onClick={p.onSnap} />
+          <SmallButton title={t('vibrato.title')} label={t('vibrato.title')} icon={faWaveSquare} disabled={pitchOff} onClick={p.onVibrato} />
+        </>
+      )}
       {p.showPitch && p.hasCurve && (
         <>
           <SmallButton
