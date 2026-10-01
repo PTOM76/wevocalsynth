@@ -31,6 +31,7 @@ interface DspExports {
     preserveFormant: number,
     formantSemitones: number,
   ): number
+  formant_curve_planar(input: number, frames: number, channels: number, sampleRate: number, shifts: number, shiftCount: number, hop: number): number
   analyze_f0(input: number, frames: number, sampleRate: number, minHz: number, maxHz: number, voicedLimit: number, silenceRms: number): number
   analyze_spectrogram(input: number, frames: number, sampleRate: number): number
   analyze_tempo(input: number, frames: number, sampleRate: number): number
@@ -76,7 +77,17 @@ export interface CurveRequest {
   formantSemitones: number
 }
 
-export type DspRequest = ProcessRequest | F0Request | CurveRequest
+/** フォルマントカーブ編集のリクエスト。`shifts[k]` は時刻 k × `hopSamples` のフォルマントのずらし量（半音） */
+export interface FormantCurveRequest {
+  kind: 'formant'
+  id: number
+  channels: Float32Array[]
+  sampleRate: number
+  shifts: Float32Array
+  hopSamples: number
+}
+
+export type DspRequest = ProcessRequest | F0Request | CurveRequest | FormantCurveRequest
 
 export type DspResponse =
   | { id: number; channels: Float32Array[] }
@@ -105,7 +116,7 @@ const ready: Promise<DspExports> = fetch(wasmUrl)
   .then((bytes) => WebAssembly.instantiate(bytes, { env: { report_progress: reportProgress } }))
   .then((r) => r.instance.exports as unknown as DspExports)
 
-function run(dsp: DspExports, req: ProcessRequest | CurveRequest): Float32Array[] {
+function run(dsp: DspExports, req: ProcessRequest | CurveRequest | FormantCurveRequest): Float32Array[] {
   const frames = req.channels[0]?.length ?? 0
   const count = req.channels.length
   const total = frames * count
@@ -116,6 +127,8 @@ function run(dsp: DspExports, req: ProcessRequest | CurveRequest): Float32Array[
     const outFrames =
       req.kind === 'curve'
         ? runCurve(dsp, req, input, frames, count)
+        : req.kind === 'formant'
+          ? runFormant(dsp, req, input, frames, count)
         : dsp.process_planar(
             input,
             frames,
@@ -154,6 +167,17 @@ function runCurve(dsp: DspExports, req: CurveRequest, input: number, frames: num
     )
   } finally {
     dsp.free_f32(ratios, n)
+  }
+}
+
+function runFormant(dsp: DspExports, req: FormantCurveRequest, input: number, frames: number, count: number): number {
+  const n = req.shifts.length
+  const shifts = dsp.alloc_f32(n)
+  try {
+    new Float32Array(dsp.memory.buffer, shifts, n).set(req.shifts)
+    return dsp.formant_curve_planar(input, frames, count, req.sampleRate, shifts, n, req.hopSamples)
+  } finally {
+    dsp.free_f32(shifts, n)
   }
 }
 

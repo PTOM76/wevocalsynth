@@ -1,6 +1,6 @@
 //! wasm 向け C ABI。wasm-bindgen を使わず、Worker から素の `WebAssembly.instantiate` で呼べる関数だけを公開する。
 
-use crate::{curve, f0, process_with_progress, spec, tempo, Algorithm, Formant};
+use crate::{curve, f0, formant, process_with_progress, spec, tempo, Algorithm, Formant};
 use std::cell::RefCell;
 
 #[cfg(target_arch = "wasm32")]
@@ -129,6 +129,44 @@ pub unsafe extern "C" fn process_curve_planar(
         }
     });
     out_frames
+}
+
+/// プレーナー形式の音声のフォルマントだけを、フレームごとの量（`shifts[k]` 半音、時刻 k × `hop` サンプル）だけずらす。
+/// ピッチと長さは変えない。出力フレーム数（= `frames`）を返し、結果は `output_ptr` で取得する。
+///
+/// # Safety
+/// `input` は `frames * channels` 個、`shifts` は `shift_count` 個の有効な f32 を指していること。
+#[no_mangle]
+pub unsafe extern "C" fn formant_curve_planar(
+    input: *const f32,
+    frames: usize,
+    channels: usize,
+    sample_rate: f32,
+    shifts: *const f32,
+    shift_count: usize,
+    hop: f64,
+) -> usize {
+    let all = std::slice::from_raw_parts(input, frames * channels);
+    let shifts = std::slice::from_raw_parts(shifts, shift_count);
+    // フレームの間は直線でつなぐ。包絡を E(c·f) にするので、st 半音上げるなら c = 2^(-st/12)
+    let c_at = |i: usize| {
+        if shifts.is_empty() || hop <= 0.0 {
+            return 1.0;
+        }
+        let f = i as f64 / hop;
+        let k = (f.floor() as usize).min(shifts.len() - 1);
+        let k2 = (k + 1).min(shifts.len() - 1);
+        let st = shifts[k] as f64 + (shifts[k2] as f64 - shifts[k] as f64) * (f - k as f64).clamp(0.0, 1.0);
+        2f64.powf(-st / 12.0)
+    };
+    let count = channels.max(1) as f64;
+    let mut out = Vec::with_capacity(frames * channels);
+    for (ci, x) in all.chunks(frames.max(1)).take(channels).enumerate() {
+        let y = formant::correct_varying(x, &c_at, sample_rate, &mut |p| host_progress((ci as f64 + p) / count));
+        out.extend_from_slice(&y[..frames.min(y.len())]);
+    }
+    OUTPUT.with(|o| *o.borrow_mut() = out);
+    frames
 }
 
 /// モノラル音声 `input`（`frames` サンプル）の F0 を `f0::HOP_SEC` 間隔で、設定（`f0::Params` の各値）に従って推定し、

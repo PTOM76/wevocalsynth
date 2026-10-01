@@ -118,6 +118,8 @@ export default function App() {
     toggleWave: () => ed.setShowWave(!ed.showWave),
     showGain: ed.showGain,
     toggleGain: () => ed.setShowGain(!ed.showGain),
+    showFormant: ed.showFormant,
+    toggleFormant: () => ed.setShowFormant(!ed.showFormant),
     pitchReady: ed.showPitch && !!ed.pitch,
     setVoicing: (v) => ed.voicing.set(ed.selections, v),
     extract: (stem) => void ed.extract(stem),
@@ -188,8 +190,11 @@ export default function App() {
       ghosts={editing ? ed.tracks.ghosts : undefined}
       showWave={ed.showWave}
       showGain={ed.showGain}
-      gainCurve={ed.gainCurve.curve?.clip === shown ? ed.gainCurve.curve.db : null}
+      gainCurve={ed.gainCurve.curve?.clip === shown ? ed.gainCurve.curve.values : null}
       onDrawGain={(from, to) => edited && shown === edited && ed.gainCurve.draw(edited, from, to)}
+      showFormant={ed.showFormant}
+      formantCurve={ed.formantCurve.curve?.clip === shown ? ed.formantCurve.curve.values : null}
+      onDrawFormant={(from, to) => edited && shown === edited && ed.formantCurve.draw(edited, from, to)}
       focusLane={ed.focusLane}
       onFocusLane={ed.setFocusLane}
     />
@@ -227,6 +232,17 @@ export default function App() {
       hasGainCurve={!!ed.gainCurve.curve && ed.gainCurve.curve.clip === edited}
       onApplyGain={ed.applyGain}
       onClearGain={ed.gainCurve.clear}
+      formant={{
+        show: ed.showFormant,
+        onShowChange: ed.setShowFormant,
+        focused: ed.focusLane === 'formant',
+        hasCurve: !!ed.formantCurve.curve && ed.formantCurve.curve.clip === edited,
+        previewPlaying: ed.formantCurve.preview.playing,
+        previewBusy: ed.formantCurve.preview.busy,
+        onPreview: () => void ed.formantCurve.preview.toggle(),
+        onApply: ed.applyFormant,
+        onClear: ed.formantCurve.clear,
+      }}
       penMode={ed.penMode}
       onPenModeChange={ed.setPenMode}
       hasCurve={hasCurve}

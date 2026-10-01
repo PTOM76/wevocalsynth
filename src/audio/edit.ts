@@ -1,5 +1,5 @@
 import type { Clip, Range } from './types'
-import { F0_HOP_SEC, processAudio, processCurve, type ProcessOptions } from '../dsp/engine'
+import { F0_HOP_SEC, processAudio, processCurve, processFormantCurve, type ProcessOptions } from '../dsp/engine'
 
 /** 加工部分と未加工部分の継ぎ目のクロスフェード長 */
 const FADE_SEC = 0.005
@@ -132,6 +132,42 @@ export async function applyPitchCurve(
     onProgress,
   )
   return splice(clip, s, e, processed).clip
+}
+
+/**
+ * フォルマントカーブ編集を適用する。`shifts` は描いたずらし量（半音、`hopSec` 間隔、0 は元のまま）。
+ * ずらした区間とその前後だけを処理する。新しいクリップと、ずらした区間（試聴の範囲に使う）を返す。編集がなければ null
+ */
+export async function applyFormantCurve(
+  clip: Clip,
+  shifts: Float32Array,
+  hopSec: number,
+  onProgress?: (p: number) => void,
+): Promise<{ clip: Clip; range: Range } | null> {
+  let first = -1
+  let last = -1
+  shifts.forEach((v, k) => {
+    if (v !== 0) {
+      if (first < 0) first = k
+      last = k
+    }
+  })
+  if (first < 0) return null
+  const k0 = Math.max(0, first - CURVE_MARGIN_FRAMES)
+  const k1 = Math.min(shifts.length - 1, last + CURVE_MARGIN_FRAMES)
+  const sr = clip.sampleRate
+  const len = clip.channels[0].length
+  const s = Math.min(len, Math.round(k0 * hopSec * sr))
+  const e = Math.min(len, Math.round((k1 + 1) * hopSec * sr))
+  if (e <= s) return null
+  const processed = await processFormantCurve(
+    clip.channels.map((c) => c.subarray(s, e)),
+    sr,
+    shifts.subarray(k0, k1 + 1),
+    hopSec,
+    onProgress,
+  )
+  return { clip: splice(clip, s, e, processed).clip, range: { start: first * hopSec, end: (last + 1) * hopSec } }
 }
 
 /** `clip` の `range` を新しいクリップとして切り出す */

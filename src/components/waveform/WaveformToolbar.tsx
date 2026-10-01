@@ -7,6 +7,7 @@ import {
   faChartColumn,
   faChartArea,
   faVolumeHigh,
+  faMicrophoneLines,
   faCheck,
   faExpand,
   faGripLines,
@@ -72,6 +73,18 @@ interface Props {
   hasGainCurve: boolean
   onApplyGain: () => void
   onClearGain: () => void
+  /** フォルマントの帯（表示・フォーカス）と、描いたフォルマントの曲線の試聴・適用・破棄 */
+  formant: {
+    show: boolean
+    onShowChange: (v: boolean) => void
+    focused: boolean
+    hasCurve: boolean
+    previewPlaying: boolean
+    previewBusy: boolean
+    onPreview: () => void
+    onApply: () => void
+    onClear: () => void
+  }
   onShowPitchChange: (show: boolean) => void
   penMode: boolean
   onPenModeChange: (pen: boolean) => void
@@ -115,6 +128,7 @@ export default function WaveformToolbar(p: Props) {
   const off = !!p.disabled
   // ピッチの加工は、ピッチを表示して解析が済んでから
   const pitchOff = off || !p.showPitch || !p.pitchReady || p.busy
+  const fm = p.formant
   return (
     <>
       <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomOut') })} label={t('wave.zoomOut')} icon={faMagnifyingGlassMinus} disabled={off || !p.zoomed} onClick={p.onZoomOut} />
@@ -127,7 +141,7 @@ export default function WaveformToolbar(p: Props) {
         icon={faChartArea}
         pressed={p.showWave}
         // どちらか一方の帯は必ず出す
-        disabled={off || (p.showWave && !p.showPitch && !p.showSpectrogram && !p.showGain)}
+        disabled={off || (p.showWave && !p.showPitch && !p.showSpectrogram && !p.showGain && !p.formant.show)}
         onClick={() => p.onShowWaveChange(!p.showWave)}
       />
       <SmallButton
@@ -154,6 +168,14 @@ export default function WaveformToolbar(p: Props) {
         disabled={off}
         onClick={() => p.onShowGainChange(!p.showGain)}
       />
+      <SmallButton
+        title={t('wave.showFormant')}
+        label={t('wave.showFormant')}
+        icon={faMicrophoneLines}
+        pressed={fm.show}
+        disabled={off}
+        onClick={() => fm.onShowChange(!fm.show)}
+      />
       {/* ここから帯ごとの操作。帯の表示の切り替えとの間に区切り線を入れる */}
       {p.showGain && (p.gainFocused || p.hasGainCurve) && <Sep />}
       {/* 音量の帯にフォーカスしているときは、音量の曲線を描くペン */}
@@ -175,6 +197,34 @@ export default function WaveformToolbar(p: Props) {
             {t('common.apply')}
           </Button>
           <SmallButton title={t('gainCurve.discard')} label={t('gainCurve.discard')} icon={faTrashCan} disabled={p.busy} onClick={p.onClearGain} />
+        </>
+      )}
+      {fm.show && (fm.focused || fm.hasCurve) && <Sep />}
+      {fm.show && fm.focused && (
+        <SmallButton
+          title={t('wave.drawFormantTooltip')}
+          label={t('wave.drawFormant')}
+          icon={faPen}
+          pressed={p.penMode}
+          disabled={off}
+          onClick={() => p.onPenModeChange(!p.penMode)}
+        />
+      )}
+      {/* フォルマントは再生にすぐ反映できないため、ピッチの曲線と同じく試聴してから適用する */}
+      {fm.show && fm.hasCurve && (
+        <>
+          <SmallButton
+            title={t('pitchTool.preview')}
+            label={t('pitchTool.preview')}
+            icon={fm.previewPlaying ? faStop : fm.previewBusy ? faSpinner : faHeadphones}
+            pressed={fm.previewPlaying}
+            disabled={p.busy || fm.previewBusy}
+            onClick={fm.onPreview}
+          />
+          <Button size="small" variant="contained" startIcon={<FontAwesomeIcon icon={faCheck} />} disabled={p.busy} onClick={fm.onApply}>
+            {t('common.apply')}
+          </Button>
+          <SmallButton title={t('formantCurve.discard')} label={t('formantCurve.discard')} icon={faTrashCan} disabled={p.busy} onClick={fm.onClear} />
         </>
       )}
       {p.showPitch && (p.pitchFocused || p.hasCurve) && <Sep />}

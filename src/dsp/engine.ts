@@ -213,3 +213,17 @@ export function processCurve(
     onProgress,
   )
 }
+
+/** フォルマントだけを、フレームごとの量（`shifts` 半音、`hopSec` 間隔）だけずらす。ピッチと長さは変えない */
+export function processFormantCurve(
+  channels: Float32Array[],
+  sampleRate: number,
+  shifts: Float32Array,
+  hopSec: number,
+  onProgress?: (p: number) => void,
+): Promise<Float32Array[]> {
+  return send(
+    { kind: 'formant', id: nextId++, channels: channels.map((c) => c.slice()), sampleRate, shifts: shifts.slice(), hopSamples: hopSec * sampleRate },
+    onProgress,
+  )
+}
