@@ -23,19 +23,22 @@ import { useT } from '../i18n/i18n'
 import { SearchContext, matchCategories, type Category } from './settingsSearch'
 import { NarrowContext } from './controls'
 import { settingsPages } from './SettingsPages'
+import type { ProjectSettings } from './ProjectSection'
 
 interface Props {
   open: boolean
   onClose: () => void
   settings: Settings
   onChange: (patch: Partial<Settings>) => void
+  /** 今のプロジェクト（名前・テンポ）。ファイルを開いていなければ null */
+  project: ProjectSettings | null
 }
 
 /**
  * 設定画面。PC は左の分類から選んで右で変え、「OK」「適用」で反映・保存、「キャンセル」なら捨てる。
  * スマホは分類の一覧から各画面へ進み、変更はその場で反映する
  */
-export default function SettingsDialog({ open, onClose, settings, onChange }: Props) {
+export default function SettingsDialog({ open, onClose, settings, onChange, project }: Props) {
   const t = useT()
   const theme = useTheme()
   const narrow = useMediaQuery(theme.breakpoints.down('sm'))
@@ -70,7 +73,7 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
   }
   const dirty = (Object.keys(draft) as (keyof Settings)[]).some((k) => draft[k] !== settings[k])
 
-  const pages = settingsPages({ draft, set, onClose, t })
+  const pages = settingsPages({ draft, set, onClose, t, project })
 
   const label = (c: Category) => t(`settings.cat.${c}`)
 

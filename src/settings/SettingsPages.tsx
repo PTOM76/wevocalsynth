@@ -4,6 +4,7 @@ import { NumberInput } from '../components/inspector/Inspector'
 import UpdateSection from './UpdateSection'
 import DataSection from './DataSection'
 import AddonSection from './AddonSection'
+import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
 import type { LangSetting, MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
@@ -17,13 +18,15 @@ interface PageProps {
   set: (patch: Partial<Settings>) => void
   onClose: () => void
   t: (key: MessageKey) => string
+  project: ProjectSettings | null
 }
 
 /**
  * 設定画面の分類ごとの中身。項目を足したら settingsSearch.ts の検索の対象にも足す
  */
-export function settingsPages({ draft, set, onClose, t }: PageProps): Record<Category, ReactNode> {
+export function settingsPages({ draft, set, onClose, t, project }: PageProps): Record<Category, ReactNode> {
   return {
+    project: <ProjectSection project={project} />,
     general: (
       <>
         <Group title={t('settings.groupStartup')}>
@@ -153,15 +156,6 @@ export function settingsPages({ draft, set, onClose, t }: PageProps): Record<Cat
       <Group title={t('settings.groupTempo')}>
         <Check checked={draft.autoTempo} onChange={(v) => set({ autoTempo: v })} label={t('settings.autoTempo')} help={t('settings.autoTempoHelp')} />
         <Check checked={draft.showBeatGrid} onChange={(v) => set({ showBeatGrid: v })} label={t('settings.showBeatGrid')} />
-        <Row label={t('settings.bpm')}>
-          <NumberInput value={draft.bpm} onChange={(v) => set({ bpm: v })} min={20} max={400} step={0.01} unit="BPM" width={110} ariaLabel="BPM" />
-        </Row>
-        <Row label={t('settings.beatsPerBar')}>
-          <NumberInput value={draft.beatsPerBar} onChange={(v) => set({ beatsPerBar: Math.round(v) })} min={1} max={16} step={1} width={110} />
-        </Row>
-        <Row label={t('settings.beatOffset')}>
-          <NumberInput value={draft.beatOffset} onChange={(v) => set({ beatOffset: v })} min={0} max={60} step={0.001} unit={t('vibrato.secondUnit')} width={110} />
-        </Row>
       </Group>
     ),
     keys: (

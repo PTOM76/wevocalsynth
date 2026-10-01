@@ -128,7 +128,6 @@ export default function App() {
     duplicateTrack: () => ed.tracks.duplicate(),
     addTrack: () => ed.addPicker.open(),
     synth: () => setSynthOpen(true),
-    renameProject: () => setRenamingProject(true),
     showShortcuts: () => setShortcutsOpen(true),
     showSettings: () => setSettingsOpen(true),
     showHistory: () => setHistoryOpen(true),
@@ -448,7 +447,10 @@ export default function App() {
       />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings}
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={settings}
         onChange={updateSettings}
         project={ed.fileName ? { name: ed.fileName, tempo: ed.projectTempo, onRename: ed.setProjectName, onTempoChange: ed.setProjectTempo } : null}
       />

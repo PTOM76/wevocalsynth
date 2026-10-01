@@ -50,7 +50,6 @@ interface Actions {
   /** 音を0から作る（新しいトラック。何も開いていなくても使える） */
   synth: () => void
   /** プロジェクト名を変える */
-  renameProject: () => void
   showShortcuts: () => void
   showSettings: () => void
   showHistory: () => void
@@ -90,7 +89,6 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
         { label: t('synth.menu'), disabled: a.busy, onClick: a.synth },
         { label: t('menu.saveProject'), shortcut: a.ctrlS === 'project' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.save },
-        { label: t('project.renameMenu'), disabled: noClip, onClick: a.renameProject },
         { divider: true },
         { label: t('menu.export'), shortcut: a.ctrlS === 'export' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.openExport },
         { divider: true },
@@ -152,7 +150,6 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
         { label: t('synth.menu'), disabled: a.busy, onClick: a.synth },
         { label: t('menu.saveProject'), disabled: noClip, onClick: a.save },
-        { label: t('project.renameMenu'), disabled: noClip, onClick: a.renameProject },
         { label: t('menu.export'), disabled: noClip, onClick: a.openExport },
       ],
     },

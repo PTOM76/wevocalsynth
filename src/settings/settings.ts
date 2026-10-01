@@ -42,12 +42,6 @@ export interface Settings {
   autoTempo: boolean
   /** 拍の目安線を波形に出す */
   showBeatGrid: boolean
-  /** テンポ（BPM） */
-  bpm: number
-  /** 1小節の拍数 */
-  beatsPerBar: number
-  /** 1拍目の位置（秒）。曲の頭に無音があるときに合わせる */
-  beatOffset: number
   /** 元に戻せる段数 */
   historyLimit: number
   /** 元に戻す履歴が使うメモリの上限（MB）。超えたら古い段から捨てる */
@@ -79,9 +73,6 @@ export const DEFAULT_SETTINGS: Settings = {
   ctrlS: 'project',
   autoTempo: true,
   showBeatGrid: true,
-  bpm: 120,
-  beatsPerBar: 4,
-  beatOffset: 0,
   showDebug: false,
   showMeters: true,
   // int8: CPU でも fp16 より速く、GPU も使える（fp16 は WebGPU で動かない。docs/DECISIONS.md）

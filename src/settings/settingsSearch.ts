@@ -2,14 +2,15 @@ import { createContext, useContext } from 'react'
 import type { MessageKey } from '../i18n/i18n'
 
 /** 設定画面の分類 */
-export type Category = 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'vocal' | 'data' | 'debug'
-export const CATEGORIES: Category[] = ['general', 'display', 'pitch', 'tempo', 'keys', 'vocal', 'data', 'debug']
+export type Category = 'project' | 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'vocal' | 'data' | 'debug'
+export const CATEGORIES: Category[] = ['project', 'general', 'display', 'pitch', 'tempo', 'keys', 'vocal', 'data', 'debug']
 
 /**
  * 設定の検索の対象: 分類ごとのグループ名・項目名・説明文の訳文キー。
  * SettingsDialog の各ページ（と DataSection / AddonSection）に項目を足したら、ここにも足す
  */
 const INDEX: Record<Category, MessageKey[]> = {
+  project: ['settings.groupProject', 'project.name', 'settings.bpm', 'settings.beatsPerBar', 'settings.beatOffset'],
   general: [
     'settings.groupStartup', 'settings.autoRestore', 'settings.autoRestoreHelp',
     'settings.groupHistory', 'settings.historyLimit', 'settings.historyMemory',
@@ -20,7 +21,6 @@ const INDEX: Record<Category, MessageKey[]> = {
   pitch: ['settings.groupPitch', 'settings.f0MinHz', 'settings.f0MaxHz', 'settings.f0Voicing', 'settings.f0SilenceDb'],
   tempo: [
     'settings.groupTempo', 'settings.autoTempo', 'settings.autoTempoHelp', 'settings.showBeatGrid',
-    'settings.bpm', 'settings.beatsPerBar', 'settings.beatOffset',
   ],
   keys: ['settings.groupShortcuts', 'settings.ctrlS'],
   vocal: [
