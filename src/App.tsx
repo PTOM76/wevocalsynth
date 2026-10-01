@@ -390,7 +390,7 @@ export default function App() {
         <ExportDialog
           open={ed.exportOpen}
           onClose={() => ed.setExportOpen(false)}
-          baseName={ed.baseName}
+          baseName={ed.exportName}
           sourceRate={edited.sampleRate}
           sourceChannels={edited.channels.length}
           hasSelection={!!selection}

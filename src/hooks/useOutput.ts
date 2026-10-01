@@ -15,6 +15,8 @@ import { t } from '../i18n/i18n'
 
 interface Deps {
   fileName: string
+  /** プロジェクト名を自分で変えたか（変えていなければ、書き出しの名前に _wevocal を付ける） */
+  named: boolean
   params: EditParams
   history: ReturnType<typeof useHistory>
   tracks: ReturnType<typeof useTracks>
@@ -29,6 +31,8 @@ interface Deps {
 export function useOutput(d: Deps) {
   const { history, tracks } = d
   const baseName = d.fileName.replace(/\.[^.]+$/, '') || 'audio'
+  // 書き出しの名前の初期値: ファイル名のままなら、元のファイルと区別できるよう _wevocal を付ける
+  const exportName = d.named ? baseName : `${baseName}_wevocal`
 
   /** 全トラック（音声・フェーダー・鳴らし方・重ねる表示）と、選んでいるトラックを .wvsp にしてダウンロードする */
   const saveProjectFile = () =>
@@ -45,7 +49,7 @@ export function useOutput(d: Deps) {
         overlay: tracks.overlay.has(tr.id),
       }))
       const active = Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId))
-      downloadBlob(saveProject({ fileName: d.fileName, params: d.params, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
+      downloadBlob(saveProject({ fileName: d.fileName, named: d.named, params: d.params, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
       d.notify(t('toast.saved'))
     })
 
@@ -78,5 +82,5 @@ export function useOutput(d: Deps) {
       d.notify(t('toast.exported'))
     })
 
-  return { baseName, saveProjectFile, exportFile }
+  return { baseName, exportName, saveProjectFile, exportFile }
 }

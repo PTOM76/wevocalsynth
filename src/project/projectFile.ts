@@ -30,7 +30,10 @@ export interface ProjectTrack {
 }
 
 export interface Project {
+  /** プロジェクト名 */
   fileName: string
+  /** プロジェクト名を自分で変えたか（変えていなければ、書き出しの名前に _wevocal を付ける）。古いファイルには無い */
+  named?: boolean
   params: EditParams
   tracks: ProjectTrack[]
   /** 編集していたトラックの位置 */
@@ -42,6 +45,7 @@ type ClipInfo = { sampleRate: number; channels: number; length: number }
 interface Header {
   version: number
   fileName: string
+  named?: boolean
   params: EditParams
   /** 版 2: トラックごとの名前。クリップは2つずつ（原音・加工後）並ぶ */
   tracks?: { name: string; volume?: number; pan?: number; mute?: boolean; solo?: boolean; overlay?: boolean }[]
@@ -92,6 +96,7 @@ export function saveProject(p: Project): Blob {
   const header: Header = {
     version: VERSION,
     fileName: p.fileName,
+    named: p.named,
     params: p.params,
     tracks: p.tracks.map((t) => ({ name: t.name, volume: t.volume, pan: t.pan, mute: t.mute, solo: t.solo, overlay: t.overlay })),
     active: p.active,
@@ -135,5 +140,5 @@ export async function loadProject(file: File): Promise<Project> {
     }),
   }))
   const tracks = names.map((name, i) => ({ name, original: clips[i * 2], edited: clips[i * 2 + 1], ...pickTrackState(infos?.[i]) }))
-  return { fileName: header.fileName, params: header.params, tracks, active: Math.min(header.active ?? 0, tracks.length - 1) }
+  return { fileName: header.fileName, named: header.named, params: header.params, tracks, active: Math.min(header.active ?? 0, tracks.length - 1) }
 }

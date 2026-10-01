@@ -17,6 +17,7 @@ const LEGACY_KEYS = { original: 'autosave:original', edited: 'autosave:edited', 
 
 export interface AutosaveMeta {
   fileName: string
+  named?: boolean
   params: EditParams
   /** トラックの並び。音声は trackKey(id) に置く */
   tracks?: { id: string; name: string; volume?: number; pan?: number; mute?: boolean; solo?: boolean; overlay?: boolean }[]
@@ -71,7 +72,7 @@ export async function loadAutosave(): Promise<{ project: Project; ids: string[] 
     )
     if (!tracks.every((t) => isClip(t.original) && isClip(t.edited))) return null
     return {
-      project: { fileName: meta.fileName, params: meta.params, tracks: tracks as Project['tracks'], active: Math.min(meta.active ?? 0, tracks.length - 1) },
+      project: { fileName: meta.fileName, named: meta.named, params: meta.params, tracks: tracks as Project['tracks'], active: Math.min(meta.active ?? 0, tracks.length - 1) },
       ids: meta.tracks.map((t) => t.id),
     }
   }

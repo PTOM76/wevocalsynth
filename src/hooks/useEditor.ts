@@ -62,6 +62,8 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   tempoRef.current = { tempo, onTempo }
   // プロジェクト名。初めは開いたファイルの名前（拡張子を除く）で、変えられる。保存・書き出しのファイル名の初期値になる
   const [fileName, setFileName] = useState('')
+  // プロジェクト名を自分で変えたか（変えていなければ、書き出しの名前に _wevocal を付ける）
+  const [named, setNamed] = useState(false)
   const history = useHistory({ limit: settings.historyLimit, budgetBytes: settings.historyMemoryMb * 2 ** 20 })
   // 編集できるのは選んでいるトラックだけ。original / edited はそのトラックの原音・加工後
   const tracks = useTracks(history)
@@ -178,6 +180,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     (clip: Clip, name: string, project: Project | null, ids?: string[]) => {
       // 拡張子は除く（以前のプロジェクトファイルは、拡張子付きの名前を持っていた）
       setFileName(name.replace(/\.[^.]+$/, ''))
+      setNamed(!!project?.named)
       // プロジェクトはトラックごとに。自動保存から戻すときは保存先の ID を引き継ぐ（保存し直さずに済む）
       const list = project
         ? project.tracks.map((tr, i) => ({ id: ids?.[i] || newTrackId(), name: tr.name, original: tr.original, clip: tr.edited }))
@@ -284,8 +287,9 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     })
 
   // プロジェクトの保存と書き出し
-  const { baseName, saveProjectFile, exportFile } = useOutput({
+  const { baseName, exportName, saveProjectFile, exportFile } = useOutput({
     fileName,
+    named,
     params,
     history,
     tracks,
@@ -326,7 +330,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   // 作業状態の自動保存と、起動時の復元
   useAutosave(
     settings.autoRestore,
-    { fileName, tracks: history.tracks, activeId: history.activeId, faders: tracks.faders, mix: tracks.mix, overlay: tracks.overlay },
+    { fileName, named, tracks: history.tracks, activeId: history.activeId, faders: tracks.faders, mix: tracks.mix, overlay: tracks.overlay },
     params,
     (project, ids) => {
       openClip(project.tracks[project.active].edited, project.fileName, project, ids)
@@ -385,7 +389,11 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   return {
     // 素材と履歴
-    fileName, setProjectName: (name: string) => name.trim() && setFileName(name.trim()), original, edited, shown, duration, editing, source, setSource, history, commit,
+    fileName, setProjectName: (name: string) => {
+      if (!name.trim()) return
+      setFileName(name.trim())
+      setNamed(true)
+    }, original, edited, shown, duration, editing, source, setSource, history, commit,
     // 処理状態と通知
     busy, progress, taskLabel: task.label, cancelTask: task.cancel, toast, setToast,
     // 選択範囲
@@ -398,6 +406,6 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, focusLane, setFocusLane, clip, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
+    cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker, dragOver,
   }
 }

@@ -34,7 +34,7 @@ function whenIdle(fn: () => void): () => void {
  */
 export function useAutosave(
   enabled: boolean,
-  state: { fileName: string; tracks: Track[]; activeId: string; faders: Record<string, TrackFader>; mix: Record<string, TrackMix>; overlay: ReadonlySet<string> },
+  state: { fileName: string; named: boolean; tracks: Track[]; activeId: string; faders: Record<string, TrackFader>; mix: Record<string, TrackMix>; overlay: ReadonlySet<string> },
   params: EditParams,
   onRestore: (project: Project, ids: string[]) => void,
   onError: (e: unknown) => void,
@@ -74,11 +74,12 @@ export function useAutosave(
     void clearAutosave()
   }, [enabled])
 
-  const { fileName, tracks, activeId, faders, mix, overlay } = state
+  const { fileName, named, tracks, activeId, faders, mix, overlay } = state
   /** トラックの並びとパラメータ・フェーダー・鳴らし方を保存する（小さいので、すぐ書いてよい） */
   const writeMeta = () =>
     saveMeta({
       fileName,
+      named,
       params: latest.current.params,
       tracks: tracks.map((t) => ({
         id: t.id,
@@ -145,5 +146,5 @@ export function useAutosave(
       }
     }, META_DELAY_MS)
     return () => clearTimeout(timer)
-  }, [enabled, tracks, fileName, activeId, faders, mix, overlay])
+  }, [enabled, tracks, fileName, named, activeId, faders, mix, overlay])
 }
