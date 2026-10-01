@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Clip } from '../audio/types'
-import type { Track } from '../audio/tracks'
+import type { Track, TrackFader } from '../audio/tracks'
 import type { EditParams } from '../components/EditPanel'
 import type { Project } from '../project/projectFile'
 import { clearAutosave, loadAutosave, removeTrackClips, saveMeta, saveTrackClip } from '../project/autosave'
@@ -31,7 +31,7 @@ function whenIdle(fn: () => void): () => void {
  */
 export function useAutosave(
   enabled: boolean,
-  state: { fileName: string; tracks: Track[]; activeId: string },
+  state: { fileName: string; tracks: Track[]; activeId: string; faders: Record<string, TrackFader> },
   params: EditParams,
   onRestore: (project: Project, ids: string[]) => void,
   onError: (e: unknown) => void,
@@ -72,7 +72,7 @@ export function useAutosave(
   }, [enabled])
 
   // 音声が変わって落ち着き、ブラウザが空いたら保存する
-  const { fileName, tracks, activeId } = state
+  const { fileName, tracks, activeId, faders } = state
   useEffect(() => {
     if (!enabled || !tracks.length || !restoredRef.current) return
     let cancelIdle = () => {}
@@ -94,7 +94,7 @@ export function useAutosave(
           saveMeta({
             fileName,
             params: latest.current.params,
-            tracks: tracks.map((t) => ({ id: t.id, name: t.name })),
+            tracks: tracks.map((t) => ({ id: t.id, name: t.name, volume: faders[t.id]?.db, pan: faders[t.id]?.pan })),
             active: Math.max(0, tracks.findIndex((t) => t.id === activeId)),
           })
         } catch (e) {
@@ -106,5 +106,5 @@ export function useAutosave(
       clearTimeout(timer)
       cancelIdle()
     }
-  }, [enabled, fileName, tracks, activeId])
+  }, [enabled, fileName, tracks, activeId, faders])
 }

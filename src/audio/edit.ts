@@ -272,6 +272,35 @@ export function panRange(clip: Clip, range: Range, pan: number): Clip {
   return { sampleRate: clip.sampleRate, channels: [l, r, ...clip.channels.slice(2)] }
 }
 
+/**
+ * トラックのフェーダー（音量 `db`・パン `pan`）を、クリップ全体に掛けた音声（書き出し用）。
+ * 再生（usePlayer の GainNode → StereoPannerNode）と同じ計算。どちらも中立なら元のクリップを返す
+ */
+export function applyFader(clip: Clip, db: number, pan: number): Clip {
+  if (db === 0 && pan === 0) return clip
+  const g = 10 ** (db / 20)
+  if (pan === 0) return { sampleRate: clip.sampleRate, channels: clip.channels.map((c) => c.map((v) => v * g)) }
+  const [l0, r0] = clip.channels.length >= 2 ? clip.channels : [clip.channels[0], clip.channels[0]]
+  const n = l0.length
+  const l = new Float32Array(n)
+  const r = new Float32Array(n)
+  const x = ((pan <= 0 ? pan + 1 : pan) * Math.PI) / 2
+  const [cos, sin] = [Math.cos(x), Math.sin(x)]
+  for (let i = 0; i < n; i++) {
+    const a = l0[i] * g
+    const b = r0[i] * g
+    // StereoPannerNode（ステレオ入力）と同じ式（panRange の説明を参照）
+    if (pan <= 0) {
+      l[i] = a + b * cos
+      r[i] = b * sin
+    } else {
+      l[i] = a * cos
+      r[i] = b + a * sin
+    }
+  }
+  return { sampleRate: clip.sampleRate, channels: [l, r] }
+}
+
 /** `range` を無音にする */
 export function silenceRange(clip: Clip, range: Range): Clip {
   return mapGain(clip, range, () => 0)

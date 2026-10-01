@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Clip } from '../audio/types'
-import { DEFAULT_MIX, isAudible, makeTrack, type Track, type TrackMix } from '../audio/tracks'
+import { DEFAULT_FADER, DEFAULT_MIX, isAudible, makeTrack, type Track, type TrackFader, type TrackMix } from '../audio/tracks'
 import { mixClips } from '../audio/mix'
 import type { useHistory } from './useHistory'
 import { t } from '../i18n/i18n'
@@ -12,6 +12,9 @@ import { t } from '../i18n/i18n'
 export function useTracks(history: ReturnType<typeof useHistory>) {
   const { tracks, activeId } = history
   const [mix, setMix] = useState<Record<string, TrackMix>>({})
+  // フェーダー（音量・パン）。再生と書き出しに常に掛ける
+  const [faders, setFaders] = useState<Record<string, TrackFader>>({})
+  const faderOf = (id: string) => faders[id] ?? DEFAULT_FADER
   // 大きな波形の後ろに重ねるトラック（見え方の切り替えなので履歴に入れない。既定は重ねない）
   const [overlay, setOverlay] = useState<ReadonlySet<string>>(new Set())
   const active = tracks.find((tr) => tr.id === activeId) ?? null
@@ -116,10 +119,14 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
         if (!n.delete(id)) n.add(id)
         return n
       }),
-    /** ファイルを開き直したときに、鳴らし方と重ねる表示を戻す */
-    resetMix: () => {
+    faders,
+    faderOf,
+    setFader: (id: string, patch: Partial<TrackFader>) => setFaders((f) => ({ ...f, [id]: { ...(f[id] ?? DEFAULT_FADER), ...patch } })),
+    /** ファイルを開き直したときに、鳴らし方と重ねる表示を戻し、フェーダーを `initial`（プロジェクトの値）にする */
+    resetMix: (initial: Record<string, TrackFader> = {}) => {
       setMix({})
       setOverlay(new Set())
+      setFaders(initial)
     },
   }
 }

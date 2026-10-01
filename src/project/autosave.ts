@@ -19,7 +19,7 @@ export interface AutosaveMeta {
   fileName: string
   params: EditParams
   /** トラックの並び。音声は trackKey(id) に置く */
-  tracks?: { id: string; name: string }[]
+  tracks?: { id: string; name: string; volume?: number; pan?: number }[]
   active?: number
 }
 
@@ -58,7 +58,13 @@ export async function loadAutosave(): Promise<{ project: Project; ids: string[] 
   const meta = (await idbGet(META_KEY)) as AutosaveMeta | undefined
   if (meta?.tracks?.length) {
     const tracks = await Promise.all(
-      meta.tracks.map(async (t) => ({ name: t.name, original: await idbGet(trackKey(t.id, 'original')), edited: await idbGet(trackKey(t.id, 'edited')) })),
+      meta.tracks.map(async (t) => ({
+        name: t.name,
+        volume: t.volume,
+        pan: t.pan,
+        original: await idbGet(trackKey(t.id, 'original')),
+        edited: await idbGet(trackKey(t.id, 'edited')),
+      })),
     )
     if (!tracks.every((t) => isClip(t.original) && isClip(t.edited))) return null
     return {

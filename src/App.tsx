@@ -266,6 +266,8 @@ export default function App() {
       <VolumePanel
         hasSelection={!!selection}
         busy={busy || panelsDisabled}
+        fader={ed.tracks.faderOf(ed.tracks.activeId)}
+        onFaderChange={(patch) => ed.tracks.setFader(ed.tracks.activeId, patch)}
         db={ed.gainDb}
         onDbChange={ed.setGainDb}
         pan={ed.pan}

@@ -20,6 +20,9 @@ export interface ProjectTrack {
   name: string
   original: Clip
   edited: Clip
+  /** フェーダー（音量 dB・パン）。古いファイルには無い */
+  volume?: number
+  pan?: number
 }
 
 export interface Project {
@@ -37,7 +40,7 @@ interface Header {
   fileName: string
   params: EditParams
   /** 版 2: トラックごとの名前。クリップは2つずつ（原音・加工後）並ぶ */
-  tracks?: { name: string }[]
+  tracks?: { name: string; volume?: number; pan?: number }[]
   active?: number
   clips: ClipInfo[]
 }
@@ -77,7 +80,7 @@ export function saveProject(p: Project): Blob {
     version: VERSION,
     fileName: p.fileName,
     params: p.params,
-    tracks: p.tracks.map((t) => ({ name: t.name })),
+    tracks: p.tracks.map((t) => ({ name: t.name, volume: t.volume, pan: t.pan })),
     active: p.active,
     clips: clips.map((c) => ({ sampleRate: c.sampleRate, channels: c.channels.length, length: c.channels[0].length })),
   }
@@ -105,7 +108,8 @@ export async function loadProject(file: File): Promise<Project> {
   }
   const jsonLen = view.getUint32(4, true)
   const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, jsonLen))) as Header
-  const names = header.version === 1 ? [header.fileName] : header.version === 2 ? (header.tracks ?? []).map((tr) => tr.name) : null
+  const infos = header.version === 1 ? [{ name: header.fileName }] : header.version === 2 ? (header.tracks ?? []) : null
+  const names = infos?.map((tr) => tr.name) ?? null
   if (!names || header.clips.length !== names.length * 2 || names.length === 0) throw new Error(t('project.unsupported'))
 
   let offset = 8 + jsonLen
@@ -117,6 +121,6 @@ export async function loadProject(file: File): Promise<Project> {
       return ch
     }),
   }))
-  const tracks = names.map((name, i) => ({ name, original: clips[i * 2], edited: clips[i * 2 + 1] }))
+  const tracks = names.map((name, i) => ({ name, original: clips[i * 2], edited: clips[i * 2 + 1], volume: infos?.[i]?.volume, pan: infos?.[i]?.pan }))
   return { fileName: header.fileName, params: header.params, tracks, active: Math.min(header.active ?? 0, tracks.length - 1) }
 }

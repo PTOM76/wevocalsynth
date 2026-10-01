@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from './types'
+import { DEFAULT_FADER, type TrackFader } from './tracks'
 import { clipDuration } from './types'
 
 /** 一緒に鳴らすトラック（id はレベルメーターの対応づけに使う） */
@@ -9,6 +10,31 @@ export interface PlayTrack {
 }
 
 const NO_TRACKS: PlayTrack[] = []
+const NO_FADERS: Record<string, TrackFader> = {}
+
+/** パンの処理。モノラルも左右同じ音のステレオにしてから掛ける（適用の panRange・書き出しの applyFader と同じ計算になるように） */
+function makePanner(ctx: AudioContext) {
+  const p = ctx.createStereoPanner()
+  p.channelCount = 2
+  p.channelCountMode = 'explicit'
+  p.channelInterpretation = 'speakers'
+  return p
+}
+
+/**
+ * フェーダー（音量・パン）の値を、つないだノードに入れる。再生中に動かしたときは途切れないよう少しだけならし、
+ * 再生を始めるとき（`immediate`）はそのまま入れる（出だしの音量がずれないように）
+ */
+function setFaderNodes(n: { gain: GainNode; pan: StereoPannerNode }, f: TrackFader, immediate = false) {
+  if (immediate) {
+    n.gain.gain.value = 10 ** (f.db / 20)
+    n.pan.pan.value = f.pan
+    return
+  }
+  const t = n.gain.context.currentTime
+  n.gain.gain.setTargetAtTime(10 ** (f.db / 20), t, 0.01)
+  n.pan.pan.setTargetAtTime(f.pan, t, 0.01)
+}
 
 /** レベルメーター用の AnalyserNode を作る（時間波形を読むだけなので小さくてよい） */
 function makeAnalyser(ctx: AudioContext) {
@@ -35,9 +61,13 @@ const RAMP_SEC = 0.005
  */
 export function usePlayer(
   clip: Clip | null,
-  opts: { id?: string; others?: PlayTrack[]; muted?: boolean; liveGain?: LiveGain | null } = {},
+  opts: { id?: string; others?: PlayTrack[]; muted?: boolean; liveGain?: LiveGain | null; faders?: Record<string, TrackFader> } = {},
 ) {
-  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null } = opts
+  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null, faders = NO_FADERS } = opts
+  const fadersRef = useRef(faders)
+  fadersRef.current = faders
+  /** トラックごとのフェーダーのノード（再生のたびに作る。動かしたらここへ値を入れる） */
+  const faderNodes = useRef(new Map<string, { gain: GainNode; pan: StereoPannerNode }>())
   const ctxRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
   /** 一緒に鳴らしているほかのトラックの音 */
@@ -73,6 +103,7 @@ export function usePlayer(
     }
     extraRef.current = []
     analysersRef.current.clear()
+    faderNodes.current.clear()
   }, [])
 
   const currentTime = useCallback(() => {
@@ -156,13 +187,13 @@ export function usePlayer(
       const master = masterRef.current
       const meter = makeAnalyser(ctx)
       analysersRef.current.set(id, meter)
-      // パン: モノラルも左右同じ音のステレオにしてから掛ける（適用の panRange と同じ計算になるように）
-      const panner = ctx.createStereoPanner()
-      panner.channelCount = 2
-      panner.channelCountMode = 'explicit'
-      panner.channelInterpretation = 'speakers'
+      // 適用前の音量・パン（範囲だけ） → トラックのフェーダー（全体） → メーター → 全体の出口
+      const panner = makePanner(ctx)
       panRef.current = panner
-      src.connect(gain).connect(panner).connect(meter).connect(master)
+      const fader = { gain: ctx.createGain(), pan: makePanner(ctx) }
+      setFaderNodes(fader, fadersRef.current[id] ?? DEFAULT_FADER, true)
+      faderNodes.current.set(id, fader)
+      src.connect(gain).connect(panner).connect(fader.gain).connect(fader.pan).connect(meter).connect(master)
       src.onended = () => {
         sourceRef.current = null
         setPlaying(false)
@@ -180,7 +211,10 @@ export function usePlayer(
           e.buffer = bufferOf(o.clip)
           const m = makeAnalyser(ctx)
           analysersRef.current.set(o.id, m)
-          e.connect(m).connect(master)
+          const f = { gain: ctx.createGain(), pan: makePanner(ctx) }
+          setFaderNodes(f, fadersRef.current[o.id] ?? DEFAULT_FADER, true)
+          faderNodes.current.set(o.id, f)
+          e.connect(f.gain).connect(f.pan).connect(m).connect(master)
           e.start(at, start, Math.min(end, clipDuration(o.clip)) - start)
           return e
         })
@@ -191,6 +225,11 @@ export function usePlayer(
     },
     [clip, id, others, muted, stopSource, scheduleGain],
   )
+
+  // 再生中にフェーダーを動かしたら、すぐ反映する
+  useEffect(() => {
+    for (const [trackId, n] of faderNodes.current) setFaderNodes(n, faders[trackId] ?? DEFAULT_FADER)
+  }, [faders])
 
   // 再生中に適用前の音量が変わったら、すぐ反映する
   const gainKey = liveGain ? `${liveGain.db}:${liveGain.pan}:${liveGain.ranges.map((r) => `${r.start}-${r.end}`).join(',')}` : ''

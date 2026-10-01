@@ -7,7 +7,7 @@ import { EXPORT_EXT, exportAudio } from '../audio/export/exportAudio'
 import { sliceRanges } from '../audio/multiRange'
 import type { ExportSettings } from '../components/ExportDialog'
 import { PROJECT_EXT, isProjectFile, loadProject, saveProject, type Project } from '../project/projectFile'
-import { applyPitchCurve, spliceProcessed } from '../audio/edit'
+import { applyFader, applyPitchCurve, spliceProcessed } from '../audio/edit'
 import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
@@ -103,10 +103,12 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   // 音量の適用前の値。再生中の音（加工後の表示のとき、対象の範囲だけ）にすぐ反映する
   const [gainDb, setGainDb] = useState(0)
   const [pan, setPan] = useState(0)
-  const editRangesForGain: Range[] = source === 'edited' && edited ? (selections.length ? selections : [{ start: 0, end: clipDuration(edited) }]) : []
+  // 選択範囲の音量・パンは範囲を選んでいるときだけ（範囲が無いときはトラックのフェーダーを使う）
+  const editRangesForGain: Range[] = source === 'edited' && edited ? selections : []
   const player = usePlayer(shown, {
     id: history.activeId,
     others: tracks.others,
+    faders: tracks.faders,
     muted: tracks.activeMuted,
     liveGain: (gainDb || pan) && editRangesForGain.length ? { ranges: editRangesForGain, db: gainDb, pan } : null,
   })
@@ -178,7 +180,10 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
         ? project.tracks.map((tr, i) => ({ id: ids?.[i] || newTrackId(), name: tr.name, original: tr.original, clip: tr.edited }))
         : [makeTrack(name, clip)]
       history.reset(list, list[project ? project.active : 0].id)
-      tracks.resetMix()
+      // フェーダーはプロジェクトに保存した値から（新しいファイルは中立）
+      tracks.resetMix(
+        Object.fromEntries((project?.tracks ?? []).map((tr, i) => [list[i].id, { db: tr.volume ?? 0, pan: tr.pan ?? 0 }])),
+      )
       setGainDb(0)
       setPan(0)
       setSource('edited')
@@ -277,7 +282,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const saveProjectFile = () =>
     task.run(t('task.saving'), async () => {
       if (!original || !edited) return
-      const list = history.tracks.map((tr) => ({ name: tr.name, original: tr.original, edited: tr.clip }))
+      const list = history.tracks.map((tr) => ({ name: tr.name, original: tr.original, edited: tr.clip, volume: tracks.faderOf(tr.id).db, pan: tracks.faderOf(tr.id).pan }))
       const active = Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId))
       downloadBlob(saveProject({ fileName, params, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
       setToast({ severity: 'success', message: t('toast.saved') })
@@ -287,7 +292,10 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const exportFile = (s: ExportSettings) =>
     task.run(t('task.exporting'), async (signal) => {
       if (!edited) return
-      const clip = s.selectionOnly && selections.length ? sliceRanges(edited, selections) : edited
+      const part = s.selectionOnly && selections.length ? sliceRanges(edited, selections) : edited
+      // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
+      const fader = tracks.faderOf(history.activeId)
+      const clip = applyFader(part, fader.db, fader.pan)
       const blob = await exportAudio(
         clip,
         { ...s, range: null, sampleRate: s.sampleRate || clip.sampleRate },
@@ -326,7 +334,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   // 作業状態の自動保存と、起動時の復元
   useAutosave(
     settings.autoRestore,
-    { fileName, tracks: history.tracks, activeId: history.activeId },
+    { fileName, tracks: history.tracks, activeId: history.activeId, faders: tracks.faders },
     params,
     (project, ids) => {
       openClip(project.tracks[project.active].edited, project.fileName, project, ids)

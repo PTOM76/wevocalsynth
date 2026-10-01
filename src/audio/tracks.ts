@@ -21,6 +21,21 @@ export interface TrackMix {
 
 export const DEFAULT_MIX: TrackMix = { mute: false, solo: false }
 
+/**
+ * トラックの音量・パン（フェーダー）。音声は書き換えず、再生と書き出しの両方に常に掛ける（適用ボタンは無い）。
+ * 元に戻す履歴には入れないが、プロジェクトファイルと自動保存には保存する
+ */
+export interface TrackFader {
+  /** 音量（dB） */
+  db: number
+  /** パン（-1 = 左 … 0 = 中央 … 1 = 右） */
+  pan: number
+}
+
+export const DEFAULT_FADER: TrackFader = { db: 0, pan: 0 }
+
+export const isNeutralFader = (f: TrackFader) => f.db === 0 && f.pan === 0
+
 let nextId = 1
 export const newTrackId = () => `t${Date.now().toString(36)}${(nextId++).toString(36)}`
 
