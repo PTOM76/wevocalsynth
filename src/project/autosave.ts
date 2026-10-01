@@ -26,10 +26,55 @@ export interface AutosaveMeta {
 }
 
 let worker: Worker | null = null
-const send = (m: AutosaveMessage) => {
+const post = (m: AutosaveMessage, transfer: Transferable[] = []) => {
   worker ??= new Worker(new URL('./autosaveWorker.ts', import.meta.url), { type: 'module' })
-  worker.postMessage(m)
+  worker.postMessage(m, transfer)
 }
+
+/** 1回に送る音声のサンプル数（4MB。複製は 1〜2ms で済む） */
+const CHUNK = 1 << 20
+/**
+ * 送る順番待ち。音声は小分けにして、ブラウザが空いている間に少しずつ送る（まとめて送ると数百MB の複製で画面が止まった）。
+ * 並び（meta）や削除も同じ列に入れ、音声より先に届かないようにする
+ */
+const pending: (() => void)[] = []
+let pumping = false
+function pump() {
+  if (pumping) return
+  pumping = true
+  const step = (deadline?: IdleDeadline) => {
+    const until = performance.now() + 8
+    while (pending.length && (deadline ? deadline.timeRemaining() > 1 : performance.now() < until)) pending.shift()!()
+    if (!pending.length) {
+      pumping = false
+      return
+    }
+    if ('requestIdleCallback' in window) window.requestIdleCallback(step, { timeout: 1000 })
+    else setTimeout(() => step(), 16)
+  }
+  step()
+}
+const send = (m: AutosaveMessage) => {
+  pending.push(() => post(m))
+  pump()
+}
+/** 音声を小分けにして送る */
+function sendClip(key: string, clip: Clip) {
+  const length = clip.channels[0].length
+  pending.push(() => post({ type: 'begin', key, sampleRate: clip.sampleRate, channels: clip.channels.length, length }))
+  clip.channels.forEach((ch, channel) => {
+    for (let offset = 0; offset < length; offset += CHUNK) {
+      pending.push(() => {
+        const data = ch.slice(offset, offset + CHUNK)
+        post({ type: 'chunk', key, channel, offset, data }, [data.buffer])
+      })
+    }
+  })
+  pending.push(() => post({ type: 'end', key }))
+  pump()
+}
+/** 加工後が原音と同じ（まだ加工していない）ときに、音声の代わりに置く印 */
+const SAME_AS_ORIGINAL = { sameAsOriginal: true }
 
 // 開発中のホットリロードで古い Worker が残らないようにする
 import.meta.hot?.dispose(() => {
@@ -38,7 +83,9 @@ import.meta.hot?.dispose(() => {
 })
 
 /** トラックの原音か加工後を保存する（変わったものだけ呼ぶ） */
-export const saveTrackClip = (id: string, kind: 'original' | 'edited', clip: Clip) => send({ type: 'put', key: trackKey(id, kind), value: clip })
+/** `sameAsOriginal` なら、加工後は原音と同じなので音声を送らず印だけ置く（開いた直後は同じ音声を2回送っていた） */
+export const saveTrackClip = (id: string, kind: 'original' | 'edited', clip: Clip, sameAsOriginal = false) =>
+  sameAsOriginal ? send({ type: 'put', key: trackKey(id, kind), value: SAME_AS_ORIGINAL }) : sendClip(trackKey(id, kind), clip)
 
 /** トラックの並びとパラメータを保存する */
 export const saveMeta = (meta: AutosaveMeta) => send({ type: 'put', key: META_KEY, value: meta })
@@ -71,6 +118,9 @@ export async function loadAutosave(): Promise<{ project: Project; ids: string[] 
         edited: await idbGet(trackKey(t.id, 'edited')),
       })),
     )
+    // 加工していないトラックは、加工後に印だけを置いている
+    for (const t of tracks) if ((t.edited as typeof SAME_AS_ORIGINAL | undefined)?.sameAsOriginal) t.edited = t.original
+
     if (!tracks.every((t) => isClip(t.original) && isClip(t.edited))) return null
     return {
       project: { fileName: meta.fileName, named: meta.named, params: meta.params, tempo: meta.tempo, tracks: tracks as Project['tracks'], active: Math.min(meta.active ?? 0, tracks.length - 1) },

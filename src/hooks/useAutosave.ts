@@ -107,7 +107,7 @@ export function useAutosave(
           for (const t of tracks) {
             const s = saved.current.get(t.id) ?? { original: null, edited: null }
             if (s.original !== t.original) saveTrackClip(t.id, 'original', t.original)
-            if (s.edited !== t.clip) saveTrackClip(t.id, 'edited', t.clip)
+            if (s.edited !== t.clip) saveTrackClip(t.id, 'edited', t.clip, t.clip === t.original)
             saved.current.set(t.id, { original: t.original, edited: t.clip })
           }
           // なくなったトラック（削除・別のファイルを開いた）の音声を消す

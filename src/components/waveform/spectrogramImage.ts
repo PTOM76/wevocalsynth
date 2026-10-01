@@ -22,24 +22,37 @@ const SPEC_LUT = (() => {
   return lut
 })()
 
-/** 表示範囲のスペクトログラムを width × height の画像にする（1列に複数フレームが入る場合は最大値） */
+/**
+ * 表示範囲のスペクトログラムを width × height の画像にする（1列に複数フレームが入る場合は最大値）。
+ * 列ごとに、入るフレームの最大値を周波数の段ごとに先にまとめてから縦に引き伸ばす
+ * （以前は画面の1点ごとにフレームをたどっていて、全体表示では拡大・縮小のたびに画面が止まった）
+ */
 export function renderSpectrogram(spec: Spectrogram, width: number, height: number, viewStart: number, viewDur: number) {
   const img = new ImageData(width, height)
   const px = img.data
+  const rows = spec.rows
+  const col = new Uint8Array(rows)
+  // 画面の y ごとの段（どの列でも同じ）
+  const rowAt = new Int32Array(height)
+  for (let y = 0; y < height; y++) rowAt[y] = Math.round(((height - 1 - y) / Math.max(1, height - 1)) * (rows - 1))
   for (let x = 0; x < width; x++) {
     const ka = Math.max(0, Math.floor((viewStart + (x / width) * viewDur) / spec.hopSec))
-    const kb = Math.min(
-      spec.frames - 1,
-      Math.max(ka, Math.floor((viewStart + ((x + 1) / width) * viewDur) / spec.hopSec)),
-    )
+    const kb = Math.min(spec.frames - 1, Math.max(ka, Math.floor((viewStart + ((x + 1) / width) * viewDur) / spec.hopSec)))
+    col.fill(0)
+    // フレームの中の段は並んでいるので、順に読む
+    for (let k = ka; k <= kb; k++) {
+      const base = k * rows
+      for (let r = 0; r < rows; r++) {
+        const v = spec.data[base + r]
+        if (v > col[r]) col[r] = v
+      }
+    }
     for (let y = 0; y < height; y++) {
-      const r = Math.round(((height - 1 - y) / (height - 1)) * (spec.rows - 1))
-      let v = 0
-      for (let k = ka; k <= kb; k++) v = Math.max(v, spec.data[k * spec.rows + r])
+      const v = col[rowAt[y]] * 3
       const o = (y * width + x) * 4
-      px[o] = SPEC_LUT[v * 3]
-      px[o + 1] = SPEC_LUT[v * 3 + 1]
-      px[o + 2] = SPEC_LUT[v * 3 + 2]
+      px[o] = SPEC_LUT[v]
+      px[o + 1] = SPEC_LUT[v + 1]
+      px[o + 2] = SPEC_LUT[v + 2]
       px[o + 3] = 255
     }
   }
