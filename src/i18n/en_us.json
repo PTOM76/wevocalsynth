@@ -401,6 +401,7 @@
   "track.move": "Reorder tracks",
   "track.mergeSelected": "Merge selected tracks",
   "track.removeSelected": "Delete {count} selected tracks",
+  "debug.copied": "Copied",
   "settings.title": "Settings",
   "settings.autoRestore": "Autosave work and restore it next time",
   "settings.autoRestoreHelp": "Audio is stored only in this browser and never uploaded",

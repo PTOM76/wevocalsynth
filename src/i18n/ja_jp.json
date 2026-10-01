@@ -401,6 +401,7 @@
   "track.move": "トラックの並び替え",
   "track.mergeSelected": "選んだトラックを統合",
   "track.removeSelected": "選んだ {count} 本のトラックを削除",
+  "debug.copied": "コピーしました",
   "settings.title": "設定",
   "settings.autoRestore": "作業を自動保存し、次回開いたときに復元する",
   "settings.autoRestoreHelp": "音声はこのブラウザ内にだけ保存され、外部には送信されません",

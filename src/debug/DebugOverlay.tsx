@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Box } from '@mui/material'
-import { memoryUsage, recentDspJobs, renderCounts } from './debugStats'
+import { memoryUsage, recentDspJobs, recentStalls, renderCounts } from './debugStats'
+import { APP_BUILD } from '../pwa/updateCheck'
 
 /** 表示を更新する間隔（ミリ秒）。数字が読める速さにする */
 const UPDATE_MS = 500
@@ -23,10 +24,11 @@ type MemoryInfo = { usedJSHeapSize: number }
 
 /**
  * デバッグ表示（画面の左下）。FPS・一番重かったフレーム・部品の描画回数・
- * 長いタスク・メモリ・DSP の処理時間を出す。操作の邪魔にならないよう、クリックは下に通す
+ * 長いタスク・メモリ・DSP の処理時間・画面が止まった記録を出す。文字は選んでコピーできる（不具合の報告に貼る）
  */
 export default function DebugOverlay() {
   const [stats, setStats] = useState<Stats | null>(null)
+  const boxRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let frames = 0
@@ -66,7 +68,10 @@ export default function DebugOverlay() {
       const counts = renderCounts()
       const renders: [string, number][] = [...counts].map(([k, v]) => [k, (v - (lastCounts.get(k) ?? 0)) / sec])
       const memory = (performance as Performance & { memory?: MemoryInfo }).memory
-      setStats({
+      // 表示の中の文字を選んでいる間は書き換えない（書き換えると選択が外れてコピーできない）
+      const sel = window.getSelection()
+      const selecting = !!sel && !sel.isCollapsed && !!boxRef.current?.contains(sel.anchorNode)
+      if (!selecting) setStats({
         fps: frames / sec,
         worstFrame: worst,
         renders,
@@ -93,15 +98,27 @@ export default function DebugOverlay() {
   const jobs = recentDspJobs()
   // 60fps を下回ったら黄、30fps を下回ったら赤
   const fpsColor = stats.fps >= 55 ? '#8f8' : stats.fps >= 30 ? '#ff8' : '#f88'
+  const lines = [
+    `long tasks ${stats.longTasks}${stats.longTasks ? ` (max ${stats.longestTask.toFixed(0)}ms)` : ''}`,
+    ...(stats.heapMb !== null ? [`heap ${stats.heapMb.toFixed(0)}MB`] : []),
+    ...stats.renders.map(([k, v]) => `render ${k} ${v.toFixed(1)}/s`),
+    ...[...memoryUsage()].map(([k, v]) => `mem ${k} ${(v / 2 ** 20).toFixed(0)}MB`),
+    ...jobs.map((j) => `dsp ${j.kind} ${j.ms.toFixed(0)}ms`),
+    // 画面が止まった記録と、その間に始まった処理
+    ...recentStalls().map((st) => `stall ${st.ms.toFixed(0)}ms @${st.at.toFixed(0)}s${st.heapMb !== null ? ` heap ${st.heapMb.toFixed(0)}MB` : ''}: ${st.during.join(', ')}`),
+  ]
   return (
     <Box
-      aria-hidden
+      ref={boxRef}
       sx={{
         position: 'fixed',
         left: 8,
         bottom: 8,
         zIndex: 2000,
-        pointerEvents: 'none',
+        // 文字を選んでコピーできるようにする（不具合の報告に貼る）
+        userSelect: 'text',
+        WebkitUserSelect: 'text',
+        cursor: 'text',
         px: 1,
         py: 0.5,
         borderRadius: 0.5,
@@ -114,12 +131,8 @@ export default function DebugOverlay() {
       <Box component="span" sx={{ color: fpsColor }}>
         {`FPS ${stats.fps.toFixed(0)}`}
       </Box>
-      {`  worst ${stats.worstFrame.toFixed(0)}ms\n`}
-      {`long tasks ${stats.longTasks}${stats.longTasks ? ` (max ${stats.longestTask.toFixed(0)}ms)` : ''}\n`}
-      {stats.heapMb !== null && `heap ${stats.heapMb.toFixed(0)}MB\n`}
-      {stats.renders.map(([k, v]) => `render ${k} ${v.toFixed(1)}/s\n`).join('')}
-      {[...memoryUsage()].map(([k, v]) => `mem ${k} ${(v / 2 ** 20).toFixed(0)}MB\n`).join('')}
-      {jobs.map((j) => `dsp ${j.kind} ${j.ms.toFixed(0)}ms\n`).join('')}
+      {`  worst ${stats.worstFrame.toFixed(0)}ms`}
+      {'\n' + [...lines, `build ${APP_BUILD}`, `UA ${navigator.userAgent}`].join('\n')}
     </Box>
   )
 }

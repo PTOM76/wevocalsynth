@@ -74,6 +74,8 @@ export interface Stall {
   ms: number
   /** その間に始まった処理（同じものはまとめて回数を付ける） */
   during: string[]
+  /** そのときの JS のメモリ（MB。Chrome だけ） */
+  heapMb: number | null
 }
 const STALL_HISTORY = 8
 const stalls: Stall[] = []
@@ -88,7 +90,9 @@ try {
         const c = names.filter((x) => x === n).length
         return c > 1 ? `${n}×${c}` : n
       })
-      stalls.unshift({ at: e.startTime / 1000, ms: e.duration, during: counted.length ? counted : ['(印のない処理)'] })
+      const mem = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory
+      // 印が無ければ、ガベージコレクション（メモリの掃除）や、印を付けていない処理
+      stalls.unshift({ at: e.startTime / 1000, ms: e.duration, during: counted.length ? counted : ['(印のない処理)'], heapMb: mem ? mem.usedJSHeapSize / 2 ** 20 : null })
       stalls.length = Math.min(stalls.length, STALL_HISTORY)
       console.warn(`[stall] ${e.duration.toFixed(0)}ms`, counted)
     }

@@ -2,6 +2,7 @@ import type { Clip } from '../audio/types'
 import type { EditParams } from '../components/EditPanel'
 import type { Project, ProjectTempo } from './projectFile'
 import { idbGet } from './idb'
+import { markActivity } from '../debug/debugStats'
 import type { AutosaveMessage } from './autosaveWorker'
 
 /**
@@ -61,6 +62,7 @@ const send = (m: AutosaveMessage) => {
 /** 音声を小分けにして送る */
 function sendClip(key: string, clip: Clip) {
   const length = clip.channels[0].length
+  pending.push(() => markActivity('autosave'))
   pending.push(() => post({ type: 'begin', key, sampleRate: clip.sampleRate, channels: clip.channels.length, length }))
   clip.channels.forEach((ch, channel) => {
     for (let offset = 0; offset < length; offset += CHUNK) {

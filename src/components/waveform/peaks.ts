@@ -1,4 +1,5 @@
 import type { Clip } from '../../audio/types'
+import { markActivity } from '../../debug/debugStats'
 import type { View } from './draw'
 
 /** 最も細かい段のブロックの大きさ（サンプル）。これより細かく見るときはサンプルを直接走査する */
@@ -66,7 +67,7 @@ export function computePeaks(clip: Clip, width: number, view: View) {
   while (BASE_BLOCK * 2 ** (level + 1) * 2 <= samplesPerPixel) level++
   let pyramid: Pyramid | null = null
   if (level >= 0) {
-    pyramid = cache.get(clip) ?? build(clip)
+    pyramid = cache.get(clip) ?? (markActivity('peaks build'), build(clip))
     cache.set(clip, pyramid)
     level = Math.min(level, pyramid.levels.length - 1)
   }

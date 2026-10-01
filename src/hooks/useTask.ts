@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { markActivity } from '../debug/debugStats'
 import { cancelDsp } from '../dsp/engine'
 
 /**
@@ -20,6 +21,7 @@ export function useTask(onStart: () => void, onError: (e: unknown) => void, onCa
     ctrl.current = c
     setBusy(true)
     setLabel(taskLabel)
+    markActivity(`task ${taskLabel}`)
     setProgress(0)
     onStart()
     // 中断されたら、処理の終わりを待たずに抜ける

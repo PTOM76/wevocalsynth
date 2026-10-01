@@ -3,6 +3,7 @@ import type { Range } from '../../audio/types'
 import { F0_HOP_SEC, type Spectrogram } from '../../dsp/engine'
 import { renderSpectrogram } from './spectrogramImage'
 import { hzToMidi, noteName } from '../../audio/notes'
+import { markActivity } from '../../debug/debugStats'
 import { t } from '../../i18n/i18n'
 
 export const RULER_HEIGHT = 24
@@ -158,6 +159,7 @@ export function drawBeatGrid(c: DrawContext, grid: BeatGrid, h: number) {
  * 選択範囲の変更などでの描き直しでは使い回す
  */
 export function spectrogramLayer(spec: Spectrogram, width: number, specH: number, view: View) {
+  markActivity('spectrogram image')
   const off = new OffscreenCanvas(Math.max(1, width), Math.max(1, specH))
   off.getContext('2d')!.putImageData(renderSpectrogram(spec, width, specH, view.start, view.dur), 0, 0)
   return off
