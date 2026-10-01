@@ -8,6 +8,7 @@ const renders = new Map<string, number>()
 
 /** 部品の描画を1回数える。部品の関数の先頭で呼ぶ */
 export function countRender(name: string) {
+  markActivity(`render ${name}`)
   renders.set(name, (renders.get(name) ?? 0) + 1)
 }
 
@@ -51,4 +52,52 @@ export function recordDspJob(job: DspJob) {
 
 export function recentDspJobs(): readonly DspJob[] {
   return jobs
+}
+
+/**
+ * 画面が止まったときの原因探し。重くなりそうな処理の始まりに `markActivity` で印を付けておき、
+ * 長いタスク（画面が止まった時間）と重なった印を一緒に記録する。表示を点けていなくても記録する
+ */
+const STALL_MS = 150
+const marks: { name: string; t: number }[] = []
+const MARK_HISTORY = 200
+
+/** 重くなりそうな処理の始まりに呼ぶ（名前を付けるだけで軽い） */
+export function markActivity(name: string) {
+  marks.push({ name, t: performance.now() })
+  if (marks.length > MARK_HISTORY) marks.splice(0, marks.length - MARK_HISTORY)
+}
+
+export interface Stall {
+  /** 起きた時刻（ページを開いてからの秒） */
+  at: number
+  ms: number
+  /** その間に始まった処理（同じものはまとめて回数を付ける） */
+  during: string[]
+}
+const STALL_HISTORY = 8
+const stalls: Stall[] = []
+
+try {
+  new PerformanceObserver((list) => {
+    for (const e of list.getEntries()) {
+      if (e.duration < STALL_MS) continue
+      const end = e.startTime + e.duration
+      const names = marks.filter((m) => m.t >= e.startTime - 1 && m.t <= end).map((m) => m.name)
+      const counted = [...new Set(names)].map((n) => {
+        const c = names.filter((x) => x === n).length
+        return c > 1 ? `${n}×${c}` : n
+      })
+      stalls.unshift({ at: e.startTime / 1000, ms: e.duration, during: counted.length ? counted : ['(印のない処理)'] })
+      stalls.length = Math.min(stalls.length, STALL_HISTORY)
+      console.warn(`[stall] ${e.duration.toFixed(0)}ms`, counted)
+    }
+  }).observe({ type: 'longtask', buffered: true })
+} catch {
+  // 長いタスクを測れないブラウザ（Safari・Firefox）では記録しない
+}
+
+/** 最近の、画面が止まった記録（新しい順） */
+export function recentStalls(): readonly Stall[] {
+  return stalls
 }
