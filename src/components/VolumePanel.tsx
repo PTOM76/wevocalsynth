@@ -1,4 +1,6 @@
-import { Box, Button, Slider } from '@mui/material'
+import { Box, Button, IconButton, Slider, Tooltip } from '@mui/material'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowRotateLeft } from '@fortawesome/free-solid-svg-icons'
 import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow } from './inspector/Inspector'
 import { useT, type MessageKey } from '../i18n/i18n'
 import { panLabel } from '../hooks/useClipCommands'
@@ -66,6 +68,22 @@ export default function VolumePanel({ hasSelection, busy, db, onDbChange: setDb,
       </PropRow>
       <PropRow>
         <Box sx={{ flexGrow: 1 }} />
+        {/* 適用前のゲインとパンを 0 に戻す（再生中の音も元に戻る）。加工パネルのリセットと同じ見た目 */}
+        <Tooltip title={t('common.reset')}>
+          <span>
+            <IconButton
+              size="small"
+              aria-label={t('common.reset')}
+              disabled={busy || (db === 0 && pan === 0)}
+              onClick={() => {
+                setDb(0)
+                setPan(0)
+              }}
+            >
+              <FontAwesomeIcon icon={faArrowRotateLeft} fontSize={12} />
+            </IconButton>
+          </span>
+        </Tooltip>
         <Button
           size="small"
           variant="contained"
