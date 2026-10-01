@@ -13,6 +13,7 @@ import {
 } from '../addons/addons'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { useT } from '../i18n/i18n'
+import { useConfirm } from '../components/ConfirmDialog'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 
@@ -26,6 +27,7 @@ interface Status {
 export default function AddonSection({ ids }: { ids: string[] }) {
   const t = useT()
   const { request, dialog } = useAddonInstall()
+  const { confirm, dialog: confirmDialog } = useConfirm()
   const [status, setStatus] = useState<Record<string, Status>>({})
   const [message, setMessage] = useState<string | null>(null)
   const list = ADDONS.filter((a) => ids.includes(a.id))
@@ -55,7 +57,7 @@ export default function AddonSection({ ids }: { ids: string[] }) {
     refresh()
   }
   const remove = async (a: AddonInfo) => {
-    if (!window.confirm(t('addon.deleteConfirm', { name: t(a.name) }))) return
+    if (!(await confirm({ message: t('addon.deleteConfirm', { name: t(a.name) }), okLabel: t('data.delete'), danger: true }))) return
     // 依存していた実行環境なども、使われなくなったら一緒に消す
     await uninstallWithUnused(a.id)
     setMessage(t('addon.deleted'))
@@ -102,6 +104,7 @@ export default function AddonSection({ ids }: { ids: string[] }) {
       })}
       {message && <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: 12, color: 'primary.main' }}>{message}</Typography>}
       {dialog}
+      {confirmDialog}
     </>
   )
 }

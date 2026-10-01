@@ -9,6 +9,7 @@ import {
   storageUsage,
 } from '../project/storage'
 import { useT, type MessageKey } from '../i18n/i18n'
+import { useConfirm } from '../components/ConfirmDialog'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 
@@ -18,6 +19,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null)
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const { confirm, dialog } = useConfirm()
 
   const refresh = () => {
     void storageUsage().then(setUsage)
@@ -25,9 +27,9 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   }
   useEffect(refresh, [])
 
-  /** 確認してから `run` し、結果を表示する */
-  const act = async (confirmKey: MessageKey, run: () => Promise<void> | void, doneKey: MessageKey) => {
-    if (!window.confirm(t(confirmKey))) return
+  /** 確認してから `run` し、結果を表示する。`okKey` は確認ダイアログの実行ボタンの文字 */
+  const act = async (okKey: MessageKey, confirmKey: MessageKey, run: () => Promise<void> | void, doneKey: MessageKey) => {
+    if (!(await confirm({ message: t(confirmKey), okLabel: t(okKey), danger: true }))) return
     await run()
     setMessage(t(doneKey))
     refresh()
@@ -56,18 +58,19 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
       {row(
         'data.work',
         'data.workHelp',
-        danger('data.delete', () => void act('data.workConfirm', clearWorkData, 'data.workDone')),
+        danger('data.delete', () => void act('data.delete', 'data.workConfirm', clearWorkData, 'data.workDone')),
       )}
       {row(
         'data.cache',
         'data.cacheHelp',
-        danger('data.delete', () => void act('data.cacheConfirm', () => clearOfflineCache(), 'data.cacheDone')),
+        danger('data.delete', () => void act('data.delete', 'data.cacheConfirm', () => clearOfflineCache(), 'data.cacheDone')),
       )}
       {row(
         'data.settings',
         'data.settingsHelp',
         danger('data.reset', () =>
           void act(
+            'data.reset',
             'data.settingsConfirm',
             () => {
               clearLocalSettings()
@@ -84,6 +87,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
         'data.allHelp',
         danger('data.deleteAll', () =>
           void act(
+            'data.deleteAll',
             'data.allConfirm',
             async () => {
               await Promise.all([clearWorkData(), clearOfflineCache(true)])
@@ -108,6 +112,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
         </Button>,
       )}
       {message && <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: 12, color: 'primary.main' }}>{message}</Typography>}
+      {dialog}
     </>
   )
 }
