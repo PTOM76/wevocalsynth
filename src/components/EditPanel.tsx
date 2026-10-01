@@ -165,7 +165,7 @@ export default function EditPanel(p: Props) {
           {t(p.preview === 'tooLong' ? 'play.previewMax' : 'play.previewSingle')}
         </Typography>
       )}
-      {busy && <LinearProgress variant="determinate" value={p.progress * 100} aria-label={t('process.progress')} />}
+      {busy && <LinearProgress variant={p.progress < 0 ? 'indeterminate' : 'determinate'} value={Math.max(0, p.progress) * 100} aria-label={t('process.progress')} />}
 
       <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
         <Button

@@ -62,8 +62,30 @@ export const AUDIO_ACCEPT = 'audio/*,.wav,.mp3,.m4a,.mp4,video/mp4'
  * 音声ファイルをブラウザ内でデコードする。WAV と MP4 はファイル自身の
  * サンプルレートでデコードし、読み込み時のリサンプルを避ける。
  */
-export async function decodeFile(file: File): Promise<Clip> {
-  const data = await file.arrayBuffer()
+/**
+ * ファイルを読み込む。`onProgress` に読んだ割合（0〜1）を渡す（大きなファイルで止まって見えないように）
+ */
+export async function readFile(file: File, onProgress?: (p: number) => void): Promise<ArrayBuffer> {
+  if (!onProgress || !file.size) return file.arrayBuffer()
+  const out = new Uint8Array(file.size)
+  const reader = file.stream().getReader()
+  let done = 0
+  for (;;) {
+    const r = await reader.read()
+    if (r.done) break
+    out.set(r.value, done)
+    done += r.value.length
+    onProgress(done / file.size)
+  }
+  return out.buffer
+}
+
+/**
+ * 音声ファイルをデコードする。`onProgress` には読み込みの割合を渡し、デコード中（進み具合が取れない）は -1 を渡す
+ */
+export async function decodeFile(file: File, onProgress?: (p: number) => void): Promise<Clip> {
+  const data = await readFile(file, onProgress)
+  onProgress?.(-1)
   const rate = Math.min(Math.max(wavSampleRate(data) ?? mp4SampleRate(data) ?? 48000, 8000), 384000)
   const ctx = new OfflineAudioContext(1, 1, rate)
   const audio = await ctx.decodeAudioData(data)

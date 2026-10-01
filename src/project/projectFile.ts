@@ -1,5 +1,6 @@
 import type { Clip } from '../audio/types'
 import type { EditParams } from '../components/EditPanel'
+import { readFile } from '../audio/decode'
 import { t } from '../i18n/i18n'
 
 /**
@@ -125,7 +126,7 @@ export function saveProject(p: Project): Blob {
 }
 
 /** .wvsp ファイルを読み込む。形式が違えば例外 */
-export async function loadProject(file: File): Promise<Project> {
+export async function loadProject(file: File, onProgress?: (p: number) => void): Promise<Project> {
   // 先頭が gzip の印（1f 8b）なら、以前の圧縮形式として展開する
   const head = new Uint8Array(await file.slice(0, 2).arrayBuffer())
   const gzipped = head[0] === 0x1f && head[1] === 0x8b
@@ -133,7 +134,7 @@ export async function loadProject(file: File): Promise<Project> {
     ? await transform(file, new DecompressionStream('gzip')).catch(() => {
         throw new Error(t('project.invalid'))
       })
-    : await file.arrayBuffer()
+    : await readFile(file, onProgress)
   const view = new DataView(buf)
   if (buf.byteLength < 8 || new TextDecoder().decode(new Uint8Array(buf, 0, 4)) !== MAGIC) {
     throw new Error(t('project.invalid'))

@@ -245,16 +245,21 @@ export function useEditor(settings: Settings) {
   )
 
   const loadFile = useCallback(
-    async (file: File) => {
-      try {
-        // .wvsp はプロジェクト（原音・加工後・パラメータ）として開く
-        const project = isProjectFile(file) ? await loadProject(file) : null
-        if (project) openClip(project.tracks[project.active].edited, project.fileName, project)
-        else openClip(await decodeFile(file), file.name, null)
-      } catch (e) {
-        setToast({ severity: 'error', message: t('toast.loadFailed', { file: file.name, error: String(e) }) })
-      }
-    },
+    (file: File) =>
+      // 読み込み中は進捗を出す（中断したら読み込んだ結果を使わない）
+      task.run(t('task.loading'), async (signal) => {
+        try {
+          // .wvsp はプロジェクト（原音・加工後・パラメータ）として開く
+          const project = isProjectFile(file) ? await loadProject(file, setProgress) : null
+          const clip = project ? null : await decodeFile(file, setProgress)
+          if (signal.aborted) return
+          if (project) openClip(project.tracks[project.active].edited, project.fileName, project)
+          else if (clip) openClip(clip, file.name, null)
+        } catch (e) {
+          if (!signal.aborted) setToast({ severity: 'error', message: t('toast.loadFailed', { file: file.name, error: String(e) }) })
+        }
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [openClip],
   )
   const dragOver = useFileDrop((f) => void loadFile(f))
@@ -360,9 +365,14 @@ export function useEditor(settings: Settings) {
     else openClip(clip, name, null)
   }
   const addPicker = useFilePicker(AUDIO_ACCEPT, (f) =>
-    void decodeFile(f)
-      .then((clip) => tracks.addClip(clip, f.name))
-      .catch((e) => setToast({ severity: 'error', message: t('toast.loadFailed', { file: f.name, error: String(e) }) })),
+    void task.run(t('task.loading'), async (signal) => {
+      try {
+        const clip = await decodeFile(f, setProgress)
+        if (!signal.aborted) tracks.addClip(clip, f.name)
+      } catch (e) {
+        if (!signal.aborted) setToast({ severity: 'error', message: t('toast.loadFailed', { file: f.name, error: String(e) }) })
+      }
+    }),
   )
 
   // 作業状態の自動保存と、起動時の復元
