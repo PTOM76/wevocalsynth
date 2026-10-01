@@ -1,27 +1,48 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { cancelDsp } from '../dsp/engine'
 
 /**
- * 時間のかかる処理を、処理中フラグ・進捗・エラー通知付きで実行する。`label` は処理中に出す内容（「音声加工中…」など）。
- * `onStart` は処理を始める直前（再生の停止など）、`onError` は失敗時に呼ぶ。
+ * 時間のかかる処理を、処理中フラグ・進捗・エラー通知・中断付きで実行する。`label` は処理中に出す内容（「音声加工中…」など）。
+ * `onStart` は処理を始める直前（再生の停止など）、`onError` は失敗時、`onCancel` は中断したときに呼ぶ。
+ *
+ * 中断（`cancel`）すると、その場で処理中の表示を終え、DSP の Worker を止める。
+ * 処理は渡された `signal` を見て、中断されていたら結果を使わない（履歴に積まない）こと。
+ * DSP 以外の Worker を使う処理は、`signal` の abort で自分の Worker を止める
  */
-export function useTask(onStart: () => void, onError: (e: unknown) => void) {
+export function useTask(onStart: () => void, onError: (e: unknown) => void, onCancel: () => void) {
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState(0)
   const [label, setLabel] = useState('')
+  const ctrl = useRef<AbortController | null>(null)
 
-  const run = async (taskLabel: string, task: () => Promise<void>) => {
+  const run = async (taskLabel: string, task: (signal: AbortSignal) => Promise<void>) => {
+    const c = new AbortController()
+    ctrl.current = c
     setBusy(true)
     setLabel(taskLabel)
     setProgress(0)
     onStart()
+    // 中断されたら、処理の終わりを待たずに抜ける
+    const aborted = new Promise<void>((resolve) => c.signal.addEventListener('abort', () => resolve()))
     try {
-      await task()
+      await Promise.race([task(c.signal), aborted])
     } catch (e) {
-      onError(e)
+      if (!c.signal.aborted) onError(e)
     } finally {
-      setBusy(false)
+      if (ctrl.current === c) {
+        ctrl.current = null
+        setBusy(false)
+      }
     }
   }
 
-  return { busy, progress, label, setProgress, run }
+  const cancel = () => {
+    const c = ctrl.current
+    if (!c) return
+    c.abort()
+    cancelDsp()
+    onCancel()
+  }
+
+  return { busy, progress, label, setProgress, run, cancel }
 }

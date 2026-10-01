@@ -46,6 +46,18 @@ import.meta.hot?.dispose(() => {
   worker = null
 })
 
+/**
+ * 処理中のものをすべて中断する（Worker ごと止める。待っている呼び出しは失敗する）。
+ * Worker は次のリクエストで作り直される（wasm の読み込みに少しかかる）
+ */
+export function cancelDsp() {
+  if (!worker) return
+  worker.terminate()
+  worker = null
+  pending.forEach((p) => p.reject(new DOMException('cancelled', 'AbortError')))
+  pending.clear()
+}
+
 /** リクエストを Worker に送り、結果（チャンネル配列）を待つ */
 function send(req: DspRequest, onProgress?: (p: number) => void): Promise<Float32Array[]> {
   return sendRaw(req, onProgress) as Promise<Float32Array[]>

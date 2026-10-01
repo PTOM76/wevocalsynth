@@ -83,6 +83,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const task = useTask(
     () => playbackRef.current?.stopAll(),
     (e) => setToast({ severity: 'error', message: t('toast.processFailed', { error: String(e) }) }),
+    () => setToast({ severity: 'info', message: t('toast.cancelled') }),
   )
   const { busy, progress, setProgress } = task
   const edited = history.present
@@ -142,6 +143,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     editRanges,
     model: settings.vocalModel,
     gpu: settings.vocalGpu,
+    keepHighBand: settings.vocalKeepHighBand,
     ensure: addons.ensure,
     run: task.run,
     setProgress,
@@ -209,13 +211,15 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const dragOver = useFileDrop((f) => void loadFile(f))
 
   const apply = () =>
-    task.run(t('task.processing'), async () => {
+    task.run(t('task.processing'), async (signal) => {
       if (!edited || !editRanges.length) return
       // 同じ設定のプレビューがあれば、それを差し込むだけで済ませる
       const spliced = preview.result && !multi ? spliceProcessed(edited, preview.result) : null
       const result = spliced
         ? { clip: spliced.clip, ranges: [spliced.range] }
         : await applyEditToRanges(edited, editRanges, params, setProgress)
+      // 中断されていたら結果を使わない（ほかの処理も同じ）
+      if (signal.aborted) return
       commit(result.clip, applyLabel(params))
       setSelections(selections.length ? result.ranges : [])
       setParams((p) => ({ ...p, ...NEUTRAL }))
@@ -224,19 +228,21 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   // Shift+右端ドラッグ: 範囲をドラッグ後の長さに伸縮する（ピッチは変えない）
   const stretchRange = (r: Range, dur: number) =>
-    task.run(t('task.stretching'), async () => {
+    task.run(t('task.stretching'), async (signal) => {
       if (!edited) return
       const opts = { ...params, ...NEUTRAL, stretch: dur / (r.end - r.start) }
       const result = await applyEditToRanges(edited, [r], opts, setProgress)
+      if (signal.aborted) return
       commit(result.clip, t('history.stretch', { ratio: opts.stretch.toFixed(2) }))
       setSelections(result.ranges)
     })
 
   const applyCurve = () =>
-    task.run(t('task.curve'), async () => {
+    task.run(t('task.curve'), async (signal) => {
       const target = pitchTarget.target
       if (!edited || !pitch || shown !== edited || target?.clip !== edited) return
       const next = await applyPitchCurve(edited, pitch, target.hz, params, setProgress)
+      if (signal.aborted) return
       if (next) {
         commit(next, t('history.curve'))
         setToast({ severity: 'success', message: t('toast.applied') })
@@ -254,7 +260,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   // 書き出しダイアログの設定で音声ファイルを作る。選択範囲が複数ならつなげて書き出す
   const exportFile = (s: ExportSettings) =>
-    task.run(t('task.exporting'), async () => {
+    task.run(t('task.exporting'), async (signal) => {
       if (!edited) return
       const clip = s.selectionOnly && selections.length ? sliceRanges(edited, selections) : edited
       const blob = await exportAudio(
@@ -262,6 +268,8 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
         { ...s, range: null, sampleRate: s.sampleRate || clip.sampleRate },
         setProgress,
       )
+      // MP3 などの Worker は止められないので、中断されていたら結果を捨てる
+      if (signal.aborted) return
       downloadBlob(blob, `${s.fileName.trim()}${EXPORT_EXT[s.format]}`)
       setExportOpen(false)
       setToast({ severity: 'success', message: t('toast.exported') })
@@ -322,7 +330,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     // 素材と履歴
     fileName, original, edited, shown, duration, editing, source, setSource, history, commit,
     // 処理状態と通知
-    busy, progress, taskLabel: task.label, toast, setToast,
+    busy, progress, taskLabel: task.label, cancelTask: task.cancel, toast, setToast,
     // 選択範囲
     selections, selection, setSelections, selectAll, clearSelection, editRanges, multi,
     // 加工パラメータ
