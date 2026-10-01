@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ボーカル抽出の実験</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 16px; max-width: 760px; }
+  label { display: block; margin: 6px 0; }
+  button { padding: 8px 14px; font-size: 15px; margin-top: 8px; }
+  progress { width: 100%; }
+  audio { width: 100%; }
+  pre { background: #f4f4f4; padding: 8px; white-space: pre-wrap; word-break: break-all; font-size: 13px; }
+  @media (prefers-color-scheme: dark) { body { background: #121212; color: #eee; } pre { background: #222; } }
+</style>
+</head>
+<body>
+<h1>ボーカル抽出の実験（Spleeter 2stems）</h1>
+<label>音声ファイル <input type="file" id="file" accept="audio/*,video/mp4"></label>
+<label>モデル
+  <select id="model"><option value="fp16">fp16（約39MB）</option><option value="int8">int8（約52MB）</option><option value="fp32">fp32（約79MB）</option></select>
+</label>
+<label>実行方法
+  <select id="backend"><option value="wasm">WASM</option><option value="webgpu">WebGPU</option></select>
+</label>
+<label>11kHz より上
+  <select id="extend"><option value="zeros">0 にする（sherpa-onnx と同じ）</option><option value="edge">1024 ビン目のマスクで延ばす</option></select>
+</label>
+<button id="run">抽出</button>
+<progress id="progress" value="0" max="1"></progress>
+<h2>ボーカル <a id="vocals-dl">保存</a></h2>
+<audio id="vocals" controls></audio>
+<h2>伴奏 <a id="accompaniment-dl">保存</a></h2>
+<audio id="accompaniment" controls></audio>
+<pre id="log"></pre>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

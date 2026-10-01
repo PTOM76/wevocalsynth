@@ -27,6 +27,3 @@ dsp/target
 
 # 確認用の追加機能（scripts/gen-addon-test.mjs public で作る）
 public/addons/test
-
-# 実験的な機能
-experiments/*
