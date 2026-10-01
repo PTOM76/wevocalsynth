@@ -31,6 +31,8 @@ import { useFilePicker } from './useFilePicker'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
+import { useVocalExtract } from './useVocalExtract'
+import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
 
@@ -133,6 +135,21 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     notify: (message) => setToast({ severity: 'info', message }),
   })
 
+  // ボーカル抽出（追加機能）。未導入なら確認ダイアログ（addonDialog）を出す
+  const addons = useAddonInstall()
+  const vocal = useVocalExtract({
+    edited,
+    editRanges,
+    model: settings.vocalModel,
+    gpu: settings.vocalGpu,
+    ensure: addons.ensure,
+    run: task.run,
+    setProgress,
+    commit,
+    onVocals: () => setParams((p) => ({ ...p, ...MODE_SETTINGS.vocal })),
+    notify: (message) => setToast({ severity: 'success', message }),
+  })
+
   /** 読み込んだ音声（またはプロジェクト）を画面に反映する */
   const openClip = useCallback(
     (clip: Clip, name: string, project: Project | null) => {
@@ -192,7 +209,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const dragOver = useFileDrop((f) => void loadFile(f))
 
   const apply = () =>
-    task.run(async () => {
+    task.run(t('task.processing'), async () => {
       if (!edited || !editRanges.length) return
       // 同じ設定のプレビューがあれば、それを差し込むだけで済ませる
       const spliced = preview.result && !multi ? spliceProcessed(edited, preview.result) : null
@@ -207,7 +224,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   // Shift+右端ドラッグ: 範囲をドラッグ後の長さに伸縮する（ピッチは変えない）
   const stretchRange = (r: Range, dur: number) =>
-    task.run(async () => {
+    task.run(t('task.stretching'), async () => {
       if (!edited) return
       const opts = { ...params, ...NEUTRAL, stretch: dur / (r.end - r.start) }
       const result = await applyEditToRanges(edited, [r], opts, setProgress)
@@ -216,7 +233,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     })
 
   const applyCurve = () =>
-    task.run(async () => {
+    task.run(t('task.curve'), async () => {
       const target = pitchTarget.target
       if (!edited || !pitch || shown !== edited || target?.clip !== edited) return
       const next = await applyPitchCurve(edited, pitch, target.hz, params, setProgress)
@@ -229,7 +246,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   const baseName = fileName.replace(/\.[^.]+$/, '') || 'audio'
   const saveProjectFile = () =>
-    task.run(async () => {
+    task.run(t('task.saving'), async () => {
       if (!original || !edited) return
       downloadBlob(saveProject({ fileName, original, edited, params }), `${baseName}${PROJECT_EXT}`)
       setToast({ severity: 'success', message: t('toast.saved') })
@@ -237,7 +254,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   // 書き出しダイアログの設定で音声ファイルを作る。選択範囲が複数ならつなげて書き出す
   const exportFile = (s: ExportSettings) =>
-    task.run(async () => {
+    task.run(t('task.exporting'), async () => {
       if (!edited) return
       const clip = s.selectionOnly && selections.length ? sliceRanges(edited, selections) : edited
       const blob = await exportAudio(
@@ -305,7 +322,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     // 素材と履歴
     fileName, original, edited, shown, duration, editing, source, setSource, history, commit,
     // 処理状態と通知
-    busy, progress, toast, setToast,
+    busy, progress, taskLabel: task.label, toast, setToast,
     // 選択範囲
     selections, selection, setSelections, selectAll, clearSelection, editRanges, multi,
     // 加工パラメータ
@@ -315,6 +332,6 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     // 表示（ピッチ・スペクトログラム）とピッチ描画
     showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
-    cmd, apply, stretchRange, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
+    cmd, apply, stretchRange, extract: vocal.extract, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
   }
 }

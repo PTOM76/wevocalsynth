@@ -28,11 +28,13 @@ WeVocalSynthは、Webブラウザ上で音声素材のピッチおよび時間�
 
 ## セットアップ
 ```bash
-git clone git@github.com:PTOM76/wevocalsynth.git
+git clone --recursive git@github.com:PTOM76/wevocalsynth.git
 cd wevocalsynth
 npm install
 npm run dev
 ```
+
+`extractor/`（ボーカル抽出）と `wevocal-lib/`（共有の信号処理）は submodule。`--recursive` を付け忘れたら `git submodule update --init` で取得する。
 
 音声処理（`dsp/`）を変えるときだけ Rust が要る。ビルド済みの `.wasm` をリポジトリに含めているので、画面だけなら Node.js だけで動く。
 

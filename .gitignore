@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 dsp/target
+
+# 開発サーバー用の追加機能（npm run build:addons:dev、scripts/gen-addon-test.mjs public で作る）
+public/addons
+
+# 追加機能のモデルの取得先（scripts/build-addons.mjs）
+.cache

@@ -61,7 +61,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
       {row(
         'data.cache',
         'data.cacheHelp',
-        danger('data.delete', () => void act('data.cacheConfirm', clearOfflineCache, 'data.cacheDone')),
+        danger('data.delete', () => void act('data.cacheConfirm', () => clearOfflineCache(), 'data.cacheDone')),
       )}
       {row(
         'data.settings',
@@ -86,7 +86,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
           void act(
             'data.allConfirm',
             async () => {
-              await Promise.all([clearWorkData(), clearOfflineCache()])
+              await Promise.all([clearWorkData(), clearOfflineCache(true)])
               clearLocalSettings()
               location.reload()
             },

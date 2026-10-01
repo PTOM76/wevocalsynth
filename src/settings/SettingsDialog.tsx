@@ -20,10 +20,12 @@ import {
 } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
-import { DEFAULT_SETTINGS, type CtrlSAction, type F0Voicing, type InitialMode, type Settings, type ThemeSetting } from './settings'
+import { DEFAULT_SETTINGS, type CtrlSAction, type F0Voicing, type InitialMode, type Settings, type ThemeSetting, type VocalModel } from './settings'
 import { NumberInput } from '../components/inspector/Inspector'
 import UpdateSection from './UpdateSection'
 import DataSection from './DataSection'
+import AddonSection from './AddonSection'
+import { VOCAL_MODELS } from '../hooks/useVocalExtract'
 import { useT, type LangSetting } from '../i18n/i18n'
 
 interface Props {
@@ -33,8 +35,11 @@ interface Props {
   onChange: (patch: Partial<Settings>) => void
 }
 
-type Category = 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'data' | 'debug'
-const CATEGORIES: Category[] = ['general', 'display', 'pitch', 'tempo', 'keys', 'data', 'debug']
+type Category = 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'vocal' | 'data' | 'debug'
+const CATEGORIES: Category[] = ['general', 'display', 'pitch', 'tempo', 'keys', 'vocal', 'data', 'debug']
+
+/** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
+const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
 
 /** スマホ向けの表示か（項目を縦に積み、文字と操作を大きくする） */
 const NarrowContext = createContext(false)
@@ -206,6 +211,27 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
         </Row>
       </Group>
     ),
+    vocal: (
+      <>
+        <Group title={t('settings.groupVocal')}>
+          <Row label={t('settings.vocalModel')}>
+            <Choice<VocalModel>
+              value={draft.vocalModel}
+              onChange={(v) => set({ vocalModel: v })}
+              options={[
+                ['fp16', t('settings.vocalModelFp16')],
+                ['int8', t('settings.vocalModelInt8')],
+                ['fp32', t('settings.vocalModelFp32')],
+              ]}
+            />
+          </Row>
+          <Check checked={draft.vocalGpu} onChange={(v) => set({ vocalGpu: v })} label={t('settings.vocalGpu')} help={t('settings.vocalGpuHelp')} />
+        </Group>
+        <Group title={t('settings.groupAddons')}>
+          <AddonSection ids={VOCAL_ADDONS} />
+        </Group>
+      </>
+    ),
     data: (
       <Group title={t('settings.groupData')}>
         <DataSection onClose={onClose} />
@@ -213,9 +239,14 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
     ),
 
     debug: (
-      <Group title={t('settings.groupDebug')}>
-        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
-      </Group>
+      <>
+        <Group title={t('settings.groupDebug')}>
+          <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
+        </Group>
+        <Group title={t('settings.groupAddonTest')}>
+          <AddonSection ids={['test']} />
+        </Group>
+      </>
     ),
     pitch: (
       <Group title={t('settings.groupPitch')}>

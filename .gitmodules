@@ -1,0 +1,6 @@
+[submodule "wevocal-lib"]
+	path = wevocal-lib
+	url = https://github.com/PTOM76/wevocal-lib.git
+[submodule "extractor"]
+	path = extractor
+	url = https://github.com/PTOM76/wevocalextractor.git

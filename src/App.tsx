@@ -101,6 +101,7 @@ export default function App() {
     togglePitch: () => ed.setShowPitch(!ed.showPitch),
     pitchReady: ed.showPitch && !!ed.pitch,
     setVoicing: (v) => ed.voicing.set(ed.selections, v),
+    extract: (stem) => void ed.extract(stem),
     showShortcuts: () => setShortcutsOpen(true),
     showSettings: () => setSettingsOpen(true),
     showHistory: () => setHistoryOpen(true),
@@ -310,6 +311,7 @@ export default function App() {
                 onSelectionChange={setActiveSelection}
                 busy={busy}
                 progress={ed.progress}
+                taskLabel={ed.taskLabel}
                 source={ed.source}
                 onSourceChange={ed.setSource}
                 tempo={tempoField()}
@@ -359,6 +361,7 @@ export default function App() {
       {ed.dragOver && <DropOverlay />}
       {settings.showDebug && <DebugOverlay />}
       <UpdatePrompt />
+      {ed.addonDialog}
 
       <Snackbar open={!!ed.toast} autoHideDuration={4000} onClose={() => ed.setToast(null)}>
         {ed.toast ? (

@@ -29,6 +29,8 @@ interface Actions {
   pitchReady: boolean
   /** 選択範囲のピッチを強制表示（1）・強制非表示（-1）・解析のまま（0）にする */
   setVoicing: (value: 1 | -1 | 0) => void
+  /** ボーカル抽出（追加機能）。対象は選択範囲、なければ全体 */
+  extract: (stem: 'vocals' | 'accompaniment') => void
   showShortcuts: () => void
   showSettings: () => void
   showHistory: () => void
@@ -52,6 +54,9 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { divider: true },
     { label: t('edit.selectAll'), shortcut: 'Ctrl+A', disabled: noClip, onClick: a.selectAll },
     { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: noSel, onClick: a.clearSelection },
+    { divider: true },
+    { label: t('extract.vocalsMenu'), disabled: noClip, onClick: () => a.extract('vocals') },
+    { label: t('extract.accompanimentMenu'), disabled: noClip, onClick: () => a.extract('accompaniment') },
   ]
 
   const menus: MenuGroup[] = [
