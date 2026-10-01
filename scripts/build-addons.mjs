@@ -1,4 +1,6 @@
-// 追加機能を dist/addons/ に作る（npm run build の後に実行する）。docs/EXTRACTOR.md
+// 追加機能を <出力先>/addons/ に作る。docs/EXTRACTOR.md
+//   node scripts/build-addons.mjs          … dist（npm run build の後に実行する。CI はこちら）
+//   node scripts/build-addons.mjs public   … public（npm run dev でも使える。npm run build でも dist にコピーされる）
 // - vocal-extractor: ボーカル抽出の実行環境（extractor/ をビルド。ONNX Runtime Web を含む）
 // - spleeter-<種類>: モデル。sherpa-onnx の配布物を取得し、vocals.onnx / accompaniment.onnx に名前をそろえる
 // 各フォルダに manifest.json（ファイルの大きさとハッシュ、内容から決めたバージョン）を書く
@@ -7,7 +9,7 @@ import { createHash } from 'node:crypto'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
-const OUT = 'dist/addons'
+const OUT = `${process.argv[2] ?? 'dist'}/addons`
 /** 取得したモデルの置き場所（git には入れない。CI ではキャッシュする） */
 const CACHE = '.cache/addon-models'
 const RELEASE = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/source-separation-models'
@@ -43,6 +45,7 @@ function writeManifest(id, dir, entry) {
 }
 
 // 実行環境
+process.env.ADDONS_OUT = OUT
 run('npx vite build -c vite.addons.config.ts')
 writeManifest('vocal-extractor', join(OUT, 'vocal-extractor'), 'index.js')
 

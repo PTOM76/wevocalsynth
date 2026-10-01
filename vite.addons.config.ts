@@ -9,7 +9,8 @@ export default defineConfig({
   // 読み込み元（アプリの base）によらず、index.js からの相対パスで worker・wasm を探す
   base: './',
   build: {
-    outDir: 'dist/addons/vocal-extractor',
+    // 出力先は scripts/build-addons.mjs が決める（dist/addons か public/addons）
+    outDir: `${process.env.ADDONS_OUT ?? 'dist/addons'}/vocal-extractor`,
     emptyOutDir: true,
     assetsInlineLimit: 0,
     rollupOptions: {

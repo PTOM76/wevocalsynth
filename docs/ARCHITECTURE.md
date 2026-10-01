@@ -189,5 +189,6 @@ FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効く�
 | `npm run dev` / `npm run build` | Vite の開発サーバー / 本番ビルド |
 | `npm run test:dsp` | DSP のテスト |
 | `npm run build:addons` | 追加機能（ボーカル抽出の実行環境とモデル）を `dist/addons/` に作る。`npm run build` の後に実行する |
+| `npm run build:addons:dev` | 同じものを `public/addons/` に作る（git には入れない）。`npm run dev` でもボーカル抽出を試せる。一度作れば `npm run build` でも `dist/` にコピーされる |
 
 `.wasm` はリポジトリに含めているので、Rust がない環境でも `npm install && npm run dev` で動く。
