@@ -39,8 +39,8 @@ export interface AddonInfo {
 /** 配信している追加機能 */
 export const ADDONS: AddonInfo[] = [
   { id: 'vocal-extractor', name: 'addon.vocalExtractor' },
-  { id: 'spleeter-fp16', name: 'addon.spleeterFp16', shortName: 'addon.modelStandard', requires: ['vocal-extractor'] },
-  { id: 'spleeter-int8', name: 'addon.spleeterInt8', shortName: 'addon.modelFast', requires: ['vocal-extractor'] },
+  { id: 'spleeter-fp16', name: 'addon.spleeterFp16', shortName: 'addon.modelLight', requires: ['vocal-extractor'] },
+  { id: 'spleeter-int8', name: 'addon.spleeterInt8', shortName: 'addon.modelStandard', requires: ['vocal-extractor'] },
   { id: 'spleeter-fp32', name: 'addon.spleeterFp32', shortName: 'addon.modelPrecise', requires: ['vocal-extractor'] },
   { id: 'test', name: 'addon.test', dev: true },
 ]

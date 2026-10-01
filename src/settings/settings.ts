@@ -79,7 +79,8 @@ export const DEFAULT_SETTINGS: Settings = {
   beatsPerBar: 4,
   beatOffset: 0,
   showDebug: false,
-  vocalModel: 'fp16',
+  // int8: CPU でも fp16 より速く、GPU も使える（fp16 は WebGPU で動かない。docs/DECISIONS.md）
+  vocalModel: 'int8',
   vocalGpu: true,
   f0MinHz: 60,
   f0MaxHz: 1000,

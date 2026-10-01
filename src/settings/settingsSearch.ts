@@ -25,7 +25,7 @@ const INDEX: Record<Category, MessageKey[]> = {
   keys: ['settings.groupShortcuts', 'settings.ctrlS'],
   vocal: [
     'settings.groupVocal', 'settings.vocalModel', 'settings.vocalGpu', 'settings.vocalGpuHelp',
-    'settings.groupAddons', 'addon.modelStandard', 'addon.modelFast', 'addon.modelPrecise',
+    'settings.groupAddons', 'addon.modelStandard', 'addon.modelLight', 'addon.modelPrecise',
   ],
   data: [
     'settings.groupData', 'data.work', 'data.workHelp', 'data.cache', 'data.cacheHelp', 'data.addons',

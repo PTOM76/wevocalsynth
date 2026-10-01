@@ -236,8 +236,8 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
               value={draft.vocalModel}
               onChange={(v) => set({ vocalModel: v })}
               options={[
-                ['fp16', t('addon.modelStandard')],
-                ['int8', t('addon.modelFast')],
+                ['fp16', t('addon.modelLight')],
+                ['int8', t('addon.modelStandard')],
                 ['fp32', t('addon.modelPrecise')],
               ]}
             />
