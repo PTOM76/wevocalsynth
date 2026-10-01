@@ -12,6 +12,7 @@ import { F0_HOP_SEC, type Spectrogram } from '../dsp/engine'
 import {
   RULER_HEIGHT,
   laneHeights,
+  prepareCanvas,
   drawBeatGrid,
   drawPitchLane,
   drawPlayhead,
@@ -194,9 +195,7 @@ export default function Waveform(props: Props) {
     const canvas = canvasRef.current
     if (!canvas || !peaks) return
     const dpr = window.devicePixelRatio || 1
-    canvas.width = width * dpr
-    canvas.height = height * dpr
-    const g = canvas.getContext('2d')!
+    const g = prepareCanvas(canvas, width * dpr, height * dpr)!
     g.setTransform(dpr, 0, 0, dpr, 0, 0)
     g.clearRect(0, 0, width, height)
     g.font = `11px ${font}`

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Box, ButtonBase, Tooltip, Typography } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackMix } from '../../audio/tracks'
 import { computePeaks } from '../waveform/peaks'
-import type { View } from '../waveform/draw'
+import { prepareCanvas, type View } from '../waveform/draw'
 import { usePalette } from '../waveform/usePalette'
 import { useT } from '../../i18n/i18n'
 import LevelMeter from '../LevelMeter'
@@ -76,9 +76,7 @@ function MiniWave({ track, view, selected }: { track: Track; view: View; selecte
       const dpr = window.devicePixelRatio || 1
       const w = Math.max(1, Math.round(canvas.clientWidth * dpr))
       const h = Math.max(1, Math.round(canvas.clientHeight * dpr))
-      canvas.width = w
-      canvas.height = h
-      const g = canvas.getContext('2d')
+      const g = prepareCanvas(canvas, w, h)
       if (!g) return
       g.clearRect(0, 0, w, h)
       const { min, max } = computePeaks(track.clip, w, view)

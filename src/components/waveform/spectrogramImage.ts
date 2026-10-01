@@ -27,8 +27,12 @@ const SPEC_LUT = (() => {
  * 列ごとに、入るフレームの最大値を周波数の段ごとに先にまとめてから縦に引き伸ばす
  * （以前は画面の1点ごとにフレームをたどっていて、全体表示では拡大・縮小のたびに画面が止まった）
  */
+let lastImg: ImageData | null = null
+
 export function renderSpectrogram(spec: Spectrogram, width: number, height: number, viewStart: number, viewDur: number) {
-  const img = new ImageData(width, height)
+  // 同じ大きさなら前の画像の置き場を使い回す（すぐ putImageData で写すので、上書きしてよい）
+  if (!lastImg || lastImg.width !== width || lastImg.height !== height) lastImg = new ImageData(width, height)
+  const img = lastImg
   const px = img.data
   const rows = spec.rows
   const col = new Uint8Array(rows)

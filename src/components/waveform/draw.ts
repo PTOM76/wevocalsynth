@@ -160,9 +160,29 @@ export function drawBeatGrid(c: DrawContext, grid: BeatGrid, h: number) {
  */
 export function spectrogramLayer(spec: Spectrogram, width: number, specH: number, view: View) {
   markActivity('spectrogram image')
-  const off = new OffscreenCanvas(Math.max(1, width), Math.max(1, specH))
-  off.getContext('2d')!.putImageData(renderSpectrogram(spec, width, specH, view.start, view.dur), 0, 0)
-  return off
+  // 拡大・スクロールのたびに作り直さず、同じ大きさなら同じ画像の置き場を使い回す（ごみを減らす）
+  const w = Math.max(1, width)
+  const h = Math.max(1, specH)
+  if (!specCanvas || specCanvas.width !== w || specCanvas.height !== h) specCanvas = new OffscreenCanvas(w, h)
+  specCanvas.getContext('2d')!.putImageData(renderSpectrogram(spec, w, h, view.start, view.dur), 0, 0)
+  return specCanvas
+}
+let specCanvas: OffscreenCanvas | null = null
+
+/**
+ * Canvas の大きさを `w` × `h` にして、描く前の状態（真っさらで、設定も初期値）にする。
+ * 大きさが同じなら作り直さずに reset で済ませる（width を代入すると、同じ大きさでも画像の領域を確保し直し、
+ * 描き直すたびにメモリの掃除が増えて画面が止まる原因になった）
+ */
+export function prepareCanvas(canvas: HTMLCanvasElement, w: number, h: number) {
+  const g = canvas.getContext('2d')
+  if (canvas.width === w && canvas.height === h && g && 'reset' in g) {
+    g.reset()
+    return g
+  }
+  canvas.width = w
+  canvas.height = h
+  return g
 }
 
 /** スペクトログラムの帯を描く（解析中はその旨を表示）。`layer` は `spectrogramLayer` で作った画像 */

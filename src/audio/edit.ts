@@ -56,6 +56,8 @@ function splice(clip: Clip, s: number, e: number, processed: Float32Array[]): { 
   const len = clip.channels[0].length
   const pLen = processed[0].length
   const fade = Math.min(Math.round(FADE_SEC * sr), Math.floor(pLen / 2), s, len - e)
+  // 全体を加工したなら、つなぐものが無いので加工後の音声をそのまま使う（全体の長さの配列をもう1つ作らない）
+  if (s === 0 && e === len) return { clip: { sampleRate: sr, channels: processed }, range: { start: 0, end: pLen / sr } }
 
   const channels = clip.channels.map((src, ci) => {
     const p = processed[ci]
