@@ -5,6 +5,7 @@ import { Box, Slider, Stack, Typography } from '@mui/material'
 import { usePalette } from './waveform/usePalette'
 import { useLaneDivider } from './waveform/useLaneDivider'
 import { useLanePen } from './waveform/useLanePen'
+import { usePitchGrab } from './waveform/usePitchGrab'
 import { useRangeEdges, type EdgeDrag } from './waveform/useRangeEdges'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
@@ -77,6 +78,9 @@ interface Props {
   penMode: boolean
   /** フレーム `from.k` から `to.k` までを描く（`midi` が null なら消す） */
   onDraw: (from: DrawPoint, to: DrawPoint) => void
+  /** 掴むモード（ピッチの線を掴んで上下に動かす）と、動かした結果の目標ピッチ（`pitch` と同じ長さ、0 は未編集） */
+  grabMode: boolean
+  onGrabPitch: (hz: Float32Array) => void
   /** スペクトログラム。解析中は null */
   spectrogram: Spectrogram | null
   showSpectrogram: boolean
@@ -294,6 +298,18 @@ export default function Waveform(props: Props) {
     curveLane(showGain, gainTop({ waveH, specH, pitchH }), gainH, GAIN_SCALE, props.onDrawGain),
     curveLane(showFormant, formantTop({ waveH, specH, pitchH, gainH }), formantH, FORMANT_SCALE, props.onDrawFormant),
   ], () => setDrawVersion((v) => v + 1))
+  // 掴むモード: ピッチの線を掴んで上下に動かす
+  const grab = usePitchGrab(
+    canvasRef,
+    props.grabMode,
+    { enabled: showPitch, top: RULER_HEIGHT + upperH, height: pitchH, range },
+    pitch,
+    target,
+    selections,
+    timeAt,
+    props.onGrabPitch,
+  )
+  const [grabHover, setGrabHover] = useState(false)
 
   const cancelLongPress = () => {
     if (longPressRef.current) clearTimeout(longPressRef.current.timer)
@@ -317,7 +333,7 @@ export default function Waveform(props: Props) {
           width: '100%',
           height,
           display: 'block',
-          cursor: rulerHover ? 'pointer' : dividerHover ? 'row-resize' : penMode && (showPitch || showGain || showFormant) ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
+          cursor: rulerHover ? 'pointer' : dividerHover ? 'row-resize' : grab.grabbing() ? 'grabbing' : grabHover ? 'grab' : penMode && (showPitch || showGain || showFormant) ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
         }}
         onContextMenu={(e) => {
           e.preventDefault()
@@ -360,6 +376,10 @@ export default function Waveform(props: Props) {
             longPressRef.current = { timer, x, y }
           }
           if (pen.down(e)) return
+          if (grab.down(e)) {
+            cancelLongPress()
+            return
+          }
           const t0 = snapTime(e.clientX)
           const hit = edgeAt(e.clientX)
           if (hit) {
@@ -379,11 +399,13 @@ export default function Waveform(props: Props) {
           if (divider.dragging()) return divider.move(e)
           if (scrubRef.current) return scrubTo(e.clientX)
           if (pen.move(e)) return
+          if (grab.move(e)) return
           const d = dragRef.current
           if (!d) {
             setRulerHover(onRuler(e))
             setDividerHover(divider.hit(e))
-            setEdgeHover(!penMode && !!edgeAt(e.clientX))
+            setGrabHover(grab.hover(e))
+            setEdgeHover(!penMode && !props.grabMode && !!edgeAt(e.clientX))
             return
           }
           if (d.edge) return dragEdge(d.edge, e.clientX)
@@ -407,6 +429,7 @@ export default function Waveform(props: Props) {
             return
           }
           if (pen.end()) return
+          if (grab.end()) return
           const d = dragRef.current
           dragRef.current = null
           const edge = d?.edge

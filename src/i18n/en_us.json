@@ -143,6 +143,8 @@
   "wave.pitch": "Show pitch",
   "wave.drawPitch": "Draw pitch",
   "wave.drawPitchTooltip": "Draw pitch (Shift: snap to semitones / Alt: erase)",
+  "wave.grabPitch": "Grab and move pitch",
+  "wave.grabPitchTooltip": "Drag the line up or down (inside a selection: that range; otherwise: until the next gap. Shift: semitone steps)",
   "wave.discardCurve": "Discard drawn pitch",
   "wave.showAll": "Show all",
   "wave.scroll": "View position",

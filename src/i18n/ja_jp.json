@@ -143,6 +143,8 @@
   "wave.pitch": "ピッチ表示",
   "wave.drawPitch": "ピッチを描く",
   "wave.drawPitchTooltip": "ピッチを描く（Shift: 半音に吸着 / Alt: 消す）",
+  "wave.grabPitch": "ピッチを掴んで動かす",
+  "wave.grabPitchTooltip": "線を掴んで上下に動かす（選択範囲の中ならその範囲、外なら途切れるまで。Shift: 半音刻み）",
   "wave.discardCurve": "描いたピッチを破棄",
   "wave.showAll": "全体表示",
   "wave.scroll": "表示位置",

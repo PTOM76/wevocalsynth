@@ -185,6 +185,8 @@ export default function App() {
       target={ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null}
       penMode={ed.penMode && editing}
       onDraw={(from, to) => ed.pitch && ed.pitchTarget.draw(shown, ed.pitch, from, to)}
+      grabMode={ed.grabMode && editing}
+      onGrabPitch={(hz) => ed.pitchTarget.replace(shown, hz)}
       spectrogram={ed.spec}
       showSpectrogram={ed.showSpec}
       pitchPercent={pitchPercent}
@@ -248,6 +250,8 @@ export default function App() {
       }}
       penMode={ed.penMode}
       onPenModeChange={ed.setPenMode}
+      grabMode={ed.grabMode}
+      onGrabModeChange={ed.setGrabMode}
       hasCurve={hasCurve}
       busy={busy}
       onApplyCurve={ed.applyCurve}

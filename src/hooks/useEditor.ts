@@ -87,7 +87,17 @@ export function useEditor(settings: Settings) {
   const { showWave, setShowWave, showSpec, setShowSpec, showPitch, setShowPitch, showGain, setShowGain, showFormant, setShowFormant, focusLane, setFocusLane } = lanes
   // 音量の帯に描いた曲線（再生にすぐ反映し、適用で音声に書き込む）
   const gainCurve = useLaneCurve()
-  const [penMode, setPenMode] = useState(false)
+  // ペン（描く）と掴む（ピッチの線を上下に動かす）は、どちらか一方だけ
+  const [penMode, setPenModeState] = useState(false)
+  const [grabMode, setGrabModeState] = useState(false)
+  const setPenMode = (v: boolean) => {
+    setPenModeState(v)
+    if (v) setGrabModeState(false)
+  }
+  const setGrabMode = (v: boolean) => {
+    setGrabModeState(v)
+    if (v) setPenModeState(false)
+  }
   const [autoMode, setAutoMode] = useState<Mode | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
@@ -217,6 +227,7 @@ export function useEditor(settings: Settings) {
       gainCurve.clear()
       formantCurve.clear()
       setPenMode(false)
+      setGrabMode(false)
       pitchTarget.clear()
       setParams((p) => ({ ...(project ? project.params : p), ...NEUTRAL }))
       // 新しい素材ならボーカル／楽器を自動判定して初期値にする（プロジェクトは保存時の設定を使う）
@@ -456,7 +467,7 @@ export function useEditor(settings: Settings) {
     // 再生
     player, preview, loop, playback, repeat, setRepeat,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
-    showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
+    showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
     cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker,

@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
   faArrowDown,
+  faArrowPointer,
   faArrowUp,
   faChartArea,
   faVolumeHigh,
@@ -87,6 +88,9 @@ interface Props {
   onShowPitchChange: (show: boolean) => void
   penMode: boolean
   onPenModeChange: (pen: boolean) => void
+  /** 掴むモード（ピッチの線を掴んで上下に動かす） */
+  grabMode: boolean
+  onGrabModeChange: (grab: boolean) => void
   /** 描いたピッチがあるか（適用・破棄ボタンを出す） */
   hasCurve: boolean
   busy: boolean
@@ -237,6 +241,14 @@ export default function WaveformToolbar(p: Props) {
             pressed={p.penMode}
             disabled={off || !p.showPitch}
             onClick={() => p.onPenModeChange(!p.penMode)}
+          />
+          <SmallButton
+            title={t('wave.grabPitchTooltip')}
+            label={t('wave.grabPitch')}
+            icon={faArrowPointer}
+            pressed={p.grabMode}
+            disabled={pitchOff}
+            onClick={() => p.onGrabModeChange(!p.grabMode)}
           />
           <SmallButton title={t('pitchTool.up')} label={t('pitchTool.up')} icon={faArrowUp} disabled={pitchOff} onClick={() => p.onShift(1)} />
           <SmallButton title={t('pitchTool.down')} label={t('pitchTool.down')} icon={faArrowDown} disabled={pitchOff} onClick={() => p.onShift(-1)} />
