@@ -102,13 +102,15 @@ export function useAddonInstall() {
   const busy = state?.progress != null
   const size = state?.manifests?.reduce((s, m) => s + addonSize(m), 0) ?? 0
   // 依存するものも一緒に入れるときは、その名前も出す
-  const extra = state?.manifests?.filter((m) => m.id !== state.id).map((m) => name(m.id)) ?? []
+  // 文言の主語: 入れ替えるものに `id` が含まれていればそれ、依存だけ（実行環境だけが古いなど）なら最初のもの
+  const mainId = state?.manifests?.some((m) => m.id === state.id) ? state.id : (state?.manifests?.[0]?.id ?? state?.id ?? '')
+  const extra = state?.manifests?.filter((m) => m.id !== mainId).map((m) => name(m.id)) ?? []
 
   const dialog = (
     <Dialog open={!!state} onClose={() => !busy && close(false)} fullWidth maxWidth="xs">
       <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t(state?.updating ? 'addon.updateTitle' : 'addon.installTitle')}</DialogTitle>
       <DialogContent dividers>
-        <Typography sx={{ fontSize: 14 }}>{t(state?.updating ? 'addon.updateText' : 'addon.installText', { name: state ? name(state.id) : '' })}</Typography>
+        <Typography sx={{ fontSize: 14 }}>{t(state?.updating ? 'addon.updateText' : 'addon.installText', { name: state ? name(mainId) : '' })}</Typography>
         {extra.length > 0 && <Typography sx={{ fontSize: 13, mt: 1 }}>{t(state?.updating ? 'addon.updateWith' : 'addon.installWith', { names: extra.join('、') })}</Typography>}
         <Typography sx={{ fontSize: 13, mt: 1 }}>
           {state?.manifests ? t('addon.downloadSize', { size: mb(size) }) : !state?.error && t('addon.checking')}
