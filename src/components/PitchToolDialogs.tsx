@@ -24,7 +24,7 @@ import { useT } from '../i18n/i18n'
 const NOTES = Array.from({ length: 49 }, (_, i) => 36 + i)
 
 /** ラベル・スライダー・数値欄の1行 */
-function SliderRow(p: { label: string; value: number; onChange: (v: number) => void; min: number; max: number; step: number; unit?: string }) {
+export function SliderRow(p: { label: string; value: number; onChange: (v: number) => void; min: number; max: number; step: number; unit?: string }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
       <Typography sx={{ fontSize: 13, width: 72, flexShrink: 0 }}>{p.label}</Typography>
@@ -35,7 +35,7 @@ function SliderRow(p: { label: string; value: number; onChange: (v: number) => v
 }
 
 /** 共通の枠: タイトル・対象範囲の表示・「作成」「キャンセル」 */
-function ToolDialog(p: { open: boolean; title: string; hasSelection: boolean; onClose: () => void; onRun: () => void; children: ReactNode }) {
+export function ToolDialog(p: { open: boolean; title: string; hasSelection: boolean; onClose: () => void; onRun: () => void; children: ReactNode }) {
   const t = useT()
   return (
     <Dialog open={p.open} onClose={p.onClose} fullWidth maxWidth="xs">
@@ -65,7 +65,7 @@ function ToolDialog(p: { open: boolean; title: string; hasSelection: boolean; on
   )
 }
 
-interface DialogProps<O> {
+export interface DialogProps<O> {
   open: boolean
   hasSelection: boolean
   onClose: () => void

@@ -23,7 +23,8 @@ import { usePersistentNumber } from './components/layout/Splitter'
 import EditPanel from './components/EditPanel'
 import VolumePanel from './components/VolumePanel'
 import { SnapDialog, VibratoDialog } from './components/PitchToolDialogs'
-import { addVibrato, flattenPitch, snapPitch } from './audio/pitchTools'
+import { MidiDialog } from './components/MidiDialog'
+import { addVibrato, fitMidi, flattenPitch, snapPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
 import ExportDialog from './components/ExportDialog'
@@ -71,7 +72,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [pitchDialog, setPitchDialog] = useState<'snap' | 'vibrato' | null>(null)
+  const [pitchDialog, setPitchDialog] = useState<'snap' | 'vibrato' | 'midi' | null>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
   const viewCtl = useWaveformView(ed.duration, player.livePosition, player.playing)
@@ -238,6 +239,7 @@ export default function App() {
       onFlatten={() => ed.pitchTools.edit(flattenPitch)}
       onSnap={() => setPitchDialog('snap')}
       onVibrato={() => setPitchDialog('vibrato')}
+      onMidi={() => setPitchDialog('midi')}
     />
   )
 
@@ -420,6 +422,15 @@ export default function App() {
         bpm={settings.bpm}
         onClose={() => setPitchDialog(null)}
         onRun={(o) => ed.pitchTools.edit((cur, f0, k0, k1) => addVibrato(cur, f0, k0, k1, o))}
+      />
+      <MidiDialog
+        open={pitchDialog === 'midi'}
+        hasSelection={!!selection}
+        bpm={settings.bpm}
+        // MIDI の先頭を置く位置の初期値: 選択範囲があればその始まり、なければ1拍目の位置
+        defaultOffset={selection ? selection.start : settings.beatOffset}
+        onClose={() => setPitchDialog(null)}
+        onRun={(o) => ed.pitchTools.edit((cur, f0, k0, k1) => fitMidi(cur, f0, k0, k1, o))}
       />
       <HistoryDialog
         open={historyOpen}

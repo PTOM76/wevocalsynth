@@ -79,6 +79,8 @@ interface Props {
   onSnap: () => void
   /** 「ビブラート」ダイアログを開く */
   onVibrato: () => void
+  /** 「MIDI の音程を当てはめる」ダイアログを開く */
+  onMidi: () => void
   /** ファイルを開く前など、すべて操作できないとき */
   disabled?: boolean
 }
@@ -126,6 +128,7 @@ export default function WaveformToolbar(p: Props) {
           <SmallButton title={t('pitchTool.flatten')} label={t('pitchTool.flatten')} icon={faGripLines} disabled={pitchOff} onClick={p.onFlatten} />
           <SmallButton title={t('snap.title')} label={t('snap.title')} icon={faMagnet} disabled={pitchOff} onClick={p.onSnap} />
           <SmallButton title={t('vibrato.title')} label={t('vibrato.title')} icon={faWaveSquare} disabled={pitchOff} onClick={p.onVibrato} />
+          <SmallButton title={t('midi.title')} label={t('midi.title')} icon={faMusic} disabled={pitchOff} onClick={p.onMidi} />
         </>
       )}
       {p.showPitch && p.hasCurve && (

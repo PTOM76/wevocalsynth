@@ -1,5 +1,6 @@
 import { F0_HOP_SEC } from '../dsp/engine'
 import { hzToMidi, midiToHz } from './notes'
+import type { MidiNote } from './midi'
 
 /** ビブラートの設定 */
 export interface VibratoOptions {
@@ -142,4 +143,57 @@ export function flattenPitch(target: Float32Array | null, f0: Float32Array, k0: 
     if (hz > 0) out[Math.max(0, k0) + i] = hz
   })
   return out
+}
+
+/** MIDI の音程を当てはめる設定 */
+export interface MidiFitOptions {
+  /** 当てはめる音符（秒は、MIDI の先頭からの時刻） */
+  notes: MidiNote[]
+  /** MIDI の先頭を置く位置（秒、クリップの先頭から） */
+  offset: number
+  /** 時刻に掛ける倍率（MIDI のテンポを設定の BPM に合わせるときは MIDI の BPM ÷ 設定の BPM） */
+  timeScale: number
+  /** 移調（半音） */
+  transpose: number
+  /** 揺れ（ビブラートなど）を残して、音の中心だけ合わせる */
+  keepShape: boolean
+  /** 合わせる強さ（0〜1）。1 でぴったり */
+  strength: number
+}
+
+/**
+ * フレーム k0〜k1 のピッチを、その時刻に鳴っている MIDI の音符の高さにした目標ピッチを返す。
+ * 和音のときは一番高い音（メロディ）を使う。音符の無いところと無声のフレームは変えない
+ */
+export function fitMidi(target: Float32Array | null, f0: Float32Array, k0: number, k1: number, o: MidiFitOptions): Float32Array {
+  const out = target ? target.slice() : new Float32Array(f0.length)
+  const lo = Math.max(0, k0)
+  const hi = Math.min(f0.length - 1, k1)
+  const src = (k: number) => hzToMidi(out[k] > 0 ? out[k] : f0[k])
+  // 揺れを残すときの「音の中心」: 有声のフレームだけで取った移動平均（flattenPitch と同じ幅）
+  const half = Math.round(FLATTEN_SEC / F0_HOP_SEC / 2)
+  const center = (k: number) => {
+    let sum = 0
+    let n = 0
+    for (let j = Math.max(lo, k - half); j <= Math.min(hi, k + half); j++) {
+      if (f0[j] > 0) {
+        sum += src(j)
+        n++
+      }
+    }
+    return n ? sum / n : src(k)
+  }
+  const notes = o.notes.map((n) => ({ note: n.note + o.transpose, start: o.offset + n.start * o.timeScale, end: o.offset + n.end * o.timeScale }))
+  const result = new Float32Array(out)
+  for (let k = lo; k <= hi; k++) {
+    if (!(f0[k] > 0)) continue
+    const t = k * F0_HOP_SEC
+    let dest = -Infinity
+    for (const n of notes) if (n.start <= t && t < n.end && n.note > dest) dest = n.note
+    if (dest === -Infinity) continue
+    const m = src(k)
+    const goal = o.keepShape ? m + (dest - center(k)) : dest
+    result[k] = midiToHz(m + (goal - m) * o.strength)
+  }
+  return result
 }
