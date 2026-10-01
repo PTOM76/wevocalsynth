@@ -17,10 +17,11 @@ function makeAnalyser(ctx: AudioContext) {
   return a
 }
 
-/** 適用前の音量（スライダーの値）を、再生中の音に反映するための指定。`ranges` の中だけ `db` 変える */
+/** 適用前の音量・パン（スライダーの値）を、再生中の音に反映するための指定。`ranges` の中だけ `db` 変え、`pan`（-1〜1）に振る */
 export interface LiveGain {
   ranges: Range[]
   db: number
+  pan: number
 }
 
 /** 範囲の境目で音量を切り替える時間（秒）。適用時のランプ（edit.ts の GAIN_RAMP_SEC）と同じ */
@@ -43,6 +44,7 @@ export function usePlayer(
   const extraRef = useRef<AudioBufferSourceNode[]>([])
   /** `clip` の音の音量（適用前の音量をここで反映する） */
   const gainRef = useRef<GainNode | null>(null)
+  const panRef = useRef<StereoPannerNode | null>(null)
   const liveGainRef = useRef(liveGain)
   liveGainRef.current = liveGain
   /** レベルメーター: トラックごと（再生のたびに作る）と、全体の出口 */
@@ -87,25 +89,30 @@ export function usePlayer(
    */
   const scheduleGain = useCallback(() => {
     const ctx = ctxRef.current
-    const g = gainRef.current?.gain
-    if (!ctx || !g || !sourceRef.current) return
+    const gain = gainRef.current?.gain
+    const pan = panRef.current?.pan
+    if (!ctx || !gain || !pan || !sourceRef.current) return
     const { ctxStart, offset, end } = clockRef.current
     const lg = liveGainRef.current
-    const target = lg ? 10 ** (lg.db / 20) : 1
     const now = ctx.currentTime
     const pos = offset + Math.max(0, now - ctxStart)
     const inside = (t: number) => !!lg && lg.ranges.some((r) => t >= r.start && t < r.end)
-    g.cancelScheduledValues(now)
-    g.setValueAtTime(inside(pos) ? target : 1, now)
-    if (!lg) return
-    for (const r of lg.ranges) {
-      for (const [t, to] of [[r.start, target], [r.end, 1]] as const) {
-        if (t <= pos || t >= end) continue
-        const when = ctxStart + (t - offset)
-        g.setValueAtTime(to === target ? 1 : target, Math.max(now, when - RAMP_SEC))
-        g.linearRampToValueAtTime(to, when)
+    // 音量とパンを同じ形で予約する（範囲の中は inValue、外は outValue）
+    const schedule = (param: AudioParam, inValue: number, outValue: number) => {
+      param.cancelScheduledValues(now)
+      param.setValueAtTime(inside(pos) ? inValue : outValue, now)
+      if (!lg) return
+      for (const r of lg.ranges) {
+        for (const [t, from, to] of [[r.start, outValue, inValue], [r.end, inValue, outValue]] as const) {
+          if (t <= pos || t >= end) continue
+          const when = ctxStart + (t - offset)
+          param.setValueAtTime(from, Math.max(now, when - RAMP_SEC))
+          param.linearRampToValueAtTime(to, when)
+        }
       }
     }
+    schedule(gain, lg ? 10 ** (lg.db / 20) : 1, 1)
+    schedule(pan, lg ? lg.pan : 0, 0)
   }, [])
 
   const play = useCallback(
@@ -149,7 +156,13 @@ export function usePlayer(
       const master = masterRef.current
       const meter = makeAnalyser(ctx)
       analysersRef.current.set(id, meter)
-      src.connect(gain).connect(meter).connect(master)
+      // パン: モノラルも左右同じ音のステレオにしてから掛ける（適用の panRange と同じ計算になるように）
+      const panner = ctx.createStereoPanner()
+      panner.channelCount = 2
+      panner.channelCountMode = 'explicit'
+      panner.channelInterpretation = 'speakers'
+      panRef.current = panner
+      src.connect(gain).connect(panner).connect(meter).connect(master)
       src.onended = () => {
         sourceRef.current = null
         setPlaying(false)
@@ -180,7 +193,7 @@ export function usePlayer(
   )
 
   // 再生中に適用前の音量が変わったら、すぐ反映する
-  const gainKey = liveGain ? `${liveGain.db}:${liveGain.ranges.map((r) => `${r.start}-${r.end}`).join(',')}` : ''
+  const gainKey = liveGain ? `${liveGain.db}:${liveGain.pan}:${liveGain.ranges.map((r) => `${r.start}-${r.end}`).join(',')}` : ''
   useEffect(() => {
     if (!muted) scheduleGain()
   }, [gainKey, muted, scheduleGain])

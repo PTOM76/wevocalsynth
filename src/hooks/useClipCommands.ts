@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
-import { fadeRange, gainRange, insertAt, normalizeRange, silenceRange } from '../audio/edit'
+import { fadeRange, gainRange, insertAt, normalizeRange, panRange, silenceRange } from '../audio/edit'
 import { mapRanges, normalizeRanges, removeRanges, sliceRanges } from '../audio/multiRange'
 import type { VolumeAction } from '../components/VolumePanel'
 import { t } from '../i18n/i18n'
@@ -25,6 +25,9 @@ interface Deps {
  * 切り取り・コピー・貼り付け・トリミングと音量編集。どれも即座に終わり、履歴に積む。
  * 複数範囲を選んでいる場合は全範囲が対象で、コピー・トリミングは範囲をつなげたものになる。
  */
+/** パンの表記（L50 / C / R30 など） */
+export const panLabel = (pan: number) => (Math.abs(pan) < 0.005 ? 'C' : `${pan < 0 ? 'L' : 'R'}${Math.round(Math.abs(pan) * 100)}`)
+
 export function useClipCommands(d: Deps) {
   const [clipboard, setClipboard] = useState<Clip | null>(null)
   const { edited, selections, editRanges } = d
@@ -58,10 +61,20 @@ export function useClipCommands(d: Deps) {
     d.setSelections([])
   }
 
-  const gain = (db: number) => {
-    if (edited && editRanges.length) {
-      d.commit(mapRanges(edited, editRanges, (c, r) => gainRange(c, r, db)), `${t('volume.gain')} ${db > 0 ? '+' : ''}${db.toFixed(1)}dB`)
+  /** ゲイン（dB）とパン（-1〜1）をまとめて適用する（どちらか一方だけでもよい）。履歴には1つの操作として積む */
+  const gain = (db: number, pan = 0) => {
+    if (!edited || !editRanges.length || (db === 0 && pan === 0)) return
+    let next = edited
+    const parts: string[] = []
+    if (db !== 0) {
+      next = mapRanges(next, editRanges, (c, r) => gainRange(c, r, db))
+      parts.push(`${t('volume.gain')} ${db > 0 ? '+' : ''}${db.toFixed(1)}dB`)
     }
+    if (pan !== 0) {
+      next = mapRanges(next, editRanges, (c, r) => panRange(c, r, pan))
+      parts.push(`${t('volume.pan')} ${panLabel(pan)}`)
+    }
+    d.commit(next, parts.join('・'))
   }
   const volume = (action: VolumeAction) => {
     if (!edited || !editRanges.length) return

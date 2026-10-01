@@ -241,6 +241,37 @@ export function normalizeRange(clip: Clip, range: Range, peakDb = -1): Clip | nu
   return gainRange(clip, range, peakDb - 20 * Math.log10(peak))
 }
 
+/**
+ * `range` のパン（-1 = 左 … 0 = 中央 … 1 = 右）を変える。計算は Web Audio の StereoPannerNode（ステレオ入力）と同じ式で、
+ * 再生中の試聴（usePlayer）と結果が一致する。モノラルは左右同じ音のステレオにしてから掛ける（パン 0 の部分は音量が変わらない）。
+ * 範囲の両端は GAIN_RAMP_SEC かけてパンを切り替える
+ */
+export function panRange(clip: Clip, range: Range, pan: number): Clip {
+  const [s, e] = toFrames(clip, range)
+  const n = e - s
+  const ramp = Math.min(Math.round(GAIN_RAMP_SEC * clip.sampleRate), Math.floor(n / 2))
+  const [l0, r0] = clip.channels.length >= 2 ? clip.channels : [clip.channels[0], clip.channels[0]]
+  const l = l0.slice()
+  const r = r0.slice()
+  for (let i = 0; i < n; i++) {
+    const edge = Math.min(i, n - 1 - i)
+    const p = edge < ramp ? pan * (edge / ramp) : pan
+    const a = l0[s + i]
+    const b = r0[s + i]
+    // StereoPannerNode（ステレオ入力）: 左に振るときは右の音を左へ寄せ、右に振るときは左の音を右へ寄せる
+    if (p <= 0) {
+      const x = ((p + 1) * Math.PI) / 2
+      l[s + i] = a + b * Math.cos(x)
+      r[s + i] = b * Math.sin(x)
+    } else {
+      const x = (p * Math.PI) / 2
+      l[s + i] = a * Math.cos(x)
+      r[s + i] = b + a * Math.sin(x)
+    }
+  }
+  return { sampleRate: clip.sampleRate, channels: [l, r, ...clip.channels.slice(2)] }
+}
+
 /** `range` を無音にする */
 export function silenceRange(clip: Clip, range: Range): Clip {
   return mapGain(clip, range, () => 0)

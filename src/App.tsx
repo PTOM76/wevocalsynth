@@ -265,6 +265,8 @@ export default function App() {
         busy={busy || panelsDisabled}
         db={ed.gainDb}
         onDbChange={ed.setGainDb}
+        pan={ed.pan}
+        onPanChange={ed.setPan}
         onGain={ed.cmd.gain}
         onAction={ed.cmd.volume}
       />

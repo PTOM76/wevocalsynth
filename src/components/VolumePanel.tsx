@@ -1,6 +1,7 @@
 import { Box, Button, Slider } from '@mui/material'
 import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow } from './inspector/Inspector'
 import { useT, type MessageKey } from '../i18n/i18n'
+import { panLabel } from '../hooks/useClipCommands'
 
 export type VolumeAction = 'fadeIn' | 'fadeOut' | 'normalize' | 'silence'
 
@@ -10,7 +11,11 @@ interface Props {
   /** 適用前の音量（スライダーの値）。再生中の音にすぐ反映される */
   db: number
   onDbChange: (db: number) => void
-  onGain: (db: number) => void
+  /** 適用前のパン（-1 = 左 … 1 = 右）。再生中の音にすぐ反映される */
+  pan: number
+  onPanChange: (pan: number) => void
+  /** ゲインとパンをまとめて適用する */
+  onGain: (db: number, pan: number) => void
   onAction: (action: VolumeAction) => void
 }
 
@@ -24,7 +29,7 @@ const ACTIONS: { action: VolumeAction; label: MessageKey }[] = [
 const SMALL_BUTTON_SX = { minWidth: 0, height: 26, px: 1, fontSize: 12 } as const
 
 /** インスペクタの「音量」。ゲインの行（動かすと再生中の音にすぐ反映し、「適用」で確定）と、フェードなどの操作 */
-export default function VolumePanel({ hasSelection, busy, db, onDbChange: setDb, onGain, onAction }: Props) {
+export default function VolumePanel({ hasSelection, busy, db, onDbChange: setDb, pan, onPanChange: setPan, onGain, onAction }: Props) {
   const t = useT()
 
   return (
@@ -44,15 +49,31 @@ export default function VolumePanel({ hasSelection, busy, db, onDbChange: setDb,
         />
         <NumberInput value={db} onChange={setDb} min={-24} max={12} step={0.5} unit="dB" ariaLabel={t('volume.gainAria')} />
       </PropRow>
+      <PropRow label={t('volume.pan')}>
+        <Slider
+          aria-label={t('volume.panAria')}
+          value={pan * 100}
+          min={-100}
+          max={100}
+          step={1}
+          marks={[{ value: 0 }]}
+          valueLabelDisplay="auto"
+          valueLabelFormat={(v) => panLabel(v / 100)}
+          onChange={(_, v) => setPan((v as number) / 100)}
+          sx={COMPACT_SLIDER_SX}
+        />
+        <NumberInput value={Math.round(pan * 100)} onChange={(v) => setPan(v / 100)} min={-100} max={100} step={1} ariaLabel={t('volume.panAria')} />
+      </PropRow>
       <PropRow>
         <Box sx={{ flexGrow: 1 }} />
         <Button
           size="small"
           variant="contained"
-          disabled={busy || db === 0}
+          disabled={busy || (db === 0 && pan === 0)}
           onClick={() => {
-            onGain(db)
+            onGain(db, pan)
             setDb(0)
+            setPan(0)
           }}
           sx={{ ...SMALL_BUTTON_SX, px: 1.5 }}
         >
