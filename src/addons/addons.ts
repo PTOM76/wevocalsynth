@@ -145,6 +145,20 @@ export async function uninstall(id: string) {
   }
 }
 
+/**
+ * `id` を消し、それが依存していた追加機能のうち、ほかの導入済みの追加機能から使われなくなったものも消す
+ * （例: モデルを全部消したら実行環境も消す）
+ */
+export async function uninstallWithUnused(id: string) {
+  await uninstall(id)
+  const installed = new Set<string>()
+  for (const a of ADDONS) if (await installedManifest(a.id)) installed.add(a.id)
+  for (const dep of withRequires(id).filter((d) => d !== id)) {
+    const used = ADDONS.some((a) => installed.has(a.id) && a.id !== dep && withRequires(a.id).includes(dep))
+    if (!used) await uninstall(dep)
+  }
+}
+
 /** 導入済みの追加機能を読み込む。モジュールの形は追加機能ごとに決める */
 export async function loadAddon<T>(id: string): Promise<T> {
   const m = await installedManifest(id)

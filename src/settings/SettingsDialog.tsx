@@ -38,8 +38,8 @@ interface Props {
 type Category = 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'vocal' | 'data' | 'debug'
 const CATEGORIES: Category[] = ['general', 'display', 'pitch', 'tempo', 'keys', 'vocal', 'data', 'debug']
 
-/** 設定の「ボーカル抽出」に並べる追加機能（実行環境とモデル） */
-const VOCAL_ADDONS = ['vocal-extractor', ...Object.values(VOCAL_MODELS).map((m) => m.addon)]
+/** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
+const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
 
 /** スマホ向けの表示か（項目を縦に積み、文字と操作を大きくする） */
 const NarrowContext = createContext(false)

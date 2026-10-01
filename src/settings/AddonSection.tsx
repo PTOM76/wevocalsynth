@@ -7,7 +7,7 @@ import {
   fetchManifest,
   installedManifest,
   loadAddon,
-  uninstall,
+  uninstallWithUnused,
   type AddonInfo,
   type AddonManifest,
 } from '../addons/addons'
@@ -44,7 +44,8 @@ export default function AddonSection({ ids }: { ids: string[] }) {
 
   const describe = (s: Status | undefined) => {
     if (!s) return t('addon.checking')
-    if (!s.installed) return s.latest ? t('addon.notInstalledSize', { size: mb(addonSize(s.latest)) }) : t('addon.notInstalled')
+    // 配信中のマニフェストが取れないと導入できない（オフライン、または追加機能を置いていない開発サーバーなど）
+    if (!s.installed) return s.latest ? t('addon.notInstalledSize', { size: mb(addonSize(s.latest)) }) : t('addon.notAvailable')
     const info = t('addon.installedInfo', { version: s.installed.version, size: mb(addonSize(s.installed)) })
     return s.latest && s.latest.version !== s.installed.version ? `${info} / ${t('addon.updateAvailable', { version: s.latest.version })}` : info
   }
@@ -55,7 +56,8 @@ export default function AddonSection({ ids }: { ids: string[] }) {
   }
   const remove = async (a: AddonInfo) => {
     if (!window.confirm(t('addon.deleteConfirm', { name: t(a.name) }))) return
-    await uninstall(a.id)
+    // 依存していた実行環境なども、使われなくなったら一緒に消す
+    await uninstallWithUnused(a.id)
     setMessage(t('addon.deleted'))
     refresh()
   }
