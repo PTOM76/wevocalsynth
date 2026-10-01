@@ -6,7 +6,7 @@ import { useEditor } from './hooks/useEditor'
 import { useAppMenus } from './hooks/useAppMenus'
 import { useWaveformView, ZOOM_STEP } from './components/waveform/useWaveformView'
 import AppHeader from './components/AppHeader'
-import { DropOverlay, EmptyState } from './components/EmptyState'
+import { EmptyState } from './components/EmptyState'
 import Waveform from './components/Waveform'
 import LevelMeter from './components/LevelMeter'
 import { useTrackArea } from './components/tracks/useTrackArea'
@@ -454,7 +454,6 @@ export default function App() {
         onChange={updateSettings}
         project={ed.fileName ? { name: ed.fileName, tempo: ed.projectTempo, onRename: ed.setProjectName, onTempoChange: ed.setProjectTempo } : null}
       />
-      {ed.dragOver && <DropOverlay />}
       {settings.showDebug && <DebugOverlay />}
       <UpdatePrompt />
       {ed.addonDialog}

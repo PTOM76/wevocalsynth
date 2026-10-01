@@ -31,6 +31,8 @@ export function useTrackDrag(tracks: Track[], axis: 'x' | 'y', disabled: boolean
     onDragOver: (e: React.DragEvent<HTMLElement>) => {
       if (!dragId) return
       e.preventDefault()
+      // カーソルを「移動」の形にする
+      e.dataTransfer.dropEffect = 'move'
       // 要素の前半なら前、後半なら後ろに入れる
       const r = e.currentTarget.getBoundingClientRect()
       const after = axis === 'y' ? e.clientY > r.top + r.height / 2 : e.clientX > r.left + r.width / 2

@@ -68,7 +68,6 @@
 
   "empty.formats": "WAV / MP3 / MP4 etc. (drag & drop supported)",
   "empty.choose": "Choose a file",
-  "empty.drop": "Drop to open",
 
   "process.title": "Process",
   "process.mode": "Processing mode",

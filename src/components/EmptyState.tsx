@@ -23,29 +23,3 @@ export function EmptyState({ onOpen, onSynth }: { onOpen: () => void; onSynth: (
     </Stack>
   )
 }
-
-/** ドラッグ中、画面全体でドロップを受け付けることを示すオーバーレイ */
-export function DropOverlay() {
-  const t = useT()
-  return (
-    <Box
-      sx={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 'modal',
-        pointerEvents: 'none',
-        bgcolor: 'action.hover',
-        outline: 2,
-        outlineColor: 'primary.main',
-        outlineOffset: -2,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Typography variant="h6" color="primary">
-        {t('empty.drop')}
-      </Typography>
-    </Box>
-  )
-}

@@ -1,34 +1,33 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
-/** ページ上のどこにファイルをドロップしても `onFile` を呼ぶ。ドラッグ中かどうかを返す */
+/** ドラッグしているものがファイルか（トラックの並び替えなど、画面の中のドラッグは扱わない） */
+const hasFiles = (e: DragEvent) => !!e.dataTransfer?.types.includes('Files')
+
+/**
+ * ページ上のどこにファイルをドロップしても `onFile` を呼ぶ。
+ * 受け付けることは画面の案内ではなく、マウスカーソル（コピーの形）で示す
+ */
 export function useFileDrop(onFile: (file: File) => void) {
-  const [dragOver, setDragOver] = useState(false)
   const onFileRef = useRef(onFile)
   onFileRef.current = onFile
 
   useEffect(() => {
     const over = (e: DragEvent) => {
+      if (!hasFiles(e)) return
       e.preventDefault()
-      setDragOver(true)
-    }
-    const leave = (e: DragEvent) => {
-      if (!e.relatedTarget) setDragOver(false)
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
     }
     const drop = (e: DragEvent) => {
+      if (!hasFiles(e)) return
       e.preventDefault()
-      setDragOver(false)
       const file = e.dataTransfer?.files[0]
       if (file) onFileRef.current(file)
     }
     window.addEventListener('dragover', over)
-    window.addEventListener('dragleave', leave)
     window.addEventListener('drop', drop)
     return () => {
       window.removeEventListener('dragover', over)
-      window.removeEventListener('dragleave', leave)
       window.removeEventListener('drop', drop)
     }
   }, [])
-
-  return dragOver
 }

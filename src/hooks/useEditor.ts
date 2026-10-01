@@ -262,7 +262,6 @@ export function useEditor(settings: Settings) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [openClip],
   )
-  const dragOver = useFileDrop((f) => void loadFile(f))
 
   const apply = () =>
     task.run(t('task.processing'), async (signal) => {
@@ -364,7 +363,8 @@ export function useEditor(settings: Settings) {
     if (history.tracks.length) tracks.addClip(clip, name)
     else openClip(clip, name, null)
   }
-  const addPicker = useFilePicker(AUDIO_ACCEPT, (f) =>
+  /** 音声ファイルを新しいトラックとして足す */
+  const addTrackFile = (f: File) =>
     void task.run(t('task.loading'), async (signal) => {
       try {
         const clip = await decodeFile(f, setProgress)
@@ -372,8 +372,10 @@ export function useEditor(settings: Settings) {
       } catch (e) {
         if (!signal.aborted) setToast({ severity: 'error', message: t('toast.loadFailed', { file: f.name, error: String(e) }) })
       }
-    }),
-  )
+    })
+  const addPicker = useFilePicker(AUDIO_ACCEPT, addTrackFile)
+  // ドロップした音声は、もう開いているならトラックとして足す（プロジェクトファイルは開き直す）
+  useFileDrop((f) => (history.tracks.length && !isProjectFile(f) ? addTrackFile(f) : void loadFile(f)))
 
   // 作業状態の自動保存と、起動時の復元
   useAutosave(
@@ -454,6 +456,6 @@ export function useEditor(settings: Settings) {
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker, dragOver,
+    cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker,
   }
 }
