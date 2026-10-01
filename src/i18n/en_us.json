@@ -346,7 +346,7 @@
   "midi.trackItem": "{name} ({count} notes)",
   "midi.offset": "Start position",
   "midi.tempoMidi": "Keep MIDI tempo ({bpm} BPM)",
-  "midi.tempoProject": "Match tempo setting ({bpm} BPM)",
+  "midi.tempoProject": "Match project tempo ({bpm} BPM)",
   "midi.transpose": "Transpose",
   "addon.updateTitle": "Update add-on",
   "addon.updateText": "A new version of \"{name}\" is available. Update it?",

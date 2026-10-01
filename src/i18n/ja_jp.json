@@ -346,7 +346,7 @@
   "midi.trackItem": "{name}（{count} 音）",
   "midi.offset": "開始位置",
   "midi.tempoMidi": "MIDI のテンポのまま（{bpm} BPM）",
-  "midi.tempoProject": "設定の BPM に合わせる（{bpm} BPM）",
+  "midi.tempoProject": "プロジェクトの BPM に合わせる（{bpm} BPM）",
   "midi.transpose": "移調",
   "addon.updateTitle": "追加機能の更新",
   "addon.updateText": "「{name}」の新しい版があります。更新しますか？",
