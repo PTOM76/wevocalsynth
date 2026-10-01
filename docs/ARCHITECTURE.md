@@ -60,6 +60,9 @@ extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追�
 | `usePlayback` | 再生・試聴・ループの切り替え（どれかを始めたらほかを止める） |
 | `usePreview` | 加工済みプレビューを裏で作る |
 | `useClipAnalysis` | F0・スペクトログラム（表示が ON のときだけ。解析の設定が変わったら解析し直す） |
+| `useLanes` | 帯（波形・スペクトログラム・ピッチ・音量・フォルマント）の表示とフォーカス。ツールバーとショートカットはフォーカスしている帯に効く |
+| `useLaneCurve` / `useFormantCurve` | 音量・フォルマントの帯に描いた曲線（10ms 間隔）。音量は再生にすぐ反映し、フォルマントは試聴で加工して聴く。どちらも適用で確定する |
+| `usePitchClipboard` | ピッチの帯での切り取り・コピー・貼り付け（曲線が対象） |
 | `usePitchTarget` / `usePitchTools` | 目標ピッチの曲線（ペン・一括の加工）と、適用前の試聴 |
 | `usePitchVoicing` | ピッチの強制表示・非表示 |
 | `useTempo` | テンポの自動解析と候補 |
@@ -74,7 +77,10 @@ extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追�
 
 | ファイル | 担当 |
 | --- | --- |
-| `draw.ts` | Canvas への描画（目盛り・波形・スペクトログラム・ピッチ帯・拍の線・選択範囲） |
+| `draw.ts` | Canvas への描画（目盛り・波形・スペクトログラム・ピッチ帯・拍の線・選択範囲）と、帯の高さの割り振り（`laneHeights`） |
+| `curveLane.ts` | 音量・フォルマントの帯（目盛りと描いた曲線。縦軸の範囲だけを変えて共通に使う） |
+| `useLanePen.ts` | 帯のペン。押した帯で描き始め、離すまでその帯に描く（ピッチ・音量・フォルマントで共通） |
+| `useLaneDivider.ts` | 上の帯（波形・スペクトログラム）と下の帯（ピッチ・音量・フォルマント）の境目のドラッグ |
 | `peaks.ts` | 波形の最小値・最大値のピラミッド。拡大率に合った段から求めるので、全体表示でも速い |
 | `useWaveformView.ts` | 表示範囲（拡大縮小・スクロール・再生中の追従） |
 | `useRangeEdges.ts` | 範囲の端のドラッグ |
@@ -139,7 +145,7 @@ extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追�
 | `pv.rs` | Phase Vocoder（identity phase locking）。フレーム 2048・75% オーバーラップ。楽器の既定。位相の回転を複素数の掛け算にし、隣り合う2フレームを1回の FFT で変換して速くしている |
 | `timemap.rs` | 出力位置→入力位置の対応。一定倍率とピッチカーブの両方を表す |
 | `curve.rs` | ピッチカーブ編集。時間ごとのピッチ比から時間マップを作る |
-| `formant.rs` | ケプストラムによるスペクトル包絡の補正 |
+| `formant.rs` | ケプストラムによるスペクトル包絡の補正（一定の量と、時間で変わる量） |
 | `f0.rs` | YIN による F0 推定（16kHz に間引き、10ms 間隔）。探す範囲・有声判定・無音判定は `Params` で変えられる |
 | `spec.rs` | 表示用スペクトログラム（STFT 2048/256、対数周波数 128段、1バイト） |
 | `tempo.rs` | テンポ解析。スペクトルの増加量（オンセット強度）の、時間方向の周波数成分から BPM の候補と1拍目の位置を求める |
@@ -154,13 +160,14 @@ FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効く�
 | `alloc_f32` / `free_f32` | wasm メモリ上の f32 配列の確保・解放 |
 | `process_planar` | ピッチ変更・時間伸縮・フォルマント（全チャンネル） |
 | `process_curve_planar` | ピッチカーブに従った処理 |
+| `formant_curve_planar` | フォルマントカーブに従った処理（フォルマントだけを動かし、ピッチと長さは変えない） |
 | `analyze_f0` / `analyze_spectrogram` / `analyze_tempo` | F0 推定（設定つき）、スペクトログラム、テンポの候補（モノラル） |
 | `output_ptr` / `output_u8_ptr` | 直前の結果の置き場所 |
 
 進捗は、Worker が渡す `env.report_progress(p)` を wasm から呼んで通知する。
 
 ## Worker とのやりとり
-- リクエストは `kind` で分ける: `process`（加工）、`curve`（ピッチカーブ）、`f0`、`spec`、`tempo`
+- リクエストは `kind` で分ける: `process`（加工）、`curve`（ピッチカーブ）、`formant`（フォルマントカーブ）、`f0`、`spec`、`tempo`
 - 応答は `{ id, channels }` / `{ id, bytes }` / `{ id, error }` / `{ id, progress }`
 - `engine.ts` が `id` ごとに Promise を持ち、応答と対応づける
 - 音声データは `transfer` で渡し、コピーを避ける
