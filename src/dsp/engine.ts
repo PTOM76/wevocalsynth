@@ -13,11 +13,20 @@ type Pending = {
   onProgress?: (p: number) => void
 }
 
-let worker: Worker | null = null
-let nextId = 1
-const pending = new Map<number, Pending>()
+/**
+ * Worker は2つに分ける。加工（加工・ピッチカーブ・フォルマントと、その試聴）と、解析（F0・スペクトログラム・テンポ）。
+ * 1つだと順番待ちになり、ファイルを開いた直後の解析中に「適用」を押すと、解析が終わるまで進捗が 0% のまま止まって見えた
+ */
+type Lane = 'edit' | 'analysis'
+const laneOf = (req: DspRequest): Lane => (req.kind === 'f0' || req.kind === 'spec' || req.kind === 'tempo' ? 'analysis' : 'edit')
 
-function getWorker() {
+let nextId = 1
+const workers = new Map<Lane, Worker>()
+/** 待っている呼び出し。どの Worker に送ったかも持つ（中断で、その Worker の分だけ失敗させる） */
+const pending = new Map<number, Pending & { lane: Lane }>()
+
+function getWorker(lane: Lane) {
+  let worker = workers.get(lane)
   if (!worker) {
     worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
     worker.onmessage = (e: MessageEvent<DspResponse>) => {
@@ -31,34 +40,42 @@ function getWorker() {
       if ('error' in e.data) p.reject(new Error(e.data.error))
       else p.resolve('bytes' in e.data ? e.data.bytes : e.data.channels)
     }
-    worker.onerror = (e) => {
-      pending.forEach((p) => p.reject(new Error(e.message || 'DSP worker error')))
-      pending.clear()
-    }
+    worker.onerror = (e) => failLane(lane, new Error(e.message || 'DSP worker error'))
+    workers.set(lane, worker)
   }
   return worker
+}
+
+/** `lane` の Worker に送った呼び出しを、すべて `err` で失敗させる */
+function failLane(lane: Lane, err: Error) {
+  for (const [id, p] of pending) {
+    if (p.lane !== lane) continue
+    pending.delete(id)
+    p.reject(err)
+  }
 }
 
 // 開発中、このファイルがホットリロードで入れ替わったら古い Worker を止める
 // （止めないと WASM のメモリを抱えた Worker が書き換えのたびに増え、タブがメモリ不足で落ちる）
 import.meta.hot?.dispose(() => {
-  worker?.terminate()
-  worker = null
+  workers.forEach((w) => w.terminate())
+  workers.clear()
 })
 
-/**
- * 処理中のものをすべて中断する（Worker ごと止める。待っている呼び出しは失敗する）。
- * Worker は次のリクエストで作り直される（wasm の読み込みに少しかかる）
- */
 /** 中断（`cancelDsp`）で失敗したか。通知せずに済ませるのに使う */
 export const isCancelled = (e: unknown) => e instanceof DOMException && e.name === 'AbortError'
 
+/**
+ * 加工の処理をすべて中断する（Worker ごと止める。待っている呼び出しは失敗する）。
+ * 解析（ピッチ・スペクトログラム・テンポ）は止めない（止めると、表示中の解析が出ないままになる）。
+ * Worker は次のリクエストで作り直される（wasm の読み込みに少しかかる）
+ */
 export function cancelDsp() {
+  const worker = workers.get('edit')
   if (!worker) return
   worker.terminate()
-  worker = null
-  pending.forEach((p) => p.reject(new DOMException('cancelled', 'AbortError')))
-  pending.clear()
+  workers.delete('edit')
+  failLane('edit', new DOMException('cancelled', 'AbortError'))
 }
 
 /** リクエストを Worker に送り、結果（チャンネル配列）を待つ */
@@ -72,7 +89,9 @@ function sendRaw(req: DspRequest, onProgress?: (p: number) => void): Promise<Flo
   // デバッグ表示用に、処理の種類と所要時間を記録する
   const done = () => recordDspJob({ kind: req.kind, ms: performance.now() - t0 })
   return new Promise((resolve, reject) => {
+    const lane = laneOf(req)
     pending.set(req.id, {
+      lane,
       resolve: (v) => {
         done()
         resolve(v)
@@ -82,7 +101,7 @@ function sendRaw(req: DspRequest, onProgress?: (p: number) => void): Promise<Flo
     })
     const buffers = 'samples' in req ? [req.samples.buffer] : req.channels.map((c) => c.buffer)
     if (req.kind === 'curve') buffers.push(req.ratios.buffer)
-    getWorker().postMessage(req, buffers)
+    getWorker(lane).postMessage(req, buffers)
   })
 }
 

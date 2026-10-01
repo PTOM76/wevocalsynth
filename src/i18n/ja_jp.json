@@ -89,7 +89,7 @@
   "pitchTool.down": "ピッチを半音下げる（↓、Shift+↓ で 0.1 半音）",
   "pitchTool.preview": "適用前に試聴（曲線のある部分）",
   "pitchTool.target": "対象: {range}",
-  "pitchTool.hint": "作成した曲線はピッチ帯に青い線で表示されます。ツールバーの「適用」で音声に反映します",
+  "pitchTool.hint": "作成した曲線はピッチパネルに青い線で表示されます。ツールバーの「適用」で音声に反映します",
   "pitchTool.create": "作成",
   "pitchTool.flatten": "ピッチの揺れを平らにする（選択範囲、なければ全体）",
   "snap.title": "音程に揃える",
