@@ -161,6 +161,21 @@ export async function uninstallWithUnused(id: string) {
   }
 }
 
+/** 導入済みの追加機能の合計の大きさ（バイト） */
+export async function installedAddonsSize(): Promise<number> {
+  let total = 0
+  for (const a of ADDONS) {
+    const m = await installedManifest(a.id)
+    if (m) total += addonSize(m)
+  }
+  return total
+}
+
+/** 導入済みの追加機能をすべて消す（設定の「データ」） */
+export async function clearAddons() {
+  if (addonsSupported()) await caches.delete(ADDON_CACHE)
+}
+
 /** 導入済みの追加機能を読み込む。モジュールの形は追加機能ごとに決める */
 export async function loadAddon<T>(id: string): Promise<T> {
   const m = await installedManifest(id)

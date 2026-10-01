@@ -8,6 +8,7 @@ import {
   requestPersist,
   storageUsage,
 } from '../project/storage'
+import { clearAddons, installedAddonsSize } from '../addons/addons'
 import { useT, type MessageKey } from '../i18n/i18n'
 import { useConfirm } from '../components/ConfirmDialog'
 
@@ -18,12 +19,14 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const t = useT()
   const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null)
   const [persisted, setPersisted] = useState<boolean | null>(null)
+  const [addonBytes, setAddonBytes] = useState(0)
   const [message, setMessage] = useState<string | null>(null)
   const { confirm, dialog } = useConfirm()
 
   const refresh = () => {
     void storageUsage().then(setUsage)
     void isPersisted().then(setPersisted)
+    void installedAddonsSize().then(setAddonBytes)
   }
   useEffect(refresh, [])
 
@@ -35,11 +38,11 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
     refresh()
   }
 
-  const row = (label: MessageKey, help: MessageKey, button: React.ReactNode) => (
+  const row = (label: MessageKey, help: MessageKey, button: React.ReactNode, vars?: Record<string, string>) => (
     <Box sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%', display: 'flex', alignItems: 'center', gap: 1.5 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontSize: 13 }}>{t(label)}</Typography>
-        <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary' }}>{t(help)}</Typography>
+        <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary' }}>{t(help, vars)}</Typography>
       </Box>
       {button}
     </Box>
@@ -64,6 +67,12 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
         'data.cache',
         'data.cacheHelp',
         danger('data.delete', () => void act('data.delete', 'data.cacheConfirm', () => clearOfflineCache(), 'data.cacheDone')),
+      )}
+      {row(
+        'data.addons',
+        'data.addonsHelp',
+        danger('data.delete', () => void act('data.delete', 'data.addonsConfirm', clearAddons, 'data.addonsDone')),
+        { size: mb(addonBytes) },
       )}
       {row(
         'data.settings',
