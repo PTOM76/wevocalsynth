@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Clip, Range } from './types'import { DEFAULT_FADER, type TrackFader } from './tracks'
+import type { Clip, Range } from './types'
+import { DEFAULT_FADER, type TrackFader } from './tracks'
 import { clipDuration } from './types'
 
 /** 一緒に鳴らすトラック（id はレベルメーターの対応づけに使う） */

@@ -24,10 +24,11 @@ interface Props {
   onAction: (action: VolumeAction) => void
 }
 
-const ACTIONS: { action: VolumeAction; label: MessageKey }[] = [
+// 名前だけでは分かりにくいものには説明（tooltip）を付ける
+const ACTIONS: { action: VolumeAction; label: MessageKey; tooltip?: MessageKey }[] = [
   { action: 'fadeIn', label: 'volume.fadeIn' },
   { action: 'fadeOut', label: 'volume.fadeOut' },
-  { action: 'normalize', label: 'volume.normalize' },
+  { action: 'normalize', label: 'volume.normalize', tooltip: 'volume.normalizeTooltip' },
   { action: 'silence', label: 'volume.silence' },
 ]
 
@@ -148,11 +149,21 @@ export default function VolumePanel({ hasSelection, busy, fader, onFaderChange, 
       <Heading>{t(hasSelection ? 'common.selection' : 'common.whole')}</Heading>
       {/* 2列に並べる（横幅の狭いインスペクタでも折り返しで崩れないように） */}
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5 }}>
-        {ACTIONS.map(({ action, label }) => (
-          <Button key={action} size="small" variant="outlined" disabled={busy} onClick={() => onAction(action)} sx={SMALL_BUTTON_SX}>
-            {t(label)}
-          </Button>
-        ))}
+        {ACTIONS.map(({ action, label, tooltip }) => {
+          const button = (
+            <Button key={action} size="small" variant="outlined" disabled={busy} onClick={() => onAction(action)} sx={SMALL_BUTTON_SX}>
+              {t(label)}
+            </Button>
+          )
+          return tooltip ? (
+            <Tooltip key={action} title={t(tooltip)}>
+              {/* 押せないときも説明を出すため span で包む */}
+              <Box component="span" sx={{ display: 'grid' }}>{button}</Box>
+            </Tooltip>
+          ) : (
+            button
+          )
+        })}
       </Box>
     </InspectorSection>
   )
