@@ -7,6 +7,8 @@ import { clearAutosave, loadAutosave, removeTrackClips, saveMeta, saveTrackClip 
 
 /** 編集が止まってから自動保存するまでの待ち時間（ミリ秒） */
 const SAVE_DELAY_MS = 1500
+/** フェーダーなど（音声以外）だけが変わったときに、保存するまでの待ち時間（ミリ秒）。動かしている間は書かない */
+const META_DELAY_MS = 300
 /** ブラウザが空くのを待つ最長時間（ミリ秒）。これを過ぎたら空いていなくても保存する */
 const IDLE_TIMEOUT_MS = 5000
 
@@ -24,6 +26,7 @@ function whenIdle(fn: () => void): () => void {
  * 作業状態を IndexedDB に自動保存し、起動時に復元する。
  * - 保存は音声が変わって落ち着き、さらにブラウザが空いているときに、Worker で行う（操作の邪魔をしない）
  * - トラックごとに、原音・加工後のうち変わったものだけを保存し直す。スライダーを動かしただけでは保存しない
+ * - フェーダー・ミュート・ソロなど（音声以外）だけが変わったときは、待たずにすぐ保存する
  * - 起動時の復元が終わるまでは保存しない（前回の作業を空の状態で上書きしないため）
  * - 無効にしたら保存済みのデータも消す
  *
@@ -71,8 +74,27 @@ export function useAutosave(
     void clearAutosave()
   }, [enabled])
 
-  // 音声が変わって落ち着き、ブラウザが空いたら保存する
   const { fileName, tracks, activeId, faders, mix, overlay } = state
+  /** トラックの並びとパラメータ・フェーダー・鳴らし方を保存する（小さいので、すぐ書いてよい） */
+  const writeMeta = () =>
+    saveMeta({
+      fileName,
+      params: latest.current.params,
+      tracks: tracks.map((t) => ({
+        id: t.id,
+        name: t.name,
+        volume: faders[t.id]?.db,
+        pan: faders[t.id]?.pan,
+        mute: mix[t.id]?.mute,
+        solo: mix[t.id]?.solo,
+        overlay: overlay.has(t.id),
+      })),
+      active: Math.max(0, tracks.findIndex((t) => t.id === activeId)),
+    })
+  const writeMetaRef = useRef(writeMeta)
+  writeMetaRef.current = writeMeta
+
+  // 音声が変わって落ち着き、ブラウザが空いたら保存する
   useEffect(() => {
     if (!enabled || !tracks.length || !restoredRef.current) return
     let cancelIdle = () => {}
@@ -91,20 +113,8 @@ export function useAutosave(
             removeTrackClips(gone)
             gone.forEach((id) => saved.current.delete(id))
           }
-          saveMeta({
-            fileName,
-            params: latest.current.params,
-            tracks: tracks.map((t) => ({
-              id: t.id,
-              name: t.name,
-              volume: faders[t.id]?.db,
-              pan: faders[t.id]?.pan,
-              mute: mix[t.id]?.mute,
-              solo: mix[t.id]?.solo,
-              overlay: overlay.has(t.id),
-            })),
-            active: Math.max(0, tracks.findIndex((t) => t.id === activeId)),
-          })
+          // 音声の後に書く（Worker は届いた順に書くので、並びが音声より先に保存されることはない）
+          writeMetaRef.current()
         } catch (e) {
           latest.current.onError(e)
         }
@@ -114,5 +124,26 @@ export function useAutosave(
       clearTimeout(timer)
       cancelIdle()
     }
-  }, [enabled, fileName, tracks, activeId, faders, mix, overlay])
+  }, [enabled, tracks])
+
+  // フェーダー・鳴らし方・重ねる表示・選んでいるトラックだけが変わったときは、待たずにすぐ保存する
+  // （上の保存は数秒待つので、動かしてすぐ再読み込みすると消えていた）。
+  // ただし、どのトラックの音声もまだ保存していないものがあるときは書かない
+  // （音声の無いトラックを並びに入れてしまうと、復元できなくなる。上の保存が音声の後に書く）
+  useEffect(() => {
+    if (!enabled || !tracks.length || !restoredRef.current) return
+    const allSaved = tracks.every((t) => {
+      const s = saved.current.get(t.id)
+      return s && s.original === t.original && s.edited === t.clip
+    })
+    if (!allSaved) return
+    const timer = setTimeout(() => {
+      try {
+        writeMetaRef.current()
+      } catch (e) {
+        latest.current.onError(e)
+      }
+    }, META_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [enabled, tracks, fileName, activeId, faders, mix, overlay])
 }
