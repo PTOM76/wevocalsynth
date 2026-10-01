@@ -301,6 +301,24 @@ export function applyFader(clip: Clip, db: number, pan: number): Clip {
   return { sampleRate: clip.sampleRate, channels: [l, r] }
 }
 
+/**
+ * 音量の曲線（dB、`hopSec` 間隔、0 は元の音量）を音声に掛ける。フレームの間は dB を線形補間する。
+ * 再生中の試聴（usePlayer の setValueCurveAtTime）と同じ値になる
+ */
+export function applyGainCurve(clip: Clip, db: Float32Array, hopSec: number): Clip {
+  const sr = clip.sampleRate
+  const n = clip.channels[0].length
+  const gain = new Float32Array(n)
+  for (let i = 0; i < n; i++) {
+    const f = i / sr / hopSec
+    const k = Math.min(db.length - 1, Math.floor(f))
+    const k2 = Math.min(db.length - 1, k + 1)
+    const d = db[k] + (db[k2] - db[k]) * (f - k)
+    gain[i] = 10 ** (d / 20)
+  }
+  return { sampleRate: sr, channels: clip.channels.map((c) => c.map((v, i) => v * gain[i])) }
+}
+
 /** `range` を無音にする */
 export function silenceRange(clip: Clip, range: Range): Clip {
   return mapGain(clip, range, () => 0)

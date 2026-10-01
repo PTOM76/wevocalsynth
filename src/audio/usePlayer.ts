@@ -63,9 +63,21 @@ const RAMP_SEC = 0.005
  */
 export function usePlayer(
   clip: Clip | null,
-  opts: { id?: string; others?: PlayTrack[]; muted?: boolean; liveGain?: LiveGain | null; faders?: Record<string, TrackFader> } = {},
+  opts: {
+    id?: string
+    others?: PlayTrack[]
+    muted?: boolean
+    liveGain?: LiveGain | null
+    faders?: Record<string, TrackFader>
+    /** 音量の帯に描いた曲線（dB、`hopSec` 間隔）。再生にすぐ反映する（`clip` の音だけに効く） */
+    gainCurve?: { db: Float32Array; hopSec: number } | null
+  } = {},
 ) {
-  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null, faders = NO_FADERS } = opts
+  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null, faders = NO_FADERS, gainCurve = null } = opts
+  const gainCurveRef = useRef(gainCurve)
+  gainCurveRef.current = gainCurve
+  /** 音量の曲線を掛けるノード（再生のたびに作る） */
+  const curveNodeRef = useRef<GainNode | null>(null)
   const fadersRef = useRef(faders)
   fadersRef.current = faders
   /** トラックごとのフェーダーのノード（再生のたびに作る。動かしたらここへ値を入れる） */
@@ -163,6 +175,41 @@ export function usePlayer(
     schedule(pan, lg ? lg.pan : 0, 0)
   }, [])
 
+  /**
+   * 音量の曲線を、今の位置から終わりまで予約する（描いている途中でも呼び直し、今から先を入れ直す）。
+   * フレームの間は直線でつなぐ（適用の applyGainCurve と同じ値になる）
+   */
+  const scheduleCurve = useCallback(() => {
+    const ctx = ctxRef.current
+    const g = curveNodeRef.current?.gain
+    if (!ctx || !g || !sourceRef.current) return
+    const { ctxStart, offset, end } = clockRef.current
+    const now = ctx.currentTime
+    const pos = offset + Math.max(0, now - ctxStart)
+    const c = gainCurveRef.current
+    // 進行中の曲線の予約と重なると、ブラウザによってはエラーになるので、予約はすべて消してから入れ直す
+    g.cancelScheduledValues(0)
+    if (!c || end - pos < 0.02) {
+      g.setValueAtTime(1, now)
+      return
+    }
+    const at = (t: number) => {
+      const f = t / c.hopSec
+      const k = Math.min(c.db.length - 1, Math.floor(f))
+      const k2 = Math.min(c.db.length - 1, k + 1)
+      return 10 ** ((c.db[k] + (c.db[k2] - c.db[k]) * (f - k)) / 20)
+    }
+    const n = Math.max(2, Math.ceil((end - pos) / c.hopSec) + 1)
+    const values = new Float32Array(n)
+    for (let i = 0; i < n; i++) values[i] = at(pos + (i * (end - pos)) / (n - 1))
+    try {
+      g.setValueCurveAtTime(values, Math.max(now, ctxStart + (pos - offset)), end - pos)
+    } catch {
+      // 予約できなければ、今の位置の値だけ入れる（次に描き直したときにまた予約する）
+      g.setValueAtTime(values[0], now)
+    }
+  }, [])
+
   const play = useCallback(
     async (from: number, to?: number) => {
       if (!clip) return
@@ -210,6 +257,9 @@ export function usePlayer(
       // 適用前の音量・パン（範囲だけ） → トラックのフェーダー（全体） → メーター → 全体の出口
       const panner = makePanner(ctx)
       made.push(panner)
+      const curveNode = ctx.createGain()
+      made.push(curveNode)
+      curveNodeRef.current = curveNode
       panRef.current = panner
       const fader = { gain: ctx.createGain(), pan: makePanner(ctx) }
       made.push(fader.gain, fader.pan)
@@ -219,7 +269,7 @@ export function usePlayer(
       made.push(mute)
       mute.gain.value = muted ? 0 : 1
       muteNodes.current.set(id, mute)
-      src.connect(gain).connect(panner).connect(fader.gain).connect(fader.pan).connect(mute).connect(meter).connect(master)
+      src.connect(gain).connect(panner).connect(curveNode).connect(fader.gain).connect(fader.pan).connect(mute).connect(meter).connect(master)
       src.onended = () => {
         // 最後まで再生して止まったときも、部品を切り離して AudioContext を止める
         stopSource()
@@ -254,11 +304,17 @@ export function usePlayer(
       nodesRef.current = made
       clockRef.current = { ctxStart: at, offset: start, end }
       scheduleGain()
+      scheduleCurve()
       setPosition(start)
       setPlaying(true)
     },
-    [clip, id, others, muted, stopSource, scheduleGain],
+    [clip, id, others, muted, stopSource, scheduleGain, scheduleCurve],
   )
+
+  // 描いた音量の曲線が変わったら、再生中でもすぐ反映する
+  useEffect(() => {
+    scheduleCurve()
+  }, [gainCurve, scheduleCurve])
 
   // 再生中にフェーダーを動かしたら、すぐ反映する
   useEffect(() => {

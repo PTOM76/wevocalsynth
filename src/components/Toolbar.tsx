@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
-import { Box, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCirclePlay, faCopy, faCropSimple, faPaste, faPause, faPlay, faRepeat, faScissors, faStop, faXmark } from '@fortawesome/free-solid-svg-icons'
-import { SmallButton } from './waveform/WaveformToolbar'
+import { SmallButton, ToolbarDivider } from './waveform/WaveformToolbar'
 import { useT } from '../i18n/i18n'
 import LiveTime from './LiveTime'
 
@@ -42,7 +42,8 @@ export default function Toolbar(p: Props) {
     <Stack
       direction="row"
       spacing={0.5}
-      divider={<Divider orientation="vertical" flexItem sx={{ my: 1 }} />}
+      // すき間は Stack の spacing が付けるので、区切り線自体には付けない
+      divider={<ToolbarDivider />}
       sx={{ height: 40, px: 1, alignItems: 'center', borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
     >
       <Stack direction="row" sx={{ alignItems: 'center' }}>

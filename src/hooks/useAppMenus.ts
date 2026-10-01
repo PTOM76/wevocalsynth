@@ -30,6 +30,8 @@ interface Actions {
   /** 波形の帯を出すか（ピッチを出していないときは隠せない） */
   showWave: boolean
   toggleWave: () => void
+  showGain: boolean
+  toggleGain: () => void
   /** ピッチを表示していて解析済みか */
   pitchReady: boolean
   /** 選択範囲のピッチを強制表示（1）・強制非表示（-1）・解析のまま（0）にする */
@@ -105,8 +107,9 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       label: t('menu.view'),
       entries: [
         { label: t('menu.spectrogram'), checked: a.showSpectrogram, disabled: !a.hasClip, onClick: a.toggleSpectrogram },
-        { label: t('menu.wave'), checked: a.showWave, disabled: !a.hasClip || (a.showWave && !a.showPitch && !a.showSpectrogram), onClick: a.toggleWave },
+        { label: t('menu.wave'), checked: a.showWave, disabled: !a.hasClip || (a.showWave && !a.showPitch && !a.showSpectrogram && !a.showGain), onClick: a.toggleWave },
         { label: t('menu.pitch'), checked: a.showPitch, disabled: !a.hasClip, onClick: a.togglePitch },
+        { label: t('menu.gain'), checked: a.showGain, disabled: !a.hasClip, onClick: a.toggleGain },
       ],
     },
     {

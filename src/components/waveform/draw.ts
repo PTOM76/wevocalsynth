@@ -10,16 +10,25 @@ export const RULER_HEIGHT = 24
 const MIN_WAVE_HEIGHT = 80
 
 /**
- * Canvas 全体の高さ `total` を、時間軸と帯（上から波形・スペクトログラム・ピッチ）に割り振る。
- * ピッチ帯は時間軸を除いた高さの `pitchPercent` %（ほかの帯が無ければ高さいっぱい）、残りを波形とスペクトログラムで等分する
+ * Canvas 全体の高さ `total` を、時間軸と帯（上から波形・スペクトログラム・ピッチ・音量）に割り振る。
+ * 下の帯（ピッチ・音量）は時間軸を除いた高さの `pitchPercent` %（上の帯が無ければ高さいっぱい）を等分し、
+ * 残りを上の帯（波形・スペクトログラム）で等分する
  */
-export function laneHeights(total: number, show: { wave: boolean; spec: boolean; pitch: boolean }, pitchPercent: number) {
+export function laneHeights(total: number, show: { wave: boolean; spec: boolean; pitch: boolean; gain?: boolean }, pitchPercent: number) {
   const body = Math.max(MIN_WAVE_HEIGHT, total - RULER_HEIGHT)
   const upper = (show.wave ? 1 : 0) + (show.spec ? 1 : 0)
-  const pitchH = show.pitch ? (upper ? Math.round((body * pitchPercent) / 100) : body) : 0
-  const each = upper ? (body - pitchH) / upper : 0
+  const lower = (show.pitch ? 1 : 0) + (show.gain ? 1 : 0)
+  const lowerH = lower ? (upper ? Math.round((body * pitchPercent) / 100) : body) : 0
+  const pitchH = show.pitch ? Math.round(lowerH / lower) : 0
+  const each = upper ? (body - lowerH) / upper : 0
   const waveH = show.wave ? Math.round(each) : 0
-  return { waveH, specH: show.spec ? body - pitchH - waveH : 0, pitchH, height: RULER_HEIGHT + body }
+  return {
+    waveH,
+    specH: show.spec ? body - lowerH - waveH : 0,
+    pitchH,
+    gainH: show.gain ? lowerH - pitchH : 0,
+    height: RULER_HEIGHT + body,
+  }
 }
 
 export { hzToMidi }
@@ -71,15 +80,24 @@ export interface DrawContext {
   view: View
   pal: Theme['palette']
   dark: boolean
-  /** 波形・スペクトログラム・ピッチの帯の高さ（`laneHeights` で決める。出さない帯は 0） */
+  /** 波形・スペクトログラム・ピッチ・音量の帯の高さ（`laneHeights` で決める。出さない帯は 0） */
   waveH: number
   specH: number
   pitchH: number
+  gainH?: number
 }
 
 /** スペクトログラム・ピッチの帯の上端 */
 const specTop = (c: DrawContext) => RULER_HEIGHT + c.waveH
 const pitchTop = (c: DrawContext) => RULER_HEIGHT + c.waveH + c.specH
+export const gainTop = (c: Pick<DrawContext, 'waveH' | 'specH' | 'pitchH'>) => RULER_HEIGHT + c.waveH + c.specH + c.pitchH
+
+/** 音量の帯の縦軸（dB） */
+export const GAIN_MIN_DB = -24
+export const GAIN_MAX_DB = 12
+/** 音量の帯の y（帯の中の位置）→ dB / dB → y */
+export const gainDbAt = (y: number, h: number) => GAIN_MAX_DB - (Math.min(Math.max(y, 0), h) / h) * (GAIN_MAX_DB - GAIN_MIN_DB)
+const gainY = (db: number, top: number, h: number) => top + ((GAIN_MAX_DB - db) / (GAIN_MAX_DB - GAIN_MIN_DB)) * h
 
 const toX = ({ width, view }: DrawContext, t: number) => ((t - view.start) / view.dur) * width
 
@@ -171,15 +189,47 @@ export function drawSpectrogram(c: DrawContext, spec: Spectrogram | null, layer:
 }
 
 /** 帯の種類 */
-export type Lane = 'wave' | 'spec' | 'pitch'
+export type Lane = 'wave' | 'spec' | 'pitch' | 'gain'
 
 /** フォーカスしている帯の左端に色の帯を描く（ツールバーとショートカットがその帯に効くことを示す） */
 export function drawLaneFocus(c: DrawContext, lane: Lane) {
-  const { g, pal, waveH, specH, pitchH } = c
-  const [y, h] = lane === 'wave' ? [RULER_HEIGHT, waveH] : lane === 'spec' ? [specTop(c), specH] : [pitchTop(c), pitchH]
+  const { g, pal, waveH, specH, pitchH, gainH = 0 } = c
+  const [y, h] = lane === 'wave' ? [RULER_HEIGHT, waveH] : lane === 'spec' ? [specTop(c), specH] : lane === 'pitch' ? [pitchTop(c), pitchH] : [gainTop(c), gainH]
   if (h <= 0) return
   g.fillStyle = pal.primary.main
   g.fillRect(0, y, 3, h)
+}
+
+/**
+ * 音量の帯: dB の目盛りと、描いた音量の曲線（フレーム間隔 `hopSec`、0 は元の音量）。
+ * 描いていなければ 0 dB の線だけを出す
+ */
+export function drawGainLane(c: DrawContext, curve: Float32Array | null, hopSec: number) {
+  const { g, width, view, pal, gainH = 0 } = c
+  const top = gainTop(c)
+  if (gainH <= 0) return
+  g.fillStyle = pal.divider
+  g.fillRect(0, top, width, 1)
+  // 目盛り（0 dB は少し濃く）
+  for (const db of [12, 6, 0, -6, -12, -24]) {
+    const y = Math.round(gainY(db, top, gainH))
+    g.fillStyle = db === 0 ? alpha(pal.text.secondary, 0.5) : alpha(pal.divider, 0.6)
+    g.fillRect(0, y, width, 1)
+    g.fillStyle = pal.text.secondary
+    if (db !== -24) g.fillText(`${db > 0 ? '+' : ''}${db}`, 4, y - 6)
+  }
+  if (!curve) return
+  g.strokeStyle = pal.warning.main
+  g.lineWidth = 2
+  g.beginPath()
+  for (let x = 0; x < width; x++) {
+    const tt = view.start + (x / width) * view.dur
+    const k = Math.min(curve.length - 1, Math.max(0, Math.round(tt / hopSec)))
+    const y = gainY(curve[k], top, gainH)
+    if (x === 0) g.moveTo(x, y)
+    else g.lineTo(x, y)
+  }
+  g.stroke()
 }
 
 /** 選択範囲の塗りと両端の線（高さ `h` まで） */

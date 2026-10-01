@@ -3,7 +3,7 @@ import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { AUDIO_ACCEPT, decodeFile } from '../audio/decode'
 import { PROJECT_EXT, isProjectFile, loadProject, type Project } from '../project/projectFile'
-import { applyPitchCurve, spliceProcessed } from '../audio/edit'
+import { applyGainCurve, applyPitchCurve, spliceProcessed } from '../audio/edit'
 import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
@@ -34,6 +34,7 @@ import { usePitchClipboard } from './usePitchClipboard'
 import { useLanes } from './useLanes'
 import { useOutput } from './useOutput'
 import { useSeek } from './useSeek'
+import { GAIN_HOP_SEC, useGainCurve } from './useGainCurve'
 import { makeTrack, newTrackId } from '../audio/tracks'
 import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
@@ -80,7 +81,9 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   })
   // 帯（波形・スペクトログラム・ピッチ）の表示とフォーカス
   const lanes = useLanes()
-  const { showWave, setShowWave, showSpec, setShowSpec, showPitch, setShowPitch, focusLane, setFocusLane } = lanes
+  const { showWave, setShowWave, showSpec, setShowSpec, showPitch, setShowPitch, showGain, setShowGain, focusLane, setFocusLane } = lanes
+  // 音量の帯に描いた曲線（再生にすぐ反映し、適用で音声に書き込む）
+  const gainCurve = useGainCurve()
   const [penMode, setPenMode] = useState(false)
   const [autoMode, setAutoMode] = useState<Mode | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
@@ -115,6 +118,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     faders: tracks.faders,
     muted: tracks.activeMuted,
     liveGain: (gainDb || pan) && editRangesForGain.length ? { ranges: editRangesForGain, db: gainDb, pan } : null,
+    gainCurve: editing && gainCurve.curve?.clip === edited ? { db: gainCurve.curve.db, hopSec: GAIN_HOP_SEC } : null,
   })
   const pitchTarget = usePitchTarget()
 
@@ -200,6 +204,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
       cmd.clearClipboard()
       // 前のファイルの表示設定を持ち越すと、開いた直後に重い解析やプレビュー処理が走るため戻す
       lanes.reset()
+      gainCurve.clear()
       setPenMode(false)
       pitchTarget.clear()
       setParams((p) => ({ ...(project ? project.params : p), ...NEUTRAL }))
@@ -228,7 +233,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
           .catch(() => {})
       }
     },
-    [history, tracks, lanes, pitchTarget, cmd, settings.initialMode, settings.autoTempo],
+    [history, tracks, lanes, gainCurve, pitchTarget, cmd, settings.initialMode, settings.autoTempo],
   )
 
   const loadFile = useCallback(
@@ -285,6 +290,15 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
       }
       pitchTarget.clear()
     })
+
+  /** 描いた音量の曲線を音声に書き込み、履歴に積む */
+  const applyGain = () => {
+    const c = gainCurve.curve
+    if (!edited || c?.clip !== edited) return
+    commit(applyGainCurve(edited, c.db, GAIN_HOP_SEC), t('gainCurve.label'))
+    gainCurve.clear()
+    setToast({ severity: 'success', message: t('toast.applied') })
+  }
 
   // プロジェクトの保存と書き出し
   const { baseName, exportName, saveProjectFile, exportFile } = useOutput({
@@ -403,7 +417,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     // 再生
     player, preview, loop, playback,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
-    showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, focusLane, setFocusLane, clip, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
+    showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, focusLane, setFocusLane, clip, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
     cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker, dragOver,

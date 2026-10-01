@@ -1,3 +1,4 @@
+import { GAIN_HOP_SEC, type GainPoint } from '../hooks/useGainCurve'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Slider, Stack, Typography } from '@mui/material'
 import { usePalette } from './waveform/usePalette'
@@ -19,6 +20,9 @@ import {
   drawWave,
   drawGhostWave,
   drawLaneFocus,
+  drawGainLane,
+  gainDbAt,
+  gainTop,
   type Lane,
   pitchRange,
   type BeatGrid,
@@ -83,6 +87,10 @@ interface Props {
   ghosts?: Clip[]
   /** 波形の帯を出すか（偽ならピッチだけ） */
   showWave: boolean
+  /** 音量の帯を出すか、描いた音量の曲線（dB、`GAIN_HOP_SEC` 間隔）と、ペンで描く */
+  showGain: boolean
+  gainCurve: Float32Array | null
+  onDrawGain: (from: GainPoint, to: GainPoint) => void
   /** フォーカスしている帯（ツールバーとショートカットが効く）。押した帯にフォーカスを移す */
   focusLane: Lane
   onFocusLane: (lane: Lane) => void
@@ -148,10 +156,12 @@ export default function Waveform(props: Props) {
   const ghostPeaks = useMemo(() => (width > 0 && ghosts?.length ? ghosts.map((g) => computePeaks(g, width, view)) : []), [ghosts, width, view])
   const range = useMemo(() => (pitch ? pitchRange(pitch) : null), [pitch])
   const showWave = props.showWave
-  const { waveH, specH, pitchH, height } = laneHeights(size.height, { wave: showWave, spec: showSpectrogram, pitch: showPitch }, props.pitchPercent)
-  // ピッチ帯と上の帯（波形・スペクトログラム）の境目のドラッグは、両方あるときだけ
+  const showGain = props.showGain
+  const { waveH, specH, pitchH, gainH, height } = laneHeights(size.height, { wave: showWave, spec: showSpectrogram, pitch: showPitch, gain: showGain }, props.pitchPercent)
+  // 下の帯（ピッチ・音量）と上の帯（波形・スペクトログラム）の境目のドラッグは、両方あるときだけ
   const upperH = waveH + specH
-  const divider = useLaneDivider(canvasRef, { waveH: upperH, pitchH }, showPitch && upperH > 0, props.onPitchPercentChange)
+  const lowerH = pitchH + gainH
+  const divider = useLaneDivider(canvasRef, { waveH: upperH, pitchH: lowerH }, lowerH > 0 && upperH > 0, props.onPitchPercentChange)
   const [dividerHover, setDividerHover] = useState(false)
   const specLayer = useMemo(
     () => (showSpectrogram && spectrogram && width > 0 && specH > 0 ? spectrogramLayer(spectrogram, width, specH, view) : null),
@@ -169,7 +179,7 @@ export default function Waveform(props: Props) {
     g.clearRect(0, 0, width, height)
     g.font = `11px ${font}`
     g.textBaseline = 'middle'
-    const c: DrawContext = { g, width, view, pal, dark, waveH, specH, pitchH }
+    const c: DrawContext = { g, width, view, pal, dark, waveH, specH, pitchH, gainH }
 
     drawRuler(c)
     // スペクトログラムは波形の代わりに表示する。選択範囲は波形などに隠れないよう、最後に重ねる
@@ -181,11 +191,12 @@ export default function Waveform(props: Props) {
     // スペクトログラムは波形を置き換えず、自分の帯に描く
     if (showSpectrogram) drawSpectrogram(c, spectrogram, specLayer)
     if (showPitch) drawPitchLane(c, pitch, range, target)
+    if (showGain) drawGainLane(c, props.gainCurve, GAIN_HOP_SEC)
     if (beatGrid) drawBeatGrid(c, beatGrid, height)
     for (const r of selections) drawSelection(c, r, height)
     // 帯が2本以上あるときだけ、どれにフォーカスしているかを示す
-    if ([showWave, showSpectrogram, showPitch].filter(Boolean).length > 1) drawLaneFocus(c, props.focusLane)
-  }, [showWave, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
+    if ([showWave, showSpectrogram, showPitch, showGain].filter(Boolean).length > 1) drawLaneFocus(c, props.focusLane)
+  }, [showWave, showGain, props.gainCurve, gainH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
 
   // 再生位置の線（再生中は毎フレーム変わるので、こちらだけを描き直す）
   useEffect(() => {
@@ -256,6 +267,23 @@ export default function Waveform(props: Props) {
     return { k, midi: e.shiftKey ? Math.round(m) : m }
   }
 
+  /** 音量の帯の上の点（Shift で 1dB に吸着、Alt で元の音量に戻す）。描画中でなく帯の外なら null */
+  const gainDrawRef = useRef<GainPoint | null>(null)
+  const gainPointAt = (e: React.PointerEvent): GainPoint | null => {
+    if (!penMode || !showGain) return null
+    const rect = canvasRef.current!.getBoundingClientRect()
+    const y = e.clientY - rect.top - gainTop({ waveH, specH, pitchH })
+    if (gainDrawRef.current === null && (y < 0 || y > gainH)) return null
+    const k = Math.round(timeAt(e.clientX) / GAIN_HOP_SEC)
+    if (e.altKey) return { k, db: null }
+    const db = gainDbAt(y, gainH)
+    return { k, db: e.shiftKey ? Math.round(db) : db }
+  }
+  const drawGainTo = (p: GainPoint) => {
+    props.onDrawGain(gainDrawRef.current ?? p, p)
+    gainDrawRef.current = p
+  }
+
   const drawTo = (p: DrawPoint) => {
     props.onDraw(drawRef.current ?? p, p)
     drawRef.current = p
@@ -284,7 +312,7 @@ export default function Waveform(props: Props) {
           width: '100%',
           height,
           display: 'block',
-          cursor: rulerHover ? 'pointer' : dividerHover ? 'row-resize' : penMode && showPitch ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
+          cursor: rulerHover ? 'pointer' : dividerHover ? 'row-resize' : penMode && (showPitch || showGain) ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
         }}
         onContextMenu={(e) => {
           e.preventDefault()
@@ -293,7 +321,7 @@ export default function Waveform(props: Props) {
         onPointerDown={(e) => {
           // 押した帯にフォーカスを移す（時間目盛りの上は変えない）
           const ly = e.clientY - e.currentTarget.getBoundingClientRect().top - RULER_HEIGHT
-          if (ly >= 0) props.onFocusLane(ly < waveH ? 'wave' : ly < upperH ? 'spec' : 'pitch')
+          if (ly >= 0) props.onFocusLane(ly < waveH ? 'wave' : ly < upperH ? 'spec' : ly < upperH + pitchH ? 'pitch' : 'gain')
           // 右クリックは範囲選択を始めない（コンテキストメニューに任せる）
           if (e.button === 2) return
           altRef.current = e.altKey
@@ -328,6 +356,8 @@ export default function Waveform(props: Props) {
           }
           const p = drawPointAt(e)
           if (p) return drawTo(p)
+          const gp = gainPointAt(e)
+          if (gp) return drawGainTo(gp)
           const t0 = snapTime(e.clientX)
           const hit = edgeAt(e.clientX)
           if (hit) {
@@ -349,6 +379,11 @@ export default function Waveform(props: Props) {
           if (drawRef.current) {
             const p = drawPointAt(e)
             if (p) drawTo(p)
+            return
+          }
+          if (gainDrawRef.current) {
+            const p = gainPointAt(e)
+            if (p) drawGainTo(p)
             return
           }
           const d = dragRef.current
@@ -378,8 +413,9 @@ export default function Waveform(props: Props) {
             scrubRef.current = false
             return
           }
-          if (drawRef.current) {
+          if (drawRef.current || gainDrawRef.current) {
             drawRef.current = null
+            gainDrawRef.current = null
             return
           }
           const d = dragRef.current

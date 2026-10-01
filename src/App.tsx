@@ -116,6 +116,8 @@ export default function App() {
     togglePitch: () => ed.setShowPitch(!ed.showPitch),
     showWave: ed.showWave,
     toggleWave: () => ed.setShowWave(!ed.showWave),
+    showGain: ed.showGain,
+    toggleGain: () => ed.setShowGain(!ed.showGain),
     pitchReady: ed.showPitch && !!ed.pitch,
     setVoicing: (v) => ed.voicing.set(ed.selections, v),
     extract: (stem) => void ed.extract(stem),
@@ -185,6 +187,9 @@ export default function App() {
       beatGrid={beatGrid}
       ghosts={editing ? ed.tracks.ghosts : undefined}
       showWave={ed.showWave}
+      showGain={ed.showGain}
+      gainCurve={ed.gainCurve.curve?.clip === shown ? ed.gainCurve.curve.db : null}
+      onDrawGain={(from, to) => edited && shown === edited && ed.gainCurve.draw(edited, from, to)}
       focusLane={ed.focusLane}
       onFocusLane={ed.setFocusLane}
     />
@@ -216,6 +221,12 @@ export default function App() {
       showWave={ed.showWave}
       onShowWaveChange={ed.setShowWave}
       pitchFocused={ed.focusLane === 'pitch'}
+      showGain={ed.showGain}
+      onShowGainChange={ed.setShowGain}
+      gainFocused={ed.focusLane === 'gain'}
+      hasGainCurve={!!ed.gainCurve.curve && ed.gainCurve.curve.clip === edited}
+      onApplyGain={ed.applyGain}
+      onClearGain={ed.gainCurve.clear}
       penMode={ed.penMode}
       onPenModeChange={ed.setPenMode}
       hasCurve={hasCurve}

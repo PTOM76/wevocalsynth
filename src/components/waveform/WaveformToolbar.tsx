@@ -1,4 +1,4 @@
-import { Button, IconButton, Tooltip } from '@mui/material'
+import { Button, Divider, IconButton, Tooltip } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
@@ -6,6 +6,7 @@ import {
   faArrowUp,
   faChartColumn,
   faChartArea,
+  faVolumeHigh,
   faCheck,
   faExpand,
   faGripLines,
@@ -64,6 +65,13 @@ interface Props {
   onShowWaveChange: (v: boolean) => void
   /** ピッチの帯にフォーカスしているか（ピッチの道具はそのときだけ出す） */
   pitchFocused: boolean
+  /** 音量の帯（表示・フォーカス）と、描いた音量の曲線の適用・破棄 */
+  showGain: boolean
+  onShowGainChange: (v: boolean) => void
+  gainFocused: boolean
+  hasGainCurve: boolean
+  onApplyGain: () => void
+  onClearGain: () => void
   onShowPitchChange: (show: boolean) => void
   penMode: boolean
   onPenModeChange: (pen: boolean) => void
@@ -92,6 +100,15 @@ interface Props {
   disabled?: boolean
 }
 
+/**
+ * ツールバーの操作のまとまりの区切り線（ツールバーの切り取りなどとの間と、帯ごとの操作の間で同じものを使う）。
+ * 置き場所の行の高さによらず同じ長さになるよう、高さを決めて上下中央に置く。`gap` なら左右にすき間を付ける
+ */
+export function ToolbarDivider({ gap = false }: { gap?: boolean }) {
+  return <Divider orientation="vertical" flexItem sx={{ height: 24, alignSelf: 'center', mx: gap ? 0.5 : 0 }} />
+}
+const Sep = () => <ToolbarDivider gap />
+
 /** 波形の表示ツール（拡大縮小・表示の切替・ピッチ描画）。PC はツールバー、スマホは波形のすぐ下に置く */
 export default function WaveformToolbar(p: Props) {
   const t = useT()
@@ -103,13 +120,14 @@ export default function WaveformToolbar(p: Props) {
       <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomOut') })} label={t('wave.zoomOut')} icon={faMagnifyingGlassMinus} disabled={off || !p.zoomed} onClick={p.onZoomOut} />
       <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomIn') })} label={t('wave.zoomIn')} icon={faMagnifyingGlassPlus} disabled={off || !p.canZoomIn} onClick={p.onZoomIn} />
       <SmallButton title={t('wave.showAll')} label={t('wave.showAll')} icon={faExpand} disabled={off || !p.zoomed} onClick={p.onShowAll} />
+      <Sep />
       <SmallButton
         title={t('wave.showWave')}
         label={t('wave.showWave')}
         icon={faChartArea}
         pressed={p.showWave}
         // どちらか一方の帯は必ず出す
-        disabled={off || (p.showWave && !p.showPitch && !p.showSpectrogram)}
+        disabled={off || (p.showWave && !p.showPitch && !p.showSpectrogram && !p.showGain)}
         onClick={() => p.onShowWaveChange(!p.showWave)}
       />
       <SmallButton
@@ -128,6 +146,38 @@ export default function WaveformToolbar(p: Props) {
         disabled={off}
         onClick={() => p.onShowPitchChange(!p.showPitch)}
       />
+      <SmallButton
+        title={t('wave.showGain')}
+        label={t('wave.showGain')}
+        icon={faVolumeHigh}
+        pressed={p.showGain}
+        disabled={off}
+        onClick={() => p.onShowGainChange(!p.showGain)}
+      />
+      {/* ここから帯ごとの操作。帯の表示の切り替えとの間に区切り線を入れる */}
+      {p.showGain && (p.gainFocused || p.hasGainCurve) && <Sep />}
+      {/* 音量の帯にフォーカスしているときは、音量の曲線を描くペン */}
+      {p.showGain && p.gainFocused && (
+        <SmallButton
+          title={t('wave.drawGainTooltip')}
+          label={t('wave.drawGain')}
+          icon={faPen}
+          pressed={p.penMode}
+          disabled={off}
+          onClick={() => p.onPenModeChange(!p.penMode)}
+        />
+      )}
+      {/* 描いた音量の曲線は、再生にはすぐ反映される。適用で音声に書き込み、破棄で捨てる */}
+      {p.showGain && p.hasGainCurve && (
+        <>
+          {/* ピッチの曲線の「適用」と同じ見た目にそろえる */}
+          <Button size="small" variant="contained" startIcon={<FontAwesomeIcon icon={faCheck} />} disabled={p.busy} onClick={p.onApplyGain}>
+            {t('common.apply')}
+          </Button>
+          <SmallButton title={t('gainCurve.discard')} label={t('gainCurve.discard')} icon={faTrashCan} disabled={p.busy} onClick={p.onClearGain} />
+        </>
+      )}
+      {p.showPitch && (p.pitchFocused || p.hasCurve) && <Sep />}
       {/* ピッチの道具は、ピッチの帯にフォーカスしているときだけ出す（ツールバーはフォーカスしている帯の操作にする） */}
       {p.showPitch && p.pitchFocused && (
         <>
