@@ -27,7 +27,7 @@ WeVocalSynthは、Webブラウザ上で音声素材のピッチおよび時間�
 ## 技術スタック
 | 項目 | 内容 |
 | --- | --- |
-| 画面 | React + TypeScript + MUI（Vite） |
+| 画面 | React + TypeScript + MUI（[PevenMUI](https://github.com/PTOM76/pevenmui)、Vite） |
 | 音声処理 | Rust → WebAssembly（Web Worker で実行） |
 | 再生 | Web Audio API、AudioWorklet |
 
@@ -39,7 +39,8 @@ npm install
 npm run dev
 ```
 
-`extractor/`（ボーカル抽出）と `wevocal-lib/`（共有の信号処理）は submodule。`--recursive` を付け忘れたら `git submodule update --init` で取得する。
+`extractor/`（ボーカル抽出）、`wevocal-lib/`（共有の信号処理）、`pevenmui/`（UI 部品）は submodule。`--recursive` を付け忘れたら `git submodule update --init` で取得する。
+`--recursive` だと `extractor/pevenmui/` も取得されるが、直すのはルートの `pevenmui/` の方。紛らわしければ `extractor/` で `todo setup:nested` を実行して隠す。
 
 音声処理（`dsp/`）を変えるときだけ Rust が要る。ビルド済みの `.wasm` をリポジトリに含めているので、画面だけなら Node.js だけで動く。
 

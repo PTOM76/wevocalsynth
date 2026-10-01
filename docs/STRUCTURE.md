@@ -11,7 +11,7 @@ src/
 ├── components/      画面部品
 │   ├── waveform/    帯パネルの描画（Canvas）と表示範囲、ツールバーのボタン
 │   ├── tracks/      トラックの欄（波形付きの一覧 / タブ）・右クリックメニュー・名前の変更・並び替え
-│   └── menu/        メニューの項目の定義と描画
+│   └── layout/      PC とスマホのレイアウト
 ├── audio/           音声データの処理と再生（React に依存しない関数が中心）。トラック・ミックス・MIDI・音声の作成もここ
 │   └── realtime/    ループ試聴の AudioWorklet
 ├── dsp/             Worker と wasm の橋渡し、wevocal_dsp.wasm
@@ -23,7 +23,8 @@ src/
 └── i18n/            訳文と t()
 dsp/src/             Rust の DSP
 wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT）。submodule
-extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追加機能としてビルドする（docs/EXTRACTOR.md）
+extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追加機能としてビルドする（docs/EXTRACTOR.md）。単体の Web ツールでもある
+pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確認ダイアログ・分割バー・設定画面の部品）。submodule
 ```
 
 | フック | 担当 |
