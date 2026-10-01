@@ -35,8 +35,9 @@ src/
 ├── hooks/           状態と操作（useEditor がまとめる）
 ├── components/      画面部品
 │   ├── waveform/    波形の描画（Canvas）と表示範囲
+│   ├── tracks/      トラックの欄（波形付きの一覧 / タブ）・右クリックメニュー・名前の変更
 │   └── menu/        メニューの項目の定義と描画
-├── audio/           音声データの処理と再生（React に依存しない関数が中心）
+├── audio/           音声データの処理と再生（React に依存しない関数が中心）。トラック・ミックス・MIDI・音声の作成もここ
 │   └── realtime/    ループ試聴の AudioWorklet
 ├── dsp/             Worker と wasm の橋渡し、wevocal_dsp.wasm
 ├── project/         プロジェクトファイル（.wvsp）と自動保存
@@ -53,8 +54,9 @@ extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追�
 | フック | 担当 |
 | --- | --- |
 | `useEditor` | 状態と操作をまとめ、`App.tsx` に渡す |
-| `useHistory` | 元に戻す・やり直す・操作履歴。各段は前後のクリップとの差分と操作名だけを持つ（段数・メモリの上限は設定） |
-| `usePlayer` | Web Audio での再生 |
+| `useHistory` | トラックと、元に戻す・やり直す・操作履歴。各段は「どのトラックの差分か」と操作名（トラックの追加・削除は一覧）だけを持つ（段数・メモリの上限は設定） |
+| `useTracks` | トラックの操作（複製・追加・分ける・統合・名前・削除・選択）と、フェーダー・ミュート・ソロ・重ねる表示 |
+| `usePlayer` | Web Audio での再生。ほかのトラックも一緒に鳴らし、フェーダー・適用前の音量とパン・ミュートをすぐ反映する。レベルメーター用の AnalyserNode も持つ |
 | `usePlayback` | 再生・試聴・ループの切り替え（どれかを始めたらほかを止める） |
 | `usePreview` | 加工済みプレビューを裏で作る |
 | `useClipAnalysis` | F0・スペクトログラム（表示が ON のときだけ。解析の設定が変わったら解析し直す） |
@@ -62,8 +64,10 @@ extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追�
 | `usePitchVoicing` | ピッチの強制表示・非表示 |
 | `useTempo` | テンポの自動解析と候補 |
 | `useNumberDraft` | 数値欄（入力途中の文字を持ち、確定時に丸める） |
-| `useClipCommands` | 切り貼り・音量編集（JS で即時に処理） |
-| `useAutosave` | IndexedDB への自動保存と、起動時の復元 |
+| `useClipCommands` | 切り貼り・音量とパンの適用・フェードなど（JS で即時に処理） |
+| `useVocalExtract` | ボーカル抽出（追加機能）。範囲の置き換えと、ボーカル・伴奏の2トラックへの分割 |
+| `useTask` | 時間のかかる処理の、処理中の表示・進捗・中断（DSP の Worker を止める） |
+| `useAutosave` | IndexedDB への自動保存（トラックごと）と、起動時の復元 |
 | `useAppMenus` | メニューバー・⋮ メニュー・右クリックメニューの中身 |
 
 ### 波形（`components/waveform`）
@@ -102,7 +106,7 @@ extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追�
 | 読み込み | `decodeFile` で `Clip`（サンプルレート＋チャンネルごとの `Float32Array`）にする。WAV・MP4/M4A はファイルからサンプルレートを読み、同じレートでデコードする |
 | 初期化 | `useHistory.reset` で履歴を作り直し、ボーカル／楽器を自動判定してパラメータの初期値にする。テンポも解析して BPM・1拍目を設定に入れる |
 | 編集 | 編集のたびに新しい `Clip` を作って、操作名と一緒に `commit` する（元のクリップは書き換えない） |
-| 出力 | 書き出しダイアログで `exportAudio` を呼び、WAV / MP3 / Opus にしてダウンロードする |
+| 出力 | 書き出しダイアログで `exportAudio` を呼び、WAV / MP3 / Opus にしてダウンロードする。選んでいるトラック（フェーダーを掛けたもの）か、全トラックのミックス（`mixClips`。ミュート・ソロとフェーダーに従う）を選べる |
 
 ### 加工（ピッチ・長さ）
 1. `applyEditToRanges` が各範囲を後ろから順に処理する（前の範囲の位置がずれないように）
@@ -110,6 +114,8 @@ extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追�
 3. `spliceProcessed` で元の位置に差し戻す。継ぎ目は 5ms のクロスフェードでつなぐ
 
 `applyPitchCurve`（ピッチカーブ）は曲線のある部分だけを切り出して処理し、同じように差し戻す。
+
+ピッチの一括操作（半音上下・平らにする・音程に揃える・ビブラート・MIDI の当てはめ）は、どれも「目標ピッチの曲線を返す関数」（`audio/pitchTools.ts`）で、`usePitchTools.edit` に渡す。MIDI は `audio/midi.ts` で読み、その時刻に鳴っている音符（和音なら一番高い音）を目標にする（`fitMidi`）。
 
 同じ設定の加工済みプレビューがあれば、2 を飛ばしてプレビューをそのまま差し込む。
 
@@ -160,6 +166,20 @@ FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効く�
 - 音声データは `transfer` で渡し、コピーを避ける
 - Worker は1つで、リクエストは順番に処理される
 
+## トラック
+編集できるのは**選んでいるトラックだけ**で、ほかのトラックは一緒に鳴らして聴く参照になる。今までの編集の操作（加工・音量・切り貼り・抽出）は、そのまま選んでいるトラックのクリップに効く。
+
+| 持つもの | 場所 | 元に戻す | 保存 |
+| --- | --- | --- | --- |
+| トラックの一覧（名前・原音・加工後） | `useHistory` | できる | する |
+| フェーダー（音量 dB・パン） | `useTracks` | できない | する |
+| ミュート・ソロ・重ねる表示 | `useTracks` | できない | する |
+
+- 履歴は1本で、各段は「トラック id と差分」か「トラックの一覧」。元に戻すと、変わったトラックに切り替わる（`audio/tracks.ts`、`hooks/useHistory.ts`）
+- トラックを増やす操作: 複製、ファイルの追加、ボーカルと伴奏に分ける（`separateBoth`、推論は1回）、統合（`mixClips`、一番上のトラックのサンプルレートに合わせる）、音声の作成（`audio/synth.ts`）
+- トラックの欄（`components/tracks/TrackPanel`）: 2本以上のときだけ出す。広げると波形付きの一覧（小さな波形は大きな波形と同じ表示範囲）、折りたたむとタブ
+- ほかのトラックの波形は、右クリックメニューで大きな波形の後ろに薄く重ねられる（`drawGhostWave`）
+
 ## 再生
 
 | 種類 | 実装 | 用途 |
@@ -169,14 +189,25 @@ FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効く�
 | ループ | `useRealtimePreview`（AudioWorklet のグラニュラー方式） | スライダー操作中の即時確認 |
 | 曲線の試聴 | `usePitchTools` が曲線の部分だけ加工し、`usePlayer` で再生 | ピッチの加工を適用する前の確認 |
 
+### 音の通り道（`usePlayer`）
+```
+選んでいるトラック: 音源 → 適用前の音量 → 適用前のパン → フェーダー（音量・パン） → ミュート → メーター ┐
+ほかのトラック:     音源 ─────────────────────────────→ フェーダー（音量・パン） → ミュート → メーター ┼→ 全体（左右のメーター）→ 出力
+```
+- 適用前の音量・パンは、選択範囲の境目の時刻に予約する（5ms で切り替え）。再生中に動かしても入れ直す
+- ミュート・ソロで鳴らさないトラックも再生しておき、ミュートの音量を 0 にする（再生中の切り替えをすぐ反映するため）
+- パンは StereoPannerNode（モノラルも左右同じ音のステレオにしてから）。適用（`panRange`）と書き出し（`applyFader`）も同じ式なので、聴こえる音と結果が一致する
+- 止めたら、再生のたびに作った部品をすべて切り離し、AudioContext を一時停止する
+- レベルメーター（`LevelMeter`）は AnalyserNode を毎フレーム Canvas に直接描く。鳴っていなくて表示も消えたら 0.25 秒おきの確認にする
+
 再生中の位置は React の状態として更新しない（更新すると画面全体が毎回描き直されて重くなった）。再生位置の線・時間の表示・自動スクロールは、それぞれ `livePosition()` を自分で読む。
 
 ## 保存
 
 | 対象 | 保存先 | 形式 |
 | --- | --- | --- |
-| プロジェクト | ダウンロード（.wvsp） | 無圧縮（"WVSP"＋ヘッダ JSON＋f32 の原音・加工後）。古い gzip のファイルも読める |
-| 自動保存 | IndexedDB（`wevocalsynth` / `kv` / `autosave:original`・`autosave:edited`・`autosave:meta`） | `Float32Array` をそのまま。書き込みは Worker で、ブラウザが空いているときに行う |
+| プロジェクト | ダウンロード（.wvsp） | 無圧縮（"WVSP"＋ヘッダ JSON＋トラックごとの f32 の原音・加工後）。版 2 はヘッダにトラックの一覧（名前・フェーダー・ミュート・ソロ・重ねる表示）を持つ。版 1（1トラック）と古い gzip のファイルも読める |
+| 自動保存 | IndexedDB（`wevocalsynth` / `kv` / `autosave:track:<id>:original`・`…:edited`・`autosave:meta`） | `Float32Array` をそのまま。音声は変わったトラックだけ、ブラウザが空いているときに Worker で書く。フェーダーなどだけが変わったときは、音声がすべて保存済みなら 0.3 秒後にすぐ書く。以前の形式（1トラック）も読める |
 | 設定 | localStorage（`wevocalsynth.settings`、画面の状態は `wevocalsynth.*`） | JSON |
 
 設定 → データ から、作業データ・オフライン用キャッシュ・設定を削除できる（`project/storage.ts`）。
@@ -188,6 +219,7 @@ FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効く�
 | `npm run build:wasm` | Rust を wasm にビルドし `src/dsp/wevocal_dsp.wasm` にコピー（simd128 有効） |
 | `npm run dev` / `npm run build` | Vite の開発サーバー / 本番ビルド |
 | `npm run test:dsp` | DSP のテスト |
+| `npm run build:wasm:extractor` | ボーカル抽出の STFT（`extractor/dsp`）を wasm にビルド（隣の `wevocal-lib` を使う） |
 | `npm run build:addons` | 追加機能（ボーカル抽出の実行環境とモデル）を `dist/addons/` に作る。`npm run build` の後に実行する |
 | `npm run build:addons:dev` | 同じものを `public/addons/` に作る（git には入れない）。`npm run dev` でもボーカル抽出を試せる。一度作れば `npm run build` でも `dist/` にコピーされる |
 
