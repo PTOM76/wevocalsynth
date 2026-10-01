@@ -2,12 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { AUDIO_ACCEPT, decodeFile } from '../audio/decode'
-import { downloadBlob } from '../audio/wav'
-import { EXPORT_EXT, exportAudio } from '../audio/export/exportAudio'
-import { sliceRanges } from '../audio/multiRange'
-import type { ExportSettings } from '../components/ExportDialog'
-import { PROJECT_EXT, isProjectFile, loadProject, saveProject, type Project } from '../project/projectFile'
-import { applyFader, applyPitchCurve, spliceProcessed } from '../audio/edit'
+import { PROJECT_EXT, isProjectFile, loadProject, type Project } from '../project/projectFile'
+import { applyPitchCurve, spliceProcessed } from '../audio/edit'
 import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
@@ -35,9 +31,10 @@ import { useVocalExtract } from './useVocalExtract'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { useTracks } from './useTracks'
 import { usePitchClipboard } from './usePitchClipboard'
-import type { Lane } from '../components/waveform/draw'
-import { isAudible, makeTrack, newTrackId } from '../audio/tracks'
-import { mixClips } from '../audio/mix'
+import { useLanes } from './useLanes'
+import { useOutput } from './useOutput'
+import { useSeek } from './useSeek'
+import { makeTrack, newTrackId } from '../audio/tracks'
 import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
 
@@ -78,22 +75,9 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     algorithm: 'psola',
     preserveFormant: false,
   })
-  // 波形の帯を出すか（偽ならピッチだけ）と、フォーカスしている帯（ツールバーとショートカットが効く）
-  const [showWave, setShowWaveState] = useState(true)
-  const [focusLaneState, setFocusLane] = useState<Lane>('wave')
-  const [showPitch, setShowPitchState] = useState(false)
-  const [showSpec, setShowSpecState] = useState(false)
-  // 帯を隠して何も出ていなくなるときは、波形の帯を出す（どれか1本は必ず出す）。出したときはその帯にフォーカスする
-  const setShowPitch = (v: boolean) => {
-    setShowPitchState(v)
-    if (!v && !showSpec) setShowWaveState(true)
-    if (v) setFocusLane('pitch')
-  }
-  const setShowSpec = (v: boolean) => {
-    setShowSpecState(v)
-    if (!v && !showPitch) setShowWaveState(true)
-    if (v) setFocusLane('spec')
-  }
+  // 帯（波形・スペクトログラム・ピッチ）の表示とフォーカス
+  const lanes = useLanes()
+  const { showWave, setShowWave, showSpec, setShowSpec, showPitch, setShowPitch, focusLane, setFocusLane } = lanes
   const [penMode, setPenMode] = useState(false)
   const [autoMode, setAutoMode] = useState<Mode | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
@@ -210,8 +194,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
       setSelectionsState([])
       cmd.clearClipboard()
       // 前のファイルの表示設定を持ち越すと、開いた直後に重い解析やプレビュー処理が走るため戻す
-      setShowPitch(false)
-      setShowSpec(false)
+      lanes.reset()
       setPenMode(false)
       pitchTarget.clear()
       setParams((p) => ({ ...(project ? project.params : p), ...NEUTRAL }))
@@ -240,7 +223,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
           .catch(() => {})
       }
     },
-    [history, tracks, pitchTarget, cmd, settings.initialMode, settings.autoTempo],
+    [history, tracks, lanes, pitchTarget, cmd, settings.initialMode, settings.autoTempo],
   )
 
   const loadFile = useCallback(
@@ -298,44 +281,17 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
       pitchTarget.clear()
     })
 
-  const baseName = fileName.replace(/\.[^.]+$/, '') || 'audio'
-  const saveProjectFile = () =>
-    task.run(t('task.saving'), async () => {
-      if (!original || !edited) return
-      const list = history.tracks.map((tr) => ({ name: tr.name, original: tr.original, edited: tr.clip, volume: tracks.faderOf(tr.id).db, pan: tracks.faderOf(tr.id).pan, mute: tracks.mix[tr.id]?.mute, solo: tracks.mix[tr.id]?.solo, overlay: tracks.overlay.has(tr.id) }))
-      const active = Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId))
-      downloadBlob(saveProject({ fileName, params, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
-      setToast({ severity: 'success', message: t('toast.saved') })
-    })
-
-  // 書き出しダイアログの設定で音声ファイルを作る。選択範囲が複数ならつなげて書き出す
-  const exportFile = (s: ExportSettings) =>
-    task.run(t('task.exporting'), async (signal) => {
-      if (!edited) return
-      // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける。選択範囲のみなら、どのトラックも同じ時間を切り出す
-      const render = (c: Clip, id: string) => {
-        const part = s.selectionOnly && selections.length ? sliceRanges(c, selections) : c
-        const f = tracks.faderOf(id)
-        return applyFader(part, f.db, f.pan)
-      }
-      // ミックス: 再生と同じく、ミュート・ソロに従って鳴るトラックだけを混ぜる（サンプルレートは選んでいるトラックに合わせる）
-      const audible = history.tracks.filter((tr) => isAudible(tr.id, tracks.mix, history.tracks))
-      let clip = render(edited, history.activeId)
-      if (s.mix && history.tracks.length > 1 && audible.length) {
-        const parts = audible.map((tr) => render(tr.clip, tr.id))
-        clip = await mixClips(parts, edited.sampleRate, Math.max(...parts.map((c) => c.channels.length)))
-      }
-      const blob = await exportAudio(
-        clip,
-        { ...s, range: null, sampleRate: s.sampleRate || clip.sampleRate },
-        setProgress,
-      )
-      // MP3 などの Worker は止められないので、中断されていたら結果を捨てる
-      if (signal.aborted) return
-      downloadBlob(blob, `${s.fileName.trim()}${EXPORT_EXT[s.format]}`)
-      setExportOpen(false)
-      setToast({ severity: 'success', message: t('toast.exported') })
-    })
+  // プロジェクトの保存と書き出し
+  const { baseName, saveProjectFile, exportFile } = useOutput({
+    fileName,
+    params,
+    history,
+    tracks,
+    selections,
+    task,
+    notify: (message) => setToast({ severity: 'success', message }),
+    closeExport: () => setExportOpen(false),
+  })
 
   // 通常の再生と試聴は、片方を始めたらもう片方を止める
   // ピッチ曲線の加工と試聴（試聴を始めるときはほかの再生を止める）
@@ -382,34 +338,9 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const selectAll = () => edited && setSelections([{ start: 0, end: clipDuration(edited) }])
   const clearSelection = () => setSelections([])
 
-  /**
-   * 再生位置を前後に動かす（矢印キー）。拍の線を出していれば前後の拍の線へ、出していなければ1秒。`fine` なら 0.1 秒。
-   * 再生中なら、動かした位置から続けて鳴らす（player.seek）
-   */
-  const seekBy = (dir: -1 | 1, fine: boolean) => {
-    if (!shown) return
-    const pos = player.livePosition()
-    let t: number
-    if (fine) t = pos + dir * 0.1
-    else if (settings.showBeatGrid && settings.bpm > 0) {
-      const beat = 60 / settings.bpm
-      const k = (pos - settings.beatOffset) / beat
-      // 今の位置がちょうど拍の線の上なら、隣の線へ
-      const next = dir > 0 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1
-      t = settings.beatOffset + next * beat
-    } else t = pos + dir
-    player.seek(Math.max(0, Math.min(duration, t)))
-  }
-  const seekEdge = (edge: 'start' | 'end') => shown && player.seek(edge === 'start' ? 0 : duration)
+  // 矢印キー・Home / End での再生位置の移動
+  const { seekBy, seekEdge } = useSeek({ shown, duration, settings, getPosition: player.livePosition, seek: player.seek })
 
-  // 帯の表示とフォーカス: フォーカスしている帯を隠したら、出ている帯（上から順）にフォーカスする
-  const shownLanes: Lane[] = [showWave && 'wave', showSpec && 'spec', showPitch && 'pitch'].filter(Boolean) as Lane[]
-  const focusLane: Lane = shownLanes.includes(focusLaneState) ? focusLaneState : (shownLanes[0] ?? 'wave')
-  /** 波形の帯を出す・隠す（ほかに出ている帯が無ければ隠せない。どれか1本は必ず出す） */
-  const setShowWave = (v: boolean) => {
-    if (!v && !showPitch && !showSpec) return
-    setShowWaveState(v)
-  }
   // ピッチの曲線の切り取り・コピー・貼り付け（ピッチの帯にフォーカスしているとき）
   const pitchClip = usePitchClipboard({
     edited,
