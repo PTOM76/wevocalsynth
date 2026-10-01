@@ -103,7 +103,7 @@ ex.dispose()
 - STFT＋逆STFT を JS で書いた今は、処理時間の4割を占める。wevocal-lib（Rust、SIMD）に移して縮める
 - 音質は「後段の加工に十分」（聴いた印象）
 - スマホ・int8 / fp32 の WebGPU の速さは未測定
-- 実験のコードは `experiments/vocal-extractor/`（git には入れていない）
+- 実験のコード（処理時間の内訳・出力の値を出す確認ページ）は削除した。git の履歴の `experiments/vocal-extractor/`（コミット bf5b964 まで）にある
 
 ### 実行方法
 | 実行方法 | 扱い |
