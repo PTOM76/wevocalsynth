@@ -31,6 +31,8 @@ export interface ExportSettings {
   sampleRate: number
   mono: boolean
   selectionOnly: boolean
+  /** 全トラックを混ぜて書き出す（偽なら選んでいるトラックだけ）。ミュート・ソロとフェーダーに従う */
+  mix: boolean
 }
 
 interface Props {
@@ -40,6 +42,8 @@ interface Props {
   sourceRate: number
   sourceChannels: number
   hasSelection: boolean
+  /** トラックの数（2本以上なら「書き出す対象」を出す） */
+  trackCount: number
   busy: boolean
   progress: number
   onExport: (s: ExportSettings) => void
@@ -78,6 +82,7 @@ export default function ExportDialog(p: Props) {
     sampleRate: 0,
     mono: false,
     selectionOnly: false,
+    mix: true,
   })
   const [opusOk, setOpusOk] = useState(false)
   const set = (patch: Partial<ExportSettings>) => setS((v) => ({ ...v, ...patch }))
@@ -163,6 +168,17 @@ export default function ExportDialog(p: Props) {
               ['mono', 'Mono'],
             ]}
           />
+          {p.trackCount > 1 && (
+            <Choice
+              label={t('export.target')}
+              value={s.mix ? 'mix' : 'active'}
+              onChange={(v) => set({ mix: v === 'mix' })}
+              options={[
+                ['mix', t('export.targetMix')],
+                ['active', t('export.targetActive')],
+              ]}
+            />
+          )}
           <Choice
             label={t('export.range')}
             value={s.selectionOnly ? 'selection' : 'whole'}

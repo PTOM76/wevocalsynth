@@ -34,7 +34,8 @@ import { useAutosave } from './useAutosave'
 import { useVocalExtract } from './useVocalExtract'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { useTracks } from './useTracks'
-import { makeTrack, newTrackId } from '../audio/tracks'
+import { isAudible, makeTrack, newTrackId } from '../audio/tracks'
+import { mixClips } from '../audio/mix'
 import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
 
@@ -292,10 +293,19 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const exportFile = (s: ExportSettings) =>
     task.run(t('task.exporting'), async (signal) => {
       if (!edited) return
-      const part = s.selectionOnly && selections.length ? sliceRanges(edited, selections) : edited
-      // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
-      const fader = tracks.faderOf(history.activeId)
-      const clip = applyFader(part, fader.db, fader.pan)
+      // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける。選択範囲のみなら、どのトラックも同じ時間を切り出す
+      const render = (c: Clip, id: string) => {
+        const part = s.selectionOnly && selections.length ? sliceRanges(c, selections) : c
+        const f = tracks.faderOf(id)
+        return applyFader(part, f.db, f.pan)
+      }
+      // ミックス: 再生と同じく、ミュート・ソロに従って鳴るトラックだけを混ぜる（サンプルレートは選んでいるトラックに合わせる）
+      const audible = history.tracks.filter((tr) => isAudible(tr.id, tracks.mix, history.tracks))
+      let clip = render(edited, history.activeId)
+      if (s.mix && history.tracks.length > 1 && audible.length) {
+        const parts = audible.map((tr) => render(tr.clip, tr.id))
+        clip = await mixClips(parts, edited.sampleRate, Math.max(...parts.map((c) => c.channels.length)))
+      }
       const blob = await exportAudio(
         clip,
         { ...s, range: null, sampleRate: s.sampleRate || clip.sampleRate },

@@ -402,6 +402,7 @@ export default function App() {
           sourceRate={edited.sampleRate}
           sourceChannels={edited.channels.length}
           hasSelection={!!selection}
+          trackCount={ed.tracks.tracks.length}
           busy={busy}
           progress={ed.progress}
           onExport={ed.exportFile}
