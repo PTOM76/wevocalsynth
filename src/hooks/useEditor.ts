@@ -383,7 +383,7 @@ export function useEditor(settings: Settings) {
   const clearSelection = () => setSelections([])
 
   // 矢印キー・Home / End での再生位置の移動
-  const { seekBy, seekEdge } = useSeek({ shown, duration, settings, getPosition: player.livePosition, seek: player.seek })
+  const { seekBy, seekEdge } = useSeek({ shown, duration, showBeatGrid: settings.showBeatGrid, ...projectTempo, getPosition: player.livePosition, seek: player.seek })
 
   // ピッチの曲線の切り取り・コピー・貼り付け（ピッチの帯にフォーカスしているとき）
   const pitchClip = usePitchClipboard({

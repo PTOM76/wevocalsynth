@@ -380,7 +380,6 @@
   "menu.wave": "波形",
   "wave.showWave": "波形表示",
   "project.rename": "プロジェクト名の変更",
-  "project.renameMenu": "プロジェクト名の変更…",
   "project.renameHint": "クリックでプロジェクト名を変更（保存・書き出しのファイル名になります）",
   "menu.gain": "音量",
   "wave.showGain": "音量表示",

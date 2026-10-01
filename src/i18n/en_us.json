@@ -380,7 +380,6 @@
   "menu.wave": "Waveform",
   "wave.showWave": "Show waveform",
   "project.rename": "Rename project",
-  "project.renameMenu": "Rename project…",
   "project.renameHint": "Click to rename the project (used as the file name when saving and exporting)",
   "menu.gain": "Volume",
   "wave.showGain": "Show volume",

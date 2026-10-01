@@ -1,11 +1,13 @@
 import type { Clip } from '../audio/types'
-import type { Settings } from '../settings/settings'
 
 interface Deps {
   /** 今表示しているクリップ（無ければ何もしない） */
   shown: Clip | null
   duration: number
-  settings: Pick<Settings, 'showBeatGrid' | 'bpm' | 'beatOffset'>
+  /** 拍の線を出しているか（設定）と、プロジェクトのテンポ */
+  showBeatGrid: boolean
+  bpm: number
+  beatOffset: number
   getPosition: () => number
   /** 再生中なら、動かした位置から続けて鳴らす（player.seek） */
   seek: (t: number) => void
@@ -19,7 +21,7 @@ export function useSeek(d: Deps) {
   const seekBy = (dir: -1 | 1, fine: boolean) => {
     if (!d.shown) return
     const pos = d.getPosition()
-    const { showBeatGrid, bpm, beatOffset } = d.settings
+    const { showBeatGrid, bpm, beatOffset } = d
     let t: number
     if (fine) t = pos + dir * 0.1
     else if (showBeatGrid && bpm > 0) {
