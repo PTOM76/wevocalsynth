@@ -14,6 +14,9 @@ export type CtrlSAction = 'project' | 'export'
 /** ピッチ解析で声とみなす判定の厳しさ。ゆるいほど、かすれた声も拾うが、雑音も拾いやすい */
 export type F0Voicing = 'strict' | 'normal' | 'loose'
 
+/** ボーカル抽出のモデル（Spleeter 2stems の種類）。fp16 が一番小さい */
+export type VocalModel = 'fp16' | 'int8' | 'fp32'
+
 /** 判定の厳しさごとの、有声とみなす谷の深さの上限（Rust 側 `f0::Params::voiced_limit`） */
 const VOICED_LIMIT: Record<F0Voicing, number> = { strict: 0.25, normal: 0.35, loose: 0.5 }
 
@@ -56,6 +59,8 @@ export interface Settings {
   f0Voicing: F0Voicing
   /** ピッチ解析: これより小さい音量（dB）は無音とみなす */
   f0SilenceDb: number
+  /** ボーカル抽出に使うモデル（追加機能） */
+  vocalModel: VocalModel
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
 }
@@ -72,6 +77,7 @@ export const DEFAULT_SETTINGS: Settings = {
   beatsPerBar: 4,
   beatOffset: 0,
   showDebug: false,
+  vocalModel: 'fp16',
   f0MinHz: 60,
   f0MaxHz: 1000,
   f0Voicing: 'normal',

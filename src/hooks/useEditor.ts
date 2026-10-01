@@ -31,6 +31,8 @@ import { useFilePicker } from './useFilePicker'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
+import { useVocalExtract } from './useVocalExtract'
+import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
 
@@ -131,6 +133,20 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     seek: player.seek,
     commit,
     notify: (message) => setToast({ severity: 'info', message }),
+  })
+
+  // ボーカル抽出（追加機能）。未導入なら確認ダイアログ（addonDialog）を出す
+  const addons = useAddonInstall()
+  const vocal = useVocalExtract({
+    edited,
+    editRanges,
+    model: settings.vocalModel,
+    ensure: addons.ensure,
+    run: task.run,
+    setProgress,
+    commit,
+    onVocals: () => setParams((p) => ({ ...p, ...MODE_SETTINGS.vocal })),
+    notify: (message) => setToast({ severity: 'success', message }),
   })
 
   /** 読み込んだ音声（またはプロジェクト）を画面に反映する */
@@ -315,6 +331,6 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     // 表示（ピッチ・スペクトログラム）とピッチ描画
     showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
-    cmd, apply, stretchRange, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
+    cmd, apply, stretchRange, extract: vocal.extract, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
   }
 }

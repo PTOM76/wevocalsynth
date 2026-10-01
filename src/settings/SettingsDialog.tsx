@@ -20,7 +20,7 @@ import {
 } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
-import { DEFAULT_SETTINGS, type CtrlSAction, type F0Voicing, type InitialMode, type Settings, type ThemeSetting } from './settings'
+import { DEFAULT_SETTINGS, type CtrlSAction, type F0Voicing, type InitialMode, type Settings, type ThemeSetting, type VocalModel } from './settings'
 import { NumberInput } from '../components/inspector/Inspector'
 import UpdateSection from './UpdateSection'
 import DataSection from './DataSection'
@@ -208,9 +208,24 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
       </Group>
     ),
     addons: (
-      <Group title={t('settings.groupAddons')}>
-        <AddonSection showDev={import.meta.env.DEV || draft.showDebug} />
-      </Group>
+      <>
+        <Group title={t('settings.groupVocal')}>
+          <Row label={t('settings.vocalModel')}>
+            <Choice<VocalModel>
+              value={draft.vocalModel}
+              onChange={(v) => set({ vocalModel: v })}
+              options={[
+                ['fp16', t('settings.vocalModelFp16')],
+                ['int8', t('settings.vocalModelInt8')],
+                ['fp32', t('settings.vocalModelFp32')],
+              ]}
+            />
+          </Row>
+        </Group>
+        <Group title={t('settings.groupAddons')}>
+          <AddonSection showDev={import.meta.env.DEV || draft.showDebug} />
+        </Group>
+      </>
     ),
     data: (
       <Group title={t('settings.groupData')}>
