@@ -110,7 +110,7 @@ export function useAddonInstall() {
         <Button size="small" onClick={() => close(false)}>
           {t('common.cancel')}
         </Button>
-        <Button size="small" variant="contained" disabled={!state?.manifests || busy} onClick={() => void run()}>
+        <Button size="small" disabled={!state?.manifests || busy} onClick={() => void run()}>
           {t('addon.install')}
         </Button>
       </DialogActions>

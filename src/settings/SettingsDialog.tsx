@@ -380,7 +380,6 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
         </Button>
         <Button
           size="small"
-          variant="contained"
           onClick={() => {
             onChange(draft)
             onClose()

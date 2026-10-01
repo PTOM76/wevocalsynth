@@ -188,7 +188,6 @@ export default function ExportDialog(p: Props) {
           {t('common.cancel')}
         </Button>
         <Button
-          variant="contained"
           disabled={p.busy || !s.fileName.trim()}
           onClick={() => p.onExport({ ...s, sampleRate: rate, kbps })}
         >

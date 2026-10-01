@@ -50,7 +50,6 @@ function ToolDialog(p: { open: boolean; title: string; hasSelection: boolean; on
       <DialogActions>
         <Button
           size="small"
-          variant="contained"
           onClick={() => {
             p.onRun()
             p.onClose()

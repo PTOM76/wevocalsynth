@@ -42,7 +42,7 @@ export function useConfirm() {
         <Button size="small" autoFocus onClick={() => close(false)}>
           {t('common.cancel')}
         </Button>
-        <Button size="small" variant="contained" color={req?.danger ? 'error' : 'primary'} onClick={() => close(true)}>
+        <Button size="small" color={req?.danger ? 'error' : 'primary'} onClick={() => close(true)}>
           {req?.okLabel}
         </Button>
       </DialogActions>
