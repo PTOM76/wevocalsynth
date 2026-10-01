@@ -8,10 +8,9 @@ import { useWaveformView, ZOOM_STEP } from './components/waveform/useWaveformVie
 import AppHeader from './components/AppHeader'
 import { DropOverlay, EmptyState } from './components/EmptyState'
 import Waveform from './components/Waveform'
-import TrackPanel from './components/tracks/TrackPanel'
 import LevelMeter from './components/LevelMeter'
+import { useTrackArea } from './components/tracks/useTrackArea'
 import RenameDialog from './components/tracks/RenameDialog'
-import { trackMenuEntries } from './components/tracks/trackMenu'
 import WaveformToolbar from './components/waveform/WaveformToolbar'
 import Toolbar from './components/Toolbar'
 import StatusBar from './components/StatusBar'
@@ -22,10 +21,9 @@ import MobileLayout from './components/layout/MobileLayout'
 import { usePersistentNumber } from './components/layout/Splitter'
 import EditPanel from './components/EditPanel'
 import VolumePanel from './components/VolumePanel'
-import { SnapDialog, VibratoDialog } from './components/PitchToolDialogs'
-import { MidiDialog } from './components/MidiDialog'
+import PitchToolHost, { type PitchDialogKind } from './components/PitchToolHost'
 import SynthDialog from './components/SynthDialog'
-import { addVibrato, fitMidi, flattenPitch, snapPitch } from './audio/pitchTools'
+import { flattenPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
 import ExportDialog from './components/ExportDialog'
@@ -75,7 +73,8 @@ export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [synthOpen, setSynthOpen] = useState(false)
-  const [pitchDialog, setPitchDialog] = useState<'snap' | 'vibrato' | 'midi' | null>(null)
+  const [renamingProject, setRenamingProject] = useState(false)
+  const [pitchDialog, setPitchDialog] = useState<PitchDialogKind>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
   const viewCtl = useWaveformView(ed.duration, player.livePosition, player.playing)
@@ -124,6 +123,7 @@ export default function App() {
     duplicateTrack: () => ed.tracks.duplicate(),
     addTrack: () => ed.addPicker.open(),
     synth: () => setSynthOpen(true),
+    renameProject: () => setRenamingProject(true),
     showShortcuts: () => setShortcutsOpen(true),
     showSettings: () => setSettingsOpen(true),
     showHistory: () => setHistoryOpen(true),
@@ -191,41 +191,12 @@ export default function App() {
   ) : (
     <EmptyState onOpen={ed.picker.open} onSynth={() => setSynthOpen(true)} />
   )
-  // トラックの右クリックメニューと名前の変更
-  const [trackMenu, setTrackMenu] = useState<{ id: string; x: number; y: number } | null>(null)
-  const [renaming, setRenaming] = useState<string | null>(null)
-  const trackActions = {
-    tracks: ed.tracks.tracks,
-    activeId: ed.tracks.activeId,
-    mix: ed.tracks.mix,
-    busy,
-    select: ed.tracks.select,
-    duplicate: ed.tracks.duplicate,
-    rename: setRenaming,
-    splitStems: (id: string) => void ed.splitStems(id),
-    mergeDown: (id: string) => void ed.tracks.mergeDown(id),
-    mergeAll: () => void ed.tracks.mergeAll(),
-    toggleMute: ed.tracks.toggleMute,
-    toggleSolo: ed.tracks.toggleSolo,
-    overlay: ed.tracks.overlay,
-    toggleOverlay: ed.tracks.toggleOverlay,
-    remove: ed.tracks.remove,
-  }
-  const trackViewProps = {
-    tracks: ed.tracks.tracks,
-    activeId: ed.tracks.activeId,
-    mix: ed.tracks.mix,
-    disabled: busy,
-    onSelect: ed.tracks.select,
-    onToggleMute: ed.tracks.toggleMute,
-    onToggleSolo: ed.tracks.toggleSolo,
-    onContextMenu: (id: string, x: number, y: number) => setTrackMenu({ id, x, y }),
-    meter: settings.showMeters ? player.analyser : null,
-  }
+  // トラックの欄（右クリックメニュー・名前の変更を含む）
+  const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null)
   // トラックが2本以上あるときだけ、波形の上にトラックの欄を出す（広げると波形付きの一覧、折りたたむとタブ）
   const editor = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      <TrackPanel {...trackViewProps} view={view} />
+      {trackArea.panel(view)}
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{waveform}</Box>
     </Box>
   )
@@ -388,6 +359,7 @@ export default function App() {
             statusBar={
               <StatusBar
                 fileName={ed.fileName}
+                onRename={() => setRenamingProject(true)}
                 clip={shown}
                 duration={ed.duration}
                 selection={selection}
@@ -407,15 +379,12 @@ export default function App() {
       </Box>
 
       <ContextMenu position={contextPos} entries={context} onClose={() => setContextPos(null)} />
-      <ContextMenu
-        position={trackMenu}
-        entries={trackMenu ? trackMenuEntries(trackMenu.id, trackActions) : []}
-        onClose={() => setTrackMenu(null)}
-      />
+      {trackArea.overlays}
       <RenameDialog
-        name={renaming ? (ed.tracks.tracks.find((tr) => tr.id === renaming)?.name ?? '') : null}
-        onClose={() => setRenaming(null)}
-        onRename={(name) => renaming && ed.tracks.rename(renaming, name)}
+        name={renamingProject ? ed.fileName : null}
+        title={t('project.rename')}
+        onClose={() => setRenamingProject(false)}
+        onRename={ed.setProjectName}
       />
       {edited && (
         <ExportDialog
@@ -431,27 +400,14 @@ export default function App() {
           onExport={ed.exportFile}
         />
       )}
-      <SnapDialog
-        open={pitchDialog === 'snap'}
-        hasSelection={!!selection}
+      <PitchToolHost
+        open={pitchDialog}
         onClose={() => setPitchDialog(null)}
-        onRun={(o) => ed.pitchTools.edit((cur, f0, k0, k1) => snapPitch(cur, f0, k0, k1, o))}
-      />
-      <VibratoDialog
-        open={pitchDialog === 'vibrato'}
         hasSelection={!!selection}
+        selectionStart={selection ? selection.start : null}
         bpm={settings.bpm}
-        onClose={() => setPitchDialog(null)}
-        onRun={(o) => ed.pitchTools.edit((cur, f0, k0, k1) => addVibrato(cur, f0, k0, k1, o))}
-      />
-      <MidiDialog
-        open={pitchDialog === 'midi'}
-        hasSelection={!!selection}
-        bpm={settings.bpm}
-        // MIDI の先頭を置く位置の初期値: 選択範囲があればその始まり、なければ1拍目の位置
-        defaultOffset={selection ? selection.start : settings.beatOffset}
-        onClose={() => setPitchDialog(null)}
-        onRun={(o) => ed.pitchTools.edit((cur, f0, k0, k1) => fitMidi(cur, f0, k0, k1, o))}
+        beatOffset={settings.beatOffset}
+        pitchTools={ed.pitchTools}
       />
       <SynthDialog open={synthOpen} bpm={settings.bpm} onClose={() => setSynthOpen(false)} onCreate={ed.addSynth} />
       <HistoryDialog

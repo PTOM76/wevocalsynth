@@ -60,6 +60,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const tempo = useTempo()
   const tempoRef = useRef({ tempo, onTempo })
   tempoRef.current = { tempo, onTempo }
+  // プロジェクト名。初めは開いたファイルの名前（拡張子を除く）で、変えられる。保存・書き出しのファイル名の初期値になる
   const [fileName, setFileName] = useState('')
   const history = useHistory({ limit: settings.historyLimit, budgetBytes: settings.historyMemoryMb * 2 ** 20 })
   // 編集できるのは選んでいるトラックだけ。original / edited はそのトラックの原音・加工後
@@ -175,7 +176,8 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   /** 読み込んだ音声（またはプロジェクト）を画面に反映する */
   const openClip = useCallback(
     (clip: Clip, name: string, project: Project | null, ids?: string[]) => {
-      setFileName(name)
+      // 拡張子は除く（以前のプロジェクトファイルは、拡張子付きの名前を持っていた）
+      setFileName(name.replace(/\.[^.]+$/, ''))
       // プロジェクトはトラックごとに。自動保存から戻すときは保存先の ID を引き継ぐ（保存し直さずに済む）
       const list = project
         ? project.tracks.map((tr, i) => ({ id: ids?.[i] || newTrackId(), name: tr.name, original: tr.original, clip: tr.edited }))
@@ -383,7 +385,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   return {
     // 素材と履歴
-    fileName, original, edited, shown, duration, editing, source, setSource, history, commit,
+    fileName, setProjectName: (name: string) => name.trim() && setFileName(name.trim()), original, edited, shown, duration, editing, source, setSource, history, commit,
     // 処理状態と通知
     busy, progress, taskLabel: task.label, cancelTask: task.cancel, toast, setToast,
     // 選択範囲

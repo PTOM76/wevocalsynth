@@ -1,4 +1,4 @@
-import { Box, IconButton, LinearProgress, Stack, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material'
+import { Box, ButtonBase, IconButton, LinearProgress, Stack, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import type { Clip, Range } from '../audio/types'
@@ -10,7 +10,9 @@ import SelectionField from './SelectionField'
 export type Source = 'edited' | 'original'
 
 interface Props {
+  /** プロジェクト名（押すと変える） */
   fileName: string
+  onRename: () => void
   clip: Clip | null
   duration: number
   /** 一番後ろの選択範囲（入力欄で編集するもの）と、選択範囲の数 */
@@ -42,9 +44,16 @@ export default function StatusBar(p: Props) {
       direction="row"
       sx={{ height: 24, fontSize: 12, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper', alignItems: 'center' }}
     >
-      <Box className="selectable" sx={{ ...ITEM_SX, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', lineHeight: '24px' }}>
-        {p.fileName || '—'}
-      </Box>
+      {/* プロジェクト名。押すと名前を変えられる（保存・書き出しのファイル名になる） */}
+      <Tooltip title={t('project.renameHint')}>
+        <ButtonBase
+          disabled={!p.clip}
+          onClick={p.onRename}
+          sx={{ ...ITEM_SX, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', lineHeight: '24px', fontSize: 12, '&:hover': { bgcolor: 'action.hover' } }}
+        >
+          {p.fileName || '—'}
+        </ButtonBase>
+      </Tooltip>
       {p.clip && (
         <Box sx={{ ...ITEM_SX, color: 'text.secondary' }}>
           {p.clip.sampleRate} Hz・{p.clip.channels.length === 1 ? 'Mono' : `${p.clip.channels.length} ch`}・{formatTime(p.duration)}
