@@ -36,6 +36,8 @@ interface Actions {
   /** トラックの複製と、ファイルをトラックとして追加 */
   duplicateTrack: () => void
   addTrack: () => void
+  /** 音を0から作る（新しいトラック。何も開いていなくても使える） */
+  synth: () => void
   showShortcuts: () => void
   showSettings: () => void
   showHistory: () => void
@@ -73,6 +75,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       entries: [
         { label: t('menu.open'), shortcut: 'Ctrl+O', disabled: a.busy, onClick: a.open },
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
+        { label: t('synth.menu'), disabled: a.busy, onClick: a.synth },
         { label: t('menu.saveProject'), shortcut: a.ctrlS === 'project' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.save },
         { divider: true },
         { label: t('menu.export'), shortcut: a.ctrlS === 'export' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.openExport },
@@ -126,6 +129,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       entries: [
         { label: t('menu.open'), disabled: a.busy, onClick: a.open },
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
+        { label: t('synth.menu'), disabled: a.busy, onClick: a.synth },
         { label: t('menu.saveProject'), disabled: noClip, onClick: a.save },
         { label: t('menu.export'), disabled: noClip, onClick: a.openExport },
       ],

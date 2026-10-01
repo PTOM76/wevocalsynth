@@ -24,6 +24,7 @@ import EditPanel from './components/EditPanel'
 import VolumePanel from './components/VolumePanel'
 import { SnapDialog, VibratoDialog } from './components/PitchToolDialogs'
 import { MidiDialog } from './components/MidiDialog'
+import SynthDialog from './components/SynthDialog'
 import { addVibrato, fitMidi, flattenPitch, snapPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
@@ -72,6 +73,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [synthOpen, setSynthOpen] = useState(false)
   const [pitchDialog, setPitchDialog] = useState<'snap' | 'vibrato' | 'midi' | null>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
@@ -110,6 +112,7 @@ export default function App() {
     splitStems: () => void ed.splitStems(),
     duplicateTrack: () => ed.tracks.duplicate(),
     addTrack: () => ed.addPicker.open(),
+    synth: () => setSynthOpen(true),
     showShortcuts: () => setShortcutsOpen(true),
     showSettings: () => setSettingsOpen(true),
     showHistory: () => setHistoryOpen(true),
@@ -172,7 +175,7 @@ export default function App() {
       ghosts={editing ? ed.tracks.ghosts : undefined}
     />
   ) : (
-    <EmptyState onOpen={ed.picker.open} />
+    <EmptyState onOpen={ed.picker.open} onSynth={() => setSynthOpen(true)} />
   )
   // トラックの右クリックメニューと名前の変更
   const [trackMenu, setTrackMenu] = useState<{ id: string; x: number; y: number } | null>(null)
@@ -432,6 +435,7 @@ export default function App() {
         onClose={() => setPitchDialog(null)}
         onRun={(o) => ed.pitchTools.edit((cur, f0, k0, k1) => fitMidi(cur, f0, k0, k1, o))}
       />
+      <SynthDialog open={synthOpen} bpm={settings.bpm} onClose={() => setSynthOpen(false)} onCreate={ed.addSynth} />
       <HistoryDialog
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}

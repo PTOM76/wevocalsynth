@@ -338,6 +338,11 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   const picker = useFilePicker(`${AUDIO_ACCEPT},${PROJECT_EXT}`, (f) => void loadFile(f))
   // 開いている作業に、別のファイルを新しいトラックとして足す
+  /** 作った音（音を0から作る）を、新しいトラックとして足す。何も開いていなければ、最初のトラックとして開く */
+  const addSynth = (clip: Clip, name: string) => {
+    if (history.tracks.length) tracks.addClip(clip, name)
+    else openClip(clip, name, null)
+  }
   const addPicker = useFilePicker(AUDIO_ACCEPT, (f) =>
     void decodeFile(f)
       .then((clip) => tracks.addClip(clip, f.name))
@@ -392,7 +397,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     // 表示（ピッチ・スペクトログラム）とピッチ描画
     showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
-    tracks, addPicker, gainDb, setGainDb, pan, setPan,
+    tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
     cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
   }
 }
