@@ -93,7 +93,15 @@ export function usePlayer(
   const [playing, setPlaying] = useState(false)
   const [position, setPosition] = useState(0)
 
-  const stopSource = useCallback(() => {
+  /** 再生のたびに作る、音源より後ろの部品（音量・パン・フェーダー・ミュート・メーター）。止めたらすべて切り離す */
+  const nodesRef = useRef<AudioNode[]>([])
+
+  /**
+   * 鳴らしている音をすべて止めて、再生のたびに作った部品を切り離す
+   * （切り離さないと全体の出口につながったまま残り、無音を処理し続ける。再生を繰り返すほど増えて重くなった）。
+   * `suspend` なら AudioContext も一時停止して、止まっている間の音声処理を止める（すぐ再生し直すときは偽）
+   */
+  const stopSource = useCallback((suspend = true) => {
     const src = sourceRef.current
     if (src) {
       src.onended = null
@@ -106,9 +114,13 @@ export function usePlayer(
       e.disconnect()
     }
     extraRef.current = []
+    for (const n of nodesRef.current) n.disconnect()
+    nodesRef.current = []
     analysersRef.current.clear()
     faderNodes.current.clear()
     muteNodes.current.clear()
+    const ctx = ctxRef.current
+    if (suspend && ctx?.state === 'running') void ctx.suspend()
   }, [])
 
   const currentTime = useCallback(() => {
@@ -165,7 +177,8 @@ export function usePlayer(
         }
         return b
       }
-      stopSource()
+      // すぐ鳴らし直すので、AudioContext は止めない
+      stopSource(false)
       const duration = clipDuration(clip)
       const start = Math.max(0, Math.min(from, duration))
       const end = Math.max(start, Math.min(to ?? duration, duration))
@@ -174,6 +187,8 @@ export function usePlayer(
       src.buffer = bufferOf(clip)
       // 鳴らさないときも、再生位置と終わりの基準にするため音源は作る（音量 0 でつなぐ）
       const gain = ctx.createGain()
+      // この再生で作った部品（止めたら stopSource が切り離す）
+      const made: AudioNode[] = [gain]
       gainRef.current = gain
       // 全体の出口（レベルメーター）。AudioContext ごとに1つ
       if (!masterRef.current || masterRef.current.context !== ctx) {
@@ -190,19 +205,24 @@ export function usePlayer(
       }
       const master = masterRef.current
       const meter = makeAnalyser(ctx)
+      made.push(meter)
       analysersRef.current.set(id, meter)
       // 適用前の音量・パン（範囲だけ） → トラックのフェーダー（全体） → メーター → 全体の出口
       const panner = makePanner(ctx)
+      made.push(panner)
       panRef.current = panner
       const fader = { gain: ctx.createGain(), pan: makePanner(ctx) }
+      made.push(fader.gain, fader.pan)
       setFaderNodes(fader, fadersRef.current[id] ?? DEFAULT_FADER, true)
       faderNodes.current.set(id, fader)
       const mute = ctx.createGain()
+      made.push(mute)
       mute.gain.value = muted ? 0 : 1
       muteNodes.current.set(id, mute)
       src.connect(gain).connect(panner).connect(fader.gain).connect(fader.pan).connect(mute).connect(meter).connect(master)
       src.onended = () => {
-        sourceRef.current = null
+        // 最後まで再生して止まったときも、部品を切り離して AudioContext を止める
+        stopSource()
         setPlaying(false)
         // 範囲試聴の後は範囲の先頭に戻し、通常再生の後は終端で止める
         setPosition(to !== undefined ? start : end)
@@ -217,17 +237,21 @@ export function usePlayer(
           const e = ctx.createBufferSource()
           e.buffer = bufferOf(o.clip)
           const m = makeAnalyser(ctx)
+          made.push(m)
           analysersRef.current.set(o.id, m)
           const f = { gain: ctx.createGain(), pan: makePanner(ctx) }
+          made.push(f.gain, f.pan)
           setFaderNodes(f, fadersRef.current[o.id] ?? DEFAULT_FADER, true)
           faderNodes.current.set(o.id, f)
           const mute = ctx.createGain()
+          made.push(mute)
           mute.gain.value = o.audible ? 1 : 0
           muteNodes.current.set(o.id, mute)
           e.connect(f.gain).connect(f.pan).connect(mute).connect(m).connect(master)
           e.start(at, start, Math.min(end, clipDuration(o.clip)) - start)
           return e
         })
+      nodesRef.current = made
       clockRef.current = { ctxStart: at, offset: start, end }
       scheduleGain()
       setPosition(start)

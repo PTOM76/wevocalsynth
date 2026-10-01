@@ -23,6 +23,9 @@ export function useRealtimePreview(clip: Clip | null, range: Range | null, semit
     genRef.current++
     nodeRef.current?.disconnect()
     nodeRef.current = null
+    // 止めている間は音声処理も止める（動かしたままだと、開いている間ずっと CPU を使う）。start で再開する
+    const ctx = ctxRef.current
+    if (ctx?.state === 'running') void ctx.suspend()
     setPlaying(false)
   }, [])
 
