@@ -131,7 +131,7 @@
   "volume.fadeIn": "Fade in",
   "volume.fadeOut": "Fade out",
   "volume.normalize": "Normalize",
-  "volume.normalizeTooltip": "Raise or lower the volume so the loudest peak sits just below clipping (-1 dB)",
+  "volume.normalizeTooltip": "Adjust the volume so the loudest peak is at -1 dB (just below clipping)",
   "volume.silence": "Silence",
 
   "wave.aria": "Waveform (drag to select, Ctrl+drag to add a range, drag a range edge to adjust, Shift+drag the right edge to stretch, click to move the playhead)",

@@ -131,7 +131,7 @@
   "volume.fadeIn": "フェードイン",
   "volume.fadeOut": "フェードアウト",
   "volume.normalize": "ノーマライズ",
-  "volume.normalizeTooltip": "一番大きい音が音割れしない上限（-1 dB）になるよう、全体の音量をそろえて上げ下げ",
+  "volume.normalizeTooltip": "一番大きい音が -1 dB（音割れの手前）になるよう音量を上げ下げ",
   "volume.silence": "無音化",
 
   "wave.aria": "音声波形（ドラッグで範囲選択、Ctrl+ドラッグで範囲を追加、範囲の端をドラッグで調整、Shift+右端ドラッグで伸縮、クリックで再生位置を移動）",
