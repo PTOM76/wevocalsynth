@@ -197,7 +197,7 @@ WeVocalSynth の操作方法をまとめた説明書。<br />
 
 | 種類 | 例 |
 | --- | --- |
-| 音声ファイル | WAV、MP3、M4A（AAC）など、ブラウザが再生できる形式 |
+| 音声ファイル | WAV、AIFF、MP3、M4A（AAC）、MP4、FLAC、Ogg（Vorbis/Opus）、WebM（MP4/WebM は音声だけを使う。FLAC/Ogg/WebM はブラウザによって読めないことがある） |
 | 動画ファイル | MP4（中の音声だけを読み込む） |
 | プロジェクトファイル | .wvsp（このアプリで保存したもの） |
 
