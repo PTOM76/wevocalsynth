@@ -4,10 +4,8 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
   faArrowDown,
   faArrowUp,
-  faChartColumn,
   faChartArea,
   faVolumeHigh,
-  faMicrophoneLines,
   faCheck,
   faExpand,
   faGripLines,
@@ -22,6 +20,7 @@ import {
   faSpinner,
   faStop,
   faTrashCan,
+  faSliders,
 } from '@fortawesome/free-solid-svg-icons'
 import { useT } from '../../i18n/i18n'
 
@@ -138,7 +137,7 @@ export default function WaveformToolbar(p: Props) {
       <SmallButton
         title={t('wave.showWave')}
         label={t('wave.showWave')}
-        icon={faChartArea}
+        icon={faWaveSquare}
         pressed={p.showWave}
         // どちらか一方の帯は必ず出す
         disabled={off || (p.showWave && !p.showPitch && !p.showSpectrogram && !p.showGain && !p.formant.show)}
@@ -147,7 +146,7 @@ export default function WaveformToolbar(p: Props) {
       <SmallButton
         title={t('wave.spectrogram')}
         label={t('wave.spectrogram')}
-        icon={faChartColumn}
+        icon={faChartArea}
         pressed={p.showSpectrogram}
         disabled={off}
         onClick={() => p.onShowSpectrogramChange(!p.showSpectrogram)}
@@ -171,7 +170,7 @@ export default function WaveformToolbar(p: Props) {
       <SmallButton
         title={t('wave.showFormant')}
         label={t('wave.showFormant')}
-        icon={faMicrophoneLines}
+        icon={faSliders}
         pressed={fm.show}
         disabled={off}
         onClick={() => fm.onShowChange(!fm.show)}
