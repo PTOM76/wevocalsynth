@@ -6,7 +6,6 @@ import {
   addonsSupported,
   fetchManifest,
   installedManifest,
-  loadAddon,
   uninstallWithUnused,
   type AddonInfo,
   type AddonManifest,
@@ -63,15 +62,6 @@ export default function AddonSection({ ids }: { ids: string[] }) {
     setMessage(t('addon.deleted'))
     refresh()
   }
-  // 開発者向け: 保存先から読み込めるかの確認（確認用の追加機能は `check()` を持つ）
-  const check = async (a: AddonInfo) => {
-    try {
-      const mod = await loadAddon<{ check: () => string }>(a.id)
-      setMessage(mod.check())
-    } catch (e) {
-      setMessage(String(e))
-    }
-  }
 
   return (
     <>
@@ -84,11 +74,6 @@ export default function AddonSection({ ids }: { ids: string[] }) {
               <Typography sx={{ fontSize: 13 }}>{t(a.shortName ?? a.name)}</Typography>
               <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary' }}>{describe(s)}</Typography>
             </Box>
-            {a.dev && s?.installed && (
-              <Button size="small" onClick={() => void check(a)} sx={{ flexShrink: 0 }}>
-                {t('addon.check')}
-              </Button>
-            )}
             {(!s?.installed || updatable) && (
               <Button size="small" variant="outlined" disabled={!s?.latest} onClick={() => void install(a)} sx={{ flexShrink: 0 }}>
                 {t(updatable ? 'addon.update' : 'addon.install')}

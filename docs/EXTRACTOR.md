@@ -55,8 +55,6 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 - 取得するときは URL にクエリを付ける（`?v=` / `?t=`）。付けないと、導入済みの古い版が Service Worker から返る
 - 保存先から照合するときは `ignoreVary` を付ける。サーバーによって `Vary`（`Origin` / `Accept-Encoding`）が付き、条件次第で見つからないと判定されるため
 
-### 確認用の追加機能
-`test`（[scripts/gen-addon-test.mjs](../scripts/gen-addon-test.mjs) で作る、40MB のダミー＋`index.js`）。設定の「開発者向け」に出る。デプロイ時に `dist/addons/test/` に作る。開発サーバーでは `node scripts/gen-addon-test.mjs public` で作る（git には入れない）。
 
 ## ボーカル抽出の追加機能
 | 追加機能 | 中身 | 大きさ |

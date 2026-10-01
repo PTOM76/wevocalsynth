@@ -31,7 +31,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupData', 'data.work', 'data.workHelp', 'data.cache', 'data.cacheHelp', 'data.addons',
     'data.settings', 'data.settingsHelp', 'data.all', 'data.persist', 'data.persistHelp',
   ],
-  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.groupAddonTest'],
+  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp'],
 }
 
 /** 比べやすい形にする（全角・半角と大文字・小文字の違いをなくす） */

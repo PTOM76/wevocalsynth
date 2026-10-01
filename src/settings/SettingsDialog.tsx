@@ -262,14 +262,9 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
     ),
 
     debug: (
-      <>
-        <Group title={t('settings.groupDebug')}>
-          <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
-        </Group>
-        <Group title={t('settings.groupAddonTest')}>
-          <AddonSection ids={['test']} />
-        </Group>
-      </>
+      <Group title={t('settings.groupDebug')}>
+        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
+      </Group>
     ),
     pitch: (
       <Group title={t('settings.groupPitch')}>

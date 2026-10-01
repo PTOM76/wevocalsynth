@@ -30,8 +30,6 @@ export interface AddonInfo {
   name: MessageKey
   /** 設定の一覧に出す短い名前（その機能の設定画面に並べるので、機能名を繰り返さない） */
   shortName?: MessageKey
-  /** 開発者向け（確認用。設定の「開発者向け」に出し、「読み込みを確認」ボタンを付ける） */
-  dev?: boolean
   /** 先に導入が要る追加機能（導入するときに一緒に入れる） */
   requires?: string[]
 }
@@ -42,7 +40,6 @@ export const ADDONS: AddonInfo[] = [
   { id: 'spleeter-fp16', name: 'addon.spleeterFp16', shortName: 'addon.modelLight', requires: ['vocal-extractor'] },
   { id: 'spleeter-int8', name: 'addon.spleeterInt8', shortName: 'addon.modelStandard', requires: ['vocal-extractor'] },
   { id: 'spleeter-fp32', name: 'addon.spleeterFp32', shortName: 'addon.modelPrecise', requires: ['vocal-extractor'] },
-  { id: 'test', name: 'addon.test', dev: true },
 ]
 
 /** `id` と、その導入に要る追加機能（依存を先に並べる） */
