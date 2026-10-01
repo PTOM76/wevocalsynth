@@ -44,9 +44,13 @@ export default defineConfig({
           {
             // ページを開く操作は対象外（追加機能のファイルだけを保存先から返す）
             urlPattern: ({ url, request }) => url.pathname.includes('/addons/') && request.mode !== 'navigate',
-            handler: 'CacheFirst',
-            // サーバーが付ける Vary（Origin / Accept-Encoding）で照合が外れないようにする
-            options: { cacheName: 'wevocalsynth-addons', matchOptions: { ignoreVary: true } },
+            // 保存先にあればそれを返し、なければネットワークから取る。保存は導入の処理（src/addons/addons.ts）だけが行う
+            // （CacheFirst だと取ったものを勝手に保存し、導入を中断したファイルや更新確認のマニフェストが残る）。
+            // ignoreVary: サーバーが付ける Vary（Origin / Accept-Encoding）で照合が外れないようにする。
+            // キャッシュ名は ADDON_CACHE と一致させる（sw.js に埋め込まれるので import できない）
+            handler: async ({ request }) =>
+              // @ts-expect-error この関数は sw.js（Service Worker）で動くので caches がある（設定ファイルの型は Node 向け）
+              (await caches.match(request, { cacheName: 'wevocalsynth-addons', ignoreVary: true })) ?? fetch(request),
           },
         ],
       },

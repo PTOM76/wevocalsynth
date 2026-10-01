@@ -24,6 +24,7 @@ import { DEFAULT_SETTINGS, type CtrlSAction, type F0Voicing, type InitialMode, t
 import { NumberInput } from '../components/inspector/Inspector'
 import UpdateSection from './UpdateSection'
 import DataSection from './DataSection'
+import AddonSection from './AddonSection'
 import { useT, type LangSetting } from '../i18n/i18n'
 
 interface Props {
@@ -33,8 +34,8 @@ interface Props {
   onChange: (patch: Partial<Settings>) => void
 }
 
-type Category = 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'data' | 'debug'
-const CATEGORIES: Category[] = ['general', 'display', 'pitch', 'tempo', 'keys', 'data', 'debug']
+type Category = 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'addons' | 'data' | 'debug'
+const CATEGORIES: Category[] = ['general', 'display', 'pitch', 'tempo', 'keys', 'addons', 'data', 'debug']
 
 /** スマホ向けの表示か（項目を縦に積み、文字と操作を大きくする） */
 const NarrowContext = createContext(false)
@@ -204,6 +205,11 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
             ]}
           />
         </Row>
+      </Group>
+    ),
+    addons: (
+      <Group title={t('settings.groupAddons')}>
+        <AddonSection showDev={import.meta.env.DEV || draft.showDebug} />
       </Group>
     ),
     data: (

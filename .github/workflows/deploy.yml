@@ -31,7 +31,7 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}/
-      # 追加機能の配信実験用のダミーファイル（実験が終わったら消す）
+      # 確認用の追加機能（設定 → 追加機能。デバッグ表示が ON のときだけ出る）
       - run: node scripts/gen-addon-test.mjs
       - uses: actions/upload-pages-artifact@v3
         with:

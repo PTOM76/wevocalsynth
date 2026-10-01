@@ -40,7 +40,8 @@ src/
 │   └── realtime/    ループ試聴の AudioWorklet
 ├── dsp/             Worker と wasm の橋渡し、wevocal_dsp.wasm
 ├── project/         プロジェクトファイル（.wvsp）と自動保存
-├── settings/        設定と設定画面（分類ごとのページ、データの削除、アップデートの確認）
+├── addons/          追加機能の導入・保存・読み込み（docs/EXTRACTOR.md）
+├── settings/        設定と設定画面（分類ごとのページ、追加機能、データの削除、アップデートの確認）
 ├── debug/           デバッグ表示（FPS・描画回数・メモリの内訳・DSP の時間）
 ├── pwa/             新しい版の確認
 └── i18n/            訳文と t()

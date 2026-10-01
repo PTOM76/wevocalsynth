@@ -1,9 +1,11 @@
 import { idbClear } from './idb'
+import { ADDON_CACHE } from '../addons/addons'
 
 /**
  * ブラウザ内に保存しているデータの確認と削除（設定の「データ」）。
  * - 作業データ: 自動保存した音声と作業状態（IndexedDB）
  * - オフライン用キャッシュ: PWA がオフラインで開けるように保存したアプリ本体（Cache Storage と Service Worker）
+ * - 追加機能: 導入した追加機能のファイル（別の Cache Storage。設定の「追加機能」で消す）
  * - 設定と画面の状態: localStorage の `wevocalsynth.` で始まる項目
  */
 
@@ -22,11 +24,12 @@ export const clearWorkData = () => idbClear()
 
 /**
  * オフライン用キャッシュを消し、Service Worker の登録を外す。
- * 次にページを開いたときに、アプリ本体をサーバーから取り直して登録し直す
+ * 次にページを開いたときに、アプリ本体をサーバーから取り直して登録し直す。
+ * 追加機能は取り直しに時間がかかるので、`withAddons` のときだけ消す
  */
-export async function clearOfflineCache() {
+export async function clearOfflineCache(withAddons = false) {
   if ('caches' in window) {
-    for (const key of await caches.keys()) await caches.delete(key)
+    for (const key of await caches.keys()) if (withAddons || key !== ADDON_CACHE) await caches.delete(key)
   }
   if (navigator.serviceWorker) {
     for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister()

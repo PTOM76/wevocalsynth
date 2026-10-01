@@ -113,16 +113,26 @@ ex.dispose()
  → そのまま抽出を実行
 ```
 
-### 作り
+### 作り（実装済み: [src/addons/](../src/addons/)、2026-10-01）
 | 項目 | 内容 |
 | --- | --- |
-| マニフェスト | `addons/<id>/manifest.json` に ID・バージョン・対応するアプリのバージョン・ファイル一覧（サイズとハッシュ）を書く。確認ダイアログのダウンロード量もここから出す |
-| 保存先 | アプリ本体とは別の Cache Storage（`wevocalsynth-addons`）。アプリ本体のキャッシュは更新のたびに入れ替わるため、分けて残す |
-| 読み込み | Service Worker が `addons/` へのリクエストをこの保存先から返す。オフラインでも普通に `import()` できる |
-| ビルド | 別のエントリとして `addons/vocal-extractor/` に出力する。[vite.config.ts](../vite.config.ts) の `globPatterns` に入らないよう `globIgnores: ['addons/']` を足す |
-| 更新 | アプリの更新でマニフェストのバージョンが変わったら知らせる。勝手には取得しない |
-| 削除 | 設定の「データ」に「追加機能」を足し、容量の表示と削除をできるようにする |
-| 容量 | 導入時に「データを削除されにくくする」の申請を勧める。数十MBを取り直さずに済むように |
+| マニフェスト | `addons/<id>/manifest.json` に ID・バージョン・読み込むファイル（`entry`）・ファイル一覧（大きさとハッシュ）を書く。確認ダイアログのダウンロード量と進捗もここから出す |
+| 一覧 | 配信している追加機能は `ADDONS`（[addons.ts](../src/addons/addons.ts)）に並べる |
+| 導入 | `install` がファイルを1つずつ取得し、大きさとハッシュを確かめて保存する。マニフェストは最後に保存し、あれば導入済みとみなす。途中で失敗・中断したら、その追加機能をすべて消す |
+| 保存先 | アプリ本体とは別の Cache Storage（`wevocalsynth-addons`）。アプリ本体のキャッシュは更新のたびに入れ替わるため分ける。「オフライン用キャッシュ」の削除では消さず、「すべてのデータ」の削除では消す |
+| 読み込み | Service Worker が `addons/` へのリクエストを保存先から返す（なければネットワーク）。`loadAddon` で `import()` する |
+| 確認ダイアログ | `useAddonInstall`（[AddonInstallDialog.tsx](../src/addons/AddonInstallDialog.tsx)）。機能を使う直前に `ensure(id)` を呼び、未導入ならダイアログを出す |
+| 更新・削除 | 設定の「追加機能」（[AddonSection.tsx](../src/settings/AddonSection.tsx)）。配信中のバージョンと違えば「更新」を出す。勝手には取得しない |
+| 容量 | 導入できたら「データを削除されにくくする」を申請する（断られても使える） |
+| ビルド | 追加機能ごとに `dist/addons/<id>/` に出力する。アプリ本体のプリキャッシュには入れない（`globIgnores`） |
+
+Service Worker は保存先から返すだけで、自分では保存しない。workbox の CacheFirst は取得したものを勝手に保存するため、中断したファイルや更新確認で取ったマニフェストが残る。
+取得するときは URL にクエリを付ける（`?v=` / `?t=`）。付けないと、導入済みの古い版が Service Worker から返る。
+
+#### 確認用の追加機能
+`test`（[scripts/gen-addon-test.mjs](../scripts/gen-addon-test.mjs) で作る、40MB のダミー＋`index.js`）。設定 → 開発者向け → デバッグ表示を ON にすると、設定の「追加機能」に出る。
+- 本番ビルド: デプロイ時に `dist/addons/test/` に作る
+- 開発サーバー: `node scripts/gen-addon-test.mjs public` で `public/addons/test/` に作る（git には入れない）
 
 ### 置き場所: GitHub Pages
 モデルもアプリと同じ GitHub Pages から配る。リポジトリには入れず、GitHub Releases に置いたものをデプロイ時に取得して `dist/addons/` に加える（リポジトリを大きくしないため）。
