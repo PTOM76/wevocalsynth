@@ -10,19 +10,23 @@ interface State {
   id: string
   /** 導入するもの（依存を含む）。取得できるまでは null */
   manifests: AddonManifest[] | null
+  /** `id` がすでに入っていて、新しい版に入れ替えるか（ダイアログの文言を「更新」にする） */
+  updating: boolean
   progress: number | null
   error: string | null
   resolve: (ok: boolean) => void
 }
 
-/** `id` の導入に要るもののうち、未導入か配信中と版が違うもののマニフェスト */
-async function plan(id: string, force: boolean): Promise<AddonManifest[]> {
-  const out: AddonManifest[] = []
+/** `id` の導入に要るもののうち、未導入か配信中と版が違うもののマニフェストと、`id` がすでに入っているか */
+async function plan(id: string, force: boolean): Promise<{ manifests: AddonManifest[]; updating: boolean }> {
+  const manifests: AddonManifest[] = []
+  let updating = false
   for (const a of withRequires(id)) {
     const [installed, latest] = await Promise.all([installedManifest(a), fetchManifest(a)])
-    if (!installed || installed.version !== latest.version || (force && a === id)) out.push(latest)
+    if (a === id) updating = !!installed
+    if (!installed || installed.version !== latest.version || (force && a === id)) manifests.push(latest)
   }
-  return out
+  return { manifests, updating }
 }
 
 /**
@@ -35,18 +39,30 @@ export function useAddonInstall() {
   const [state, setState] = useState<State | null>(null)
   const abort = useRef<AbortController | null>(null)
 
-  const request = (id: string) =>
+  /** `force` なら `id` は版が同じでも入れ直す（設定の「導入」）。偽なら未導入か古いものだけ入れる */
+  const request = (id: string, force = true) =>
     new Promise<boolean>((resolve) => {
-      setState({ id, manifests: null, progress: null, error: null, resolve })
-      plan(id, true).then(
-        (manifests) => setState((s) => s && { ...s, manifests }),
+      setState({ id, manifests: null, updating: false, progress: null, error: null, resolve })
+      plan(id, force).then(
+        ({ manifests, updating }) => setState((s) => s && { ...s, manifests, updating }),
         (e) => setState((s) => s && { ...s, error: t('addon.unavailable', { error: String(e) }) }),
       )
     })
 
+  /**
+   * 依存を含めて導入済みで、配信中と同じ版なら true。未導入か古い版があれば、導入・更新の確認ダイアログを出す
+   * （古い実行環境のままだと、アプリが使う関数が無くて失敗するため）。オフラインで配信中の版が分からなければ、今ある版で使う
+   */
   const ensure = async (id: string) => {
-    const missing = await Promise.all(withRequires(id).map(async (a) => !(await installedManifest(a))))
-    return missing.some(Boolean) ? request(id) : true
+    const stale = await Promise.all(
+      withRequires(id).map(async (a) => {
+        const installed = await installedManifest(a)
+        if (!installed) return true
+        const latest = await fetchManifest(a).catch(() => null)
+        return !!latest && latest.version !== installed.version
+      }),
+    )
+    return stale.some(Boolean) ? request(id, false) : true
   }
 
   const close = (ok: boolean) => {
@@ -90,10 +106,10 @@ export function useAddonInstall() {
 
   const dialog = (
     <Dialog open={!!state} onClose={() => !busy && close(false)} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('addon.installTitle')}</DialogTitle>
+      <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t(state?.updating ? 'addon.updateTitle' : 'addon.installTitle')}</DialogTitle>
       <DialogContent dividers>
-        <Typography sx={{ fontSize: 14 }}>{t('addon.installText', { name: state ? name(state.id) : '' })}</Typography>
-        {extra.length > 0 && <Typography sx={{ fontSize: 13, mt: 1 }}>{t('addon.installWith', { names: extra.join('、') })}</Typography>}
+        <Typography sx={{ fontSize: 14 }}>{t(state?.updating ? 'addon.updateText' : 'addon.installText', { name: state ? name(state.id) : '' })}</Typography>
+        {extra.length > 0 && <Typography sx={{ fontSize: 13, mt: 1 }}>{t(state?.updating ? 'addon.updateWith' : 'addon.installWith', { names: extra.join('、') })}</Typography>}
         <Typography sx={{ fontSize: 13, mt: 1 }}>
           {state?.manifests ? t('addon.downloadSize', { size: mb(size) }) : !state?.error && t('addon.checking')}
         </Typography>
@@ -111,7 +127,7 @@ export function useAddonInstall() {
           {t('common.cancel')}
         </Button>
         <Button size="small" disabled={!state?.manifests || busy} onClick={() => void run()}>
-          {t('addon.install')}
+          {t(state?.updating ? 'addon.update' : 'addon.install')}
         </Button>
       </DialogActions>
     </Dialog>
