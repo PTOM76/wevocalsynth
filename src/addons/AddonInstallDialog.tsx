@@ -97,14 +97,14 @@ export function useAddonInstall() {
         <Typography sx={{ fontSize: 13, mt: 1 }}>
           {state?.manifests ? t('addon.downloadSize', { size: mb(size) }) : !state?.error && t('addon.checking')}
         </Typography>
-        <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 1 }}>{t('addon.installHelp')}</Typography>
+        <Typography className="selectable" sx={{ fontSize: 12, color: 'text.secondary', mt: 1 }}>{t('addon.installHelp')}</Typography>
         {busy && (
           <>
             <LinearProgress variant="determinate" value={(state.progress ?? 0) * 100} sx={{ mt: 2 }} />
             <Typography sx={{ fontSize: 12, mt: 0.5 }}>{t('addon.downloading', { percent: Math.round((state.progress ?? 0) * 100) })}</Typography>
           </>
         )}
-        {state?.error && <Typography sx={{ fontSize: 12, color: 'error.main', mt: 1.5 }}>{state.error}</Typography>}
+        {state?.error && <Typography className="selectable" sx={{ fontSize: 12, color: 'error.main', mt: 1.5 }}>{state.error}</Typography>}
       </DialogContent>
       <DialogActions>
         <Button size="small" onClick={() => close(false)}>

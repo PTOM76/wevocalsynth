@@ -104,7 +104,7 @@ function Check(p: { checked: boolean; onChange: (v: boolean) => void; label: str
       <Box component="label" sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
         <Box sx={{ flex: 1 }}>
           <Typography sx={{ fontSize: 14 }}>{p.label}</Typography>
-          {p.help && <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{p.help}</Typography>}
+          {p.help && <Typography className="selectable" sx={{ fontSize: 12, color: 'text.secondary' }}>{p.help}</Typography>}
         </Box>
         <Switch checked={p.checked} onChange={(e) => p.onChange(e.target.checked)} />
       </Box>
@@ -117,7 +117,7 @@ function Check(p: { checked: boolean; onChange: (v: boolean) => void; label: str
         label={p.label}
         slotProps={{ typography: { sx: { fontSize: 13 } } }}
       />
-      {p.help && <Typography sx={{ fontSize: 11, color: 'text.secondary', ml: 4, mt: -0.5 }}>{p.help}</Typography>}
+      {p.help && <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary', ml: 4, mt: -0.5 }}>{p.help}</Typography>}
     </Box>
   )
 }

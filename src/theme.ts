@@ -41,7 +41,7 @@ export const createAppTheme = (desktop: boolean) => createTheme({
   },
   components: {
     // アプリとして、ボタンやラベルの文字をドラッグで選択してしまわないようにする。
-    // 入力欄と、選べた方がよいもの（`.selectable`: ファイル名・リンクなど）だけは選択できる
+    // 入力欄と、選べた方がよいもの（`.selectable`: ファイル名・リンク・設定の説明文・エラーの文など）だけは選択できる
     MuiCssBaseline: {
       styleOverrides: {
         // ダブルタップ・ピンチでのページ拡大もさせない（波形のピンチは波形側で扱う）

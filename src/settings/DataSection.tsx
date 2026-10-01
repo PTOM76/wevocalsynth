@@ -37,7 +37,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
     <Box sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%', display: 'flex', alignItems: 'center', gap: 1.5 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontSize: 13 }}>{t(label)}</Typography>
-        <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{t(help)}</Typography>
+        <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary' }}>{t(help)}</Typography>
       </Box>
       {button}
     </Box>
@@ -107,7 +107,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
           {t('data.persistButton')}
         </Button>,
       )}
-      {message && <Typography sx={{ gridColumn: '1 / -1', fontSize: 12, color: 'primary.main' }}>{message}</Typography>}
+      {message && <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: 12, color: 'primary.main' }}>{message}</Typography>}
     </>
   )
 }

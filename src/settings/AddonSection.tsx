@@ -80,7 +80,7 @@ export default function AddonSection({ ids }: { ids: string[] }) {
           <Box key={a.id} sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%', display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontSize: 13 }}>{t(a.shortName ?? a.name)}</Typography>
-              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{describe(s)}</Typography>
+              <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary' }}>{describe(s)}</Typography>
             </Box>
             {a.dev && s?.installed && (
               <Button size="small" onClick={() => void check(a)} sx={{ flexShrink: 0 }}>
@@ -100,7 +100,7 @@ export default function AddonSection({ ids }: { ids: string[] }) {
           </Box>
         )
       })}
-      {message && <Typography sx={{ gridColumn: '1 / -1', fontSize: 12, color: 'primary.main' }}>{message}</Typography>}
+      {message && <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: 12, color: 'primary.main' }}>{message}</Typography>}
       {dialog}
     </>
   )
