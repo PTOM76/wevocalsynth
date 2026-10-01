@@ -75,7 +75,7 @@ WeVocalSynth の操作方法をまとめた説明書。<br />
 
 トラックが 2 本以上あるときは、ツールバーの下にトラックの欄も出る（[トラック](#トラック)）。
 
-<details>
+<details open>
 <summary>ライトテーマの画面（「設定 → 表示」で切り替える）</summary>
 
 <img src="images/main-light.png" alt="ライトテーマの画面" width="800">
@@ -175,7 +175,7 @@ WeVocalSynth の操作方法をまとめた説明書。<br />
 
 横向きにすると、左に波形パネルと表示のツール、右に「加工」「音量」のタブが並ぶ（パソコンの画面に近い並び）。
 
-<details>
+<details open>
 <summary>横向きの画面</summary>
 
 <img src="images/mobile-landscape.png" alt="スマホを横向きにしたときの画面" width="600">
@@ -279,7 +279,7 @@ WeVocalSynth の操作方法をまとめた説明書。<br />
 
 ### 処理方式（「…」から選ぶ）
 
-<details>
+<details open>
 <summary>処理方式の一覧</summary>
 
 | 方式 | 向いているもの |
@@ -323,7 +323,7 @@ WeVocalSynth の操作方法をまとめた説明書。<br />
 
 ビブラートの速さは、プロジェクトの BPM に合わせた値が初めに入る。
 
-<details>
+<details open>
 <summary>「MIDI の音程を当てはめる」で選べるもの</summary>
 
 | 項目 | 内容 |
@@ -468,7 +468,7 @@ WeVocalSynth の操作方法をまとめた説明書。<br />
 - プロジェクトには、原音、加工後の音声、設定が入る。元に戻す履歴は入らない
 - トラックが 2 本以上あるときは、「全トラックのミックス」か「選んでいるトラックだけ」かを選べる。ミックスは、鳴っているトラック（ミュート・ソロに従う）を混ぜた 1 つの音声になる
 
-<details>
+<details open>
 <summary>書き出せる形式</summary>
 
 | 形式 | 拡張子 | 選べるもの |
