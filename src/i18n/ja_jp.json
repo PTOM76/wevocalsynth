@@ -183,6 +183,8 @@
   "settings.groupDebug": "デバッグ",
   "settings.showDebug": "デバッグ表示",
   "settings.showDebugHelp": "画面左下に表示します。Ctrl+Shift+D でも切り替えできます",
+  "settings.dialogPip": "ダイアログを別窓（PiP）で開く",
+  "settings.dialogPipHelp": "常に手前に出る窓で開きます。今は設定画面のみ",
   "settings.groupHistory": "元に戻す",
   "settings.historyLimit": "元に戻せる回数",
   "settings.historyMemory": "使用メモリの上限",

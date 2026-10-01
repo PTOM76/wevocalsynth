@@ -30,6 +30,7 @@ export default function SettingsDialog({ open, onClose, settings, onChange, proj
       onChange={onChange}
       categories={settingsCategories(t)}
       initial="general"
+      windowMode={settings.dialogPip ? 'pip' : 'dialog'}
       pages={(draft, set) => settingsPages({ draft, set, onClose, t, project })}
     />
   )

@@ -183,6 +183,8 @@
   "settings.groupDebug": "Debug",
   "settings.showDebug": "Debug overlay",
   "settings.showDebugHelp": "Shown at the bottom left. Toggle with Ctrl+Shift+D",
+  "settings.dialogPip": "Open dialogs in a separate window (PiP)",
+  "settings.dialogPipHelp": "Opens in an always-on-top window. Settings only for now",
   "settings.groupHistory": "Undo",
   "settings.historyLimit": "Undo steps",
   "settings.historyMemory": "Memory limit",

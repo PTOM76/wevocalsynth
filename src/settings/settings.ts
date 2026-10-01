@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { LangSetting } from '../i18n/i18n'
 import type { F0Params } from '../dsp/engine'
-
 /** ファイルを開いたときの処理モード。auto は素材から自動判定する */
 export type InitialMode = 'auto' | 'vocal' | 'instrument'
 
@@ -63,6 +62,8 @@ export interface Settings {
   showMeters: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
+  /** ダイアログを Document Picture-in-Picture の窓で開く（対応していないブラウザではふつうのダイアログ） */
+  dialogPip: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -85,6 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
   f0SilenceDb: -50,
   historyLimit: 50,
   historyMemoryMb: 512,
+  dialogPip: false,
 }
 const DEFAULTS = DEFAULT_SETTINGS
 const STORAGE_KEY = 'wevocalsynth.settings'

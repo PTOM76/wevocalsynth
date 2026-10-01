@@ -77,6 +77,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
           />
         </Row>
         <Check checked={draft.showMeters} onChange={(v) => set({ showMeters: v })} label={t('settings.showMeters')} help={t('settings.showMetersHelp')} />
+        <Check checked={draft.dialogPip} onChange={(v) => set({ dialogPip: v })} label={t('settings.dialogPip')} help={t('settings.dialogPipHelp')} />
         <Row label={t('settings.language')}>
           <Choice<LangSetting>
             value={draft.language}
@@ -125,8 +126,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
 
     debug: (
       <Group title={t('settings.groupDebug')}>
-        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
-      </Group>
+        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />      </Group>
     ),
     pitch: (
       <Group title={t('settings.groupPitch')}>
