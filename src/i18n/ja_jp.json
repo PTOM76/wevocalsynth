@@ -190,6 +190,7 @@
   "settings.windowDialog": "ダイアログ",
   "settings.windowPopup": "ポップアップ",
   "settings.windowSub": "サブウィンドウ",
+  "settings.windowTab": "別タブ",
   "settings.groupHistory": "元に戻す",
   "settings.historyLimit": "元に戻せる回数",
   "settings.historyMemory": "使用メモリの上限",

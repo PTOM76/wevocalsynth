@@ -124,7 +124,23 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
 
     debug: (
       <Group title={t('settings.groupDebug')}>
-        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />      </Group>
+        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
+        <Row label={t('settings.dialogWindow')}>
+          <Choice<WindowMode>
+            value={draft.dialogWindow}
+            onChange={(v) => set({ dialogWindow: v })}
+            options={[
+              ['dialog', t('settings.windowDialog')],
+              ['nativeDialog', '<dialog>'],
+              ['popover', 'Popover API'],
+              ['popup', t('settings.windowPopup')],
+              ['tab', t('settings.windowTab')],
+              ['window', t('settings.windowSub')],
+              ['pip', 'PiP'],
+            ]}
+          />
+        </Row>
+      </Group>
     ),
     pitch: (
       <Group title={t('settings.groupPitch')}>

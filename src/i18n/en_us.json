@@ -190,6 +190,7 @@
   "settings.windowDialog": "Dialog",
   "settings.windowPopup": "Popup",
   "settings.windowSub": "Sub-window",
+  "settings.windowTab": "New tab",
   "settings.groupHistory": "Undo",
   "settings.historyLimit": "Undo steps",
   "settings.historyMemory": "Memory limit",
