@@ -36,6 +36,18 @@ export default defineConfig({
         // wasm もオフラインで使えるようにキャッシュ対象に含める
         globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2,wasm}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+        // 追加機能はアプリ本体のプリキャッシュに入れず、導入した人だけ別のキャッシュに保存する（docs/EXTRACTOR.md）
+        globIgnores: ['addons/**'],
+        // 追加機能のページ（addons/ 以下）を開いたときにアプリ本体の index.html を返さない
+        navigateFallbackDenylist: [/\/addons\//],
+        runtimeCaching: [
+          {
+            // ページを開く操作は対象外（追加機能のファイルだけを保存先から返す）
+            urlPattern: ({ url, request }) => url.pathname.includes('/addons/') && request.mode !== 'navigate',
+            handler: 'CacheFirst',
+            options: { cacheName: 'wevocalsynth-addons' },
+          },
+        ],
       },
     }),
   ],
