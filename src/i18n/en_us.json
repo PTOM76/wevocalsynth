@@ -196,6 +196,7 @@
   "settings.autoTempo": "Analyze tempo when opening a file",
   "settings.autoTempoHelp": "Sets the BPM and first beat automatically. If the result is doubled or halved, correct it from the BPM display below",
   "update.available": "A new version is available",
+  "update.availableBuild": " ({from} → {to})",
   "update.reload": "Update",
   "settings.groupUpdate": "Updates",
   "update.check": "Check now",

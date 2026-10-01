@@ -196,6 +196,7 @@
   "settings.autoTempo": "ファイルを開いたときにテンポを自動解析する",
   "settings.autoTempoHelp": "BPMと1拍目を自動で入れます。2倍や半分の値になった時は、下のBPM表示から修正できます",
   "update.available": "新しいバージョンがあります",
+  "update.availableBuild": "（{from} → {to}）",
   "update.reload": "更新",
   "settings.groupUpdate": "アップデート",
   "update.check": "今すぐ確認",

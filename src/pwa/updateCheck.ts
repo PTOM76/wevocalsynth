@@ -5,6 +5,24 @@
 
 let registration: ServiceWorkerRegistration | null = null
 
+/** 今動いている版（バージョンとコミット。例: 1.0.3 (47a7e39)） */
+export const APP_BUILD = `${__APP_VERSION__} (${__APP_COMMIT__})`
+
+/**
+ * 配信中の版（ビルド時に書いた version.json）。更新の通知で「どの版が来たか」を出すのに使う。
+ * 取れなければ null（オフラインなど）
+ */
+export async function fetchLatestBuild(): Promise<string | null> {
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}version.json`, { cache: 'no-store' })
+    if (!res.ok) return null
+    const v = (await res.json()) as { version: string; commit: string }
+    return `${v.version} (${v.commit})`
+  } catch {
+    return null
+  }
+}
+
 /** UpdatePrompt が Service Worker を登録したときに呼ぶ */
 export function setRegistration(r: ServiceWorkerRegistration) {
   registration = r

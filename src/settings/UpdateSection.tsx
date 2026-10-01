@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Box, Button, CircularProgress, Typography } from '@mui/material'
-import { checkForUpdate, type UpdateCheckResult } from '../pwa/updateCheck'
+import { APP_BUILD, checkForUpdate, type UpdateCheckResult } from '../pwa/updateCheck'
 import { useT, type MessageKey } from '../i18n/i18n'
 
 const RESULT_TEXT: Record<UpdateCheckResult, MessageKey> = {
@@ -26,7 +26,7 @@ export default function UpdateSection() {
   return (
     <Box sx={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
       <Typography sx={{ fontSize: 13 }}>
-        {t('about.version')} {__APP_VERSION__}
+        {t('about.version')} <span className="selectable">{APP_BUILD}</span>
       </Typography>
       <Button size="small" variant="outlined" disabled={checking} onClick={() => void check()}>
         {t('update.check')}

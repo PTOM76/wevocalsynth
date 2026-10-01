@@ -1,16 +1,39 @@
+import { execSync } from 'node:child_process'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import pkg from './package.json' with { type: 'json' }
 
+/**
+ * ビルドしたコミットの短いハッシュ。バージョン番号を上げずにデプロイしても、どの版か分かるようにする
+ * （CI では GITHUB_SHA、手元では git から。取れなければ dev）
+ */
+function commitHash(): string {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7)
+  try {
+    return execSync('git rev-parse --short=7 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+  } catch {
+    return 'dev'
+  }
+}
+const commit = commitHash()
+
 // https://vite.dev/config/
 export default defineConfig({
   // GitHub Pages ではリポジトリ名のサブパスで配信されるため、CI から BASE_PATH で指定する
   base: process.env.BASE_PATH ?? '/',
-  // 「このアプリについて」に出すバージョン（package.json の version）
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  // 「このアプリについて」に出すバージョン（package.json の version）とコミット
+  define: { __APP_VERSION__: JSON.stringify(pkg.version), __APP_COMMIT__: JSON.stringify(commit) },
   plugins: [
     react(),
+    // 更新の通知で「どの版が来たか」を出すため、配信中の版を version.json に書く
+    // （オフライン用のキャッシュには入れない＝ globPatterns に json を含めないので、いつもサーバーの最新を読める）
+    {
+      name: 'version-json',
+      generateBundle() {
+        this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: pkg.version, commit }) })
+      },
+    },
     VitePWA({
       // 新しい版は利用者が「更新」を押したときに切り替える（作業中に勝手に再読み込みしない。UpdatePrompt 参照）
       registerType: 'prompt',

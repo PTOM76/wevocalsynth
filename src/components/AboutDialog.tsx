@@ -1,6 +1,7 @@
 import { Box, Button, Dialog, DialogActions, DialogContent, Link, Stack, Typography } from '@mui/material'
 import AppIcon from './AppIcon'
 import { useT } from '../i18n/i18n'
+import { APP_BUILD } from '../pwa/updateCheck'
 
 const REPOSITORY_URL = 'https://github.com/PTOM76/wevocalsynth'
 const AUTHOR = 'PitaQ'
@@ -9,7 +10,8 @@ const AUTHOR = 'PitaQ'
 export default function AboutDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const t = useT()
   const rows: [string, React.ReactNode][] = [
-    [t('about.version'), __APP_VERSION__],
+    // コミットまで出して、バージョン番号を上げずにデプロイした版も見分けられるようにする
+    [t('about.version'), <span className="selectable">{APP_BUILD}</span>],
     [t('about.author'), AUTHOR],
     [
       'GitHub',

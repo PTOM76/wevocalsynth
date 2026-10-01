@@ -1,7 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Alert, Button, Snackbar } from '@mui/material'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useT } from '../i18n/i18n'
-import { setRegistration } from '../pwa/updateCheck'
+import { APP_BUILD, fetchLatestBuild, setRegistration } from '../pwa/updateCheck'
 
 /** 開いたままでも新しい版に気づけるよう、更新を確認する間隔（ミリ秒） */
 const CHECK_INTERVAL_MS = 60 * 60 * 1000
@@ -29,6 +30,12 @@ export default function UpdatePrompt() {
     },
   })
 
+  // 通知を出したら、どの版が来たかを取りに行く（バージョン番号が同じでもコミットで見分けられる）
+  const [latest, setLatest] = useState<string | null>(null)
+  useEffect(() => {
+    if (needRefresh) void fetchLatestBuild().then(setLatest)
+  }, [needRefresh])
+
   return (
     <Snackbar open={needRefresh} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
       <Alert
@@ -42,6 +49,7 @@ export default function UpdatePrompt() {
         }
       >
         {t('update.available')}
+        {latest && <span className="selectable">{t('update.availableBuild', { from: APP_BUILD, to: latest })}</span>}
       </Alert>
     </Snackbar>
   )
