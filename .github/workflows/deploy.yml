@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        # extractor/（ボーカル抽出）と wevocal-lib/ は submodule
+        with:
+          submodules: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -31,6 +34,13 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+      # 追加機能のモデルは sherpa-onnx の配布物から取る。毎回取らないようキャッシュする
+      - uses: actions/cache@v4
+        with:
+          path: .cache/addon-models
+          key: addon-models-${{ hashFiles('scripts/build-addons.mjs') }}
+      # 追加機能（ボーカル抽出の実行環境とモデル）
+      - run: npm run build:addons
       # 確認用の追加機能（設定 → 追加機能。デバッグ表示が ON のときだけ出る）
       - run: node scripts/gen-addon-test.mjs
       - uses: actions/upload-pages-artifact@v3
