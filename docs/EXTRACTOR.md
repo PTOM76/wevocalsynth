@@ -59,7 +59,7 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 ## ボーカル抽出の追加機能
 | 追加機能 | 中身 | 大きさ |
 | --- | --- | --- |
-| `vocal-extractor` | 実行環境。WeVocalExtractor と ONNX Runtime Web（WASM・WebGPU 対応の版） | 27MB（gzip で約 7MB） |
+| `vocal-extractor` | 実行環境。WeVocalExtractor（STFT の wasm を含む）と ONNX Runtime Web（WASM・WebGPU 対応の版） | 27MB（gzip で約 7MB） |
 | `spleeter-fp16` | 軽量モデル。CPU のみ | 38MB |
 | `spleeter-int8` | 標準モデル（既定）。CPU でも fp16 より速く、GPU も使える | 50MB |
 | `spleeter-fp32` | 高精度モデル | 75MB |
@@ -70,7 +70,7 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 ### ビルド
 | 場所 | 内容 |
 | --- | --- |
-| [scripts/build-addons.mjs](../scripts/build-addons.mjs) | 実行環境のビルド、モデルの取得（`.cache/addon-models/`、sherpa-onnx の配布物）、マニフェストの生成。バージョンは内容のハッシュ |
+| [scripts/build-addons.mjs](../scripts/build-addons.mjs) | 実行環境のビルド、モデルの取得（`.cache/addon-models/`、sherpa-onnx の配布物）、マニフェストの生成。バージョンは内容のハッシュ。再配布に要るライセンスの全文（`extractor/licenses/`）も各フォルダに入れる（[LICENSE-THIRD-PARTY.md](../LICENSE-THIRD-PARTY.md)） |
 | [vite.addons.config.ts](../vite.addons.config.ts) | `extractor/` を `addons/vocal-extractor/` にビルドする。ライブラリモードは wasm を JS に埋め込む（76MB になった）ので使わない |
 
 | コマンド | 出力先 |
@@ -103,6 +103,7 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 | 設定 | 設定の「ボーカル抽出」で、使うモデルと「GPU を使う」（既定 ON）を選ぶ。モデルの導入・削除もここ |
 | 実行方法 | 「GPU を使う」が ON で、WebGPU が使え、モデルが対応していれば WebGPU、それ以外は WASM |
 | メモリ | モデルは抽出のたびに読み込み、終わったら解放する（推論中は数百MB使うため、スマホでメモリを持ち続けない） |
-| 高い帯域 | 約 11kHz より上は今は消している（`highBand: 'zeros'`） |
+| 高い帯域 | 約 11kHz より上は標準では消す。設定の「高音域を残す」で、1024 ビン目のマスクで延ばして残す（`highBand: 'edge'`） |
+| 中断 | ステータスバーの × で止める。抽出の Worker ごと止め、途中までの結果は使わない（ほかの処理も同じ。`useTask`） |
 
 アプリ側の処理は [useVocalExtract.ts](../src/hooks/useVocalExtract.ts)（導入の確認 → 実行環境とモデルを読み込む → 範囲ごとに抽出して差し戻す）。
