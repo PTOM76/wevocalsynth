@@ -8,7 +8,9 @@ import { useWaveformView, ZOOM_STEP } from './components/waveform/useWaveformVie
 import AppHeader from './components/AppHeader'
 import { DropOverlay, EmptyState } from './components/EmptyState'
 import Waveform from './components/Waveform'
-import TrackBar from './components/TrackBar'
+import TrackPanel from './components/tracks/TrackPanel'
+import RenameDialog from './components/tracks/RenameDialog'
+import { trackMenuEntries } from './components/tracks/trackMenu'
 import WaveformToolbar from './components/waveform/WaveformToolbar'
 import Toolbar from './components/Toolbar'
 import StatusBar from './components/StatusBar'
@@ -169,19 +171,38 @@ export default function App() {
   ) : (
     <EmptyState onOpen={ed.picker.open} />
   )
-  // トラックが2本以上あるときだけ、波形の上にトラックの帯を出す
+  // トラックの右クリックメニューと名前の変更
+  const [trackMenu, setTrackMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const trackActions = {
+    tracks: ed.tracks.tracks,
+    activeId: ed.tracks.activeId,
+    mix: ed.tracks.mix,
+    busy,
+    select: ed.tracks.select,
+    duplicate: ed.tracks.duplicate,
+    rename: setRenaming,
+    splitStems: (id: string) => void ed.splitStems(id),
+    mergeDown: (id: string) => void ed.tracks.mergeDown(id),
+    mergeAll: () => void ed.tracks.mergeAll(),
+    toggleMute: ed.tracks.toggleMute,
+    toggleSolo: ed.tracks.toggleSolo,
+    remove: ed.tracks.remove,
+  }
+  const trackViewProps = {
+    tracks: ed.tracks.tracks,
+    activeId: ed.tracks.activeId,
+    mix: ed.tracks.mix,
+    disabled: busy,
+    onSelect: ed.tracks.select,
+    onToggleMute: ed.tracks.toggleMute,
+    onToggleSolo: ed.tracks.toggleSolo,
+    onContextMenu: (id: string, x: number, y: number) => setTrackMenu({ id, x, y }),
+  }
+  // トラックが2本以上あるときだけ、波形の上にトラックの欄を出す（広げると波形付きの一覧、折りたたむとタブ）
   const editor = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      <TrackBar
-        tracks={ed.tracks.tracks}
-        activeId={ed.tracks.activeId}
-        mix={ed.tracks.mix}
-        disabled={busy}
-        onSelect={ed.tracks.select}
-        onToggleMute={ed.tracks.toggleMute}
-        onToggleSolo={ed.tracks.toggleSolo}
-        onRemove={ed.tracks.remove}
-      />
+      <TrackPanel {...trackViewProps} view={view} />
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{waveform}</Box>
     </Box>
   )
@@ -344,6 +365,16 @@ export default function App() {
       </Box>
 
       <ContextMenu position={contextPos} entries={context} onClose={() => setContextPos(null)} />
+      <ContextMenu
+        position={trackMenu}
+        entries={trackMenu ? trackMenuEntries(trackMenu.id, trackActions) : []}
+        onClose={() => setTrackMenu(null)}
+      />
+      <RenameDialog
+        name={renaming ? (ed.tracks.tracks.find((tr) => tr.id === renaming)?.name ?? '') : null}
+        onClose={() => setRenaming(null)}
+        onRename={(name) => renaming && ed.tracks.rename(renaming, name)}
+      />
       {edited && (
         <ExportDialog
           open={ed.exportOpen}
