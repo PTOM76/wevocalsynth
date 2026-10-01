@@ -9,8 +9,8 @@ src/
 ├── App.tsx          画面の組み立てだけ
 ├── hooks/           状態と操作（useEditor がまとめる）
 ├── components/      画面部品
-│   ├── waveform/    波形の描画（Canvas）と表示範囲
-│   ├── tracks/      トラックの欄（波形付きの一覧 / タブ）・右クリックメニュー・名前の変更
+│   ├── waveform/    帯パネルの描画（Canvas）と表示範囲、ツールバーのボタン
+│   ├── tracks/      トラックの欄（波形付きの一覧 / タブ）・右クリックメニュー・名前の変更・並び替え
 │   └── menu/        メニューの項目の定義と描画
 ├── audio/           音声データの処理と再生（React に依存しない関数が中心）。トラック・ミックス・MIDI・音声の作成もここ
 │   └── realtime/    ループ試聴の AudioWorklet
@@ -18,11 +18,11 @@ src/
 ├── project/         プロジェクトファイル（.wvsp）と自動保存
 ├── addons/          追加機能の導入・保存・読み込み（docs/EXTRACTOR.md）
 ├── settings/        設定と設定画面（分類ごとのページ、追加機能、データの削除、アップデートの確認）
-├── debug/           デバッグ表示（FPS・描画回数・メモリの内訳・DSP の時間）
+├── debug/           デバッグ表示（FPS・描画回数・メモリの内訳・DSP の時間・画面が止まった記録）
 ├── pwa/             新しい版の確認
 └── i18n/            訳文と t()
 dsp/src/             Rust の DSP
-wevocal-lib/         共有の信号処理（FFT・リサンプル）。submodule
+wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT）。submodule
 extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追加機能としてビルドする（docs/EXTRACTOR.md）
 ```
 
@@ -35,27 +35,34 @@ extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追�
 | `usePlayback` | 再生・試聴・ループの切り替え（どれかを始めたらほかを止める） |
 | `usePreview` | 加工済みプレビューを裏で作る |
 | `useClipAnalysis` | F0・スペクトログラム（表示が ON のときだけ。解析の設定が変わったら解析し直す） |
-| `useLanes` | 帯（波形・スペクトログラム・ピッチ・音量・フォルマント）の表示とフォーカス。ツールバーとショートカットはフォーカスしている帯に効く |
-| `useLaneCurve` / `useFormantCurve` | 音量・フォルマントの帯に描いた曲線（10ms 間隔）。音量は再生にすぐ反映し、フォルマントは試聴で加工して聴く。どちらも適用で確定する |
-| `usePitchClipboard` | ピッチの帯での切り取り・コピー・貼り付け（曲線が対象） |
+| `useLanes` | 帯パネル（波形・スペクトログラム・ピッチ・音量・フォルマント）の表示とフォーカス。ツールバーとショートカットはフォーカスしているパネルに効く |
+| `useLaneCurve` / `useFormantCurve` | 音量・フォルマントパネルに描いた曲線（10ms 間隔）。音量は再生にすぐ反映し、フォルマントは試聴で加工して聴く。どちらも適用で確定する |
+| `usePitchClipboard` | ピッチパネルでの切り取り・コピー・貼り付け（曲線が対象） |
 | `usePitchTarget` / `usePitchTools` | 目標ピッチの曲線（ペン・一括の加工）と、適用前の試聴 |
 | `usePitchVoicing` | ピッチの強制表示・非表示 |
 | `useTempo` | テンポの自動解析と候補 |
 | `useNumberDraft` | 数値欄（入力途中の文字を持ち、確定時に丸める） |
 | `useClipCommands` | 切り貼り・音量とパンの適用・フェードなど（JS で即時に処理） |
 | `useVocalExtract` | ボーカル抽出（追加機能）。範囲の置き換えと、ボーカル・伴奏の2トラックへの分割 |
-| `useTask` | 時間のかかる処理の、処理中の表示・進捗・中断（DSP の Worker を止める） |
+| `useTask` | 時間のかかる処理の、処理中の表示・進捗・中断（加工用の DSP の Worker を止める） |
 | `useAutosave` | IndexedDB への自動保存（トラックごと）と、起動時の復元 |
 | `useAppMenus` | メニューバー・⋮ メニュー・右クリックメニューの中身 |
+| `useShortcuts` | キーボード操作 |
+| `useSeek` | 矢印キー・Home / End での再生位置の移動 |
+| `useOutput` | プロジェクトの保存と、音声の書き出し（ミックス・ファイル名） |
+| `useFileDrop` / `useFilePicker` | ファイルのドロップと、ファイル選択の画面 |
+| `useRangeNote` | 選択範囲の今の音程（「音程を合わせる」用） |
 
 ### 波形（`components/waveform`）
 
 | ファイル | 担当 |
 | --- | --- |
-| `draw.ts` | Canvas への描画（目盛り・波形・スペクトログラム・ピッチ帯・拍の線・選択範囲）と、帯の高さの割り振り（`laneHeights`） |
-| `curveLane.ts` | 音量・フォルマントの帯（目盛りと描いた曲線。縦軸の範囲だけを変えて共通に使う） |
-| `useLanePen.ts` | 帯のペン。押した帯で描き始め、離すまでその帯に描く（ピッチ・音量・フォルマントで共通） |
-| `useLaneDivider.ts` | 上の帯（波形・スペクトログラム）と下の帯（ピッチ・音量・フォルマント）の境目のドラッグ |
+| `draw.ts` | Canvas への描画（目盛り・波形・スペクトログラム・ピッチ・拍の線・選択範囲）と、パネルの高さの割り振り（`laneHeights`）。`prepareCanvas` は大きさが同じなら Canvas を確保し直さない |
+| `spectrogramImage.ts` | スペクトログラムの画像を作る（画像の置き場は使い回す） |
+| `WaveformToolbar.tsx` | 表示のボタンと、フォーカスしているパネルの操作のボタン |
+| `curveLane.ts` | 音量・フォルマントパネル（目盛りと描いた曲線。縦軸の範囲だけを変えて共通に使う） |
+| `useLanePen.ts` | パネルのペン。押したパネルで描き始め、離すまでそのパネルに描く（ピッチ・音量・フォルマントで共通） |
+| `useLaneDivider.ts` | 上のパネル（波形・スペクトログラム）と下のパネル（ピッチ・音量・フォルマント）の境目のドラッグ |
 | `peaks.ts` | 波形の最小値・最大値のピラミッド。拡大率に合った段から求めるので、全体表示でも速い |
 | `useWaveformView.ts` | 表示範囲（拡大縮小・スクロール・再生中の追従） |
 | `useRangeEdges.ts` | 範囲の端のドラッグ |

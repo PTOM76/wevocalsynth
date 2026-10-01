@@ -12,3 +12,4 @@
 - [アルゴリズム](ALGORITHM.md)（音声処理の仕組みと参考資料）
 - [ボーカル抽出](EXTRACTOR.md)（WeVocalSynth 側。本体は wevocalextractor の docs）
 - [ドキュメントの書き方](WRITING.md)
+- [小ネタ](TIPS.md)（作ったきっかけ・名前の由来）
