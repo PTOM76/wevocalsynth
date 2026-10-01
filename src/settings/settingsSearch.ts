@@ -17,7 +17,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupProcess', 'settings.initialMode',
     'settings.groupUpdate', 'update.check',
   ],
-  display: ['settings.groupAppearance', 'settings.theme', 'settings.language', 'settings.showMeters', 'settings.showMetersHelp', 'settings.dialogPip', 'settings.dialogPipHelp'],
+  display: ['settings.groupAppearance', 'settings.theme', 'settings.language', 'settings.showMeters', 'settings.showMetersHelp'],
   pitch: ['settings.groupPitch', 'settings.f0MinHz', 'settings.f0MaxHz', 'settings.f0Voicing', 'settings.f0SilenceDb'],
   tempo: [
     'settings.groupTempo', 'settings.autoTempo', 'settings.autoTempoHelp', 'settings.showBeatGrid',
@@ -31,7 +31,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupData', 'data.work', 'data.workHelp', 'data.cache', 'data.cacheHelp', 'data.addons',
     'data.settings', 'data.settingsHelp', 'data.all', 'data.persist', 'data.persistHelp',
   ],
-  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp'],
+  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.dialogWindow'],
 }
 
 /** 設定画面に渡す分類の一覧（名前と、検索の対象の訳文） */

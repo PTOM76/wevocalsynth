@@ -8,7 +8,7 @@ import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
 import type { LangSetting, MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
-import { Check, Choice, Group, Row } from 'pevenmui'
+import { Check, Choice, Group, Row, type WindowMode } from 'pevenmui'
 
 /** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
 const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
@@ -76,9 +76,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             ]}
           />
         </Row>
-        <Check checked={draft.showMeters} onChange={(v) => set({ showMeters: v })} label={t('settings.showMeters')} help={t('settings.showMetersHelp')} />
-        <Check checked={draft.dialogPip} onChange={(v) => set({ dialogPip: v })} label={t('settings.dialogPip')} help={t('settings.dialogPipHelp')} />
-        <Row label={t('settings.language')}>
+        <Check checked={draft.showMeters} onChange={(v) => set({ showMeters: v })} label={t('settings.showMeters')} help={t('settings.showMetersHelp')} />        <Row label={t('settings.language')}>
           <Choice<LangSetting>
             value={draft.language}
             onChange={(v) => set({ language: v })}
