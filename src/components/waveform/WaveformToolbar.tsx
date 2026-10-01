@@ -102,10 +102,10 @@ interface Props {
 
 /**
  * ツールバーの操作のまとまりの区切り線（ツールバーの切り取りなどとの間と、帯ごとの操作の間で同じものを使う）。
- * 置き場所の行の高さによらず同じ長さになるよう、高さを決めて上下中央に置く。`gap` なら左右にすき間を付ける
+ * 上下は空けず、置いた列の高さいっぱいに伸ばす。`gap` なら左右にすき間を付ける（ツールバーの Stack の spacing と同じ幅）
  */
 export function ToolbarDivider({ gap = false }: { gap?: boolean }) {
-  return <Divider orientation="vertical" flexItem sx={{ height: 24, alignSelf: 'center', mx: gap ? 0.5 : 0 }} />
+  return <Divider orientation="vertical" flexItem sx={{ mx: gap ? 0.5 : 0 }} />
 }
 const Sep = () => <ToolbarDivider gap />
 

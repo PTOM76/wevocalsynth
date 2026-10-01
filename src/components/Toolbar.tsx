@@ -69,7 +69,8 @@ export default function Toolbar(p: Props) {
         <SmallButton title={t('edit.trim')} label={t('edit.trim')} icon={faCropSimple} disabled={!p.canEdit || !p.hasSelection || !p.canTrim} onClick={p.onTrim} />
         <SmallButton title={`${t('edit.clearSelection')} (Esc)`} label={t('edit.clearSelection')} icon={faXmark} disabled={!p.hasSelection} onClick={p.onClearSelection} />
       </Stack>
-      <Stack direction="row" sx={{ alignItems: 'center' }}>
+      {/* 中の区切り線もツールバーの高さいっぱいに伸びるよう、この列は上下に伸ばす */}
+      <Stack direction="row" sx={{ alignItems: 'center', alignSelf: 'stretch' }}>
         {p.viewTools}
       </Stack>
       <Box sx={{ flexGrow: 1 }} />
