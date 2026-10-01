@@ -41,7 +41,7 @@ export async function detectMode(clip: Clip): Promise<{ mode: Mode; voicedRatio:
 
 /** モードに対応する処理方式とフォルマント保持の既定値 */
 export const MODE_SETTINGS: Record<Mode, { algorithm: Algorithm; preserveFormant: boolean }> = {
-  // ボーカルは PSOLA が既定。従来の WSOLA も処理モードの「…」から選べる
-  vocal: { algorithm: 'psola', preserveFormant: true },
+  // ボーカルは SOLA が既定（にじみが少なく、聞き比べて一番自然だった）。PSOLA・WSOLA も処理モードの「…」から選べる
+  vocal: { algorithm: 'sola', preserveFormant: true },
   instrument: { algorithm: 'pv', preserveFormant: false },
 }

@@ -79,7 +79,7 @@ export function useEditor(settings: Settings) {
   const selection = selections[selections.length - 1] ?? null
   const [params, setParams] = useState<EditParams>({
     ...NEUTRAL,
-    algorithm: 'psola',
+    algorithm: MODE_SETTINGS.vocal.algorithm,
     preserveFormant: false,
   })
   // 帯（波形・スペクトログラム・ピッチ・音量・フォルマント）の表示とフォーカス
