@@ -30,14 +30,20 @@ export default function UpdatePrompt() {
     },
   })
 
-  // 通知を出したら、どの版が来たかを取りに行く（バージョン番号が同じでもコミットで見分けられる）
-  const [latest, setLatest] = useState<string | null>(null)
+  // 新しい Service Worker が来たら、どの版かを取りに行く（バージョン番号が同じでもコミットで見分けられる）。
+  // 取り終わるまでは通知を出さない（undefined は取得中、null は取れなかった）
+  const [latest, setLatest] = useState<string | null | undefined>(undefined)
   useEffect(() => {
-    if (needRefresh) void fetchLatestBuild().then(setLatest)
+    if (!needRefresh) return setLatest(undefined)
+    void fetchLatestBuild().then(setLatest)
   }, [needRefresh])
+  // 配信中の版が今動いている版と同じなら通知しない。再読み込みで新しい画面だけ先に読み込んだときなどに、
+  // 古い Service Worker の入れ替えだけが残っていることがあり、そのまま通知すると「1.0.5 → 1.0.5」になる
+  // （待っている Service Worker は、アプリを閉じたときに入れ替わる）
+  const open = needRefresh && latest !== undefined && latest !== APP_BUILD
 
   return (
-    <Snackbar open={needRefresh} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+    <Snackbar open={open} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
       <Alert
         severity="info"
         variant="filled"
