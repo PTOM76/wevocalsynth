@@ -41,6 +41,8 @@ export function useAutosave(
   onError: (e: unknown) => void,
 ) {
   const restoredRef = useRef(false)
+  // 復元を始めたか（開発中の StrictMode は起動時の処理を2回呼ぶので、2回復元しないように）
+  const restoringRef = useRef(false)
   /** トラックごとの、保存済みの原音・加工後 */
   const saved = useRef(new Map<string, { original: Clip | null; edited: Clip | null }>())
   const latest = useRef({ params, onRestore, onError })
@@ -48,7 +50,8 @@ export function useAutosave(
 
   // 起動時に1回だけ復元する
   useEffect(() => {
-    if (restoredRef.current) return
+    if (restoredRef.current || restoringRef.current) return
+    restoringRef.current = true
     if (!enabled) {
       restoredRef.current = true
       return

@@ -3,7 +3,7 @@ import type { EditParams } from '../components/EditPanel'
 import type { Project, ProjectTempo } from './projectFile'
 import { idbGet } from './idb'
 import { markActivity } from '../debug/debugStats'
-import type { AutosaveMessage } from './autosaveWorker'
+import type { AutosaveMessage, AutosaveReply } from './autosaveWorker'
 
 /**
  * 作業状態の自動保存（IndexedDB）。音声データは localStorage の容量（約5MB）に収まらないため IndexedDB に置く。
@@ -27,10 +27,31 @@ export interface AutosaveMeta {
 }
 
 let worker: Worker | null = null
-const post = (m: AutosaveMessage, transfer: Transferable[] = []) => {
-  worker ??= new Worker(new URL('./autosaveWorker.ts', import.meta.url), { type: 'module' })
-  worker.postMessage(m, transfer)
+/** 読み出しの返事を待っているもの */
+const waiting = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>()
+let nextGetId = 1
+function getWorker() {
+  if (!worker) {
+    worker = new Worker(new URL('./autosaveWorker.ts', import.meta.url), { type: 'module' })
+    worker.onmessage = (e: MessageEvent<AutosaveReply>) => {
+      const w = waiting.get(e.data.id)
+      waiting.delete(e.data.id)
+      if (e.data.error) w?.reject(new Error(e.data.error))
+      else w?.resolve(e.data.value)
+    }
+  }
+  return worker
 }
+const post = (m: AutosaveMessage, transfer: Transferable[] = []) => getWorker().postMessage(m, transfer)
+/**
+ * 音声を Worker で読み出す（メインスレッドで IndexedDB から読むと、数十MB の復元で画面が止まった）
+ */
+const readClip = (key: string) =>
+  new Promise<unknown>((resolve, reject) => {
+    const id = nextGetId++
+    waiting.set(id, { resolve, reject })
+    post({ type: 'get', key, id })
+  })
 
 /** 1回に送る音声のサンプル数（4MB。複製は 1〜2ms で済む） */
 const CHUNK = 1 << 20
@@ -116,8 +137,8 @@ export async function loadAutosave(): Promise<{ project: Project; ids: string[] 
         mute: t.mute,
         solo: t.solo,
         overlay: t.overlay,
-        original: await idbGet(trackKey(t.id, 'original')),
-        edited: await idbGet(trackKey(t.id, 'edited')),
+        original: await readClip(trackKey(t.id, 'original')),
+        edited: await readClip(trackKey(t.id, 'edited')),
       })),
     )
     // 加工していないトラックは、加工後に印だけを置いている
