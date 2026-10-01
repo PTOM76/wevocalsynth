@@ -14,7 +14,7 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-    "paths": { "pevenmui": ["./pevenmui/src/index.ts"], "pevenmui/pwa": ["./pevenmui/src/pwa/index.ts"] },
+    "paths": { "pevenmui": ["./pevenmui/src/index.ts"], "pevenmui/pwa": ["./pevenmui/src/pwa/index.ts"], "wevocal-lib": ["./wevocal-lib/web/src/index.ts"] },
     "jsx": "react-jsx",
 
     /* Linting */
@@ -23,5 +23,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "pevenmui/src"]
+  "include": ["src", "pevenmui/src", "wevocal-lib/web/src"]
 }

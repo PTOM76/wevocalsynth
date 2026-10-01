@@ -17,9 +17,7 @@ import {
   Typography,
 } from '@mui/material'
 import { enterToSubmit } from 'pevenmui'
-import type { WavFormat } from '../audio/wav'
-import { EXPORT_EXT, type ExportFormat } from '../audio/export/exportAudio'
-import { MP3_SAMPLE_RATES, OPUS_SAMPLE_RATE, canEncodeOpus } from '../audio/export/formats'
+import { EXPORT_EXT, MP3_SAMPLE_RATES, OPUS_SAMPLE_RATE, canEncodeOpus, type ExportFormat, type WavFormat } from 'wevocal-lib'
 import { useT } from '../i18n/i18n'
 
 /** ダイアログで選んだ設定（範囲は「選択範囲か全体か」だけを持つ） */

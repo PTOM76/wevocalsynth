@@ -1,14 +1,7 @@
-/** メモリ上のプレーナー形式 PCM 音声。全チャンネルは同じ長さ */
-export interface Clip {
-  sampleRate: number
-  channels: Float32Array[]
-}
+import type { Clip } from 'wevocal-lib'
 
-/** 時間範囲（秒） */
-export interface Range {
-  start: number
-  end: number
-}
+// 音声データと時間範囲の型は wevocal-lib（読み込み・書き出しと共通）
+export type { Clip, Range } from 'wevocal-lib'
 
 export const clipLength = (clip: Clip) => clip.channels[0]?.length ?? 0
 export const clipDuration = (clip: Clip) => clipLength(clip) / clip.sampleRate

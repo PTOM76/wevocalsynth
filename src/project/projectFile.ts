@@ -1,6 +1,6 @@
 import type { Clip } from '../audio/types'
 import type { EditParams } from '../components/EditPanel'
-import { readFile } from '../audio/decode'
+import { readFile } from 'wevocal-lib'
 import { t } from '../i18n/i18n'
 
 /**

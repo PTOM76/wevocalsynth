@@ -31,6 +31,8 @@ export default defineConfig({
     alias: [
       { find: /^pevenmui$/, replacement: fileURLToPath(new URL('./pevenmui/src/index.ts', import.meta.url)) },
       { find: /^pevenmui\/pwa$/, replacement: fileURLToPath(new URL('./pevenmui/src/pwa/index.ts', import.meta.url)) },
+      // 音声ファイルの読み込み・書き出し（wevocal-lib の TypeScript 側）
+      { find: /^wevocal-lib$/, replacement: fileURLToPath(new URL('./wevocal-lib/web/src/index.ts', import.meta.url)) },
     ],
   },
   // 「このアプリについて」に出すバージョン（package.json の version）とコミット

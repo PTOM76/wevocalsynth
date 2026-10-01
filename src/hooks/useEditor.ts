@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
-import { AUDIO_ACCEPT, decodeFile } from '../audio/decode'
+import { AUDIO_ACCEPT, decodeFile } from 'wevocal-lib'
 import { DEFAULT_TEMPO, PROJECT_EXT, isProjectFile, loadProject, type Project, type ProjectTempo } from '../project/projectFile'
 import { applyFormantCurve, applyGainCurve, applyPitchCurve, spliceProcessed } from '../audio/edit'
 import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
