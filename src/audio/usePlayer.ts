@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Clip, Range } from './types'
-import { DEFAULT_FADER, type TrackFader } from './tracks'
+import type { Clip, Range } from './types'import { DEFAULT_FADER, type TrackFader } from './tracks'
 import { clipDuration } from './types'
 
 /** 一緒に鳴らすトラック（id はレベルメーターの対応づけに使う） */
@@ -71,9 +70,13 @@ export function usePlayer(
     faders?: Record<string, TrackFader>
     /** 音量の帯に描いた曲線（dB、`hopSec` 間隔）。再生にすぐ反映する（`clip` の音だけに効く） */
     gainCurve?: { db: Float32Array; hopSec: number } | null
+    /** 繰り返す範囲（ループ再生）。範囲の中から再生したら終わりで先頭へ戻り、範囲の外から再生したら終わりまで鳴らしてから先頭へ戻る */
+    loop?: Range | null
   } = {},
 ) {
-  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null, faders = NO_FADERS, gainCurve = null } = opts
+  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null, faders = NO_FADERS, gainCurve = null, loop = null } = opts
+  const loopRef = useRef(loop)
+  loopRef.current = loop
   const gainCurveRef = useRef(gainCurve)
   gainCurveRef.current = gainCurve
   /** 音量の曲線を掛けるノード（再生のたびに作る） */
@@ -102,6 +105,8 @@ export function usePlayer(
   const buffers = useRef(new WeakMap<Clip, AudioBuffer>())
   // 再生中に AudioContext の時刻をクリップ上の時刻へ換算するための基準
   const clockRef = useRef({ ctxStart: 0, offset: 0, end: 0 })
+  /** 範囲試聴の終わり（通常再生なら undefined）。クリップが切り替わって再生し直すときに使う */
+  const playToRef = useRef<number | undefined>(undefined)
   const [playing, setPlaying] = useState(false)
   const [position, setPosition] = useState(0)
 
@@ -227,6 +232,9 @@ export function usePlayer(
       // すぐ鳴らし直すので、AudioContext は止めない
       stopSource(false)
       const duration = clipDuration(clip)
+      // ループ中に範囲の中から再生するときは、範囲の終わりまで
+      const lp = loopRef.current
+      if (to === undefined && lp && from >= lp.start && from < lp.end) to = lp.end
       const start = Math.max(0, Math.min(from, duration))
       const end = Math.max(start, Math.min(to ?? duration, duration))
       if (end - start < 1e-3) return
@@ -271,6 +279,12 @@ export function usePlayer(
       muteNodes.current.set(id, mute)
       src.connect(gain).connect(panner).connect(curveNode).connect(fader.gain).connect(fader.pan).connect(mute).connect(meter).connect(master)
       src.onended = () => {
+        // ループ中は範囲の先頭から鳴らし直す（音量の予約なども作り直すため、音源ごと作り直す）
+        const l = loopRef.current
+        if (l && l.end - l.start >= 1e-3) {
+          void playRef.current(l.start, l.end)
+          return
+        }
         // 最後まで再生して止まったときも、部品を切り離して AudioContext を止める
         stopSource()
         setPlaying(false)
@@ -302,6 +316,7 @@ export function usePlayer(
           return e
         })
       nodesRef.current = made
+      playToRef.current = to
       clockRef.current = { ctxStart: at, offset: start, end }
       scheduleGain()
       scheduleCurve()
@@ -310,6 +325,9 @@ export function usePlayer(
     },
     [clip, id, others, muted, stopSource, scheduleGain, scheduleCurve],
   )
+  /** 最新の play（再生の終わりの onended から、その時点のクリップ・トラックで鳴らし直すため） */
+  const playRef = useRef(play)
+  playRef.current = play
 
   // 描いた音量の曲線が変わったら、再生中でもすぐ反映する
   useEffect(() => {
@@ -357,12 +375,21 @@ export function usePlayer(
   // 再生中は position（React の状態）を更新しない。更新すると画面全体が描き直され、再生中に重くなるため。
   // 今の位置が要る部品（時間表示・再生位置の線・自動スクロール）は `livePosition` を自分で読む
 
-  // クリップが切り替わったら再生を止め、再生位置を範囲内に収める
+  // クリップが切り替わったら（トラックの切り替え・原音と加工後の切り替えなど）、再生中なら同じ位置から新しいクリップで続ける。
+  // 新しいクリップの終わりを過ぎていれば止め、再生位置を範囲内に収める
+  const prevClipRef = useRef(clip)
   useEffect(() => {
+    if (prevClipRef.current === clip) return
+    prevClipRef.current = clip
+    const t = currentTime()
+    if (t !== null && clip && t < clipDuration(clip) - 1e-3) {
+      void play(t, playToRef.current)
+      return
+    }
     stopSource()
     setPlaying(false)
     setPosition((p) => (clip ? Math.min(p, clipDuration(clip)) : 0))
-  }, [clip, stopSource])
+  }, [clip, play, currentTime, stopSource])
 
   useEffect(() => () => void ctxRef.current?.close(), [])
 

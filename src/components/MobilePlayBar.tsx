@@ -52,7 +52,7 @@ export default function MobilePlayBar(p: Props) {
         <IconButton aria-label={t('play.playSelection')} disabled={!p.hasSelection} onClick={p.onPlaySelection}>
           <FontAwesomeIcon icon={faCirclePlay} />
         </IconButton>
-        <IconButton aria-label={t('play.loopPreview')} color={p.loopPlaying ? 'primary' : 'default'} onClick={p.onLoop}>
+        <IconButton aria-label={t('play.repeat')} color={p.loopPlaying ? 'primary' : 'default'} onClick={p.onLoop}>
           <FontAwesomeIcon icon={faRepeat} />
         </IconButton>
         <Box sx={{ ml: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>

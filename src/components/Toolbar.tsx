@@ -56,7 +56,7 @@ export default function Toolbar(p: Props) {
         </Tooltip>
         <SmallButton title={t('common.stop')} label={t('common.stop')} icon={faStop} disabled={p.disabled} onClick={p.onStop} />
         <SmallButton title={t('play.playSelection')} label={t('play.playSelection')} icon={faCirclePlay} disabled={p.disabled || !p.hasSelection} onClick={p.onPlaySelection} />
-        <SmallButton title={t('play.loopTooltip')} label={t('play.loopPreview')} icon={faRepeat} pressed={p.loopPlaying} disabled={p.disabled} onClick={p.onLoop} />
+        <SmallButton title={t('play.repeatTooltip')} label={t('play.repeat')} icon={faRepeat} pressed={p.loopPlaying} disabled={p.disabled} onClick={p.onLoop} />
         <Typography variant="body2" sx={{ fontFamily: 'monospace', ml: 1, minWidth: 150 }}>
           <LiveTime position={p.position} playing={p.playing} livePosition={p.livePosition} duration={p.duration} />
         </Typography>

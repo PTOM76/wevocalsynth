@@ -74,6 +74,8 @@ export default function App() {
   const [renamingProject, setRenamingProject] = useState(false)
   const [pitchDialog, setPitchDialog] = useState<PitchDialogKind>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
+  // 左上のループは通常再生の繰り返しの切り替え（加工欄のループはリアルタイム試聴）
+  const toggleRepeat = () => ed.setRepeat(!ed.repeat)
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
   const viewCtl = useWaveformView(ed.duration, player.livePosition, player.playing)
   const [pitchPercent, setPitchPercent] = usePersistentNumber('wevocalsynth.pitchPercent', 40)
@@ -109,7 +111,7 @@ export default function App() {
     clearSelection: ed.clearSelection,
     selectAll: ed.selectAll,
     playSelection: playback.playSelection,
-    toggleLoop: playback.toggleLoop,
+    toggleLoop: toggleRepeat,
     toggleSpectrogram: () => ed.setShowSpec(!ed.showSpec),
     togglePitch: () => ed.setShowPitch(!ed.showPitch),
     showWave: ed.showWave,
@@ -168,10 +170,12 @@ export default function App() {
     <Waveform
       clip={shown}
       position={player.position}
-      playing={player.playing}
-      livePosition={player.livePosition}
+      // ループ再生中は、ループの読み位置に線を出す
+      playing={player.playing || loop.playing}
+      livePosition={loop.playing ? loop.livePosition : player.livePosition}
       selections={editing ? ed.selections : []}
-      onSeek={player.seek}
+      // ループ再生中は範囲内ならループの中で移る（範囲外は通常の移動）
+      onSeek={(t) => (loop.playing && loop.seek(t)) || player.seek(t)}
       onSelectionsChange={editing ? ed.setSelections : () => {}}
       onStretchRange={ed.stretchRange}
       onContextMenu={(x, y) => setContextPos({ x, y })}
@@ -339,11 +343,11 @@ export default function App() {
                 livePosition={player.livePosition}
                 duration={ed.duration}
                 hasSelection={!!selection}
-                loopPlaying={loop.playing}
+                loopPlaying={ed.repeat}
                 onTogglePlay={playback.togglePlay}
                 onStop={playback.stop}
                 onPlaySelection={playback.playSelection}
-                onLoop={playback.toggleLoop}
+                onLoop={toggleRepeat}
                 task={busy ? { label: ed.taskLabel, progress: ed.progress, onCancel: ed.cancelTask } : null}
                 meter={settings.showMeters && <LevelMeter source={player.masterAnalysers} rows={2} width={96} height={7} label={t('meter.master')} />}
               />
@@ -358,12 +362,12 @@ export default function App() {
                 livePosition={player.livePosition}
                 duration={ed.duration}
                 hasSelection={!!selection}
-                loopPlaying={loop.playing}
+                loopPlaying={ed.repeat}
                 disabled={!shown}
                 onTogglePlay={playback.togglePlay}
                 onStop={playback.stop}
                 onPlaySelection={playback.playSelection}
-                onLoop={playback.toggleLoop}
+                onLoop={toggleRepeat}
                 meter={settings.showMeters && <LevelMeter source={player.masterAnalysers} rows={2} width={80} height={9} label={t('meter.master')} />}
                 viewTools={viewTools}
                 canEdit={editing && !busy}

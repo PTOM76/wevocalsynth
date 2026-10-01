@@ -57,6 +57,8 @@
   "play.loop": "Loop",
   "play.loopPreview": "Loop preview",
   "play.loopTooltip": "Loop the range and hear slider changes instantly (lower quality)",
+  "play.repeat": "Repeat",
+  "play.repeatTooltip": "Repeat the selection (or the whole clip)",
   "play.preview": "Preview",
   "play.previewMax": "Preview up to 20 s",
   "play.previewSingle": "Preview needs a single range",

@@ -112,6 +112,8 @@ export function useEditor(settings: Settings) {
   // ほかのトラックも、ミュート・ソロに従って一緒に鳴らす
   // 音量の適用前の値。再生中の音（加工後の表示のとき、対象の範囲だけ）にすぐ反映する
   const [gainDb, setGainDb] = useState(0)
+  // 通常再生のループ（選択範囲、なければ全体を繰り返す）
+  const [repeat, setRepeat] = useState(false)
   const [pan, setPan] = useState(0)
   // 選択範囲の音量・パンは範囲を選んでいるときだけ（範囲が無いときはトラックのフェーダーを使う）
   const editRangesForGain: Range[] = source === 'edited' && edited ? selections : []
@@ -122,6 +124,7 @@ export function useEditor(settings: Settings) {
     muted: tracks.activeMuted,
     liveGain: (gainDb || pan) && editRangesForGain.length ? { ranges: editRangesForGain, db: gainDb, pan } : null,
     gainCurve: editing && gainCurve.curve?.clip === edited ? { db: gainCurve.curve.values, hopSec: CURVE_HOP_SEC } : null,
+    loop: repeat && duration > 0 ? (selection ?? { start: 0, end: duration }) : null,
   })
   const pitchTarget = usePitchTarget()
   // フォルマントの帯に描いた曲線（試聴ボタンで加工して聴き、適用で音声に書き込む）
@@ -451,7 +454,7 @@ export function useEditor(settings: Settings) {
     // 加工パラメータ
     params, setParams, autoMode, rangeNote,
     // 再生
-    player, preview, loop, playback,
+    player, preview, loop, playback, repeat, setRepeat,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作

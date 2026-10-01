@@ -57,6 +57,8 @@
   "play.loop": "ループ",
   "play.loopPreview": "ループ試聴",
   "play.loopTooltip": "範囲をループ再生し、スライダーの変更をすぐ反映（簡易音質）",
+  "play.repeat": "ループ再生",
+  "play.repeatTooltip": "選択範囲（なければ全体）を繰り返し再生",
   "play.preview": "試聴",
   "play.previewMax": "試聴は20秒まで",
   "play.previewSingle": "試聴は1範囲のみ",

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../types'
-import type { GranularMessage } from './granularProcessor'
+import type { GranularMessage, GranularPosition } from './granularProcessor'
 import processorUrl from './granularProcessor.ts?worker&url'
 
 /**
@@ -18,6 +18,15 @@ export function useRealtimePreview(clip: Clip | null, range: Range | null, semit
   // 作ってしまうと nodeRef から外れたノードが鳴り続け、止められなくなる
   const genRef = useRef(0)
   const readyRef = useRef<Promise<void>>(Promise.resolve())
+  /** ループしている範囲（秒の先頭・サンプル数）と、worklet から最後に知らされた読み位置 */
+  const loopRef = useRef<{ start: number; samples: number; sampleRate: number } | null>(null)
+  const reportRef = useRef<GranularPosition | null>(null)
+  /** 前に返した位置（範囲の先頭からのサンプル数。折り返す前の値） */
+  const lastRef = useRef<number | null>(null)
+  /** 最後に移った時刻（これより前の位置の知らせは古い） */
+  const seekTimeRef = useRef(0)
+  const stretchRef = useRef(stretch)
+  stretchRef.current = stretch
 
   const stop = useCallback(() => {
     genRef.current++
@@ -53,6 +62,13 @@ export function useRealtimePreview(clip: Clip | null, range: Range | null, semit
     const channels = clip.channels.map((c) => c.slice(s, e))
     const node = new AudioWorkletNode(ctx, 'granular-preview', { outputChannelCount: [clip.channels.length] })
     nodeRef.current = node
+    reportRef.current = null
+    loopRef.current = { start: range.start, samples: e - s, sampleRate: clip.sampleRate }
+    lastRef.current = null
+    seekTimeRef.current = 0
+    node.port.onmessage = (m: MessageEvent<GranularPosition>) => {
+      if (m.data.time > seekTimeRef.current) reportRef.current = m.data
+    }
     post({ type: 'load', channels }, channels.map((c) => c.buffer))
     post({ type: 'params', semitones, stretch })
     node.connect(ctx.destination)
@@ -71,5 +87,38 @@ export function useRealtimePreview(clip: Clip | null, range: Range | null, semit
 
   useEffect(() => () => void ctxRef.current?.close(), [])
 
-  return { playing, start, stop }
+  /**
+   * 今鳴らしている元音声上の位置（秒。再生位置の線用）。最後に知らされた読み位置から、
+   * 経った時間ぶん（読み位置は出力 1 サンプルあたり 1 / 伸縮率 進む）を足して範囲内に折り返す。始まる前は範囲の先頭
+   */
+  const livePosition = useCallback(() => {
+    const l = loopRef.current
+    const r = reportRef.current
+    const ctx = ctxRef.current
+    if (!l) return 0
+    if (!r || !ctx) return l.start
+    let p = r.pos + ((ctx.currentTime - r.time) * l.sampleRate) / r.stretch
+    // 時刻の読み取りのずれで少し戻ることがあるので、折り返し（大きく戻る）以外では戻さない
+    const last = lastRef.current
+    if (last !== null && p < last && last - p < l.samples / 2) p = last
+    lastRef.current = p
+    return l.start + (((p % l.samples) + l.samples) % l.samples) / l.sampleRate
+  }, [])
+
+  /** ループ中に範囲内の `t`（秒）へ移る。範囲外なら何もせず false */
+  const seek = useCallback((t: number) => {
+    const l = loopRef.current
+    const ctx = ctxRef.current
+    if (!nodeRef.current || !l || !ctx) return false
+    const pos = Math.round((t - l.start) * l.sampleRate)
+    if (pos < 0 || pos >= l.samples) return false
+    post({ type: 'seek', pos })
+    // 移る前に送られていた位置の知らせは捨てる
+    seekTimeRef.current = ctx.currentTime
+    reportRef.current = { pos, time: ctx.currentTime, stretch: stretchRef.current }
+    lastRef.current = null
+    return true
+  }, [])
+
+  return { playing, start, stop, livePosition, seek }
 }

@@ -11,11 +11,25 @@ declare abstract class AudioWorkletProcessor {
   abstract process(inputs: Float32Array[][], outputs: Float32Array[][]): boolean
 }
 declare function registerProcessor(name: string, ctor: new () => AudioWorkletProcessor): void
+declare const sampleRate: number
+declare const currentTime: number
 
 /** メインスレッドから送るメッセージ */
 export type GranularMessage =
   | { type: 'load'; channels: Float32Array[] }
   | { type: 'params'; semitones: number; stretch: number }
+  /** 読み位置を範囲の先頭から `pos` サンプルへ移す */
+  | { type: 'seek'; pos: number }
+
+/** メインスレッドへ送る今の読み位置（再生位置の線用）。`pos` は範囲の先頭からのサンプル数、`time` はその時の AudioContext の時刻 */
+export interface GranularPosition {
+  pos: number
+  time: number
+  stretch: number
+}
+
+/** 読み位置を知らせる間隔（秒） */
+const REPORT_SEC = 1 / 30
 
 const GRAIN = 2048
 const HOP = GRAIN / 2
@@ -33,6 +47,8 @@ class GranularProcessor extends AudioWorkletProcessor {
   private phase = 0
   /** 重なっている2つのグレインの読み始め位置（[新しい方, 古い方]） */
   private grains = [0, 0]
+  /** 前に読み位置を知らせてからの出力サンプル数 */
+  private sinceReport = 0
 
   constructor() {
     super()
@@ -43,6 +59,10 @@ class GranularProcessor extends AudioWorkletProcessor {
         this.readPos = 0
         this.phase = 0
         this.grains = [0, 0]
+      } else if (m.type === 'seek') {
+        // 次のブロックから新しい位置のグレインを始める（鳴っている古いグレインとは窓で重なってなめらかにつながる）
+        this.readPos = m.pos
+        this.phase = 0
       } else {
         this.ratio = 2 ** (m.semitones / 12)
         this.stretch = m.stretch
@@ -80,6 +100,18 @@ class GranularProcessor extends AudioWorkletProcessor {
         out[c][n] = this.sample(ch, posNew) * wNew + this.sample(ch, posOld) * wOld
       }
       this.phase = (this.phase + 1) % HOP
+    }
+    this.sinceReport += frames
+    if (this.sinceReport >= REPORT_SEC * sampleRate) {
+      this.sinceReport = 0
+      // 読み始め位置はグレインごとに飛ぶので、グレイン内の進み（出力 1 サンプルあたり 1 / 伸縮率）を足して連続にする。
+      // 時刻はこのブロックを出し終えたとき
+      const m: GranularPosition = {
+        pos: this.grains[0] + this.phase / this.stretch,
+        time: currentTime + frames / sampleRate,
+        stretch: this.stretch,
+      }
+      this.port.postMessage(m)
     }
     return true
   }

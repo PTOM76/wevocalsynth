@@ -127,7 +127,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
 
   const context: MenuEntry[] = [
     { label: t('play.playSelection'), disabled: noSel, onClick: a.playSelection },
-    { label: t('play.loopPreview'), disabled: noClip, onClick: a.toggleLoop },
+    { label: t('play.repeat'), disabled: noClip, onClick: a.toggleLoop },
     { divider: true },
     ...edit,
     ...(a.pitchLane
