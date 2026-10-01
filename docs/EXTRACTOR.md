@@ -165,6 +165,22 @@ Service Worker は保存先から返すだけで、自分では保存しない�
 - 保存先から照合するときは `ignoreVary` を付ける。サーバーによって `Vary`（`Origin` / `Accept-Encoding`）が付き、条件次第で見つからないと判定されるため
 - スマホの回線での速度・保存できる容量は未確認
 
+## 実装の場所 (2026-10-01)
+| 場所 | 内容 |
+| --- | --- |
+| [extractor/src/](../extractor/src/) | 抽出の本体。`createExtractor` / `separate`（44.1kHz・ステレオへの変換と戻し）、推論の Worker、STFT。アプリには依存しない |
+| [vite.addons.config.ts](../vite.addons.config.ts) | 本体を `dist/addons/vocal-extractor/` にビルドする。ライブラリモードは wasm を JS に埋め込む（76MB になった）ので使わない |
+| [scripts/build-addons.mjs](../scripts/build-addons.mjs) | 実行環境のビルド、モデルの取得（`.cache/addon-models/`）、マニフェストの生成 |
+| [src/hooks/useVocalExtract.ts](../src/hooks/useVocalExtract.ts) | アプリ側の操作。導入の確認 → 実行環境とモデルを読み込む → 範囲ごとに抽出して差し戻す |
+
+| 追加機能 | 中身 | 大きさ |
+| --- | --- | --- |
+| `vocal-extractor` | 本体と ONNX Runtime Web（WASM・WebGPU 対応の版） | 27MB（gzip で約 7MB） |
+| `spleeter-fp16` / `-int8` / `-fp32` | モデル。`vocal-extractor` に依存し、未導入なら一緒に入れる | 38 / 50 / 75MB |
+
+- モデルは抽出のたびに読み込み、終わったら Worker ごと解放する。推論中は数百MB使うため、スマホでメモリを持ち続けない
+- 11kHz より上は今は 0 にしている（`highBand`。延ばす方法も API にはある）
+
 ## WeVocalSynth への組み込み
 - 入口: 右クリックメニューと「編集」メニューの「ボーカルを抽出」。ツールバーには、よく使うと分かるまで入れない
 - 対象: 選択範囲があればその範囲、なければ全体（「ピッチの揺れを平らにする」と同じ）

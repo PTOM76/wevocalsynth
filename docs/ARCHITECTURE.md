@@ -46,6 +46,8 @@ src/
 ├── pwa/             新しい版の確認
 └── i18n/            訳文と t()
 dsp/src/             Rust の DSP
+wevocal-lib/         共有の信号処理（FFT・リサンプル）。submodule
+extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追加機能としてビルドする（docs/EXTRACTOR.md）
 ```
 
 | フック | 担当 |
@@ -132,12 +134,12 @@ dsp/src/             Rust の DSP
 | `timemap.rs` | 出力位置→入力位置の対応。一定倍率とピッチカーブの両方を表す |
 | `curve.rs` | ピッチカーブ編集。時間ごとのピッチ比から時間マップを作る |
 | `formant.rs` | ケプストラムによるスペクトル包絡の補正 |
-| `resample.rs` | 窓付き sinc 補間。上げるときはカットオフを下げて折り返しを防ぐ |
 | `f0.rs` | YIN による F0 推定（16kHz に間引き、10ms 間隔）。探す範囲・有声判定・無音判定は `Params` で変えられる |
 | `spec.rs` | 表示用スペクトログラム（STFT 2048/256、対数周波数 128段、1バイト） |
 | `tempo.rs` | テンポ解析。スペクトルの増加量（オンセット強度）の、時間方向の周波数成分から BPM の候補と1拍目の位置を求める |
-| `fft.rs` | radix-2 FFT（回転因子を段ごとに連続して並べ、SIMD が効くようにしている） |
 | `ffi.rs` | wasm 向けの C ABI |
+
+FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効くようにしている）とリサンプル（窓付き sinc 補間。上げるときはカットオフを下げて折り返しを防ぐ）は `wevocal-lib` にある。`crate::fft` / `crate::resample` で今までどおり使える。
 
 ### wasm の公開関数
 
@@ -186,5 +188,6 @@ dsp/src/             Rust の DSP
 | `npm run build:wasm` | Rust を wasm にビルドし `src/dsp/wevocal_dsp.wasm` にコピー（simd128 有効） |
 | `npm run dev` / `npm run build` | Vite の開発サーバー / 本番ビルド |
 | `npm run test:dsp` | DSP のテスト |
+| `npm run build:addons` | 追加機能（ボーカル抽出の実行環境とモデル）を `dist/addons/` に作る。`npm run build` の後に実行する |
 
 `.wasm` はリポジトリに含めているので、Rust がない環境でも `npm install && npm run dev` で動く。
