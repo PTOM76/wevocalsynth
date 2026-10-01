@@ -317,7 +317,7 @@ export default function App() {
                 onStop={playback.stop}
                 onPlaySelection={playback.playSelection}
                 onLoop={playback.toggleLoop}
-                meter={settings.showMeters && <LevelMeter source={player.masterAnalyser} width={96} height={4} label={t('meter.master')} />}
+                meter={settings.showMeters && <LevelMeter source={player.masterAnalysers} rows={2} width={96} height={7} label={t('meter.master')} />}
               />
             }
           />
@@ -336,7 +336,7 @@ export default function App() {
                 onStop={playback.stop}
                 onPlaySelection={playback.playSelection}
                 onLoop={playback.toggleLoop}
-                meter={settings.showMeters && <LevelMeter source={player.masterAnalyser} width={72} height={6} label={t('meter.master')} />}
+                meter={settings.showMeters && <LevelMeter source={player.masterAnalysers} rows={2} width={80} height={9} label={t('meter.master')} />}
                 viewTools={viewTools}
                 canEdit={editing && !busy}
                 hasClipboard={ed.cmd.hasClipboard}

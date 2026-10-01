@@ -30,7 +30,7 @@ const RAMP_SEC = 0.005
  * メモリ上のクリップを Web Audio で再生する。`others`（ほかのトラックのうち鳴らすもの）も同じ位置から一緒に鳴らす。
  * 再生位置・長さ・終わりは `clip` が基準。`muted` なら `clip` は鳴らさない（ほかのトラックのミュート・ソロで消すとき）。
  * `liveGain` は適用前の音量で、再生中に変えてもすぐ反映する（`clip` の音だけに効く）。
- * `id` は `clip` のトラックの id。トラックごとと全体のレベルメーター用に、`analyser(id)` / `masterAnalyser()` を返す
+ * `id` は `clip` のトラックの id。トラックごとと全体のレベルメーター用に、`analyser(id)` / `masterAnalysers()`（左・右）を返す
  */
 export function usePlayer(
   clip: Clip | null,
@@ -48,6 +48,8 @@ export function usePlayer(
   /** レベルメーター: トラックごと（再生のたびに作る）と、全体の出口 */
   const analysersRef = useRef(new Map<string, AnalyserNode>())
   const masterRef = useRef<AnalyserNode | null>(null)
+  /** 全体の左右（ステレオのメーター用） */
+  const masterLRRef = useRef<[AnalyserNode, AnalyserNode] | null>(null)
   /** クリップごとの AudioBuffer（作り直すと重いので覚えておく。クリップが捨てられたら一緒に消える） */
   const buffers = useRef(new WeakMap<Clip, AudioBuffer>())
   // 再生中に AudioContext の時刻をクリップ上の時刻へ換算するための基準
@@ -135,6 +137,14 @@ export function usePlayer(
       if (!masterRef.current || masterRef.current.context !== ctx) {
         masterRef.current = makeAnalyser(ctx)
         masterRef.current.connect(ctx.destination)
+        // 左右に分けて別々に測る（AnalyserNode はチャンネルを混ぜて読むため）
+        const split = ctx.createChannelSplitter(2)
+        masterRef.current.connect(split)
+        const l = makeAnalyser(ctx)
+        const r = makeAnalyser(ctx)
+        split.connect(l, 0)
+        split.connect(r, 1)
+        masterLRRef.current = [l, r]
       }
       const master = masterRef.current
       const meter = makeAnalyser(ctx)
@@ -209,8 +219,8 @@ export function usePlayer(
 
   /** トラック `id` のレベルメーター（再生していなければ null） */
   const analyser = useCallback((trackId: string) => analysersRef.current.get(trackId) ?? null, [])
-  /** 全体のレベルメーター（再生していなければ null） */
-  const masterAnalyser = useCallback(() => (sourceRef.current ? masterRef.current : null), [])
+  /** 全体のレベルメーター（左・右。再生していなければ null） */
+  const masterAnalysers = useCallback(() => (sourceRef.current ? masterLRRef.current : null), [])
 
-  return { playing, position, livePosition, play, pause, seek, analyser, masterAnalyser }
+  return { playing, position, livePosition, play, pause, seek, analyser, masterAnalysers }
 }

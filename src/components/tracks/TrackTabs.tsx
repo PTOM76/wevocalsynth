@@ -52,7 +52,7 @@ export default function TrackTabs(p: Props) {
                         {tr.name}
                       </Box>
                     </Tooltip>
-                    {p.meter && <LevelMeter source={() => p.meter?.(tr.id) ?? null} width={56} height={2} label={t('meter.track', { name: tr.name })} />}
+                    {p.meter && <LevelMeter source={() => p.meter?.(tr.id) ?? null} width={56} height={3} label={t('meter.track', { name: tr.name })} />}
                   </Box>
                   <MixToggle label="M" title={t('track.mute')} on={m.mute} color="warning.main" onClick={() => p.onToggleMute(tr.id)} />
                   <MixToggle label="S" title={t('track.solo')} on={m.solo} color="success.main" onClick={() => p.onToggleSolo(tr.id)} />
