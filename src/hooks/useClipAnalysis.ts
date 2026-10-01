@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Clip } from '../audio/types'
+import { isCancelled } from '../dsp/engine'
 
 /**
  * `enabled` の間だけ、`clip` か `key`（解析の設定）が変わるたびに `analyze` を実行して結果を返す（解析中や無効時は null）。
@@ -22,7 +23,7 @@ export function useClipAnalysis<T>(
     fnRef.current
       .analyze(clip)
       .then((data) => !cancelled && setResult({ clip, key, data }))
-      .catch((e) => !cancelled && fnRef.current.onError(e))
+      .catch((e) => !cancelled && !isCancelled(e) && fnRef.current.onError(e))
     return () => {
       cancelled = true
     }

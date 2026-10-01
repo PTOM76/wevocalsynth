@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { Clip } from '../audio/types'
-import { analyzeTempo, type TempoCandidate } from '../dsp/engine'
+import { analyzeTempo, isCancelled, type TempoCandidate } from '../dsp/engine'
 
 /**
  * テンポ（BPM）の自動解析。ファイルを開いた直後や、BPM 表示の「再解析」から呼ぶ。
@@ -22,7 +22,7 @@ export function useTempo() {
       setCandidates(result)
       if (result[0]) onDone(result[0])
     } catch (e) {
-      if (latestRef.current === clip) onError(e)
+      if (latestRef.current === clip && !isCancelled(e)) onError(e)
     } finally {
       if (latestRef.current === clip) setAnalyzing(false)
     }

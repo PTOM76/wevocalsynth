@@ -50,6 +50,9 @@ import.meta.hot?.dispose(() => {
  * 処理中のものをすべて中断する（Worker ごと止める。待っている呼び出しは失敗する）。
  * Worker は次のリクエストで作り直される（wasm の読み込みに少しかかる）
  */
+/** 中断（`cancelDsp`）で失敗したか。通知せずに済ませるのに使う */
+export const isCancelled = (e: unknown) => e instanceof DOMException && e.name === 'AbortError'
+
 export function cancelDsp() {
   if (!worker) return
   worker.terminate()
