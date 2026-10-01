@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build:wasm": "node scripts/build-wasm.mjs",
+    "build:wasm:extractor": "node extractor/scripts/build-wasm.mjs",
     "test:dsp": "cargo test --release --manifest-path dsp/Cargo.toml",
     "dev": "vite",
     "build": "tsc -b && vite build",
