@@ -18,6 +18,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { renderEntries, type MenuGroup } from './menu/MenuList'
 import MenuBar from './menu/MenuBar'
 import { useT } from '../i18n/i18n'
+import { LANDSCAPE_PHONE } from '../theme'
 
 interface Props {
   menus: MenuGroup[]
@@ -79,14 +80,17 @@ function OverflowMenu({ menus }: { menus: MenuGroup[] }) {
 export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRedo }: Props) {
   const t = useT()
   const theme = useTheme()
-  const mobile = useMediaQuery(theme.breakpoints.down('md'))
+  // 大きめのスマホを横向きにすると幅が md を超えるので、横向きのスマホもスマホの配置にする
+  const mobile = useMediaQuery(`${theme.breakpoints.down('md').replace('@media ', '')}, ${LANDSCAPE_PHONE}`)
   const standalone = useMediaQuery('(display-mode: standalone), (display-mode: window-controls-overlay)')
+  const landscape = useMediaQuery(LANDSCAPE_PHONE)
 
   if (mobile) {
     return (
       <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Toolbar sx={{ minHeight: 56, gap: 0.5 }}>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontSize: 22, fontWeight: 400 }} noWrap>
+        {/* 横向きは高さが足りないので低くする */}
+        <Toolbar sx={{ minHeight: `${landscape ? 44 : 56}px !important`, gap: 0.5 }}>
+          <Typography variant="h6" sx={{ flexGrow: 1, fontSize: landscape ? 18 : 22, fontWeight: 400 }} noWrap>
             WeVocalSynth
           </Typography>
           <HeaderIcon title={t('common.undo')} icon={faRotateLeft} disabled={!canUndo || busy} onClick={onUndo} />

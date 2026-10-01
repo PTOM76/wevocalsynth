@@ -103,3 +103,6 @@ export const desktopStyles = {
     outlineOffset: -2,
   },
 } as const
+
+/** スマホの横向き（高さが足りないので、ヘッダーを低くし、波形とパネルを左右に並べる） */
+export const LANDSCAPE_PHONE = '(orientation: landscape) and (max-height: 500px)'

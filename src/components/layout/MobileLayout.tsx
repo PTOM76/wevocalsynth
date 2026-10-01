@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { Box, Stack, Tab, Tabs } from '@mui/material'
+import { Box, Stack, Tab, Tabs, useMediaQuery } from '@mui/material'
 import { useT } from '../../i18n/i18n'
+import { LANDSCAPE_PHONE } from '../../theme'
 
 interface Props {
   /** 波形とピッチ帯（ファイルを開く前は案内） */
@@ -24,10 +25,10 @@ type TabKey = 'process' | 'volume'
 export default function MobileLayout(p: Props) {
   const t = useT()
   const [tab, setTab] = useState<TabKey>('process')
-  return (
-    <>
-      <Box sx={{ flex: '0 0 42%', minHeight: 180, p: 0.5, bgcolor: 'background.paper' }}>{p.editor}</Box>
-      <Stack
+  const landscape = useMediaQuery(LANDSCAPE_PHONE)
+
+  const viewBar = (
+    <Stack
         direction="row"
         useFlexGap
         // ボタンが増えても1段に収め、はみ出した分は横にスクロールする（折り返すと波形の高さが削られる）
@@ -35,7 +36,9 @@ export default function MobileLayout(p: Props) {
       >
         {p.view}
       </Stack>
-      <Box sx={{ borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>{p.editorFooter}</Box>
+  )
+  const footer = <Box sx={{ borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>{p.editorFooter}</Box>
+  const tabs = (
       <Tabs
         value={tab}
         onChange={(_, v: TabKey) => setTab(v)}
@@ -45,9 +48,39 @@ export default function MobileLayout(p: Props) {
         <Tab value="process" label={t('process.title')} />
         <Tab value="volume" label={t('volume.title')} />
       </Tabs>
-      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 1 }}>
-        {tab === 'process' ? p.process : p.volume}
-      </Box>
+  )
+  const panel = (
+    <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 1 }}>
+      {tab === 'process' ? p.process : p.volume}
+    </Box>
+  )
+
+  // 横向き: 高さが足りないので、左に波形と表示ツール、右にタブとパネルを並べる
+  if (landscape)
+    return (
+      <>
+        <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
+          <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ flex: 1, minHeight: 0, p: 0.5, bgcolor: 'background.paper' }}>{p.editor}</Box>
+            {viewBar}
+            {footer}
+          </Box>
+          <Box sx={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider' }}>
+            {tabs}
+            {panel}
+          </Box>
+        </Box>
+        {p.playBar}
+      </>
+    )
+
+  return (
+    <>
+      <Box sx={{ flex: '0 0 42%', minHeight: 180, p: 0.5, bgcolor: 'background.paper' }}>{p.editor}</Box>
+      {viewBar}
+      {footer}
+      {tabs}
+      {panel}
       {p.playBar}
     </>
   )

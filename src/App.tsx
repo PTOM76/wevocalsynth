@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles } from './theme'
+import { desktopStyles, LANDSCAPE_PHONE } from './theme'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
 import { useAppMenus } from './hooks/useAppMenus'
@@ -67,7 +67,8 @@ export default function App() {
   const { setMode } = useColorScheme()
   useEffect(() => setMode(settings.theme), [settings.theme, setMode])
   const theme = useTheme()
-  const mobile = useMediaQuery(theme.breakpoints.down('md'))
+  // 大きめのスマホを横向きにすると幅が md を超えるので、横向きのスマホもスマホの配置にする
+  const mobile = useMediaQuery(`${theme.breakpoints.down('md').replace('@media ', '')}, ${LANDSCAPE_PHONE}`)
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
