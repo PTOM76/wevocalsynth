@@ -28,7 +28,7 @@ export interface AddonManifest {
 export interface AddonInfo {
   id: string
   name: MessageKey
-  /** 開発者向け（デバッグ表示が ON のときだけ一覧に出す） */
+  /** 開発者向け（確認用。設定の「開発者向け」に出し、「読み込みを確認」ボタンを付ける） */
   dev?: boolean
   /** 先に導入が要る追加機能（導入するときに一緒に入れる） */
   requires?: string[]
