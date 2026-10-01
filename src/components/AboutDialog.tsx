@@ -3,8 +3,8 @@ import { AboutDialog as PevenAboutDialog } from 'pevenmui'
 import AppIcon from './AppIcon'
 import { useT } from '../i18n/i18n'
 import { APP_BUILD } from '../pwa/updateCheck'
+import { REPOSITORY_URL } from '../links'
 
-const REPOSITORY_URL = 'https://github.com/PTOM76/wevocalsynth'
 const AUTHOR = 'PitaQ'
 
 /** 「このアプリについて」: アプリ名・バージョン・作者・リポジトリ・ライセンス */

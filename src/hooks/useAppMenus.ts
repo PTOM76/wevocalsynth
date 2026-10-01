@@ -1,5 +1,6 @@
 import type { MenuEntry, MenuGroup } from 'pevenmui'
 import { useT } from '../i18n/i18n'
+import { openExternal, USER_GUIDE_URL } from '../links'
 
 interface Actions {
   hasClip: boolean
@@ -118,6 +119,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     {
       label: t('menu.help'),
       entries: [
+        { label: t('menu.userGuide'), onClick: () => openExternal(USER_GUIDE_URL) },
         { label: t('menu.shortcuts'), onClick: a.showShortcuts },
         { divider: true },
         { label: t('menu.about'), onClick: a.showAbout },
@@ -165,6 +167,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       label: t('menu.help'),
       entries: [
         { label: t('menu.settings'), onClick: a.showSettings },
+        { label: t('menu.userGuide'), onClick: () => openExternal(USER_GUIDE_URL) },
         { label: t('menu.about'), onClick: a.showAbout },
       ],
     },

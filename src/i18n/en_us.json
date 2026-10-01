@@ -38,6 +38,7 @@
   "menu.spectrogram": "Spectrogram",
   "menu.pitch": "Pitch",
   "menu.help": "Help",
+  "menu.userGuide": "User guide",
   "menu.shortcuts": "Keyboard shortcuts",
   "menu.about": "About WeVocalSynth",
   "about.version": "Version",
