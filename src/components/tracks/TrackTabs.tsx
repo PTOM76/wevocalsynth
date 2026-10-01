@@ -1,4 +1,4 @@
-import { Box, Tab, Tabs } from '@mui/material'
+import { Box, Tab, Tabs, Tooltip } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackMix } from '../../audio/tracks'
 import { MixToggle } from './TrackLanes'
 import { useT } from '../../i18n/i18n'
@@ -46,9 +46,12 @@ export default function TrackTabs(p: Props) {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                   <Box component="span" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.25 }}>
-                    <Box component="span" sx={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: audible ? 1 : 0.45 }}>
-                      {tr.name}
-                    </Box>
+                    {/* 長い名前は省略して出すので、カーソルを合わせたら全部出す */}
+                    <Tooltip title={tr.name} enterDelay={400} placement="top-start">
+                      <Box component="span" sx={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: audible ? 1 : 0.45 }}>
+                        {tr.name}
+                      </Box>
+                    </Tooltip>
                     {p.meter && <LevelMeter source={() => p.meter?.(tr.id) ?? null} width={56} height={2} label={t('meter.track', { name: tr.name })} />}
                   </Box>
                   <MixToggle label="M" title={t('track.mute')} on={m.mute} color="warning.main" onClick={() => p.onToggleMute(tr.id)} />

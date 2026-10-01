@@ -141,9 +141,12 @@ export default function TrackLanes(p: Props) {
               }}
             >
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontSize: 12, lineHeight: 1.3, fontWeight: selected ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {tr.name}
-                </Typography>
+                {/* 長い名前は省略して出すので、カーソルを合わせたら全部出す */}
+                <Tooltip title={tr.name} enterDelay={400} placement="top-start">
+                  <Typography sx={{ fontSize: 12, lineHeight: 1.3, fontWeight: selected ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {tr.name}
+                  </Typography>
+                </Tooltip>
                 {p.meter && <LevelMeter source={() => p.meter?.(tr.id) ?? null} width={84} height={3} label={t('meter.track', { name: tr.name })} />}
               </Box>
               <MixToggle label="M" title={t('track.mute')} on={m.mute} color="warning.main" onClick={() => p.onToggleMute(tr.id)} />
