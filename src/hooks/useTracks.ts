@@ -59,13 +59,25 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     history.setTracks([...tracks.slice(0, i), ...made, ...tracks.slice(i + 1)], made[0].id, label)
   }
 
-  /** トラックを消す（最後の1本は消さない） */
-  const remove = (id: string) => {
-    if (tracks.length <= 1) return
-    const i = tracks.findIndex((tr) => tr.id === id)
-    const rest = tracks.filter((tr) => tr.id !== id)
-    const nextActive = id === activeId ? rest[Math.min(i, rest.length - 1)].id : activeId
+  /** トラック `ids` を消す（全部は消さない。1本は残す） */
+  const removeMany = (ids: string[]) => {
+    const rest = tracks.filter((tr) => !ids.includes(tr.id))
+    if (!rest.length || rest.length === tracks.length) return
+    // 選んでいるトラックを消したら、消したものの中で一番上の位置にある残りのトラックを選ぶ
+    const i = tracks.findIndex((tr) => ids.includes(tr.id))
+    const nextActive = ids.includes(activeId) ? rest[Math.min(i, rest.length - 1)].id : activeId
     history.setTracks(rest, nextActive, t('track.remove'))
+  }
+  /** トラックを消す（最後の1本は消さない） */
+  const remove = (id: string) => removeMany([id])
+
+  /** トラック `id` を `to` 番目に動かす（ドラッグでの並び替え。元に戻せる） */
+  const move = (id: string, to: number) => {
+    const from = tracks.findIndex((tr) => tr.id === id)
+    if (from < 0 || from === to) return
+    const list = tracks.filter((tr) => tr.id !== id)
+    list.splice(Math.max(0, Math.min(list.length, to)), 0, tracks[from])
+    history.setTracks(list, activeId, t('track.move'))
   }
 
   /** 名前を変える（元に戻せる） */
@@ -95,6 +107,8 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     return merge([id, tracks[i + 1].id], t('track.mergeDown'))
   }
   const mergeAll = () => merge(tracks.map((tr) => tr.id), t('track.mergeAll'))
+  /** 複数選んだトラックを統合する */
+  const mergeMany = (ids: string[]) => merge(ids, t('track.mergeSelected'))
 
   const setTrackMix = (id: string, patch: Partial<TrackMix>) => setMix((m) => ({ ...m, [id]: { ...(m[id] ?? DEFAULT_MIX), ...patch } }))
 
@@ -109,9 +123,15 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     addClip,
     split,
     remove,
+    removeMany,
+    move,
     rename,
     mergeDown,
     mergeAll,
+    mergeMany,
+    /** `ids` のミュート・ソロをまとめて `on` にする */
+    setMuteMany: (ids: string[], on: boolean) => ids.forEach((id) => setTrackMix(id, { mute: on })),
+    setSoloMany: (ids: string[], on: boolean) => ids.forEach((id) => setTrackMix(id, { solo: on })),
     toggleMute: (id: string) => setTrackMix(id, { mute: !(mix[id]?.mute ?? false) }),
     toggleSolo: (id: string) => setTrackMix(id, { solo: !(mix[id]?.solo ?? false) }),
     overlay,

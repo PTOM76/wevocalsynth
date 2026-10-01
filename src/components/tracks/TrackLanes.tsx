@@ -6,6 +6,7 @@ import type { View } from '../waveform/draw'
 import { usePalette } from '../waveform/usePalette'
 import { useT } from '../../i18n/i18n'
 import LevelMeter from '../LevelMeter'
+import { pickMods, useTrackDrag, type PickMods } from './useTrackDrag'
 
 /** 1トラックの行の高さ（px） */
 const LANE_H = 30
@@ -19,7 +20,12 @@ interface Props {
   /** 下の大きな波形と同じ表示範囲 */
   view: View
   disabled: boolean
-  onSelect: (id: string) => void
+  /** 押したトラック。修飾キーがあれば複数選択（`picked`）を変える */
+  onSelect: (id: string, mods: PickMods) => void
+  /** 複数選んでいるトラック（右クリックメニューの対象） */
+  picked: ReadonlySet<string>
+  /** ドラッグでの並び替え */
+  onMove: (id: string, to: number) => void
   onToggleMute: (id: string) => void
   onToggleSolo: (id: string) => void
   onContextMenu: (id: string, x: number, y: number) => void
@@ -99,19 +105,24 @@ function MiniWave({ track, view, selected }: { track: Track; view: View; selecte
 export default function TrackLanes(p: Props) {
   const t = useT()
   const { pal } = usePalette()
+  const drag = useTrackDrag(p.tracks, 'y', p.disabled, p.onMove)
   if (p.tracks.length < 2) return null
   return (
-    <Box role="listbox" aria-label={t('track.list')} sx={{ maxHeight: LANE_H * 4.5, overflowY: 'auto' }}>
+    <Box role="listbox" aria-multiselectable aria-label={t('track.list')} sx={{ maxHeight: LANE_H * 4.5, overflowY: 'auto' }}>
       {p.tracks.map((tr, i) => {
         const m = p.mix[tr.id] ?? DEFAULT_MIX
         const selected = tr.id === p.activeId
         const audible = isAudible(tr.id, p.mix, p.tracks)
+        const picked = p.picked.has(tr.id)
+        // 差し込む位置の線（この行の上か、最後の行の下）
+        const line = drag.dropAt === i ? 'top' : drag.dropAt === i + 1 && i === p.tracks.length - 1 ? 'bottom' : null
         return (
           <Box
             key={tr.id}
             role="option"
-            aria-selected={selected}
-            onClick={() => !p.disabled && p.onSelect(tr.id)}
+            aria-selected={selected || picked}
+            {...drag.item(i)}
+            onClick={(e) => !p.disabled && p.onSelect(tr.id, pickMods(e))}
             onContextMenu={(e) => {
               e.preventDefault()
               p.onContextMenu(tr.id, e.clientX, e.clientY)
@@ -122,8 +133,10 @@ export default function TrackLanes(p: Props) {
               cursor: p.disabled ? 'default' : 'pointer',
               borderTop: i ? 1 : 0,
               borderColor: 'divider',
-              bgcolor: selected ? 'action.selected' : 'transparent',
-              '&:hover': { bgcolor: selected ? 'action.selected' : 'action.hover' },
+              bgcolor: selected || picked ? 'action.selected' : 'transparent',
+              '&:hover': { bgcolor: selected || picked ? 'action.selected' : 'action.hover' },
+              opacity: drag.dragId === tr.id ? 0.5 : 1,
+              boxShadow: line ? `inset 0 ${line === 'top' ? 2 : -2}px 0 ${pal.primary.main}` : 'none',
             }}
           >
             <Box

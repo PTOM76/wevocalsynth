@@ -7,6 +7,7 @@ import { usePersistentNumber } from '../layout/Splitter'
 import TrackLanes from './TrackLanes'
 import TrackTabs from './TrackTabs'
 import { useT } from '../../i18n/i18n'
+import type { PickMods } from './useTrackDrag'
 
 interface Props {
   tracks: Track[]
@@ -14,7 +15,12 @@ interface Props {
   mix: Record<string, TrackMix>
   view: View
   disabled: boolean
-  onSelect: (id: string) => void
+  /** 押したトラック。修飾キーがあれば複数選択（`picked`）を変える */
+  onSelect: (id: string, mods: PickMods) => void
+  /** 複数選んでいるトラック（右クリックメニューの対象） */
+  picked: ReadonlySet<string>
+  /** ドラッグでの並び替え */
+  onMove: (id: string, to: number) => void
   onToggleMute: (id: string) => void
   onToggleSolo: (id: string) => void
   onContextMenu: (id: string, x: number, y: number) => void

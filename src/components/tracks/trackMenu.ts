@@ -20,6 +20,11 @@ export interface TrackActions {
   overlay: ReadonlySet<string>
   toggleOverlay: (id: string) => void
   remove: (id: string) => void
+  /** 複数選んだトラックへのまとめての操作 */
+  mergeMany: (ids: string[]) => void
+  setMuteMany: (ids: string[], on: boolean) => void
+  setSoloMany: (ids: string[], on: boolean) => void
+  removeMany: (ids: string[]) => void
 }
 
 /**
@@ -42,5 +47,22 @@ export function trackMenuEntries(id: string, a: TrackActions): MenuEntry[] {
     { label: t('track.overlay'), checked: a.overlay.has(id), disabled: id === a.activeId, onClick: () => a.toggleOverlay(id) },
     { divider: true },
     { label: t('track.remove'), disabled: a.busy || a.tracks.length < 2, onClick: () => a.remove(id) },
+  ]
+}
+
+/**
+ * 複数選んだトラック `ids` の右クリックメニュー。ミュート・ソロは、全部オンなら外し、そうでなければ全部オンにする
+ */
+export function multiTrackMenuEntries(ids: string[], a: TrackActions): MenuEntry[] {
+  const allMute = ids.every((id) => (a.mix[id] ?? DEFAULT_MIX).mute)
+  const allSolo = ids.every((id) => (a.mix[id] ?? DEFAULT_MIX).solo)
+  return [
+    { label: t('track.mergeSelected'), disabled: a.busy, onClick: () => a.mergeMany(ids) },
+    { divider: true },
+    { label: t('track.mute'), checked: allMute, onClick: () => a.setMuteMany(ids, !allMute) },
+    { label: t('track.solo'), checked: allSolo, onClick: () => a.setSoloMany(ids, !allSolo) },
+    { divider: true },
+    // 全部は消せない（1本は残す）
+    { label: t('track.removeSelected', { count: ids.length }), disabled: a.busy || ids.length >= a.tracks.length, onClick: () => a.removeMany(ids) },
   ]
 }

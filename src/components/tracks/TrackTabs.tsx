@@ -3,13 +3,20 @@ import { DEFAULT_MIX, isAudible, type Track, type TrackMix } from '../../audio/t
 import { MixToggle } from './TrackLanes'
 import { useT } from '../../i18n/i18n'
 import LevelMeter from '../LevelMeter'
+import { usePalette } from '../waveform/usePalette'
+import { pickMods, useTrackDrag, type PickMods } from './useTrackDrag'
 
 interface Props {
   tracks: Track[]
   activeId: string
   mix: Record<string, TrackMix>
   disabled: boolean
-  onSelect: (id: string) => void
+  /** 押したトラック。修飾キーがあれば複数選択（`picked`）を変える */
+  onSelect: (id: string, mods: PickMods) => void
+  /** 複数選んでいるトラック（右クリックメニューの対象） */
+  picked: ReadonlySet<string>
+  /** ドラッグでの並び替え */
+  onMove: (id: string, to: number) => void
   onToggleMute: (id: string) => void
   onToggleSolo: (id: string) => void
   onContextMenu: (id: string, x: number, y: number) => void
@@ -20,18 +27,20 @@ interface Props {
 /** タブで並べるトラック（2本以上のときだけ出す）。下線が選んでいるトラック、右クリックで操作のメニュー */
 export default function TrackTabs(p: Props) {
   const t = useT()
+  const { pal } = usePalette()
+  const drag = useTrackDrag(p.tracks, 'x', p.disabled, p.onMove)
   if (p.tracks.length < 2) return null
   return (
     <Box>
       <Tabs
         value={p.activeId}
-        onChange={(_, id: string) => !p.disabled && p.onSelect(id)}
+        onChange={(e, id: string) => !p.disabled && p.onSelect(id, pickMods(e as React.MouseEvent))}
         variant="scrollable"
         scrollButtons="auto"
         aria-label={t('track.list')}
         sx={{ minHeight: 34, '& .MuiTabs-indicator': { height: 2 } }}
       >
-        {p.tracks.map((tr) => {
+        {p.tracks.map((tr, i) => {
           const m = p.mix[tr.id] ?? DEFAULT_MIX
           const audible = isAudible(tr.id, p.mix, p.tracks)
           return (
@@ -39,6 +48,9 @@ export default function TrackTabs(p: Props) {
               key={tr.id}
               value={tr.id}
               disabled={p.disabled}
+              {...drag.item(i)}
+              // 選んでいるタブを Ctrl / Shift で押しても onChange は来ないので、ここでも受ける
+              onClick={(e) => tr.id === p.activeId && (e.ctrlKey || e.metaKey || e.shiftKey) && p.onSelect(tr.id, pickMods(e))}
               onContextMenu={(e) => {
                 e.preventDefault()
                 p.onContextMenu(tr.id, e.clientX, e.clientY)
@@ -58,7 +70,18 @@ export default function TrackTabs(p: Props) {
                   <MixToggle label="S" title={t('track.solo')} on={m.solo} color="success.main" onClick={() => p.onToggleSolo(tr.id)} />
                 </Box>
               }
-              sx={{ minHeight: 34, py: 0.5, px: 1.5, fontSize: 12, textTransform: 'none' }}
+              sx={{
+                minHeight: 34,
+                py: 0.5,
+                px: 1.5,
+                fontSize: 12,
+                textTransform: 'none',
+                bgcolor: p.picked.has(tr.id) && tr.id !== p.activeId ? 'action.selected' : undefined,
+                opacity: drag.dragId === tr.id ? 0.5 : 1,
+                // 差し込む位置の線（このタブの左か、最後のタブの右）
+                boxShadow:
+                  drag.dropAt === i ? `inset 2px 0 0 ${pal.primary.main}` : drag.dropAt === i + 1 && i === p.tracks.length - 1 ? `inset -2px 0 0 ${pal.primary.main}` : 'none',
+              }}
             />
           )
         })}
