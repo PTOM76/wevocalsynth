@@ -225,6 +225,7 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
               ]}
             />
           </Row>
+          <Check checked={draft.vocalGpu} onChange={(v) => set({ vocalGpu: v })} label={t('settings.vocalGpu')} help={t('settings.vocalGpuHelp')} />
         </Group>
         <Group title={t('settings.groupAddons')}>
           <AddonSection ids={VOCAL_ADDONS} />

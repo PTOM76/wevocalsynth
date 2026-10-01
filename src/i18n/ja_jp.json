@@ -287,6 +287,8 @@
   "settings.cat.vocal": "ボーカル抽出",
   "settings.groupAddonTest": "追加機能の確認",
   "addon.notAvailable": "未導入（配信先から情報を取得できません）",
+  "settings.vocalGpu": "GPU処理を利用する",
+  "settings.vocalGpuHelp": "速くなります。使えない環境や標準のモデルでは CPU で処理します。結果がおかしいときはオフにしてください",
   "settings.title": "設定",
   "settings.autoRestore": "作業を自動保存し、次回開いたときに復元する",
   "settings.autoRestoreHelp": "音声はこのブラウザ内にだけ保存され、外部には送信されません",

@@ -287,6 +287,8 @@
   "settings.cat.vocal": "Vocal extraction",
   "settings.groupAddonTest": "Add-on test",
   "addon.notAvailable": "Not installed (cannot get information from the server)",
+  "settings.vocalGpu": "Use GPU",
+  "settings.vocalGpuHelp": "Faster. Falls back to CPU when unavailable or with the standard model. Turn this off if the result looks wrong",
   "settings.title": "Settings",
   "settings.autoRestore": "Autosave work and restore it next time",
   "settings.autoRestoreHelp": "Audio is stored only in this browser and never uploaded",

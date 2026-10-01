@@ -86,7 +86,7 @@ ex.dispose()
 - 設定の「ボーカル抽出のモデル」で選ぶ。未導入のモデルで抽出しようとしたら、導入の確認ダイアログを出す
 - モデルごとの導入・削除は、設定の「ボーカル抽出」でいつでもできる（使わなくなったモデルだけ消せる）
 - 実行環境（`vocal-extractor`）は一覧に出さない。モデルと一緒に導入し、どのモデルからも使われなくなったら一緒に消す（`uninstallWithUnused`）
-- 実行方法は自動で決める: WebGPU が使え、モデルが対応していれば WebGPU、それ以外は WASM
+- 実行方法: 設定の「GPU を使う」が ON（既定）で、WebGPU が使え、モデルが対応していれば WebGPU、それ以外は WASM
 - 入出力: `[2ch, 分割数, 512 フレーム, 1024 ビン]` の振幅スペクトログラム。ボーカル用・伴奏用の2つのモデルを両方動かし、比率のマスク（`v² / (v² + a²)`）を元の STFT に掛けて逆STFT する
 - STFT: 44.1kHz、n_fft 4096、hop 1024、Hann 窓、center なし
 - 1024 ビン（約 11kHz）より上はモデルが扱わない。sherpa-onnx はマスクを 0 にしている。1024 ビン目の値で延ばす方法も試せるようにしてあり、どちらを標準にするかは未定
@@ -149,6 +149,8 @@ Service Worker は保存先から返すだけで、自分では保存しない�
 `test`（[scripts/gen-addon-test.mjs](../scripts/gen-addon-test.mjs) で作る、40MB のダミー＋`index.js`）。設定の「開発者向け」に出る。
 - 本番ビルド: デプロイ時に `dist/addons/test/` に作る
 - 開発サーバー: `node scripts/gen-addon-test.mjs public` で `public/addons/test/` に作る（git には入れない）
+
+ボーカル抽出の追加機能を開発サーバー（`npm run dev`）で試すときは、`npm run build:addons:dev` で `public/addons/` に作る（git には入れない）。
 
 ### 置き場所: GitHub Pages
 モデルもアプリと同じ GitHub Pages から配る。リポジトリには入れず、GitHub Releases に置いたものをデプロイ時に取得して `dist/addons/` に加える（リポジトリを大きくしないため）。

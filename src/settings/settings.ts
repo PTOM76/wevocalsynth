@@ -61,6 +61,8 @@ export interface Settings {
   f0SilenceDb: number
   /** ボーカル抽出に使うモデル（追加機能） */
   vocalModel: VocalModel
+  /** ボーカル抽出で GPU（WebGPU）を使う。使えない環境やモデル（fp16）では CPU（WASM）で動く */
+  vocalGpu: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
 }
@@ -78,6 +80,7 @@ export const DEFAULT_SETTINGS: Settings = {
   beatOffset: 0,
   showDebug: false,
   vocalModel: 'fp16',
+  vocalGpu: true,
   f0MinHz: 60,
   f0MaxHz: 1000,
   f0Voicing: 'normal',

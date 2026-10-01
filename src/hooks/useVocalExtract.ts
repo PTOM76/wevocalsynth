@@ -37,6 +37,8 @@ interface Deps {
   /** 対象（選択範囲、なければ全体） */
   editRanges: Range[]
   model: VocalModel
+  /** GPU（WebGPU）を使ってよいか */
+  gpu: boolean
   /** 追加機能が導入済みか確かめ、なければ導入の確認ダイアログを出す */
   ensure: (id: string) => Promise<boolean>
   run: (task: () => Promise<void>) => Promise<void>
@@ -52,13 +54,13 @@ interface Deps {
  * 長さは変わらない。モデルは抽出のたびに読み込み、終わったら解放する（推論中は数百MB使うため、スマホでメモリを持ち続けない）
  */
 export function useVocalExtract(d: Deps) {
-  const createExtractor = async (model: VocalModel) => {
+  const createExtractor = async (model: VocalModel, gpu: boolean) => {
     const info = VOCAL_MODELS[model]
     const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
     const create = async (backend: ExtractorModule.Backend) =>
       mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend })
     // WebGPU で作れなければ WASM で作り直す
-    if (info.webgpu && (await hasWebGpu())) return create('webgpu').catch(() => create('wasm'))
+    if (gpu && info.webgpu && (await hasWebGpu())) return create('webgpu').catch(() => create('wasm'))
     return create('wasm')
   }
 
@@ -72,7 +74,7 @@ export function useVocalExtract(d: Deps) {
       const sr = edited.sampleRate
       const len = edited.channels[0].length
       let cur = edited
-      const extractor = await createExtractor(d.model)
+      const extractor = await createExtractor(d.model, d.gpu)
       try {
         for (const [i, r] of ranges.entries()) {
           const s = Math.max(0, Math.min(len, Math.round(r.start * sr)))

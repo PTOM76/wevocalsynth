@@ -141,6 +141,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     edited,
     editRanges,
     model: settings.vocalModel,
+    gpu: settings.vocalGpu,
     ensure: addons.ensure,
     run: task.run,
     setProgress,
