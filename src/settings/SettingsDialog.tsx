@@ -1,20 +1,15 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Box,
   Button,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   InputAdornment,
   IconButton,
   List,
   ListItemButton,
-  MenuItem,
-  Select,
-  Switch,
   TextField,
   Typography,
   useMediaQuery,
@@ -22,108 +17,17 @@ import {
 } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faChevronRight, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
-import { DEFAULT_SETTINGS, type CtrlSAction, type F0Voicing, type InitialMode, type Settings, type ThemeSetting, type VocalModel } from './settings'
-import { NumberInput } from '../components/inspector/Inspector'
-import UpdateSection from './UpdateSection'
-import DataSection from './DataSection'
-import AddonSection from './AddonSection'
-import { VOCAL_MODELS } from '../hooks/useVocalExtract'
-import { useT, type LangSetting } from '../i18n/i18n'
-import { SearchContext, matchCategories, useHighlight, type Category } from './settingsSearch'
+import { DEFAULT_SETTINGS, type Settings } from './settings'
+import { useT } from '../i18n/i18n'
+import { SearchContext, matchCategories, type Category } from './settingsSearch'
+import { NarrowContext } from './controls'
+import { settingsPages } from './SettingsPages'
 
 interface Props {
   open: boolean
   onClose: () => void
   settings: Settings
   onChange: (patch: Partial<Settings>) => void
-}
-
-/** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
-const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
-
-/** スマホ向けの表示か（項目を縦に積み、文字と操作を大きくする） */
-const NarrowContext = createContext(false)
-
-/** 枠線と見出しで項目をまとめる（PC は Windows のグループボックス風、スマホは Android の設定風の見出し） */
-function Group({ title, children }: { title: string; children: ReactNode }) {
-  const hit = useHighlight(title)
-  if (useContext(NarrowContext))
-    return (
-      <Box sx={{ mb: 3 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'primary.main', mb: 1, width: 'fit-content', ...hit }}>{title}</Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{children}</Box>
-      </Box>
-    )
-  return (
-    <Box component="fieldset" sx={{ m: 0, mb: 2, px: 1.5, pt: 0.5, pb: 1.5, border: 1, borderColor: 'divider', borderRadius: 0.5 }}>
-      <Typography component="legend" sx={{ px: 0.5, fontSize: 12, color: 'text.secondary', ...hit }}>
-        {title}
-      </Typography>
-      {/* ラベル列は一番長いラベルに合わせ、入力列は残りの幅に収める（長い選択肢は省略表示） */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'max-content minmax(0, 360px)', alignItems: 'center', columnGap: 2, rowGap: 1 }}>
-        {children}
-      </Box>
-    </Box>
-  )
-}
-
-/** 左にラベル、右に入力欄の1行（スマホはラベルの下に入力欄） */
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  const hit = useHighlight(label)
-  if (useContext(NarrowContext))
-    return (
-      <Box>
-        <Typography sx={{ fontSize: 14, mb: 0.75, width: 'fit-content', ...hit }}>{label}</Typography>
-        {children}
-      </Box>
-    )
-  return (
-    <>
-      <Typography sx={{ fontSize: 13, whiteSpace: 'nowrap', justifySelf: 'start', ...hit }}>{label}</Typography>
-      <Box sx={{ minWidth: 0 }}>{children}</Box>
-    </>
-  )
-}
-
-function Choice<T extends string>(p: { value: T; onChange: (v: T) => void; options: [T, string][] }) {
-  const narrow = useContext(NarrowContext)
-  const fontSize = narrow ? 15 : 13
-  return (
-    <Select size="small" fullWidth value={p.value} onChange={(e) => p.onChange(e.target.value as T)} sx={{ fontSize, minWidth: 0, '& .MuiSelect-select': { py: narrow ? 1.25 : 0.5 } }}>
-      {p.options.map(([v, label]) => (
-        <MenuItem key={v} value={v} sx={{ fontSize }}>
-          {label}
-        </MenuItem>
-      ))}
-    </Select>
-  )
-}
-
-function Check(p: { checked: boolean; onChange: (v: boolean) => void; label: string; help?: string }) {
-  // 項目名か説明文が検索語に一致したら、項目名に色を付ける
-  const hit = useHighlight(p.label, p.help)
-  // スマホは Android の設定と同じく、行全体を押せる右寄せのスイッチにする
-  if (useContext(NarrowContext))
-    return (
-      <Box component="label" sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-        <Box sx={{ flex: 1 }}>
-          <Typography sx={{ fontSize: 14, width: 'fit-content', ...hit }}>{p.label}</Typography>
-          {p.help && <Typography className="selectable" sx={{ fontSize: 12, color: 'text.secondary' }}>{p.help}</Typography>}
-        </Box>
-        <Switch checked={p.checked} onChange={(e) => p.onChange(e.target.checked)} />
-      </Box>
-    )
-  return (
-    // 幅 0 + 最小幅 100%: 長い説明文で項目名の列が広がらないようにしつつ、行の幅いっぱいで折り返す
-    <Box sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%' }}>
-      <FormControlLabel
-        control={<Checkbox size="small" checked={p.checked} onChange={(e) => p.onChange(e.target.checked)} />}
-        label={p.label}
-        slotProps={{ typography: { sx: { fontSize: 13, ...hit } } }}
-      />
-      {p.help && <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary', ml: 4, mt: -0.5 }}>{p.help}</Typography>}
-    </Box>
-  )
 }
 
 /**
@@ -165,161 +69,7 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
   }
   const dirty = (Object.keys(draft) as (keyof Settings)[]).some((k) => draft[k] !== settings[k])
 
-  const pages: Record<Category, ReactNode> = {
-    general: (
-      <>
-        <Group title={t('settings.groupStartup')}>
-          <Check
-            checked={draft.autoRestore}
-            onChange={(v) => set({ autoRestore: v })}
-            label={t('settings.autoRestore')}
-            help={t('settings.autoRestoreHelp')}
-          />
-        </Group>
-        <Group title={t('settings.groupHistory')}>
-          <Row label={t('settings.historyLimit')}>
-            <NumberInput value={draft.historyLimit} onChange={(v) => set({ historyLimit: Math.round(v) })} min={1} max={500} step={1} width={110} />
-          </Row>
-          <Row label={t('settings.historyMemory')}>
-            <NumberInput value={draft.historyMemoryMb} onChange={(v) => set({ historyMemoryMb: Math.round(v) })} min={64} max={4096} step={64} unit="MB" width={110} />
-          </Row>
-        </Group>
-        <Group title={t('settings.groupProcess')}>
-          <Row label={t('settings.initialMode')}>
-            <Choice<InitialMode>
-              value={draft.initialMode}
-              onChange={(v) => set({ initialMode: v })}
-              options={[
-                ['auto', t('settings.auto')],
-                ['vocal', t('common.vocal')],
-                ['instrument', t('common.instrument')],
-              ]}
-            />
-          </Row>
-        </Group>
-        <Group title={t('settings.groupUpdate')}>
-          <UpdateSection />
-        </Group>
-      </>
-    ),
-    display: (
-      <Group title={t('settings.groupAppearance')}>
-        <Row label={t('settings.theme')}>
-          <Choice<ThemeSetting>
-            value={draft.theme}
-            onChange={(v) => set({ theme: v })}
-            options={[
-              ['system', t('settings.themeSystem')],
-              ['light', t('settings.themeLight')],
-              ['dark', t('settings.themeDark')],
-            ]}
-          />
-        </Row>
-        <Row label={t('settings.language')}>
-          <Choice<LangSetting>
-            value={draft.language}
-            onChange={(v) => set({ language: v })}
-            options={[
-              ['auto', t('settings.languageAuto')],
-              ['ja_jp', '日本語'],
-              ['en_us', 'English'],
-            ]}
-          />
-        </Row>
-      </Group>
-    ),
-    vocal: (
-      <>
-        <Group title={t('settings.groupVocal')}>
-          <Row label={t('settings.vocalModel')}>
-            <Choice<VocalModel>
-              value={draft.vocalModel}
-              onChange={(v) => set({ vocalModel: v })}
-              options={[
-                ['fp16', t('addon.modelLight')],
-                ['int8', t('addon.modelStandard')],
-                ['fp32', t('addon.modelPrecise')],
-              ]}
-            />
-          </Row>
-          <Check checked={draft.vocalGpu} onChange={(v) => set({ vocalGpu: v })} label={t('settings.vocalGpu')} help={t('settings.vocalGpuHelp')} />
-          <Check
-            checked={draft.vocalKeepHighBand}
-            onChange={(v) => set({ vocalKeepHighBand: v })}
-            label={t('settings.vocalKeepHighBand')}
-            help={t('settings.vocalKeepHighBandHelp')}
-          />
-        </Group>
-        <Group title={t('settings.groupAddons')}>
-          <AddonSection ids={VOCAL_ADDONS} />
-        </Group>
-      </>
-    ),
-    data: (
-      <Group title={t('settings.groupData')}>
-        <DataSection onClose={onClose} />
-      </Group>
-    ),
-
-    debug: (
-      <Group title={t('settings.groupDebug')}>
-        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
-      </Group>
-    ),
-    pitch: (
-      <Group title={t('settings.groupPitch')}>
-        <Row label={t('settings.f0MinHz')}>
-          <NumberInput value={draft.f0MinHz} onChange={(v) => set({ f0MinHz: Math.round(v) })} min={40} max={400} step={1} unit="Hz" width={110} />
-        </Row>
-        <Row label={t('settings.f0MaxHz')}>
-          <NumberInput value={draft.f0MaxHz} onChange={(v) => set({ f0MaxHz: Math.round(v) })} min={200} max={2000} step={10} unit="Hz" width={110} />
-        </Row>
-        <Row label={t('settings.f0Voicing')}>
-          <Choice<F0Voicing>
-            value={draft.f0Voicing}
-            onChange={(v) => set({ f0Voicing: v })}
-            options={[
-              ['strict', t('settings.f0Strict')],
-              ['normal', t('settings.f0Normal')],
-              ['loose', t('settings.f0Loose')],
-            ]}
-          />
-        </Row>
-        <Row label={t('settings.f0SilenceDb')}>
-          <NumberInput value={draft.f0SilenceDb} onChange={(v) => set({ f0SilenceDb: Math.round(v) })} min={-80} max={-20} step={1} unit="dB" width={110} />
-        </Row>
-      </Group>
-    ),
-    tempo: (
-      <Group title={t('settings.groupTempo')}>
-        <Check checked={draft.autoTempo} onChange={(v) => set({ autoTempo: v })} label={t('settings.autoTempo')} help={t('settings.autoTempoHelp')} />
-        <Check checked={draft.showBeatGrid} onChange={(v) => set({ showBeatGrid: v })} label={t('settings.showBeatGrid')} />
-        <Row label={t('settings.bpm')}>
-          <NumberInput value={draft.bpm} onChange={(v) => set({ bpm: v })} min={20} max={400} step={0.01} unit="BPM" width={110} ariaLabel="BPM" />
-        </Row>
-        <Row label={t('settings.beatsPerBar')}>
-          <NumberInput value={draft.beatsPerBar} onChange={(v) => set({ beatsPerBar: Math.round(v) })} min={1} max={16} step={1} width={110} />
-        </Row>
-        <Row label={t('settings.beatOffset')}>
-          <NumberInput value={draft.beatOffset} onChange={(v) => set({ beatOffset: v })} min={0} max={60} step={0.001} unit={t('vibrato.secondUnit')} width={110} />
-        </Row>
-      </Group>
-    ),
-    keys: (
-      <Group title={t('settings.groupShortcuts')}>
-        <Row label={t('settings.ctrlS')}>
-          <Choice<CtrlSAction>
-            value={draft.ctrlS}
-            onChange={(v) => set({ ctrlS: v })}
-            options={[
-              ['project', t('settings.ctrlSProject')],
-              ['export', t('settings.ctrlSExport')],
-            ]}
-          />
-        </Row>
-      </Group>
-    ),
-  }
+  const pages = settingsPages({ draft, set, onClose, t })
 
   const label = (c: Category) => t(`settings.cat.${c}`)
 

@@ -52,8 +52,17 @@ export function matchCategories(query: string, t: (key: MessageKey) => string): 
 /** 入力中の検索語。項目名や説明文が一致したら色を付けるのに使う */
 export const SearchContext = createContext('')
 
-/** 一致した文字に付ける見た目（検索語が空なら何もしない） */
+/** 一致した項目名に付ける見た目 */
+const HIT_SX = { bgcolor: 'action.selected', borderRadius: 0.5, px: 0.25, mx: -0.25, width: 'fit-content' }
+
+/** `texts` のどれかが検索語に一致したら、項目名に付ける見た目を返す（検索語が空なら何もしない） */
 export function useHighlight(...texts: (string | undefined)[]) {
   const query = useContext(SearchContext)
-  return texts.some((s) => matches(s, query)) ? { bgcolor: 'action.selected', borderRadius: 0.5, px: 0.25, mx: -0.25 } : {}
+  return texts.some((s) => matches(s, query)) ? HIT_SX : {}
+}
+
+/** 行を並べる部品（DataSection など）向け: 一度だけ呼び、行ごとに `hit(項目名, 説明文)` で見た目を得る */
+export function useHighlighter() {
+  const query = useContext(SearchContext)
+  return (...texts: (string | undefined)[]) => (texts.some((s) => matches(s, query)) ? HIT_SX : {})
 }

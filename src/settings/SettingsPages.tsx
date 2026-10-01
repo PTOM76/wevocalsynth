@@ -1,0 +1,181 @@
+import type { ReactNode } from 'react'
+import type { CtrlSAction, F0Voicing, InitialMode, Settings, ThemeSetting, VocalModel } from './settings'
+import { NumberInput } from '../components/inspector/Inspector'
+import UpdateSection from './UpdateSection'
+import DataSection from './DataSection'
+import AddonSection from './AddonSection'
+import { VOCAL_MODELS } from '../hooks/useVocalExtract'
+import type { LangSetting, MessageKey } from '../i18n/i18n'
+import type { Category } from './settingsSearch'
+import { Check, Choice, Group, Row } from './controls'
+
+/** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
+const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
+
+interface PageProps {
+  draft: Settings
+  set: (patch: Partial<Settings>) => void
+  onClose: () => void
+  t: (key: MessageKey) => string
+}
+
+/**
+ * 設定画面の分類ごとの中身。項目を足したら settingsSearch.ts の検索の対象にも足す
+ */
+export function settingsPages({ draft, set, onClose, t }: PageProps): Record<Category, ReactNode> {
+  return {
+    general: (
+      <>
+        <Group title={t('settings.groupStartup')}>
+          <Check
+            checked={draft.autoRestore}
+            onChange={(v) => set({ autoRestore: v })}
+            label={t('settings.autoRestore')}
+            help={t('settings.autoRestoreHelp')}
+          />
+        </Group>
+        <Group title={t('settings.groupHistory')}>
+          <Row label={t('settings.historyLimit')}>
+            <NumberInput value={draft.historyLimit} onChange={(v) => set({ historyLimit: Math.round(v) })} min={1} max={500} step={1} width={110} />
+          </Row>
+          <Row label={t('settings.historyMemory')}>
+            <NumberInput value={draft.historyMemoryMb} onChange={(v) => set({ historyMemoryMb: Math.round(v) })} min={64} max={4096} step={64} unit="MB" width={110} />
+          </Row>
+        </Group>
+        <Group title={t('settings.groupProcess')}>
+          <Row label={t('settings.initialMode')}>
+            <Choice<InitialMode>
+              value={draft.initialMode}
+              onChange={(v) => set({ initialMode: v })}
+              options={[
+                ['auto', t('settings.auto')],
+                ['vocal', t('common.vocal')],
+                ['instrument', t('common.instrument')],
+              ]}
+            />
+          </Row>
+        </Group>
+        <Group title={t('settings.groupUpdate')}>
+          <UpdateSection />
+        </Group>
+      </>
+    ),
+    display: (
+      <Group title={t('settings.groupAppearance')}>
+        <Row label={t('settings.theme')}>
+          <Choice<ThemeSetting>
+            value={draft.theme}
+            onChange={(v) => set({ theme: v })}
+            options={[
+              ['system', t('settings.themeSystem')],
+              ['light', t('settings.themeLight')],
+              ['dark', t('settings.themeDark')],
+            ]}
+          />
+        </Row>
+        <Row label={t('settings.language')}>
+          <Choice<LangSetting>
+            value={draft.language}
+            onChange={(v) => set({ language: v })}
+            options={[
+              ['auto', t('settings.languageAuto')],
+              ['ja_jp', '日本語'],
+              ['en_us', 'English'],
+            ]}
+          />
+        </Row>
+      </Group>
+    ),
+    vocal: (
+      <>
+        <Group title={t('settings.groupVocal')}>
+          <Row label={t('settings.vocalModel')}>
+            <Choice<VocalModel>
+              value={draft.vocalModel}
+              onChange={(v) => set({ vocalModel: v })}
+              options={[
+                ['fp16', t('addon.modelLight')],
+                ['int8', t('addon.modelStandard')],
+                ['fp32', t('addon.modelPrecise')],
+              ]}
+            />
+          </Row>
+          <Check checked={draft.vocalGpu} onChange={(v) => set({ vocalGpu: v })} label={t('settings.vocalGpu')} help={t('settings.vocalGpuHelp')} />
+          <Check
+            checked={draft.vocalKeepHighBand}
+            onChange={(v) => set({ vocalKeepHighBand: v })}
+            label={t('settings.vocalKeepHighBand')}
+            help={t('settings.vocalKeepHighBandHelp')}
+          />
+        </Group>
+        <Group title={t('settings.groupAddons')}>
+          <AddonSection ids={VOCAL_ADDONS} />
+        </Group>
+      </>
+    ),
+    data: (
+      <Group title={t('settings.groupData')}>
+        <DataSection onClose={onClose} />
+      </Group>
+    ),
+
+    debug: (
+      <Group title={t('settings.groupDebug')}>
+        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
+      </Group>
+    ),
+    pitch: (
+      <Group title={t('settings.groupPitch')}>
+        <Row label={t('settings.f0MinHz')}>
+          <NumberInput value={draft.f0MinHz} onChange={(v) => set({ f0MinHz: Math.round(v) })} min={40} max={400} step={1} unit="Hz" width={110} />
+        </Row>
+        <Row label={t('settings.f0MaxHz')}>
+          <NumberInput value={draft.f0MaxHz} onChange={(v) => set({ f0MaxHz: Math.round(v) })} min={200} max={2000} step={10} unit="Hz" width={110} />
+        </Row>
+        <Row label={t('settings.f0Voicing')}>
+          <Choice<F0Voicing>
+            value={draft.f0Voicing}
+            onChange={(v) => set({ f0Voicing: v })}
+            options={[
+              ['strict', t('settings.f0Strict')],
+              ['normal', t('settings.f0Normal')],
+              ['loose', t('settings.f0Loose')],
+            ]}
+          />
+        </Row>
+        <Row label={t('settings.f0SilenceDb')}>
+          <NumberInput value={draft.f0SilenceDb} onChange={(v) => set({ f0SilenceDb: Math.round(v) })} min={-80} max={-20} step={1} unit="dB" width={110} />
+        </Row>
+      </Group>
+    ),
+    tempo: (
+      <Group title={t('settings.groupTempo')}>
+        <Check checked={draft.autoTempo} onChange={(v) => set({ autoTempo: v })} label={t('settings.autoTempo')} help={t('settings.autoTempoHelp')} />
+        <Check checked={draft.showBeatGrid} onChange={(v) => set({ showBeatGrid: v })} label={t('settings.showBeatGrid')} />
+        <Row label={t('settings.bpm')}>
+          <NumberInput value={draft.bpm} onChange={(v) => set({ bpm: v })} min={20} max={400} step={0.01} unit="BPM" width={110} ariaLabel="BPM" />
+        </Row>
+        <Row label={t('settings.beatsPerBar')}>
+          <NumberInput value={draft.beatsPerBar} onChange={(v) => set({ beatsPerBar: Math.round(v) })} min={1} max={16} step={1} width={110} />
+        </Row>
+        <Row label={t('settings.beatOffset')}>
+          <NumberInput value={draft.beatOffset} onChange={(v) => set({ beatOffset: v })} min={0} max={60} step={0.001} unit={t('vibrato.secondUnit')} width={110} />
+        </Row>
+      </Group>
+    ),
+    keys: (
+      <Group title={t('settings.groupShortcuts')}>
+        <Row label={t('settings.ctrlS')}>
+          <Choice<CtrlSAction>
+            value={draft.ctrlS}
+            onChange={(v) => set({ ctrlS: v })}
+            options={[
+              ['project', t('settings.ctrlSProject')],
+              ['export', t('settings.ctrlSExport')],
+            ]}
+          />
+        </Row>
+      </Group>
+    ),
+  }
+}

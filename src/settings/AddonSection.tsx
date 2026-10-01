@@ -13,6 +13,7 @@ import {
 import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { useT } from '../i18n/i18n'
 import { useConfirm } from '../components/ConfirmDialog'
+import { useHighlighter } from './settingsSearch'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 
@@ -27,6 +28,7 @@ export default function AddonSection({ ids }: { ids: string[] }) {
   const t = useT()
   const { request, dialog } = useAddonInstall()
   const { confirm, dialog: confirmDialog } = useConfirm()
+  const hit = useHighlighter()
   const [status, setStatus] = useState<Record<string, Status>>({})
   const [message, setMessage] = useState<string | null>(null)
   const list = ADDONS.filter((a) => ids.includes(a.id))
@@ -71,7 +73,7 @@ export default function AddonSection({ ids }: { ids: string[] }) {
         return (
           <Box key={a.id} sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%', display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: 13 }}>{t(a.shortName ?? a.name)}</Typography>
+              <Typography sx={{ fontSize: 13, ...hit(t(a.shortName ?? a.name)) }}>{t(a.shortName ?? a.name)}</Typography>
               <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary' }}>{describe(s)}</Typography>
             </Box>
             {(!s?.installed || updatable) && (

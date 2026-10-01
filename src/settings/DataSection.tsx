@@ -11,6 +11,7 @@ import {
 import { clearAddons, installedAddonsSize } from '../addons/addons'
 import { useT, type MessageKey } from '../i18n/i18n'
 import { useConfirm } from '../components/ConfirmDialog'
+import { useHighlighter } from './settingsSearch'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 
@@ -22,6 +23,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const [addonBytes, setAddonBytes] = useState(0)
   const [message, setMessage] = useState<string | null>(null)
   const { confirm, dialog } = useConfirm()
+  const hit = useHighlighter()
 
   const refresh = () => {
     void storageUsage().then(setUsage)
@@ -41,7 +43,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const row = (label: MessageKey, help: MessageKey, button: React.ReactNode, vars?: Record<string, string>) => (
     <Box sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%', display: 'flex', alignItems: 'center', gap: 1.5 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontSize: 13 }}>{t(label)}</Typography>
+        <Typography sx={{ fontSize: 13, ...hit(t(label), t(help, vars)) }}>{t(label)}</Typography>
         <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary' }}>{t(help, vars)}</Typography>
       </Box>
       {button}

@@ -44,9 +44,16 @@ function writeManifest(id, dir, entry) {
   console.log(`addon ${id} v${version}: ${files.length} files, ${mb.toFixed(1)} MB`)
 }
 
+/** 再配布するときに付けるライセンスの全文（extractor/licenses/）を、追加機能のフォルダに入れる。LICENSE-THIRD-PARTY.md 参照 */
+const addLicenses = (dir, names) => {
+  mkdirSync(join(dir, 'licenses'), { recursive: true })
+  for (const n of names) copyFileSync(join('extractor', 'licenses', n), join(dir, 'licenses', n))
+}
+
 // 実行環境
 process.env.ADDONS_OUT = OUT
 run('npx vite build -c vite.addons.config.ts')
+addLicenses(join(OUT, 'vocal-extractor'), ['onnxruntime-MIT.txt'])
 writeManifest('vocal-extractor', join(OUT, 'vocal-extractor'), 'index.js')
 
 // モデル
@@ -58,5 +65,6 @@ for (const [kind, m] of Object.entries(MODELS)) {
   rmSync(dir, { recursive: true, force: true })
   mkdirSync(dir, { recursive: true })
   for (const stem of ['vocals', 'accompaniment']) copyFileSync(join(src, `${stem}.${m.file}`), join(dir, `${stem}.onnx`))
+  addLicenses(dir, ['spleeter-MIT.txt', 'sherpa-onnx-Apache-2.0.txt'])
   writeManifest(`spleeter-${kind}`, dir, null)
 }
