@@ -25,9 +25,6 @@ const siteUrl = (process.env.SITE_URL ?? 'https://wevocalsynth.pitan76.net').rep
 export default defineConfig({
   // GitHub Pages ではリポジトリ名のサブパスで配信されるため、CI から BASE_PATH で指定する
   base: process.env.BASE_PATH ?? '/',
-  // 開発中・プレビューでは、デバッグ表示が「画面が止まったときに動いていた関数」を調べられるようにする（JS Self-Profiling）
-  server: { headers: { 'Document-Policy': 'js-profiling' } },
-  preview: { headers: { 'Document-Policy': 'js-profiling' } },
   // 「このアプリについて」に出すバージョン（package.json の version）とコミット
   define: { __APP_VERSION__: JSON.stringify(pkg.version), __APP_COMMIT__: JSON.stringify(commit) },
   plugins: [

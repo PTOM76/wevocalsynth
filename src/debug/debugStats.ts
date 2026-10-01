@@ -80,73 +80,6 @@ export interface Stall {
 const STALL_HISTORY = 8
 const stalls: Stall[] = []
 
-/**
- * JS の処理の記録（Chrome の JS Self-Profiling。サーバーが Document-Policy: js-profiling を返すときだけ使える）。
- * デバッグ表示を点けている間だけ 10ms ごとに記録し、画面が止まったら、その間に動いていた関数を数える。
- * 記録そのものがメモリを使う（いつも動かしたら 1GB 近くまで増えた）ので、短い間隔で捨てて取り直す
- */
-interface ProfilerTrace {
-  frames: { name: string; resourceId?: number; line?: number }[]
-  stacks: { frameId: number; parentId?: number }[]
-  samples: { timestamp: number; stackId?: number }[]
-  resources: string[]
-}
-interface JsProfiler {
-  stop(): Promise<ProfilerTrace>
-}
-type ProfilerCtor = new (o: { sampleInterval: number; maxBufferSize: number }) => JsProfiler
-let profiler: JsProfiler | null = null
-let profiling = false
-const startProfiler = () => {
-  if (!profiling) return
-  const P = (globalThis as { Profiler?: ProfilerCtor }).Profiler
-  try {
-    profiler = P ? new P({ sampleInterval: 10, maxBufferSize: 2000 }) : null
-  } catch {
-    profiler = null
-  }
-}
-let restartTimer = 0
-/** デバッグ表示を点けたら記録を始め、消したらやめる */
-export function setProfiling(on: boolean) {
-  if (on === profiling) return
-  profiling = on
-  clearInterval(restartTimer)
-  void profiler?.stop().catch(() => {})
-  profiler = null
-  if (!on) return
-  startProfiler()
-  // 記録が溜まりすぎないよう、ときどき捨てて取り直す
-  restartTimer = window.setInterval(() => {
-    void profiler?.stop().catch(() => {})
-    startProfiler()
-  }, 10_000)
-}
-
-/** `from`〜`to` の間に動いていた関数（一番上の関数ごとの割合。JS が動いていない時間は「JS 以外」） */
-async function profileBetween(from: number, to: number): Promise<string[] | null> {
-  const p = profiler
-  if (!p) return null
-  startProfiler()
-  const trace = await p.stop()
-  const inRange = trace.samples.filter((s) => s.timestamp >= from && s.timestamp <= to)
-  if (!inRange.length) return null
-  const counts = new Map<string, number>()
-  for (const s of inRange) {
-    let name = 'JS 以外（GC・描画など）'
-    if (s.stackId !== undefined) {
-      const f = trace.frames[trace.stacks[s.stackId].frameId]
-      const file = f.resourceId !== undefined ? (trace.resources[f.resourceId] ?? '').split('/').pop()?.split('?')[0] : ''
-      name = `${f.name || '(無名)'}${file ? ` ${file}:${f.line ?? ''}` : ''}`
-    }
-    counts.set(name, (counts.get(name) ?? 0) + 1)
-  }
-  return [...counts]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
-    .map(([n, c]) => `${n} ${Math.round((c / inRange.length) * 100)}%`)
-}
-
 try {
   new PerformanceObserver((list) => {
     for (const e of list.getEntries()) {
@@ -162,13 +95,6 @@ try {
       stalls.unshift({ at: e.startTime / 1000, ms: e.duration, during: counted.length ? counted : ['(印のない処理)'], heapMb: mem ? mem.usedJSHeapSize / 2 ** 20 : null })
       stalls.length = Math.min(stalls.length, STALL_HISTORY)
       console.warn(`[stall] ${e.duration.toFixed(0)}ms`, counted)
-      // 動いていた関数が分かれば書き足す
-      const stall = stalls[0]
-      void profileBetween(e.startTime, end).then((top) => {
-        if (!top) return
-        stall.during = [...stall.during, ...top.map((x) => `js: ${x}`)]
-        console.warn('[stall] js', top)
-      })
     }
   }).observe({ type: 'longtask', buffered: true })
 } catch {

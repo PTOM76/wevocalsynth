@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Box } from '@mui/material'
-import { memoryUsage, recentDspJobs, recentStalls, renderCounts, setProfiling } from './debugStats'
+import { memoryUsage, recentDspJobs, recentStalls, renderCounts } from './debugStats'
 import { APP_BUILD } from '../pwa/updateCheck'
 
 /** 表示を更新する間隔（ミリ秒）。数字が読める速さにする */
@@ -29,11 +29,6 @@ type MemoryInfo = { usedJSHeapSize: number }
 export default function DebugOverlay() {
   const [stats, setStats] = useState<Stats | null>(null)
   const boxRef = useRef<HTMLDivElement>(null)
-  // 表示している間だけ、止まったときに動いていた関数を調べる
-  useEffect(() => {
-    setProfiling(true)
-    return () => setProfiling(false)
-  }, [])
   // ドラッグで選んでいる途中も書き換えない
   const pressing = useRef(false)
   useEffect(() => {
