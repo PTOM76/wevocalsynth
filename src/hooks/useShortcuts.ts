@@ -29,8 +29,9 @@ export function useShortcuts(handlers: Handlers) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // 入力欄の中や、メニューなどが処理済みのキー（Esc で閉じたときなど）は扱わない
-      if (e.defaultPrevented || (e.target as HTMLElement).closest('input, textarea')) return
+      // 入力欄の中や、メニューなどが処理済みのキー（Esc で閉じたときなど）は扱わない。
+      // ダイアログ・メニューの中のキーも扱わない（設定画面の矢印キーや Space で、再生やピッチの変更が起きないように）
+      if (e.defaultPrevented || (e.target as HTMLElement).closest('input, textarea, [role="dialog"], [role="menu"]')) return
       const h = ref.current
       const mod = e.ctrlKey || e.metaKey
       const k = e.key.toLowerCase()

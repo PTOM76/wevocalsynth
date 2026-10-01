@@ -305,6 +305,18 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
 
   const label = (c: Category) => t(`settings.cat.${c}`)
 
+  /** 分類の一覧での ↑↓ / Home / End。分類を切り替えて、その項目にフォーカスを移す */
+  const moveCategory = (e: React.KeyboardEvent<HTMLElement>) => {
+    const i = CATEGORIES.indexOf(category)
+    const next = { ArrowUp: i - 1, ArrowDown: i + 1, Home: 0, End: CATEGORIES.length - 1 }[e.key]
+    if (next === undefined) return
+    e.preventDefault()
+    const j = Math.max(0, Math.min(CATEGORIES.length - 1, next))
+    setCategory(CATEGORIES[j])
+    const tabs = e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')
+    tabs[j]?.focus()
+  }
+
   // スマホ: Android の設定と同じく、分類の一覧 → 各画面へ進む形。変更はその場で反映し、OK・キャンセルは置かない
   if (narrow)
     return (
@@ -342,9 +354,20 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
     <Dialog open={open} onClose={onClose} fullWidth maxWidth={false} slotProps={{ paper: { sx: { maxWidth: 720, height: 'min(600px, calc(100% - 64px))' } } }}>
       <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('settings.title')}</DialogTitle>
       <DialogContent dividers sx={{ display: 'flex', gap: 2, p: 0 }}>
-        <List dense sx={{ width: 180, flexShrink: 0, borderRight: 1, borderColor: 'divider', py: 0.5 }}>
+        {/* ↑↓ で分類を切り替え、Home / End で最初・最後へ（右の項目へは Tab で移る） */}
+        <List dense role="tablist" aria-orientation="vertical" onKeyDown={moveCategory} sx={{ width: 180, flexShrink: 0, borderRight: 1, borderColor: 'divider', py: 0.5 }}>
           {CATEGORIES.map((c) => (
-            <ListItemButton key={c} selected={c === category} onClick={() => setCategory(c)} sx={{ fontSize: 13 }}>
+            <ListItemButton
+              key={c}
+              role="tab"
+              aria-selected={c === category}
+              selected={c === category}
+              autoFocus={c === category}
+              // 選ばれている分類だけを Tab で止まる場所にする（ほかへは矢印キーで移る）
+              tabIndex={c === category ? 0 : -1}
+              onClick={() => setCategory(c)}
+              sx={{ fontSize: 13 }}
+            >
               {label(c)}
             </ListItemButton>
           ))}
