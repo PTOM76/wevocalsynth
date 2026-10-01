@@ -7,5 +7,5 @@
 - [決定事項](DECISIONS.md)
 - [コーディング規約](CODING.md)
 - [アーキテクチャ](ARCHITECTURE.md)
-- [ボーカル抽出の設計](EXTRACTOR.md)
+- [ボーカル抽出](EXTRACTOR.md)（WeVocalSynth 側。本体は wevocalextractor の docs）
 - [ドキュメントの書き方](WRITING.md)
