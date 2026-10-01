@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Box, Stack, Tab, Tabs, useMediaQuery } from '@mui/material'
 import { useT } from '../../i18n/i18n'
-import { LANDSCAPE_PHONE } from '../../theme'
+import { LANDSCAPE_PHONE } from 'pevenmui'
 
 interface Props {
   /** 波形とピッチ帯（ファイルを開く前は案内） */

@@ -14,7 +14,7 @@ import {
   Select,
   Typography,
 } from '@mui/material'
-import { enterToSubmit } from './dialogKeys'
+import { enterToSubmit } from 'pevenmui'
 import type { Clip } from '../audio/types'
 import { parseMidi, type MidiFile } from '../audio/midi'
 import { PEAK_DB, synthesize, type SynthNote, type Timbre } from '../audio/synth'

@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -25,6 +26,8 @@ const siteUrl = (process.env.SITE_URL ?? 'https://wevocalsynth.pitan76.net').rep
 export default defineConfig({
   // GitHub Pages ではリポジトリ名のサブパスで配信されるため、CI から BASE_PATH で指定する
   base: process.env.BASE_PATH ?? '/',
+  // UI 部品のライブラリ（サブモジュール）はソースのまま読み込む
+  resolve: { alias: { pevenmui: fileURLToPath(new URL('./pevenmui/src/index.ts', import.meta.url)) } },
   // 「このアプリについて」に出すバージョン（package.json の version）とコミット
   define: { __APP_VERSION__: JSON.stringify(pkg.version), __APP_COMMIT__: JSON.stringify(commit) },
   plugins: [

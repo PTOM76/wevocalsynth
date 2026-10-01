@@ -1,4 +1,4 @@
-import type { MenuEntry, MenuGroup } from '../components/menu/MenuList'
+import type { MenuEntry, MenuGroup } from 'pevenmui'
 import { useT } from '../i18n/i18n'
 
 interface Actions {

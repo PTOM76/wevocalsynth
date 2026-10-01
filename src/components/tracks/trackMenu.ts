@@ -1,4 +1,4 @@
-import type { MenuEntry } from '../menu/MenuList'
+import type { MenuEntry } from 'pevenmui'
 import { DEFAULT_MIX, type Track, type TrackMix } from '../../audio/tracks'
 import { t } from '../../i18n/i18n'
 

@@ -16,7 +16,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material'
-import { enterToSubmit } from './dialogKeys'
+import { enterToSubmit } from 'pevenmui'
 import type { WavFormat } from '../audio/wav'
 import { EXPORT_EXT, type ExportFormat } from '../audio/export/exportAudio'
 import { MP3_SAMPLE_RATES, OPUS_SAMPLE_RATE, canEncodeOpus } from '../audio/export/formats'

@@ -3,7 +3,7 @@ import { TextField, Typography } from '@mui/material'
 import { NumberInput } from '../components/inspector/Inspector'
 import type { ProjectTempo } from '../project/projectFile'
 import { useT } from '../i18n/i18n'
-import { Group, Row } from './controls'
+import { Group, Row } from 'pevenmui'
 
 /** 設定の「プロジェクト」に渡す、今のプロジェクトの値と変更の関数。ファイルを開いていなければ null */
 export interface ProjectSettings {

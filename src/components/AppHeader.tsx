@@ -15,10 +15,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEllipsisVertical, faRotateLeft, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import AppIcon from './AppIcon'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { renderEntries, type MenuGroup } from './menu/MenuList'
-import MenuBar from './menu/MenuBar'
+import { renderEntries, type MenuGroup, MenuBar, LANDSCAPE_PHONE } from 'pevenmui'
 import { useT } from '../i18n/i18n'
-import { LANDSCAPE_PHONE } from '../theme'
 
 interface Props {
   menus: MenuGroup[]

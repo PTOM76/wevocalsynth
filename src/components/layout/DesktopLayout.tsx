@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Box, Stack } from '@mui/material'
-import { usePanelWidth } from './Splitter'
+import { usePanelWidth } from 'pevenmui'
 
 interface Props {
   toolbar: ReactNode

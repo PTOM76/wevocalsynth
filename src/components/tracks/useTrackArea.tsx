@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { useEditor } from '../../hooks/useEditor'
 import type { View } from '../waveform/draw'
-import { ContextMenu } from '../menu/MenuList'
+import { ContextMenu } from 'pevenmui'
 import TrackPanel from './TrackPanel'
 import RenameDialog from './RenameDialog'
 import { multiTrackMenuEntries, trackMenuEntries } from './trackMenu'

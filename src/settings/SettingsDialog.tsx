@@ -15,13 +15,12 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import { enterToSubmit } from '../components/dialogKeys'
+import { enterToSubmit, SearchContext, NarrowContext } from 'pevenmui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faChevronRight, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { DEFAULT_SETTINGS, type Settings } from './settings'
 import { useT } from '../i18n/i18n'
-import { SearchContext, matchCategories, type Category } from './settingsSearch'
-import { NarrowContext } from './controls'
+import { matchCategories, type Category } from './settingsSearch'
 import { settingsPages } from './SettingsPages'
 import type { ProjectSettings } from './ProjectSection'
 

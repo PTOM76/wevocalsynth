@@ -15,7 +15,7 @@ import {
   Slider,
   Typography,
 } from '@mui/material'
-import { enterToSubmit } from './dialogKeys'
+import { enterToSubmit } from 'pevenmui'
 import { rateForBpm, type SnapOptions, type VibratoOptions } from '../audio/pitchTools'
 import { noteName } from '../audio/notes'
 import { COMPACT_SLIDER_SX, NumberInput } from './inspector/Inspector'

@@ -12,8 +12,7 @@ import {
 } from '../addons/addons'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { useT } from '../i18n/i18n'
-import { useConfirm } from '../components/ConfirmDialog'
-import { useHighlighter } from './settingsSearch'
+import { useConfirm, useHighlighter } from 'pevenmui'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 
@@ -27,7 +26,7 @@ interface Status {
 export default function AddonSection({ ids }: { ids: string[] }) {
   const t = useT()
   const { request, dialog } = useAddonInstall()
-  const { confirm, dialog: confirmDialog } = useConfirm()
+  const { confirm, dialog: confirmDialog } = useConfirm(t('common.cancel'))
   const hit = useHighlighter()
   const [status, setStatus] = useState<Record<string, Status>>({})
   const [message, setMessage] = useState<string | null>(null)

@@ -10,8 +10,7 @@ import {
 } from '../project/storage'
 import { clearAddons, installedAddonsSize } from '../addons/addons'
 import { useT, type MessageKey } from '../i18n/i18n'
-import { useConfirm } from '../components/ConfirmDialog'
-import { useHighlighter } from './settingsSearch'
+import { useConfirm, useHighlighter } from 'pevenmui'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 
@@ -22,7 +21,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const [addonBytes, setAddonBytes] = useState(0)
   const [message, setMessage] = useState<string | null>(null)
-  const { confirm, dialog } = useConfirm()
+  const { confirm, dialog } = useConfirm(t('common.cancel'))
   const hit = useHighlighter()
 
   const refresh = () => {
