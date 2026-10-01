@@ -200,7 +200,6 @@
   "update.reload": "Update",
   "settings.groupUpdate": "Updates",
   "update.check": "Check now",
-  "update.found": "A new version is available. Press Update at the bottom right",
   "update.latest": "WeVocalSynth is up to date",
   "update.unsupported": "Cannot check for updates in this environment",
   "update.failed": "Update check failed (check your network connection)",

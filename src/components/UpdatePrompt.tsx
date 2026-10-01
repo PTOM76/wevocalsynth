@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useT } from '../i18n/i18n'
-import { APP_BUILD, fetchLatestBuild, setRegistration } from '../pwa/updateCheck'
+import { APP_BUILD, fetchLatestBuild, setApplyUpdate, setRegistration } from '../pwa/updateCheck'
 
 /** 開いたままでも新しい版に気づけるよう、更新を確認する間隔（ミリ秒） */
 const CHECK_INTERVAL_MS = 60 * 60 * 1000
@@ -31,6 +31,9 @@ export default function UpdatePrompt() {
       })
     },
   })
+
+  // 設定の「更新」からも入れ替えられるようにする
+  useEffect(() => setApplyUpdate(() => void updateServiceWorker(true)), [updateServiceWorker])
 
   // 新しい Service Worker が来たら、どの版かを取りに行く（バージョン番号が同じでもコミットで見分けられる）。
   // 取り終わるまでは通知を出さない（undefined は取得中、null は取れなかった）

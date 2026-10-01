@@ -200,7 +200,6 @@
   "update.reload": "更新",
   "settings.groupUpdate": "アップデート",
   "update.check": "今すぐ確認",
-  "update.found": "新しいバージョンがあります。右下の「更新」で適用します",
   "update.latest": "最新バージョンです",
   "update.unsupported": "この環境では確認できません",
   "update.failed": "確認に失敗しました（ネットワーク接続を確認してください）",
