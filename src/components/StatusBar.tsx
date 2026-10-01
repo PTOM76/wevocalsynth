@@ -76,7 +76,7 @@ export default function StatusBar(p: Props) {
           <Box sx={{ width: 140, display: 'flex', alignItems: 'center' }}>
             <LinearProgress variant={p.progress < 0 ? 'indeterminate' : 'determinate'} value={Math.max(0, p.progress) * 100} sx={{ flex: 1 }} />
           </Box>
-          <Typography variant="caption">{Math.round(p.progress * 100)}%</Typography>
+          {p.progress >= 0 && <Typography variant="caption">{Math.round(p.progress * 100)}%</Typography>}
           <Tooltip title={t('task.cancel')}>
             <IconButton size="small" aria-label={t('task.cancel')} onClick={p.onCancelTask} sx={{ p: 0.25 }}>
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: 12 }} />

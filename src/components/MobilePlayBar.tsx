@@ -36,7 +36,7 @@ export default function MobilePlayBar(p: Props) {
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1.5, pt: 0.75 }}>
           <Typography sx={{ fontSize: 12, whiteSpace: 'nowrap' }}>{p.task.label}</Typography>
           <LinearProgress variant={p.task.progress < 0 ? 'indeterminate' : 'determinate'} value={Math.max(0, p.task.progress) * 100} sx={{ flex: 1 }} />
-          <Typography sx={{ fontSize: 12 }}>{Math.round(p.task.progress * 100)}%</Typography>
+          {p.task.progress >= 0 && <Typography sx={{ fontSize: 12 }}>{Math.round(p.task.progress * 100)}%</Typography>}
           <IconButton aria-label={t('task.cancel')} onClick={p.task.onCancel} sx={{ p: 0.75 }}>
             <FontAwesomeIcon icon={faXmark} style={{ fontSize: 14 }} />
           </IconButton>

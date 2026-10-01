@@ -201,7 +201,7 @@ export default function EditPanel(p: Props) {
           </span>
         </Tooltip>
         <Button size="small" variant="contained" disabled={busy || unchanged || p.targetDuration <= 0} onClick={p.onApply} sx={{ ...SMALL_BUTTON_SX, px: 1.5 }}>
-          {busy ? t('process.processing', { percent: Math.round(p.progress * 100) }) : t('common.apply')}
+          {busy ? t('process.processing', { percent: Math.round(Math.max(0, p.progress) * 100) }) : t('common.apply')}
         </Button>
       </Stack>
     </InspectorSection>
