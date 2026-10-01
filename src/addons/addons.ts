@@ -20,8 +20,8 @@ export interface AddonFile {
 export interface AddonManifest {
   id: string
   version: string
-  /** `import()` するファイル */
-  entry: string
+  /** `import()` するファイル（モデルだけの追加機能は null） */
+  entry: string | null
   files: AddonFile[]
 }
 
@@ -30,16 +30,33 @@ export interface AddonInfo {
   name: MessageKey
   /** 開発者向け（デバッグ表示が ON のときだけ一覧に出す） */
   dev?: boolean
+  /** 先に導入が要る追加機能（導入するときに一緒に入れる） */
+  requires?: string[]
 }
 
 /** 配信している追加機能 */
-export const ADDONS: AddonInfo[] = [{ id: 'test', name: 'addon.test', dev: true }]
+export const ADDONS: AddonInfo[] = [
+  { id: 'vocal-extractor', name: 'addon.vocalExtractor' },
+  { id: 'spleeter-fp16', name: 'addon.spleeterFp16', requires: ['vocal-extractor'] },
+  { id: 'spleeter-int8', name: 'addon.spleeterInt8', requires: ['vocal-extractor'] },
+  { id: 'spleeter-fp32', name: 'addon.spleeterFp32', requires: ['vocal-extractor'] },
+  { id: 'test', name: 'addon.test', dev: true },
+]
+
+/** `id` と、その導入に要る追加機能（依存を先に並べる） */
+export function withRequires(id: string): string[] {
+  const info = ADDONS.find((a) => a.id === id)
+  return [...new Set([...(info?.requires ?? []).flatMap(withRequires), id])]
+}
 
 /** この環境で使えるか（Cache Storage は https か localhost でしか使えない） */
 export const addonsSupported = () => typeof caches !== 'undefined'
 
 const baseUrl = (id: string) => new URL(`${import.meta.env.BASE_URL}addons/${id}/`, location.href)
 const manifestUrl = (id: string) => new URL('manifest.json', baseUrl(id)).href
+
+/** 追加機能の中のファイルの URL（導入済みなら Service Worker が保存先から返す） */
+export const addonFileUrl = (id: string, path: string) => new URL(path, baseUrl(id)).href
 
 export const addonSize = (m: AddonManifest) => m.files.reduce((s, f) => s + f.size, 0)
 
@@ -131,6 +148,6 @@ export async function uninstall(id: string) {
 /** 導入済みの追加機能を読み込む。モジュールの形は追加機能ごとに決める */
 export async function loadAddon<T>(id: string): Promise<T> {
   const m = await installedManifest(id)
-  if (!m) throw new Error(`${id} は導入されていません`)
+  if (!m?.entry) throw new Error(`${id} は導入されていないか、読み込むファイルがありません`)
   return import(/* @vite-ignore */ new URL(m.entry, baseUrl(id)).href)
 }
