@@ -5,6 +5,8 @@ interface Actions {
   hasClip: boolean
   hasSelection: boolean
   hasClipboard: boolean
+  /** 選択範囲のみ残すを使えるか（ピッチの帯にフォーカスしているときは使えない） */
+  canTrim: boolean
   canUndo: boolean
   canRedo: boolean
   busy: boolean
@@ -25,6 +27,9 @@ interface Actions {
   toggleLoop: () => void
   toggleSpectrogram: () => void
   togglePitch: () => void
+  /** 波形の帯を出すか（ピッチを出していないときは隠せない） */
+  showWave: boolean
+  toggleWave: () => void
   /** ピッチを表示していて解析済みか */
   pitchReady: boolean
   /** 選択範囲のピッチを強制表示（1）・強制非表示（-1）・解析のまま（0）にする */
@@ -57,7 +62,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('edit.cut'), shortcut: 'Ctrl+X', disabled: noSel, onClick: a.cut },
     { label: t('edit.copy'), shortcut: 'Ctrl+C', disabled: noSel, onClick: a.copy },
     { label: t('edit.paste'), shortcut: 'Ctrl+V', disabled: noClip || !a.hasClipboard, onClick: a.paste },
-    { label: t('edit.trim'), disabled: noSel, onClick: a.trim },
+    { label: t('edit.trim'), disabled: noSel || !a.canTrim, onClick: a.trim },
     { divider: true },
     { label: t('edit.selectAll'), shortcut: 'Ctrl+A', disabled: noClip, onClick: a.selectAll },
     { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: noSel, onClick: a.clearSelection },
@@ -97,6 +102,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       label: t('menu.view'),
       entries: [
         { label: t('menu.spectrogram'), checked: a.showSpectrogram, disabled: !a.hasClip, onClick: a.toggleSpectrogram },
+        { label: t('menu.wave'), checked: a.showWave, disabled: !a.hasClip || (a.showWave && !a.showPitch && !a.showSpectrogram), onClick: a.toggleWave },
         { label: t('menu.pitch'), checked: a.showPitch, disabled: !a.hasClip, onClick: a.togglePitch },
       ],
     },

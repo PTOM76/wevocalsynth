@@ -5,6 +5,7 @@ import {
   faArrowDown,
   faArrowUp,
   faChartColumn,
+  faChartArea,
   faCheck,
   faExpand,
   faGripLines,
@@ -58,6 +59,11 @@ interface Props {
   showSpectrogram: boolean
   onShowSpectrogramChange: (show: boolean) => void
   showPitch: boolean
+  /** 波形の帯を出すか。ほかに出ている帯（スペクトログラム・ピッチ）が無ければ隠せない */
+  showWave: boolean
+  onShowWaveChange: (v: boolean) => void
+  /** ピッチの帯にフォーカスしているか（ピッチの道具はそのときだけ出す） */
+  pitchFocused: boolean
   onShowPitchChange: (show: boolean) => void
   penMode: boolean
   onPenModeChange: (pen: boolean) => void
@@ -98,6 +104,15 @@ export default function WaveformToolbar(p: Props) {
       <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomIn') })} label={t('wave.zoomIn')} icon={faMagnifyingGlassPlus} disabled={off || !p.canZoomIn} onClick={p.onZoomIn} />
       <SmallButton title={t('wave.showAll')} label={t('wave.showAll')} icon={faExpand} disabled={off || !p.zoomed} onClick={p.onShowAll} />
       <SmallButton
+        title={t('wave.showWave')}
+        label={t('wave.showWave')}
+        icon={faChartArea}
+        pressed={p.showWave}
+        // どちらか一方の帯は必ず出す
+        disabled={off || (p.showWave && !p.showPitch && !p.showSpectrogram)}
+        onClick={() => p.onShowWaveChange(!p.showWave)}
+      />
+      <SmallButton
         title={t('wave.spectrogram')}
         label={t('wave.spectrogram')}
         icon={faChartColumn}
@@ -113,8 +128,8 @@ export default function WaveformToolbar(p: Props) {
         disabled={off}
         onClick={() => p.onShowPitchChange(!p.showPitch)}
       />
-      {/* ピッチを表示しているときだけ使えるボタンは、そのときだけ出す（使えないボタンでツールバーを埋めない） */}
-      {p.showPitch && (
+      {/* ピッチの道具は、ピッチの帯にフォーカスしているときだけ出す（ツールバーはフォーカスしている帯の操作にする） */}
+      {p.showPitch && p.pitchFocused && (
         <>
           <SmallButton
             title={t('wave.drawPitchTooltip')}

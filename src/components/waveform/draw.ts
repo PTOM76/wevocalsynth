@@ -9,11 +9,17 @@ export const RULER_HEIGHT = 24
 /** 波形の欄の最低の高さ（画面が低くても、これより小さくしない） */
 const MIN_WAVE_HEIGHT = 80
 
-/** Canvas 全体の高さ `total` を、時間軸・波形・ピッチ帯に割り振る。`pitchPercent` は時間軸を除いた高さに対するピッチ帯の割合 */
-export function laneHeights(total: number, showPitch: boolean, pitchPercent: number) {
+/**
+ * Canvas 全体の高さ `total` を、時間軸と帯（上から波形・スペクトログラム・ピッチ）に割り振る。
+ * ピッチ帯は時間軸を除いた高さの `pitchPercent` %（ほかの帯が無ければ高さいっぱい）、残りを波形とスペクトログラムで等分する
+ */
+export function laneHeights(total: number, show: { wave: boolean; spec: boolean; pitch: boolean }, pitchPercent: number) {
   const body = Math.max(MIN_WAVE_HEIGHT, total - RULER_HEIGHT)
-  const pitchH = showPitch ? Math.round((body * pitchPercent) / 100) : 0
-  return { waveH: body - pitchH, pitchH, height: RULER_HEIGHT + body }
+  const upper = (show.wave ? 1 : 0) + (show.spec ? 1 : 0)
+  const pitchH = show.pitch ? (upper ? Math.round((body * pitchPercent) / 100) : body) : 0
+  const each = upper ? (body - pitchH) / upper : 0
+  const waveH = show.wave ? Math.round(each) : 0
+  return { waveH, specH: show.spec ? body - pitchH - waveH : 0, pitchH, height: RULER_HEIGHT + body }
 }
 
 export { hzToMidi }
@@ -65,10 +71,15 @@ export interface DrawContext {
   view: View
   pal: Theme['palette']
   dark: boolean
-  /** 波形の欄とピッチ帯の高さ（`laneHeights` で決める） */
+  /** 波形・スペクトログラム・ピッチの帯の高さ（`laneHeights` で決める。出さない帯は 0） */
   waveH: number
+  specH: number
   pitchH: number
 }
+
+/** スペクトログラム・ピッチの帯の上端 */
+const specTop = (c: DrawContext) => RULER_HEIGHT + c.waveH
+const pitchTop = (c: DrawContext) => RULER_HEIGHT + c.waveH + c.specH
 
 const toX = ({ width, view }: DrawContext, t: number) => ((t - view.start) / view.dur) * width
 
@@ -129,30 +140,46 @@ export function drawBeatGrid(c: DrawContext, grid: BeatGrid, h: number) {
  * 表示範囲のスペクトログラムの画像。作るのが重いため、表示範囲・大きさ・データが変わったときだけ作り、
  * 選択範囲の変更などでの描き直しでは使い回す
  */
-export function spectrogramLayer(spec: Spectrogram, width: number, waveH: number, view: View) {
-  const off = new OffscreenCanvas(Math.max(1, width), Math.max(1, waveH))
-  off.getContext('2d')!.putImageData(renderSpectrogram(spec, width, waveH, view.start, view.dur), 0, 0)
+export function spectrogramLayer(spec: Spectrogram, width: number, specH: number, view: View) {
+  const off = new OffscreenCanvas(Math.max(1, width), Math.max(1, specH))
+  off.getContext('2d')!.putImageData(renderSpectrogram(spec, width, specH, view.start, view.dur), 0, 0)
   return off
 }
 
-/** 波形の欄にスペクトログラムを描く（解析中はその旨を表示）。`layer` は `spectrogramLayer` で作った画像 */
+/** スペクトログラムの帯を描く（解析中はその旨を表示）。`layer` は `spectrogramLayer` で作った画像 */
 export function drawSpectrogram(c: DrawContext, spec: Spectrogram | null, layer: OffscreenCanvas | null) {
-  const { g, pal, waveH } = c
+  const { g, width, pal, specH } = c
+  const top = specTop(c)
+  // 上の帯との境目
+  g.fillStyle = pal.divider
+  g.fillRect(0, top, width, 1)
   if (!spec || !layer) {
     g.fillStyle = pal.text.secondary
-    g.fillText(t('common.analyzing'), 8, RULER_HEIGHT + waveH / 2)
+    g.fillText(t('common.analyzing'), 8, top + specH / 2)
     return
   }
-  g.drawImage(layer, 0, RULER_HEIGHT)
+  g.drawImage(layer, 0, top)
   // 周波数の目盛り
   g.fillStyle = 'rgba(255, 255, 255, 0.85)'
   const logSpan = Math.log(spec.maxHz / spec.minHz)
   for (const hz of [100, 1000, 10000]) {
     if (hz >= spec.maxHz) continue
-    const y = RULER_HEIGHT + waveH - (Math.log(hz / spec.minHz) / logSpan) * waveH
+    const y = top + specH - (Math.log(hz / spec.minHz) / logSpan) * specH
     g.fillRect(0, Math.round(y), 6, 1)
     g.fillText(hz >= 1000 ? `${hz / 1000}k` : `${hz}`, 8, y)
   }
+}
+
+/** 帯の種類 */
+export type Lane = 'wave' | 'spec' | 'pitch'
+
+/** フォーカスしている帯の左端に色の帯を描く（ツールバーとショートカットがその帯に効くことを示す） */
+export function drawLaneFocus(c: DrawContext, lane: Lane) {
+  const { g, pal, waveH, specH, pitchH } = c
+  const [y, h] = lane === 'wave' ? [RULER_HEIGHT, waveH] : lane === 'spec' ? [specTop(c), specH] : [pitchTop(c), pitchH]
+  if (h <= 0) return
+  g.fillStyle = pal.primary.main
+  g.fillRect(0, y, 3, h)
 }
 
 /** 選択範囲の塗りと両端の線（高さ `h` まで） */
@@ -205,8 +232,8 @@ export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float3
 
 /** ピッチ帯: 音名のグリッドと F0 曲線。描いた目標ピッチがあれば元の曲線を薄くして重ねる */
 export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range: PitchRange | null, target: Float32Array | null) {
-  const { g, width, view, pal, waveH, pitchH } = c
-  const top = RULER_HEIGHT + waveH
+  const { g, width, view, pal, pitchH } = c
+  const top = pitchTop(c)
   g.fillStyle = pal.divider
   g.fillRect(0, top, width, 1)
   if (!pitch || !range) {

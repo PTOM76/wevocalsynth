@@ -34,6 +34,8 @@ import { useAutosave } from './useAutosave'
 import { useVocalExtract } from './useVocalExtract'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { useTracks } from './useTracks'
+import { usePitchClipboard } from './usePitchClipboard'
+import type { Lane } from '../components/waveform/draw'
 import { isAudible, makeTrack, newTrackId } from '../audio/tracks'
 import { mixClips } from '../audio/mix'
 import { f0ParamsFrom, type Settings } from '../settings/settings'
@@ -76,8 +78,22 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     algorithm: 'psola',
     preserveFormant: false,
   })
-  const [showPitch, setShowPitch] = useState(false)
-  const [showSpec, setShowSpec] = useState(false)
+  // 波形の帯を出すか（偽ならピッチだけ）と、フォーカスしている帯（ツールバーとショートカットが効く）
+  const [showWave, setShowWaveState] = useState(true)
+  const [focusLaneState, setFocusLane] = useState<Lane>('wave')
+  const [showPitch, setShowPitchState] = useState(false)
+  const [showSpec, setShowSpecState] = useState(false)
+  // 帯を隠して何も出ていなくなるときは、波形の帯を出す（どれか1本は必ず出す）。出したときはその帯にフォーカスする
+  const setShowPitch = (v: boolean) => {
+    setShowPitchState(v)
+    if (!v && !showSpec) setShowWaveState(true)
+    if (v) setFocusLane('pitch')
+  }
+  const setShowSpec = (v: boolean) => {
+    setShowSpecState(v)
+    if (!v && !showPitch) setShowWaveState(true)
+    if (v) setFocusLane('spec')
+  }
   const [penMode, setPenMode] = useState(false)
   const [autoMode, setAutoMode] = useState<Mode | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
@@ -386,15 +402,44 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   }
   const seekEdge = (edge: 'start' | 'end') => shown && player.seek(edge === 'start' ? 0 : duration)
 
+  // 帯の表示とフォーカス: フォーカスしている帯を隠したら、出ている帯（上から順）にフォーカスする
+  const shownLanes: Lane[] = [showWave && 'wave', showSpec && 'spec', showPitch && 'pitch'].filter(Boolean) as Lane[]
+  const focusLane: Lane = shownLanes.includes(focusLaneState) ? focusLaneState : (shownLanes[0] ?? 'wave')
+  /** 波形の帯を出す・隠す（ほかに出ている帯が無ければ隠せない。どれか1本は必ず出す） */
+  const setShowWave = (v: boolean) => {
+    if (!v && !showPitch && !showSpec) return
+    setShowWaveState(v)
+  }
+  // ピッチの曲線の切り取り・コピー・貼り付け（ピッチの帯にフォーカスしているとき）
+  const pitchClip = usePitchClipboard({
+    edited,
+    pitch: editing ? pitch : null,
+    pitchTarget,
+    selections,
+    getPosition: player.livePosition,
+    notify: (message) => setToast({ severity: 'info', message }),
+  })
+  /** フォーカスしている帯に効く、切り取り・コピー・貼り付け・選択範囲のみ残す */
+  const onPitch = focusLane === 'pitch'
+  const clip = {
+    cut: onPitch ? pitchClip.cut : cmd.cut,
+    copy: onPitch ? pitchClip.copy : cmd.copy,
+    paste: onPitch ? pitchClip.paste : cmd.paste,
+    // 選択範囲のみ残すは、音声だけの操作
+    trim: onPitch ? () => {} : cmd.trim,
+    canTrim: !onPitch,
+    hasClipboard: onPitch ? pitchClip.hasClipboard : cmd.hasClipboard,
+  }
+
   useShortcuts({
     seekBy,
     seekEdge,
     togglePlay: playback.togglePlay,
     undo: history.undo,
     redo: history.redo,
-    cut: cmd.cut,
-    copy: cmd.copy,
-    paste: cmd.paste,
+    cut: clip.cut,
+    copy: clip.copy,
+    paste: clip.paste,
     selectAll,
     clearSelection,
     open: () => picker.open(),
@@ -417,7 +462,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     // 再生
     player, preview, loop, playback,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
-    showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
+    showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, focusLane, setFocusLane, clip, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
     cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,

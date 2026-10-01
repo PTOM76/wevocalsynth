@@ -92,7 +92,8 @@ export default function App() {
   const { menus, mobileMenus, context } = useAppMenus({
     hasClip: !!edited,
     hasSelection: !!selection,
-    hasClipboard: ed.cmd.hasClipboard,
+    hasClipboard: ed.clip.hasClipboard,
+    canTrim: ed.clip.canTrim,
     canUndo: ed.history.canUndo,
     canRedo: ed.history.canRedo,
     busy,
@@ -103,16 +104,19 @@ export default function App() {
     openExport: () => ed.setExportOpen(true),
     undo: ed.history.undo,
     redo: ed.history.redo,
-    cut: ed.cmd.cut,
-    copy: ed.cmd.copy,
-    paste: ed.cmd.paste,
-    trim: ed.cmd.trim,
+    // 切り取り・コピー・貼り付けは、フォーカスしている帯（波形なら音声、ピッチなら曲線）に効く
+    cut: ed.clip.cut,
+    copy: ed.clip.copy,
+    paste: ed.clip.paste,
+    trim: ed.clip.trim,
     clearSelection: ed.clearSelection,
     selectAll: ed.selectAll,
     playSelection: playback.playSelection,
     toggleLoop: playback.toggleLoop,
     toggleSpectrogram: () => ed.setShowSpec(!ed.showSpec),
     togglePitch: () => ed.setShowPitch(!ed.showPitch),
+    showWave: ed.showWave,
+    toggleWave: () => ed.setShowWave(!ed.showWave),
     pitchReady: ed.showPitch && !!ed.pitch,
     setVoicing: (v) => ed.voicing.set(ed.selections, v),
     extract: (stem) => void ed.extract(stem),
@@ -180,6 +184,9 @@ export default function App() {
       onPitchPercentChange={setPitchPercent}
       beatGrid={beatGrid}
       ghosts={editing ? ed.tracks.ghosts : undefined}
+      showWave={ed.showWave}
+      focusLane={ed.focusLane}
+      onFocusLane={ed.setFocusLane}
     />
   ) : (
     <EmptyState onOpen={ed.picker.open} onSynth={() => setSynthOpen(true)} />
@@ -235,6 +242,9 @@ export default function App() {
       onShowSpectrogramChange={ed.setShowSpec}
       showPitch={ed.showPitch}
       onShowPitchChange={ed.setShowPitch}
+      showWave={ed.showWave}
+      onShowWaveChange={ed.setShowWave}
+      pitchFocused={ed.focusLane === 'pitch'}
       penMode={ed.penMode}
       onPenModeChange={ed.setPenMode}
       hasCurve={hasCurve}
@@ -359,11 +369,12 @@ export default function App() {
                 meter={settings.showMeters && <LevelMeter source={player.masterAnalysers} rows={2} width={80} height={9} label={t('meter.master')} />}
                 viewTools={viewTools}
                 canEdit={editing && !busy}
-                hasClipboard={ed.cmd.hasClipboard}
-                onCut={ed.cmd.cut}
-                onCopy={ed.cmd.copy}
-                onPaste={ed.cmd.paste}
-                onTrim={ed.cmd.trim}
+                hasClipboard={ed.clip.hasClipboard}
+                canTrim={ed.clip.canTrim}
+                onCut={ed.clip.cut}
+                onCopy={ed.clip.copy}
+                onPaste={ed.clip.paste}
+                onTrim={ed.clip.trim}
                 onClearSelection={ed.clearSelection}
               />
             }

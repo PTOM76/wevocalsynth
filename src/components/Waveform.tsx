@@ -18,6 +18,8 @@ import {
   spectrogramLayer,
   drawWave,
   drawGhostWave,
+  drawLaneFocus,
+  type Lane,
   pitchRange,
   type BeatGrid,
   type DrawContext,
@@ -79,6 +81,11 @@ interface Props {
   beatGrid: BeatGrid | null
   /** 後ろに薄く重ねる、ほかのトラックの音（トラックの右クリックメニューで選ぶ） */
   ghosts?: Clip[]
+  /** 波形の帯を出すか（偽ならピッチだけ） */
+  showWave: boolean
+  /** フォーカスしている帯（ツールバーとショートカットが効く）。押した帯にフォーカスを移す */
+  focusLane: Lane
+  onFocusLane: (lane: Lane) => void
 }
 
 export default function Waveform(props: Props) {
@@ -140,12 +147,15 @@ export default function Waveform(props: Props) {
   const ghosts = props.ghosts
   const ghostPeaks = useMemo(() => (width > 0 && ghosts?.length ? ghosts.map((g) => computePeaks(g, width, view)) : []), [ghosts, width, view])
   const range = useMemo(() => (pitch ? pitchRange(pitch) : null), [pitch])
-  const { waveH, pitchH, height } = laneHeights(size.height, showPitch, props.pitchPercent)
-  const divider = useLaneDivider(canvasRef, { waveH, pitchH }, showPitch, props.onPitchPercentChange)
+  const showWave = props.showWave
+  const { waveH, specH, pitchH, height } = laneHeights(size.height, { wave: showWave, spec: showSpectrogram, pitch: showPitch }, props.pitchPercent)
+  // ピッチ帯と上の帯（波形・スペクトログラム）の境目のドラッグは、両方あるときだけ
+  const upperH = waveH + specH
+  const divider = useLaneDivider(canvasRef, { waveH: upperH, pitchH }, showPitch && upperH > 0, props.onPitchPercentChange)
   const [dividerHover, setDividerHover] = useState(false)
   const specLayer = useMemo(
-    () => (showSpectrogram && spectrogram && width > 0 ? spectrogramLayer(spectrogram, width, waveH, view) : null),
-    [showSpectrogram, spectrogram, width, waveH, view],
+    () => (showSpectrogram && spectrogram && width > 0 && specH > 0 ? spectrogramLayer(spectrogram, width, specH, view) : null),
+    [showSpectrogram, spectrogram, width, specH, view],
   )
 
   useEffect(() => {
@@ -159,20 +169,23 @@ export default function Waveform(props: Props) {
     g.clearRect(0, 0, width, height)
     g.font = `11px ${font}`
     g.textBaseline = 'middle'
-    const c: DrawContext = { g, width, view, pal, dark, waveH, pitchH }
+    const c: DrawContext = { g, width, view, pal, dark, waveH, specH, pitchH }
 
     drawRuler(c)
     // スペクトログラムは波形の代わりに表示する。選択範囲は波形などに隠れないよう、最後に重ねる
-    if (showSpectrogram) drawSpectrogram(c, spectrogram, specLayer)
-    else {
+    if (showWave) {
       // ほかのトラックは後ろに薄く重ねる
       for (const gp of ghostPeaks) drawGhostWave(c, gp)
       drawWave(c, peaks)
     }
+    // スペクトログラムは波形を置き換えず、自分の帯に描く
+    if (showSpectrogram) drawSpectrogram(c, spectrogram, specLayer)
     if (showPitch) drawPitchLane(c, pitch, range, target)
     if (beatGrid) drawBeatGrid(c, beatGrid, height)
     for (const r of selections) drawSelection(c, r, height)
-  }, [beatGrid, lang, peaks, ghostPeaks, width, height, waveH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
+    // 帯が2本以上あるときだけ、どれにフォーカスしているかを示す
+    if ([showWave, showSpectrogram, showPitch].filter(Boolean).length > 1) drawLaneFocus(c, props.focusLane)
+  }, [showWave, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
 
   // 再生位置の線（再生中は毎フレーム変わるので、こちらだけを描き直す）
   useEffect(() => {
@@ -187,7 +200,7 @@ export default function Waveform(props: Props) {
     const draw = (t: number) => {
       g.setTransform(dpr, 0, 0, dpr, 0, 0)
       g.clearRect(0, 0, width, height)
-      drawPlayhead({ g, width, view, pal, dark, waveH, pitchH }, t, height)
+      drawPlayhead({ g, width, view, pal, dark, waveH, specH, pitchH }, t, height)
     }
     draw(position)
     // 再生中は React の再描画（position は間引いて更新）を待たず、毎フレーム今の位置で描く
@@ -199,7 +212,7 @@ export default function Waveform(props: Props) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, pitchH])
+  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -235,7 +248,7 @@ export default function Waveform(props: Props) {
   const drawPointAt = (e: React.PointerEvent): DrawPoint | null => {
     if (!penMode || !showPitch || !range) return null
     const rect = canvasRef.current!.getBoundingClientRect()
-    const y = e.clientY - rect.top - RULER_HEIGHT - waveH
+    const y = e.clientY - rect.top - RULER_HEIGHT - upperH
     if (drawRef.current === null && (y < 0 || y > pitchH)) return null
     const k = Math.round(timeAt(e.clientX) / F0_HOP_SEC)
     if (e.altKey) return { k, midi: null }
@@ -278,6 +291,9 @@ export default function Waveform(props: Props) {
           props.onContextMenu(e.clientX, e.clientY)
         }}
         onPointerDown={(e) => {
+          // 押した帯にフォーカスを移す（時間目盛りの上は変えない）
+          const ly = e.clientY - e.currentTarget.getBoundingClientRect().top - RULER_HEIGHT
+          if (ly >= 0) props.onFocusLane(ly < waveH ? 'wave' : ly < upperH ? 'spec' : 'pitch')
           // 右クリックは範囲選択を始めない（コンテキストメニューに任せる）
           if (e.button === 2) return
           altRef.current = e.altKey

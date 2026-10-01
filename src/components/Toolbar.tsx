@@ -26,6 +26,8 @@ interface Props {
   /** 編集（切り取り・コピー・貼り付け・選択範囲のみ残す・選択解除） */
   canEdit: boolean
   hasClipboard: boolean
+  /** 選択範囲のみ残すを使えるか（音声だけの操作なので、ピッチの帯にフォーカスしているときは使えない） */
+  canTrim: boolean
   onCut: () => void
   onCopy: () => void
   onPaste: () => void
@@ -63,7 +65,7 @@ export default function Toolbar(p: Props) {
         <SmallButton title={`${t('edit.cut')} (Ctrl+X)`} label={t('edit.cut')} icon={faScissors} disabled={!p.canEdit || !p.hasSelection} onClick={p.onCut} />
         <SmallButton title={`${t('edit.copy')} (Ctrl+C)`} label={t('edit.copy')} icon={faCopy} disabled={!p.canEdit || !p.hasSelection} onClick={p.onCopy} />
         <SmallButton title={`${t('edit.paste')} (Ctrl+V)`} label={t('edit.paste')} icon={faPaste} disabled={!p.canEdit || !p.hasClipboard} onClick={p.onPaste} />
-        <SmallButton title={t('edit.trim')} label={t('edit.trim')} icon={faCropSimple} disabled={!p.canEdit || !p.hasSelection} onClick={p.onTrim} />
+        <SmallButton title={t('edit.trim')} label={t('edit.trim')} icon={faCropSimple} disabled={!p.canEdit || !p.hasSelection || !p.canTrim} onClick={p.onTrim} />
         <SmallButton title={`${t('edit.clearSelection')} (Esc)`} label={t('edit.clearSelection')} icon={faXmark} disabled={!p.hasSelection} onClick={p.onClearSelection} />
       </Stack>
       <Stack direction="row" sx={{ alignItems: 'center' }}>
