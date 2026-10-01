@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Slider, Stack, Typography } from '@mui/material'
 import { usePalette } from './waveform/usePalette'
 import { useLaneDivider } from './waveform/useLaneDivider'
+import { useLanePen } from './waveform/useLanePen'
 import { useRangeEdges, type EdgeDrag } from './waveform/useRangeEdges'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
@@ -114,12 +115,11 @@ export default function Waveform(props: Props) {
   const [rulerHover, setRulerHover] = useState(false)
   const onRuler = (e: React.PointerEvent) => e.clientY - canvasRef.current!.getBoundingClientRect().top < RULER_HEIGHT
   const [edgeHover, setEdgeHover] = useState(false)
-  const drawRef = useRef<DrawPoint | null>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
+  // 描いた曲線（ピッチ・音量）は配列の中身だけが変わるので、描き直しのきっかけに使うカウンタ
+  const [drawVersion, setDrawVersion] = useState(0)
   const width = size.width
   const longPressRef = useRef<{ timer: number; x: number; y: number } | null>(null)
-  // `target` は描画中に中身だけが書き換わるため、再描画のきっかけに使うカウンタ
-  const [drawVersion, setDrawVersion] = useState(0)
   const duration = clipDuration(clip)
   const { view, scrollTo, zoomed, wheel } = props.viewCtl
 
@@ -255,40 +255,33 @@ export default function Waveform(props: Props) {
 
   const { edgeAt, dragEdge } = useRangeEdges(canvasRef, view, selections, snapTime, props.onSelectionsChange)
 
-  /** ピッチ帯上の点（Shift で半音に吸着、Alt で消しゴム）。描画中でなく帯の外なら null */
-  const drawPointAt = (e: React.PointerEvent): DrawPoint | null => {
-    if (!penMode || !showPitch || !range) return null
-    const rect = canvasRef.current!.getBoundingClientRect()
-    const y = e.clientY - rect.top - RULER_HEIGHT - upperH
-    if (drawRef.current === null && (y < 0 || y > pitchH)) return null
-    const k = Math.round(timeAt(e.clientX) / F0_HOP_SEC)
-    if (e.altKey) return { k, midi: null }
-    const m = range.hi - (Math.min(Math.max(y, 0), pitchH) / pitchH) * (range.hi - range.lo)
-    return { k, midi: e.shiftKey ? Math.round(m) : m }
-  }
-
-  /** 音量の帯の上の点（Shift で 1dB に吸着、Alt で元の音量に戻す）。描画中でなく帯の外なら null */
-  const gainDrawRef = useRef<GainPoint | null>(null)
-  const gainPointAt = (e: React.PointerEvent): GainPoint | null => {
-    if (!penMode || !showGain) return null
-    const rect = canvasRef.current!.getBoundingClientRect()
-    const y = e.clientY - rect.top - gainTop({ waveH, specH, pitchH })
-    if (gainDrawRef.current === null && (y < 0 || y > gainH)) return null
-    const k = Math.round(timeAt(e.clientX) / GAIN_HOP_SEC)
-    if (e.altKey) return { k, db: null }
-    const db = gainDbAt(y, gainH)
-    return { k, db: e.shiftKey ? Math.round(db) : db }
-  }
-  const drawGainTo = (p: GainPoint) => {
-    props.onDrawGain(gainDrawRef.current ?? p, p)
-    gainDrawRef.current = p
-  }
-
-  const drawTo = (p: DrawPoint) => {
-    props.onDraw(drawRef.current ?? p, p)
-    drawRef.current = p
-    setDrawVersion((v) => v + 1)
-  }
+  // ペンで描ける帯（ピッチ: Shift で半音に吸着、Alt で消す / 音量: Shift で 1dB に吸着、Alt で元の音量に戻す）
+  const pen = useLanePen(canvasRef, penMode, timeAt, [
+    {
+      enabled: showPitch && !!range,
+      top: RULER_HEIGHT + upperH,
+      height: pitchH,
+      hopSec: F0_HOP_SEC,
+      pointAt: (k: number, y: number, e: React.PointerEvent): DrawPoint => {
+        if (e.altKey || !range) return { k, midi: null }
+        const m = range.hi - (y / pitchH) * (range.hi - range.lo)
+        return { k, midi: e.shiftKey ? Math.round(m) : m }
+      },
+      draw: props.onDraw,
+    },
+    {
+      enabled: showGain,
+      top: gainTop({ waveH, specH, pitchH }),
+      height: gainH,
+      hopSec: GAIN_HOP_SEC,
+      pointAt: (k: number, y: number, e: React.PointerEvent): GainPoint => {
+        if (e.altKey) return { k, db: null }
+        const db = gainDbAt(y, gainH)
+        return { k, db: e.shiftKey ? Math.round(db) : db }
+      },
+      draw: props.onDrawGain,
+    },
+  ], () => setDrawVersion((v) => v + 1))
 
   const cancelLongPress = () => {
     if (longPressRef.current) clearTimeout(longPressRef.current.timer)
@@ -326,13 +319,13 @@ export default function Waveform(props: Props) {
           if (e.button === 2) return
           altRef.current = e.altKey
           e.currentTarget.setPointerCapture(e.pointerId)
-          if (e.pointerType === 'touch' && !dragRef.current && !drawRef.current) selectionsAtTouch.current = selections
+          if (e.pointerType === 'touch' && !dragRef.current && !pen.drawing()) selectionsAtTouch.current = selections
           if (touch.down(e)) {
             // 2本目の指が触れたらピンチ。進行中の選択・長押し・再生位置のドラッグはやめる
             cancelLongPress()
             if (dragRef.current?.dragging) props.onSelectionsChange(selectionsAtTouch.current)
             dragRef.current = null
-            drawRef.current = null
+            pen.end()
             scrubRef.current = false
             return
           }
@@ -354,10 +347,7 @@ export default function Waveform(props: Props) {
             }, LONG_PRESS_MS)
             longPressRef.current = { timer, x, y }
           }
-          const p = drawPointAt(e)
-          if (p) return drawTo(p)
-          const gp = gainPointAt(e)
-          if (gp) return drawGainTo(gp)
+          if (pen.down(e)) return
           const t0 = snapTime(e.clientX)
           const hit = edgeAt(e.clientX)
           if (hit) {
@@ -376,16 +366,7 @@ export default function Waveform(props: Props) {
           if (touch.move(e)) return
           if (divider.dragging()) return divider.move(e)
           if (scrubRef.current) return scrubTo(e.clientX)
-          if (drawRef.current) {
-            const p = drawPointAt(e)
-            if (p) drawTo(p)
-            return
-          }
-          if (gainDrawRef.current) {
-            const p = gainPointAt(e)
-            if (p) drawGainTo(p)
-            return
-          }
+          if (pen.move(e)) return
           const d = dragRef.current
           if (!d) {
             setRulerHover(onRuler(e))
@@ -413,11 +394,7 @@ export default function Waveform(props: Props) {
             scrubRef.current = false
             return
           }
-          if (drawRef.current || gainDrawRef.current) {
-            drawRef.current = null
-            gainDrawRef.current = null
-            return
-          }
+          if (pen.end()) return
           const d = dragRef.current
           dragRef.current = null
           const edge = d?.edge
