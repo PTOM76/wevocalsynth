@@ -61,6 +61,9 @@
 ### 追加機能の進捗表示に Content-Length を使わない
 GitHub Pages は `application/octet-stream` も gzip で配信し、`Content-Length` は圧縮後の大きさになる（乱数の 40MB で元より約 13KB 大きかった）。進捗はマニフェストに書いた元の大きさで計算する (2026-10-01)。
 
+### Spleeter の fp16 版は WebGPU で動かさない
+ONNX Runtime Web 1.30 の WebGPU で fp16 版を動かすと、エラーは出ずに出力がすべて 0 になった。入力は正しく渡っていた。int8 版・fp32 版は WebGPU でも正しく抽出できたので、fp16 版のときだけ WASM で動かす (2026-10-01)。
+
 ## 画面
 
 ### アイコンは Font Awesome を使う
