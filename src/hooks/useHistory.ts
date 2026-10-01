@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { reportMemory } from '../debug/debugStats'
 import type { Clip } from '../audio/types'
-
+import type { Track } from '../audio/tracks'
 
 /**
  * 1段ぶんの差分。今のクリップの [start, start + len) を `segment` に置き換えると、隣の段のクリップになる。
@@ -64,72 +64,115 @@ function applyPatch(clip: Clip, p: Patch): Clip {
   }
 }
 
-/** 履歴の1段: 差分と、その段で行った操作の名前（一覧に出す） */
-interface Step {
-  patch: Patch
-  label: string
-}
+/**
+ * 履歴の1段と、その段で行った操作の名前（一覧に出す）。
+ * - patch: トラック `trackId` の音声の差分
+ * - tracks: トラックの追加・削除。この段を当てると、トラックの一覧が `tracks` になる（音声は参照だけなので軽い）
+ */
+type Step = { label: string } & ({ kind: 'patch'; trackId: string; patch: Patch } | { kind: 'tracks'; tracks: Track[]; activeId: string })
+
+const stepBytes = (s: Step) => (s.kind === 'patch' ? patchBytes(s.patch) : 0)
 
 interface History {
-  /** 元に戻す段（古い順）。最後の差分を今のクリップに当てると1つ前に戻る */
+  /** 元に戻す段（古い順）。最後の段を今の状態に当てると1つ前に戻る */
   past: Step[]
-  present: Clip | null
+  tracks: Track[]
+  /** 編集しているトラック（元に戻す・やり直すでは、変わったトラックに切り替える） */
+  activeId: string
   /** やり直す段（次に進む順） */
   future: Step[]
+}
+
+const EMPTY: History = { past: [], tracks: [], activeId: '', future: [] }
+
+/** `h` に段 `s` を当てた状態と、それを打ち消す段 */
+function applyStep(h: History, s: Step): { tracks: Track[]; activeId: string; inverse: Step } | null {
+  if (s.kind === 'tracks') {
+    return { tracks: s.tracks, activeId: s.activeId, inverse: { kind: 'tracks', label: s.label, tracks: h.tracks, activeId: h.activeId } }
+  }
+  const track = h.tracks.find((t) => t.id === s.trackId)
+  if (!track) return null
+  const clip = applyPatch(track.clip, s.patch)
+  return {
+    tracks: h.tracks.map((t) => (t.id === s.trackId ? { ...t, clip } : t)),
+    activeId: s.trackId,
+    inverse: { kind: 'patch', label: s.label, trackId: s.trackId, patch: diff(clip, track.clip).forward },
+  }
 }
 
 /** 1段戻す（戻せなければそのまま） */
 function stepBack(h: History): History {
   const s = h.past[h.past.length - 1]
-  if (!s || !h.present) return h
-  const prev = applyPatch(h.present, s.patch)
-  return { past: h.past.slice(0, -1), present: prev, future: [{ patch: diff(prev, h.present).forward, label: s.label }, ...h.future] }
+  const r = s && applyStep(h, s)
+  if (!r) return h
+  return { past: h.past.slice(0, -1), tracks: r.tracks, activeId: r.activeId, future: [r.inverse, ...h.future] }
 }
 
 /** 1段進む（進めなければそのまま） */
 function stepForward(h: History, l: HistoryLimits): History {
   const s = h.future[0]
-  if (!s || !h.present) return h
-  const next = applyPatch(h.present, s.patch)
+  const r = s && applyStep(h, s)
+  if (!r) return h
   const future = h.future.slice(1)
-  return { past: trim([...h.past, { patch: diff(next, h.present).forward, label: s.label }], future, l), present: next, future }
+  return { past: trim([...h.past, r.inverse], future, l), tracks: r.tracks, activeId: r.activeId, future }
 }
 
-/** 履歴の上限。limit は元に戻せる段数、udgetBytes は履歴が持つ音声データの量 */
+/** 履歴の上限。limit は元に戻せる段数、udgetBytes は履歴が持つ音声データの量 */
 export interface HistoryLimits {
   limit: number
   budgetBytes: number
 }
 
-/** 上限（段数・メモリ）に収まるよう、古い元に戻す差分から捨てる */
+/** 上限（段数・メモリ）に収まるよう、古い元に戻す段から捨てる */
 function trim(past: Step[], future: Step[], l: HistoryLimits): Step[] {
-  let bytes = [...past, ...future].reduce((s, p) => s + patchBytes(p.patch), 0)
+  let bytes = [...past, ...future].reduce((s, p) => s + stepBytes(p), 0)
   let start = Math.max(0, past.length - l.limit)
-  for (let i = 0; i < start; i++) bytes -= patchBytes(past[i].patch)
-  while (start < past.length && bytes > l.budgetBytes) bytes -= patchBytes(past[start++].patch)
+  for (let i = 0; i < start; i++) bytes -= stepBytes(past[i])
+  while (start < past.length && bytes > l.budgetBytes) bytes -= stepBytes(past[start++])
   return start ? past.slice(start) : past
 }
 
-/** 編集中クリップの履歴（元に戻す / やり直す）。各段は前後のクリップとの差分だけを持つ */
+/**
+ * トラックと、その元に戻す / やり直すの履歴。各段は前後のクリップとの差分（またはトラックの一覧）だけを持つ。
+ * 編集（commit）は選んでいるトラックに対して行う。トラックが1本なら今までの1クリップの履歴と同じ
+ */
 export function useHistory(limits: HistoryLimits) {
   // 上限は設定で変わるので、最新の値を更新処理の中から読む
   const limitsRef = useRef(limits)
   limitsRef.current = limits
-  const [history, setHistory] = useState<History>({ past: [], present: null, future: [] })
+  const [history, setHistory] = useState<History>(EMPTY)
   // デバッグ表示: 履歴が持っている音声データの量
-  useEffect(() => reportMemory('history', [...history.past, ...history.future].reduce((s, p) => s + patchBytes(p.patch), 0)), [history])
+  useEffect(() => reportMemory('history', [...history.past, ...history.future].reduce((s, p) => s + stepBytes(p), 0)), [history])
 
-  /** 新しいクリップを、操作の名前 `label` を付けて履歴に積む */
+  /** 選んでいるトラックの新しいクリップを、操作の名前 `label` を付けて履歴に積む */
   const commit = useCallback((clip: Clip, label: string) => {
     setHistory((h) => {
-      if (!h.present) return { past: [], present: clip, future: [] }
-      const { backward } = diff(h.present, clip)
-      return { past: trim([...h.past, { patch: backward, label }], [], limitsRef.current), present: clip, future: [] }
+      const track = h.tracks.find((t) => t.id === h.activeId)
+      if (!track) return h
+      const { backward } = diff(track.clip, clip)
+      const step: Step = { kind: 'patch', label, trackId: track.id, patch: backward }
+      return {
+        ...h,
+        past: trim([...h.past, step], [], limitsRef.current),
+        tracks: h.tracks.map((t) => (t.id === track.id ? { ...t, clip } : t)),
+        future: [],
+      }
     })
   }, [])
 
-  /** 履歴を捨てて `clip` から始め直す（ファイルを開いたとき） */
-  const reset = useCallback((clip: Clip) => setHistory({ past: [], present: clip, future: [] }), [])
+  /** トラックの一覧を `tracks` に変える操作（追加・削除など）を履歴に積み、`activeId` を選ぶ */
+  const setTracks = useCallback((tracks: Track[], activeId: string, label: string) => {
+    setHistory((h) => {
+      const step: Step = { kind: 'tracks', label, tracks: h.tracks, activeId: h.activeId }
+      return { past: trim([...h.past, step], [], limitsRef.current), tracks, activeId, future: [] }
+    })
+  }, [])
+
+  /** 履歴を捨てて `tracks` から始め直す（ファイルを開いたとき） */
+  const reset = useCallback((tracks: Track[], activeId = tracks[0]?.id ?? '') => setHistory({ past: [], tracks, activeId, future: [] }), [])
+
+  /** 編集するトラックを選ぶ（履歴には積まない） */
+  const select = useCallback((id: string) => setHistory((h) => (h.tracks.some((t) => t.id === id) ? { ...h, activeId: id } : h)), [])
 
   const undo = useCallback(() => setHistory(stepBack), [])
   const redo = useCallback(() => setHistory((h) => stepForward(h, limitsRef.current)), [])
@@ -146,8 +189,13 @@ export function useHistory(limits: HistoryLimits) {
     [],
   )
 
+  const active = history.tracks.find((t) => t.id === history.activeId) ?? null
   return {
-    present: history.present,
+    /** 選んでいるトラックの加工後・原音 */
+    present: active?.clip ?? null,
+    original: active?.original ?? null,
+    tracks: history.tracks,
+    activeId: history.activeId,
     canUndo: history.past.length > 0,
     canRedo: history.future.length > 0,
     /** 操作の名前の一覧（行った順）と、そのうち今までに行った数（残りはやり直せる操作） */
@@ -155,6 +203,8 @@ export function useHistory(limits: HistoryLimits) {
     done: history.past.length,
     jumpTo,
     commit,
+    setTracks,
+    select,
     reset,
     undo,
     redo,

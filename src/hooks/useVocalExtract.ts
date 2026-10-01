@@ -3,6 +3,7 @@ import { spliceProcessed } from '../audio/edit'
 import { normalizeRanges } from '../audio/multiRange'
 import { addonFileUrl, loadAddon } from '../addons/addons'
 import type { VocalModel } from '../settings/settings'
+import type { Track } from '../audio/tracks'
 import { t } from '../i18n/i18n'
 // 型だけ使う（中身は追加機能として後から読み込む）
 import type * as ExtractorModule from '../../extractor/src/index'
@@ -49,6 +50,10 @@ interface Deps {
   /** ボーカルを取り出したあとに呼ぶ（処理モードをボーカルにする） */
   onVocals: () => void
   notify: (message: string) => void
+  /** トラックの一覧と、トラック `id` を別々のトラックに置き換える操作（ボーカルと伴奏に分けるとき） */
+  tracks: Track[]
+  activeId: string
+  split: (parts: { name: string; clip: Clip }[], label: string, id: string) => void
 }
 
 /**
@@ -104,5 +109,40 @@ export function useVocalExtract(d: Deps) {
     })
   }
 
-  return { extract }
+  /** トラック `id`（既定は選んでいるもの）全体を、ボーカルと伴奏の2つのトラックに分ける（推論は1回） */
+  const splitStems = async (id = d.activeId) => {
+    const track = d.tracks.find((tr) => tr.id === id)
+    if (!track) return
+    const edited = track.clip
+    if (!(await d.ensure(VOCAL_MODELS[d.model].addon))) return
+    await d.run(t('task.splitStems'), async (signal) => {
+      const extractor = await createExtractor(d.model, d.gpu)
+      const stop = () => extractor.dispose()
+      signal.addEventListener('abort', stop)
+      let r: { vocals: Float32Array[]; accompaniment: Float32Array[] }
+      try {
+        r = await extractor.separateBoth(edited.channels, edited.sampleRate, {
+          highBand: d.keepHighBand ? 'edge' : 'zeros',
+          onProgress: d.setProgress,
+        })
+      } finally {
+        signal.removeEventListener('abort', stop)
+        extractor.dispose()
+      }
+      if (signal.aborted) return
+      const sr = edited.sampleRate
+      d.split(
+        [
+          { name: t('track.vocalsName', { name: track.name }), clip: { sampleRate: sr, channels: r.vocals } },
+          { name: t('track.accompanimentName', { name: track.name }), clip: { sampleRate: sr, channels: r.accompaniment } },
+        ],
+        t('extract.split'),
+        id,
+      )
+      d.onVocals()
+      d.notify(t('toast.extracted'))
+    })
+  }
+
+  return { extract, splitStems }
 }
