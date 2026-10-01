@@ -41,7 +41,7 @@ interface Deps {
   gpu: boolean
   /** 追加機能が導入済みか確かめ、なければ導入の確認ダイアログを出す */
   ensure: (id: string) => Promise<boolean>
-  run: (task: () => Promise<void>) => Promise<void>
+  run: (label: string, task: () => Promise<void>) => Promise<void>
   setProgress: (p: number) => void
   commit: (clip: Clip, label: string) => void
   /** ボーカルを取り出したあとに呼ぶ（処理モードをボーカルにする） */
@@ -69,7 +69,7 @@ export function useVocalExtract(d: Deps) {
     if (!edited || !editRanges.length) return
     // 導入の確認ダイアログは、処理中の表示より先に出す
     if (!(await d.ensure(VOCAL_MODELS[d.model].addon))) return
-    await d.run(async () => {
+    await d.run(t(stem === 'vocals' ? 'task.extractVocals' : 'task.extractAccompaniment'), async () => {
       const ranges = normalizeRanges(editRanges)
       const sr = edited.sampleRate
       const len = edited.channels[0].length

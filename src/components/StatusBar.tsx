@@ -17,6 +17,8 @@ interface Props {
   onSelectionChange: (r: Range | null) => void
   busy: boolean
   progress: number
+  /** 処理中の内容（「音声加工中…」など） */
+  taskLabel: string
   source: Source
   onSourceChange: (s: Source) => void
   /** BPM の表示（押すとテンポのパネル） */
@@ -54,8 +56,13 @@ export default function StatusBar(p: Props) {
       {p.tempo}
       <Box sx={{ flexGrow: 1 }} />
       {p.busy && (
-        <Box sx={{ ...ITEM_SX, gap: 1, width: 180 }}>
-          <LinearProgress variant="determinate" value={p.progress * 100} sx={{ flex: 1 }} />
+        <Box sx={{ ...ITEM_SX, gap: 1 }}>
+          <Typography variant="caption" sx={{ whiteSpace: 'nowrap' }}>
+            {p.taskLabel}
+          </Typography>
+          <Box sx={{ width: 140, display: 'flex', alignItems: 'center' }}>
+            <LinearProgress variant="determinate" value={p.progress * 100} sx={{ flex: 1 }} />
+          </Box>
           <Typography variant="caption">{Math.round(p.progress * 100)}%</Typography>
         </Box>
       )}

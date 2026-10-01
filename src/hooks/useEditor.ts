@@ -209,7 +209,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const dragOver = useFileDrop((f) => void loadFile(f))
 
   const apply = () =>
-    task.run(async () => {
+    task.run(t('task.processing'), async () => {
       if (!edited || !editRanges.length) return
       // 同じ設定のプレビューがあれば、それを差し込むだけで済ませる
       const spliced = preview.result && !multi ? spliceProcessed(edited, preview.result) : null
@@ -224,7 +224,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   // Shift+右端ドラッグ: 範囲をドラッグ後の長さに伸縮する（ピッチは変えない）
   const stretchRange = (r: Range, dur: number) =>
-    task.run(async () => {
+    task.run(t('task.stretching'), async () => {
       if (!edited) return
       const opts = { ...params, ...NEUTRAL, stretch: dur / (r.end - r.start) }
       const result = await applyEditToRanges(edited, [r], opts, setProgress)
@@ -233,7 +233,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     })
 
   const applyCurve = () =>
-    task.run(async () => {
+    task.run(t('task.curve'), async () => {
       const target = pitchTarget.target
       if (!edited || !pitch || shown !== edited || target?.clip !== edited) return
       const next = await applyPitchCurve(edited, pitch, target.hz, params, setProgress)
@@ -246,7 +246,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   const baseName = fileName.replace(/\.[^.]+$/, '') || 'audio'
   const saveProjectFile = () =>
-    task.run(async () => {
+    task.run(t('task.saving'), async () => {
       if (!original || !edited) return
       downloadBlob(saveProject({ fileName, original, edited, params }), `${baseName}${PROJECT_EXT}`)
       setToast({ severity: 'success', message: t('toast.saved') })
@@ -254,7 +254,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   // 書き出しダイアログの設定で音声ファイルを作る。選択範囲が複数ならつなげて書き出す
   const exportFile = (s: ExportSettings) =>
-    task.run(async () => {
+    task.run(t('task.exporting'), async () => {
       if (!edited) return
       const clip = s.selectionOnly && selections.length ? sliceRanges(edited, selections) : edited
       const blob = await exportAudio(
@@ -322,7 +322,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     // 素材と履歴
     fileName, original, edited, shown, duration, editing, source, setSource, history, commit,
     // 処理状態と通知
-    busy, progress, toast, setToast,
+    busy, progress, taskLabel: task.label, toast, setToast,
     // 選択範囲
     selections, selection, setSelections, selectAll, clearSelection, editRanges, multi,
     // 加工パラメータ

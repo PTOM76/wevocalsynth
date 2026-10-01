@@ -311,6 +311,7 @@ export default function App() {
                 onSelectionChange={setActiveSelection}
                 busy={busy}
                 progress={ed.progress}
+                taskLabel={ed.taskLabel}
                 source={ed.source}
                 onSourceChange={ed.setSource}
                 tempo={tempoField()}
