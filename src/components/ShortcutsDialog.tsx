@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogTitle, Table, TableBody, TableCell, TableRow } from '@mui/material'
+import { ShortcutsDialog as PevenShortcutsDialog } from 'pevenmui'
 import { useT, type MessageKey } from '../i18n/i18n'
 
 /** [キー（文字列または訳文キー）, 説明の訳文キー] */
@@ -26,20 +26,11 @@ export default function ShortcutsDialog({ open, onClose }: { open: boolean; onCl
   // 'shortcuts.' で始まるものは訳文キー、それ以外はキー名そのもの
   const keyLabel = (k: string) => (k.startsWith('shortcuts.') ? t(k as MessageKey) : k)
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>{t('menu.shortcuts')}</DialogTitle>
-      <DialogContent>
-        <Table size="small">
-          <TableBody>
-            {SHORTCUTS.map(([key, desc]) => (
-              <TableRow key={key}>
-                <TableCell sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{keyLabel(key)}</TableCell>
-                <TableCell>{t(desc)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </DialogContent>
-    </Dialog>
+    <PevenShortcutsDialog
+      open={open}
+      onClose={onClose}
+      title={t('menu.shortcuts')}
+      rows={SHORTCUTS.map(([key, desc]) => [keyLabel(key), t(desc)])}
+    />
   )
 }

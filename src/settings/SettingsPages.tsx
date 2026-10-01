@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { CtrlSAction, F0Voicing, InitialMode, Settings, ThemeSetting, VocalModel } from './settings'
 import { NumberInput } from '../components/inspector/Inspector'
-import UpdateSection from './UpdateSection'
+import { UpdateSection } from 'pevenmui/pwa'
 import DataSection from './DataSection'
 import AddonSection from './AddonSection'
 import ProjectSection, { type ProjectSettings } from './ProjectSection'

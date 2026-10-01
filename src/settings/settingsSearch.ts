@@ -1,4 +1,4 @@
-import { matches } from 'pevenmui'
+import type { SettingsCategory } from 'pevenmui'
 import type { MessageKey } from '../i18n/i18n'
 
 /** 設定画面の分類 */
@@ -34,8 +34,7 @@ const INDEX: Record<Category, MessageKey[]> = {
   debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp'],
 }
 
-/** 検索語に一致する項目がある分類（分類名そのものの一致も含む）。検索語が空ならすべて */
-export function matchCategories(query: string, t: (key: MessageKey) => string): Category[] {
-  if (!query.trim()) return CATEGORIES
-  return CATEGORIES.filter((c) => matches(t(`settings.cat.${c}`), query) || INDEX[c].some((k) => matches(t(k), query)))
+/** 設定画面に渡す分類の一覧（名前と、検索の対象の訳文） */
+export function settingsCategories(t: (key: MessageKey) => string): SettingsCategory<Category>[] {
+  return CATEGORIES.map((c) => ({ id: c, label: t(`settings.cat.${c}`), texts: INDEX[c].map((k) => t(k)) }))
 }

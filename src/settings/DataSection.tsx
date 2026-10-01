@@ -21,7 +21,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const [addonBytes, setAddonBytes] = useState(0)
   const [message, setMessage] = useState<string | null>(null)
-  const { confirm, dialog } = useConfirm(t('common.cancel'))
+  const { confirm, dialog } = useConfirm()
   const hit = useHighlighter()
 
   const refresh = () => {

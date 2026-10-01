@@ -26,7 +26,7 @@ interface Status {
 export default function AddonSection({ ids }: { ids: string[] }) {
   const t = useT()
   const { request, dialog } = useAddonInstall()
-  const { confirm, dialog: confirmDialog } = useConfirm(t('common.cancel'))
+  const { confirm, dialog: confirmDialog } = useConfirm()
   const hit = useHighlighter()
   const [status, setStatus] = useState<Record<string, Status>>({})
   const [message, setMessage] = useState<string | null>(null)
