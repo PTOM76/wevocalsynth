@@ -312,6 +312,7 @@ export default function App() {
                 busy={busy}
                 progress={ed.progress}
                 taskLabel={ed.taskLabel}
+                onCancelTask={ed.cancelTask}
                 source={ed.source}
                 onSourceChange={ed.setSource}
                 tempo={tempoField()}

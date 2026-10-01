@@ -63,6 +63,8 @@ export interface Settings {
   vocalModel: VocalModel
   /** ボーカル抽出で GPU（WebGPU）を使う。使えない環境やモデル（fp16）では CPU（WASM）で動く */
   vocalGpu: boolean
+  /** ボーカル抽出で約 11kHz より上を残す（既定は消す。残すと声は明るいが、シンバルなどが混ざりやすい） */
+  vocalKeepHighBand: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
 }
@@ -82,6 +84,7 @@ export const DEFAULT_SETTINGS: Settings = {
   // int8: CPU でも fp16 より速く、GPU も使える（fp16 は WebGPU で動かない。docs/DECISIONS.md）
   vocalModel: 'int8',
   vocalGpu: true,
+  vocalKeepHighBand: false,
   f0MinHz: 60,
   f0MaxHz: 1000,
   f0Voicing: 'normal',

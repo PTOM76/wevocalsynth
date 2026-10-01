@@ -39,9 +39,11 @@ interface Deps {
   model: VocalModel
   /** GPU（WebGPU）を使ってよいか */
   gpu: boolean
+  /** 約 11kHz より上を残す（モデルが扱わない帯域。残すと伴奏の高い音が混ざりやすい） */
+  keepHighBand: boolean
   /** 追加機能が導入済みか確かめ、なければ導入の確認ダイアログを出す */
   ensure: (id: string) => Promise<boolean>
-  run: (label: string, task: () => Promise<void>) => Promise<void>
+  run: (label: string, task: (signal: AbortSignal) => Promise<void>) => Promise<void>
   setProgress: (p: number) => void
   commit: (clip: Clip, label: string) => void
   /** ボーカルを取り出したあとに呼ぶ（処理モードをボーカルにする） */
@@ -69,12 +71,15 @@ export function useVocalExtract(d: Deps) {
     if (!edited || !editRanges.length) return
     // 導入の確認ダイアログは、処理中の表示より先に出す
     if (!(await d.ensure(VOCAL_MODELS[d.model].addon))) return
-    await d.run(t(stem === 'vocals' ? 'task.extractVocals' : 'task.extractAccompaniment'), async () => {
+    await d.run(t(stem === 'vocals' ? 'task.extractVocals' : 'task.extractAccompaniment'), async (signal) => {
       const ranges = normalizeRanges(editRanges)
       const sr = edited.sampleRate
       const len = edited.channels[0].length
       let cur = edited
       const extractor = await createExtractor(d.model, d.gpu)
+      // 中断されたら Worker ごと止める（処理中の separate は失敗する）
+      const stop = () => extractor.dispose()
+      signal.addEventListener('abort', stop)
       try {
         for (const [i, r] of ranges.entries()) {
           const s = Math.max(0, Math.min(len, Math.round(r.start * sr)))
@@ -83,14 +88,16 @@ export function useVocalExtract(d: Deps) {
           const channels = await extractor.separate(
             cur.channels.map((c) => c.subarray(s, e)),
             sr,
-            { stem, onProgress: (p) => d.setProgress((i + p) / ranges.length) },
+            { stem, highBand: d.keepHighBand ? 'edge' : 'zeros', onProgress: (p) => d.setProgress((i + p) / ranges.length) },
           )
           // 長さは変わらないので、前の範囲の位置はずれない
           cur = spliceProcessed(cur, { s, e, channels }).clip
         }
       } finally {
+        signal.removeEventListener('abort', stop)
         extractor.dispose()
       }
+      if (signal.aborted) return
       d.commit(cur, t(stem === 'vocals' ? 'extract.vocals' : 'extract.accompaniment'))
       if (stem === 'vocals') d.onVocals()
       d.notify(t('toast.extracted'))

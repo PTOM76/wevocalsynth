@@ -1,4 +1,6 @@
-import { Box, LinearProgress, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import { Box, IconButton, LinearProgress, Stack, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import type { Clip, Range } from '../audio/types'
 import { formatTime } from '../audio/types'
 import { useT } from '../i18n/i18n'
@@ -19,6 +21,8 @@ interface Props {
   progress: number
   /** 処理中の内容（「音声加工中…」など） */
   taskLabel: string
+  /** 処理を中断する */
+  onCancelTask: () => void
   source: Source
   onSourceChange: (s: Source) => void
   /** BPM の表示（押すとテンポのパネル） */
@@ -64,6 +68,11 @@ export default function StatusBar(p: Props) {
             <LinearProgress variant="determinate" value={p.progress * 100} sx={{ flex: 1 }} />
           </Box>
           <Typography variant="caption">{Math.round(p.progress * 100)}%</Typography>
+          <Tooltip title={t('task.cancel')}>
+            <IconButton size="small" aria-label={t('task.cancel')} onClick={p.onCancelTask} sx={{ p: 0.25 }}>
+              <FontAwesomeIcon icon={faXmark} style={{ fontSize: 12 }} />
+            </IconButton>
+          </Tooltip>
         </Box>
       )}
       <ToggleButtonGroup
