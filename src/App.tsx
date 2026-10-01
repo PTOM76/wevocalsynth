@@ -8,6 +8,7 @@ import { useWaveformView, ZOOM_STEP } from './components/waveform/useWaveformVie
 import AppHeader from './components/AppHeader'
 import { DropOverlay, EmptyState } from './components/EmptyState'
 import Waveform from './components/Waveform'
+import TrackBar from './components/TrackBar'
 import WaveformToolbar from './components/waveform/WaveformToolbar'
 import Toolbar from './components/Toolbar'
 import StatusBar from './components/StatusBar'
@@ -102,6 +103,9 @@ export default function App() {
     pitchReady: ed.showPitch && !!ed.pitch,
     setVoicing: (v) => ed.voicing.set(ed.selections, v),
     extract: (stem) => void ed.extract(stem),
+    splitStems: () => void ed.splitStems(),
+    duplicateTrack: () => ed.tracks.duplicate(),
+    addTrack: () => ed.addPicker.open(),
     showShortcuts: () => setShortcutsOpen(true),
     showSettings: () => setSettingsOpen(true),
     showHistory: () => setHistoryOpen(true),
@@ -139,7 +143,7 @@ export default function App() {
     />
   )
 
-  const editor = shown ? (
+  const waveform = shown ? (
     <Waveform
       clip={shown}
       position={player.position}
@@ -164,6 +168,22 @@ export default function App() {
     />
   ) : (
     <EmptyState onOpen={ed.picker.open} />
+  )
+  // トラックが2本以上あるときだけ、波形の上にトラックの帯を出す
+  const editor = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+      <TrackBar
+        tracks={ed.tracks.tracks}
+        activeId={ed.tracks.activeId}
+        mix={ed.tracks.mix}
+        disabled={busy}
+        onSelect={ed.tracks.select}
+        onToggleMute={ed.tracks.toggleMute}
+        onToggleSolo={ed.tracks.toggleSolo}
+        onRemove={ed.tracks.remove}
+      />
+      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{waveform}</Box>
+    </Box>
   )
 
   const viewTools = (
@@ -235,6 +255,7 @@ export default function App() {
           onRedo={ed.history.redo}
         />
         {ed.picker.input}
+        {ed.addPicker.input}
         {mobile ? (
           <MobileLayout
             editor={editor}

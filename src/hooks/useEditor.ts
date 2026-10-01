@@ -33,6 +33,8 @@ import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
 import { useVocalExtract } from './useVocalExtract'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
+import { useTracks } from './useTracks'
+import { makeTrack, newTrackId } from '../audio/tracks'
 import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
 
@@ -59,8 +61,10 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const tempoRef = useRef({ tempo, onTempo })
   tempoRef.current = { tempo, onTempo }
   const [fileName, setFileName] = useState('')
-  const [original, setOriginal] = useState<Clip | null>(null)
   const history = useHistory({ limit: settings.historyLimit, budgetBytes: settings.historyMemoryMb * 2 ** 20 })
+  // 編集できるのは選んでいるトラックだけ。original / edited はそのトラックの原音・加工後
+  const tracks = useTracks(history)
+  const original = history.original
   const [source, setSource] = useState<Source>('edited')
   // 選択範囲（複数可、開始位置順に正規化）。開始・終了の入力欄は一番後ろの範囲を編集する
   const [selections, setSelectionsState] = useState<Range[]>([])
@@ -95,7 +99,8 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const shown = source === 'original' ? original : edited
   const duration = shown ? clipDuration(shown) : 0
   const editing = source === 'edited' && !!edited
-  const player = usePlayer(shown)
+  // ほかのトラックも、ミュート・ソロに従って一緒に鳴らす
+  const player = usePlayer(shown, tracks.others, tracks.activeMuted)
   const pitchTarget = usePitchTarget()
 
   const fail = (key: MessageKey) => (e: unknown) => setToast({ severity: 'error', message: t(key, { error: String(e) }) })
@@ -150,14 +155,21 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     commit,
     onVocals: () => setParams((p) => ({ ...p, ...MODE_SETTINGS.vocal })),
     notify: (message) => setToast({ severity: 'success', message }),
+    tracks: history.tracks,
+    activeId: history.activeId,
+    split: tracks.split,
   })
 
   /** 読み込んだ音声（またはプロジェクト）を画面に反映する */
   const openClip = useCallback(
-    (clip: Clip, name: string, project: Project | null) => {
+    (clip: Clip, name: string, project: Project | null, ids?: string[]) => {
       setFileName(name)
-      setOriginal(project ? project.original : clip)
-      history.reset(clip)
+      // プロジェクトはトラックごとに。自動保存から戻すときは保存先の ID を引き継ぐ（保存し直さずに済む）
+      const list = project
+        ? project.tracks.map((tr, i) => ({ id: ids?.[i] || newTrackId(), name: tr.name, original: tr.original, clip: tr.edited }))
+        : [makeTrack(name, clip)]
+      history.reset(list, list[project ? project.active : 0].id)
+      tracks.resetMix()
       setSource('edited')
       setSelectionsState([])
       cmd.clearClipboard()
@@ -192,7 +204,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
           .catch(() => {})
       }
     },
-    [history, pitchTarget, cmd, settings.initialMode, settings.autoTempo],
+    [history, tracks, pitchTarget, cmd, settings.initialMode, settings.autoTempo],
   )
 
   const loadFile = useCallback(
@@ -200,7 +212,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
       try {
         // .wvsp はプロジェクト（原音・加工後・パラメータ）として開く
         const project = isProjectFile(file) ? await loadProject(file) : null
-        if (project) openClip(project.edited, project.fileName, project)
+        if (project) openClip(project.tracks[project.active].edited, project.fileName, project)
         else openClip(await decodeFile(file), file.name, null)
       } catch (e) {
         setToast({ severity: 'error', message: t('toast.loadFailed', { file: file.name, error: String(e) }) })
@@ -254,7 +266,9 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const saveProjectFile = () =>
     task.run(t('task.saving'), async () => {
       if (!original || !edited) return
-      downloadBlob(saveProject({ fileName, original, edited, params }), `${baseName}${PROJECT_EXT}`)
+      const list = history.tracks.map((tr) => ({ name: tr.name, original: tr.original, edited: tr.clip }))
+      const active = Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId))
+      downloadBlob(saveProject({ fileName, params, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
       setToast({ severity: 'success', message: t('toast.saved') })
     })
 
@@ -291,14 +305,20 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   playbackRef.current = playback
 
   const picker = useFilePicker(`${AUDIO_ACCEPT},${PROJECT_EXT}`, (f) => void loadFile(f))
+  // 開いている作業に、別のファイルを新しいトラックとして足す
+  const addPicker = useFilePicker(AUDIO_ACCEPT, (f) =>
+    void decodeFile(f)
+      .then((clip) => tracks.addClip(clip, f.name))
+      .catch((e) => setToast({ severity: 'error', message: t('toast.loadFailed', { file: f.name, error: String(e) }) })),
+  )
 
   // 作業状態の自動保存と、起動時の復元
   useAutosave(
     settings.autoRestore,
-    { fileName, original, edited },
+    { fileName, tracks: history.tracks, activeId: history.activeId },
     params,
-    (project) => {
-      openClip(project.edited, project.fileName, project)
+    (project, ids) => {
+      openClip(project.tracks[project.active].edited, project.fileName, project, ids)
       setToast({ severity: 'info', message: t('toast.restored') })
     },
     (e) => console.warn('autosave failed', e),
@@ -340,6 +360,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     // 表示（ピッチ・スペクトログラム）とピッチ描画
     showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
-    cmd, apply, stretchRange, extract: vocal.extract, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
+    tracks, addPicker,
+    cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
   }
 }

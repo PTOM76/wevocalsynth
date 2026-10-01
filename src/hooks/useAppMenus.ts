@@ -31,6 +31,11 @@ interface Actions {
   setVoicing: (value: 1 | -1 | 0) => void
   /** ボーカル抽出（追加機能）。対象は選択範囲、なければ全体 */
   extract: (stem: 'vocals' | 'accompaniment') => void
+  /** 選んでいるトラックを、ボーカルと伴奏の2トラックに分ける */
+  splitStems: () => void
+  /** トラックの複製と、ファイルをトラックとして追加 */
+  duplicateTrack: () => void
+  addTrack: () => void
   showShortcuts: () => void
   showSettings: () => void
   showHistory: () => void
@@ -57,6 +62,9 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { divider: true },
     { label: t('extract.vocalsMenu'), disabled: noClip, onClick: () => a.extract('vocals') },
     { label: t('extract.accompanimentMenu'), disabled: noClip, onClick: () => a.extract('accompaniment') },
+    { label: t('extract.splitMenu'), disabled: noClip, onClick: a.splitStems },
+    { divider: true },
+    { label: t('track.duplicate'), disabled: noClip, onClick: a.duplicateTrack },
   ]
 
   const menus: MenuGroup[] = [
@@ -64,6 +72,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       label: t('menu.file'),
       entries: [
         { label: t('menu.open'), shortcut: 'Ctrl+O', disabled: a.busy, onClick: a.open },
+        { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
         { label: t('menu.saveProject'), shortcut: a.ctrlS === 'project' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.save },
         { divider: true },
         { label: t('menu.export'), shortcut: a.ctrlS === 'export' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.openExport },
@@ -116,6 +125,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       label: t('menu.file'),
       entries: [
         { label: t('menu.open'), disabled: a.busy, onClick: a.open },
+        { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
         { label: t('menu.saveProject'), disabled: noClip, onClick: a.save },
         { label: t('menu.export'), disabled: noClip, onClick: a.openExport },
       ],

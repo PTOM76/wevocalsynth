@@ -42,6 +42,11 @@ export function useClipCommands(d: Deps) {
   }
   const paste = () => {
     if (!edited || !clipboard) return
+    // サンプルレートの違うトラックに貼ると、高さと長さがずれる（トラックごとに元のファイルのレートのまま持つため）
+    if (clipboard.sampleRate !== edited.sampleRate) {
+      d.notify(t('toast.pasteRateMismatch', { from: clipboard.sampleRate, to: edited.sampleRate }))
+      return
+    }
     const at = d.getPosition()
     d.commit(insertAt(edited, clipboard, at), t('history.paste'))
     d.setSelections([{ start: at, end: at + clipDuration(clipboard) }])
