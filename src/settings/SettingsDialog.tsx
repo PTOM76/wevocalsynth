@@ -25,6 +25,7 @@ import { NumberInput } from '../components/inspector/Inspector'
 import UpdateSection from './UpdateSection'
 import DataSection from './DataSection'
 import AddonSection from './AddonSection'
+import { VOCAL_MODELS } from '../hooks/useVocalExtract'
 import { useT, type LangSetting } from '../i18n/i18n'
 
 interface Props {
@@ -34,8 +35,11 @@ interface Props {
   onChange: (patch: Partial<Settings>) => void
 }
 
-type Category = 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'addons' | 'data' | 'debug'
-const CATEGORIES: Category[] = ['general', 'display', 'pitch', 'tempo', 'keys', 'addons', 'data', 'debug']
+type Category = 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'vocal' | 'data' | 'debug'
+const CATEGORIES: Category[] = ['general', 'display', 'pitch', 'tempo', 'keys', 'vocal', 'data', 'debug']
+
+/** 設定の「ボーカル抽出」に並べる追加機能（実行環境とモデル） */
+const VOCAL_ADDONS = ['vocal-extractor', ...Object.values(VOCAL_MODELS).map((m) => m.addon)]
 
 /** スマホ向けの表示か（項目を縦に積み、文字と操作を大きくする） */
 const NarrowContext = createContext(false)
@@ -207,7 +211,7 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
         </Row>
       </Group>
     ),
-    addons: (
+    vocal: (
       <>
         <Group title={t('settings.groupVocal')}>
           <Row label={t('settings.vocalModel')}>
@@ -223,7 +227,7 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
           </Row>
         </Group>
         <Group title={t('settings.groupAddons')}>
-          <AddonSection showDev={import.meta.env.DEV || draft.showDebug} />
+          <AddonSection ids={VOCAL_ADDONS} />
         </Group>
       </>
     ),
@@ -234,9 +238,14 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
     ),
 
     debug: (
-      <Group title={t('settings.groupDebug')}>
-        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
-      </Group>
+      <>
+        <Group title={t('settings.groupDebug')}>
+          <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
+        </Group>
+        <Group title={t('settings.groupAddonTest')}>
+          <AddonSection ids={['test']} />
+        </Group>
+      </>
     ),
     pitch: (
       <Group title={t('settings.groupPitch')}>

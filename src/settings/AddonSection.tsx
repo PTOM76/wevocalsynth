@@ -22,13 +22,13 @@ interface Status {
   latest: AddonManifest | null
 }
 
-/** 設定の「追加機能」: 一覧と、導入・更新・削除。`showDev` なら開発者向けのものも出す */
-export default function AddonSection({ showDev }: { showDev: boolean }) {
+/** 追加機能 `ids` の一覧と、導入・更新・削除（設定の「ボーカル抽出」「開発者向け」に置く） */
+export default function AddonSection({ ids }: { ids: string[] }) {
   const t = useT()
   const { request, dialog } = useAddonInstall()
   const [status, setStatus] = useState<Record<string, Status>>({})
   const [message, setMessage] = useState<string | null>(null)
-  const list = ADDONS.filter((a) => showDev || !a.dev)
+  const list = ADDONS.filter((a) => ids.includes(a.id))
 
   const refresh = () => {
     for (const a of list) {
@@ -38,7 +38,7 @@ export default function AddonSection({ showDev }: { showDev: boolean }) {
     }
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(refresh, [showDev])
+  useEffect(refresh, [ids.join()])
 
   if (!addonsSupported()) return <Typography sx={{ gridColumn: '1 / -1', fontSize: 13 }}>{t('addon.unsupported')}</Typography>
 
