@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Alert, Button, Snackbar } from '@mui/material'
+import { Alert, Button, IconButton, Snackbar } from '@mui/material'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useT } from '../i18n/i18n'
 import { APP_BUILD, fetchLatestBuild, setRegistration } from '../pwa/updateCheck'
@@ -47,11 +49,16 @@ export default function UpdatePrompt() {
       <Alert
         severity="info"
         variant="filled"
-        onClose={() => setNeedRefresh(false)}
+        // action を渡すと Alert の閉じるボタンが出なくなるので、更新ボタンの横に自分で置く
         action={
-          <Button color="inherit" size="small" onClick={() => void updateServiceWorker(true)}>
-            {t('update.reload')}
-          </Button>
+          <>
+            <Button color="inherit" size="small" onClick={() => void updateServiceWorker(true)}>
+              {t('update.reload')}
+            </Button>
+            <IconButton color="inherit" size="small" aria-label={t('common.close')} title={t('common.close')} onClick={() => setNeedRefresh(false)}>
+              <FontAwesomeIcon icon={faXmark} />
+            </IconButton>
+          </>
         }
       >
         {t('update.available')}
