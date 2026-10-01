@@ -9,6 +9,7 @@ import AppHeader from './components/AppHeader'
 import { DropOverlay, EmptyState } from './components/EmptyState'
 import Waveform from './components/Waveform'
 import TrackPanel from './components/tracks/TrackPanel'
+import LevelMeter from './components/LevelMeter'
 import RenameDialog from './components/tracks/RenameDialog'
 import { trackMenuEntries } from './components/tracks/trackMenu'
 import WaveformToolbar from './components/waveform/WaveformToolbar'
@@ -198,6 +199,7 @@ export default function App() {
     onToggleMute: ed.tracks.toggleMute,
     onToggleSolo: ed.tracks.toggleSolo,
     onContextMenu: (id: string, x: number, y: number) => setTrackMenu({ id, x, y }),
+    meter: settings.showMeters ? player.analyser : null,
   }
   // トラックが2本以上あるときだけ、波形の上にトラックの欄を出す（広げると波形付きの一覧、折りたたむとタブ）
   const editor = (
@@ -258,7 +260,14 @@ export default function App() {
   )
   const volumePanel = (
     <Box sx={disabledSx(panelsDisabled)} aria-disabled={panelsDisabled}>
-      <VolumePanel hasSelection={!!selection} busy={busy || panelsDisabled} onGain={ed.cmd.gain} onAction={ed.cmd.volume} />
+      <VolumePanel
+        hasSelection={!!selection}
+        busy={busy || panelsDisabled}
+        db={ed.gainDb}
+        onDbChange={ed.setGainDb}
+        onGain={ed.cmd.gain}
+        onAction={ed.cmd.volume}
+      />
     </Box>
   )
 
@@ -326,6 +335,7 @@ export default function App() {
                 onStop={playback.stop}
                 onPlaySelection={playback.playSelection}
                 onLoop={playback.toggleLoop}
+                meter={settings.showMeters && <LevelMeter source={player.masterAnalyser} width={72} height={6} label={t('meter.master')} />}
                 viewTools={viewTools}
                 canEdit={editing && !busy}
                 hasClipboard={ed.cmd.hasClipboard}

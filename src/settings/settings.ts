@@ -65,6 +65,8 @@ export interface Settings {
   vocalGpu: boolean
   /** ボーカル抽出で約 11kHz より上を残す（既定は消す。残すと声は明るいが、シンバルなどが混ざりやすい） */
   vocalKeepHighBand: boolean
+  /** レベルメーター（全体とトラックごと）を表示する */
+  showMeters: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
 }
@@ -81,6 +83,7 @@ export const DEFAULT_SETTINGS: Settings = {
   beatsPerBar: 4,
   beatOffset: 0,
   showDebug: false,
+  showMeters: true,
   // int8: CPU でも fp16 より速く、GPU も使える（fp16 は WebGPU で動かない。docs/DECISIONS.md）
   vocalModel: 'int8',
   vocalGpu: true,

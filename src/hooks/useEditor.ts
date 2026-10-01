@@ -100,7 +100,15 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const duration = shown ? clipDuration(shown) : 0
   const editing = source === 'edited' && !!edited
   // ほかのトラックも、ミュート・ソロに従って一緒に鳴らす
-  const player = usePlayer(shown, tracks.others, tracks.activeMuted)
+  // 音量の適用前の値。再生中の音（加工後の表示のとき、対象の範囲だけ）にすぐ反映する
+  const [gainDb, setGainDb] = useState(0)
+  const editRangesForGain: Range[] = source === 'edited' && edited ? (selections.length ? selections : [{ start: 0, end: clipDuration(edited) }]) : []
+  const player = usePlayer(shown, {
+    id: history.activeId,
+    others: tracks.others,
+    muted: tracks.activeMuted,
+    liveGain: gainDb && editRangesForGain.length ? { ranges: editRangesForGain, db: gainDb } : null,
+  })
   const pitchTarget = usePitchTarget()
 
   const fail = (key: MessageKey) => (e: unknown) => setToast({ severity: 'error', message: t(key, { error: String(e) }) })
@@ -170,6 +178,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
         : [makeTrack(name, clip)]
       history.reset(list, list[project ? project.active : 0].id)
       tracks.resetMix()
+      setGainDb(0)
       setSource('edited')
       setSelectionsState([])
       cmd.clearClipboard()
@@ -360,7 +369,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     // 表示（ピッチ・スペクトログラム）とピッチ描画
     showPitch, setShowPitch, showSpec, setShowSpec, penMode, setPenMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
-    tracks, addPicker,
+    tracks, addPicker, gainDb, setGainDb,
     cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, picker, dragOver,
   }
 }

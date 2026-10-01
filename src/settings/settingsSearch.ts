@@ -16,7 +16,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupProcess', 'settings.initialMode',
     'settings.groupUpdate', 'update.check',
   ],
-  display: ['settings.groupAppearance', 'settings.theme', 'settings.language'],
+  display: ['settings.groupAppearance', 'settings.theme', 'settings.language', 'settings.showMeters', 'settings.showMetersHelp'],
   pitch: ['settings.groupPitch', 'settings.f0MinHz', 'settings.f0MaxHz', 'settings.f0Voicing', 'settings.f0SilenceDb'],
   tempo: [
     'settings.groupTempo', 'settings.autoTempo', 'settings.autoTempoHelp', 'settings.showBeatGrid',

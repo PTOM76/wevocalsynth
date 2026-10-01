@@ -73,6 +73,7 @@ export function settingsPages({ draft, set, onClose, t }: PageProps): Record<Cat
             ]}
           />
         </Row>
+        <Check checked={draft.showMeters} onChange={(v) => set({ showMeters: v })} label={t('settings.showMeters')} help={t('settings.showMetersHelp')} />
         <Row label={t('settings.language')}>
           <Choice<LangSetting>
             value={draft.language}

@@ -19,6 +19,8 @@ interface Props {
   onStop: () => void
   onPlaySelection: () => void
   onLoop: () => void
+  /** 全体のレベルメーター */
+  meter?: ReactNode
   /** 表示ツール（拡大縮小・表示の切替・ピッチ描画） */
   viewTools: ReactNode
   /** 編集（切り取り・コピー・貼り付け・選択範囲のみ残す・選択解除） */
@@ -55,6 +57,7 @@ export default function Toolbar(p: Props) {
         <Typography variant="body2" sx={{ fontFamily: 'monospace', ml: 1, minWidth: 150 }}>
           <LiveTime position={p.position} playing={p.playing} livePosition={p.livePosition} duration={p.duration} />
         </Typography>
+        {p.meter}
       </Stack>
       <Stack direction="row" sx={{ alignItems: 'center' }}>
         <SmallButton title={`${t('edit.cut')} (Ctrl+X)`} label={t('edit.cut')} icon={faScissors} disabled={!p.canEdit || !p.hasSelection} onClick={p.onCut} />

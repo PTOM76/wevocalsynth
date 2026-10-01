@@ -16,7 +16,7 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
 
   /** 選んでいるトラックと一緒に鳴らす、ほかのトラックの音 */
   const others = useMemo(
-    () => tracks.filter((tr) => tr.id !== activeId && isAudible(tr.id, mix, tracks)).map((tr) => tr.clip),
+    () => tracks.filter((tr) => tr.id !== activeId && isAudible(tr.id, mix, tracks)).map((tr) => ({ id: tr.id, clip: tr.clip })),
     [tracks, activeId, mix],
   )
   const activeMuted = !!active && !isAudible(active.id, mix, tracks)

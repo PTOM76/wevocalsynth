@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Box, Button, Slider } from '@mui/material'
 import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow } from './inspector/Inspector'
 import { useT, type MessageKey } from '../i18n/i18n'
@@ -8,6 +7,9 @@ export type VolumeAction = 'fadeIn' | 'fadeOut' | 'normalize' | 'silence'
 interface Props {
   hasSelection: boolean
   busy: boolean
+  /** 適用前の音量（スライダーの値）。再生中の音にすぐ反映される */
+  db: number
+  onDbChange: (db: number) => void
   onGain: (db: number) => void
   onAction: (action: VolumeAction) => void
 }
@@ -21,9 +23,8 @@ const ACTIONS: { action: VolumeAction; label: MessageKey }[] = [
 
 const SMALL_BUTTON_SX = { minWidth: 0, height: 26, px: 1, fontSize: 12 } as const
 
-/** インスペクタの「音量」。ゲインの行と、フェードなどの操作 */
-export default function VolumePanel({ hasSelection, busy, onGain, onAction }: Props) {
-  const [db, setDb] = useState(0)
+/** インスペクタの「音量」。ゲインの行（動かすと再生中の音にすぐ反映し、「適用」で確定）と、フェードなどの操作 */
+export default function VolumePanel({ hasSelection, busy, db, onDbChange: setDb, onGain, onAction }: Props) {
   const t = useT()
 
   return (

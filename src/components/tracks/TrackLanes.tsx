@@ -5,6 +5,7 @@ import { computePeaks } from '../waveform/peaks'
 import type { View } from '../waveform/draw'
 import { usePalette } from '../waveform/usePalette'
 import { useT } from '../../i18n/i18n'
+import LevelMeter from '../LevelMeter'
 
 /** 1トラックの行の高さ（px） */
 const LANE_H = 30
@@ -22,6 +23,8 @@ interface Props {
   onToggleMute: (id: string) => void
   onToggleSolo: (id: string) => void
   onContextMenu: (id: string, x: number, y: number) => void
+  /** トラック `id` のレベルメーター（再生していなければ null） */
+  meter: ((id: string) => AnalyserNode | null) | null
 }
 
 /** M / S の小さな切り替え（オンなら色を付ける） */
@@ -137,9 +140,12 @@ export default function TrackLanes(p: Props) {
                 boxShadow: selected ? `inset 3px 0 0 ${pal.primary.main}` : 'none',
               }}
             >
-              <Typography sx={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: selected ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {tr.name}
-              </Typography>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontSize: 12, lineHeight: 1.3, fontWeight: selected ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {tr.name}
+                </Typography>
+                {p.meter && <LevelMeter source={() => p.meter?.(tr.id) ?? null} width={84} height={3} label={t('meter.track', { name: tr.name })} />}
+              </Box>
               <MixToggle label="M" title={t('track.mute')} on={m.mute} color="warning.main" onClick={() => p.onToggleMute(tr.id)} />
               <MixToggle label="S" title={t('track.solo')} on={m.solo} color="success.main" onClick={() => p.onToggleSolo(tr.id)} />
             </Box>

@@ -1,18 +1,53 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Clip } from './types'
+import type { Clip, Range } from './types'
 import { clipDuration } from './types'
 
-const NO_CLIPS: Clip[] = []
+/** 一緒に鳴らすトラック（id はレベルメーターの対応づけに使う） */
+export interface PlayTrack {
+  id: string
+  clip: Clip
+}
+
+const NO_TRACKS: PlayTrack[] = []
+
+/** レベルメーター用の AnalyserNode を作る（時間波形を読むだけなので小さくてよい） */
+function makeAnalyser(ctx: AudioContext) {
+  const a = ctx.createAnalyser()
+  a.fftSize = 1024
+  return a
+}
+
+/** 適用前の音量（スライダーの値）を、再生中の音に反映するための指定。`ranges` の中だけ `db` 変える */
+export interface LiveGain {
+  ranges: Range[]
+  db: number
+}
+
+/** 範囲の境目で音量を切り替える時間（秒）。適用時のランプ（edit.ts の GAIN_RAMP_SEC）と同じ */
+const RAMP_SEC = 0.005
 
 /**
  * メモリ上のクリップを Web Audio で再生する。`others`（ほかのトラックのうち鳴らすもの）も同じ位置から一緒に鳴らす。
- * 再生位置・長さ・終わりは `clip` が基準。`muted` なら `clip` は鳴らさない（ほかのトラックのミュート・ソロで消すとき）
+ * 再生位置・長さ・終わりは `clip` が基準。`muted` なら `clip` は鳴らさない（ほかのトラックのミュート・ソロで消すとき）。
+ * `liveGain` は適用前の音量で、再生中に変えてもすぐ反映する（`clip` の音だけに効く）。
+ * `id` は `clip` のトラックの id。トラックごとと全体のレベルメーター用に、`analyser(id)` / `masterAnalyser()` を返す
  */
-export function usePlayer(clip: Clip | null, others: Clip[] = NO_CLIPS, muted = false) {
+export function usePlayer(
+  clip: Clip | null,
+  opts: { id?: string; others?: PlayTrack[]; muted?: boolean; liveGain?: LiveGain | null } = {},
+) {
+  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null } = opts
   const ctxRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
   /** 一緒に鳴らしているほかのトラックの音 */
   const extraRef = useRef<AudioBufferSourceNode[]>([])
+  /** `clip` の音の音量（適用前の音量をここで反映する） */
+  const gainRef = useRef<GainNode | null>(null)
+  const liveGainRef = useRef(liveGain)
+  liveGainRef.current = liveGain
+  /** レベルメーター: トラックごと（再生のたびに作る）と、全体の出口 */
+  const analysersRef = useRef(new Map<string, AnalyserNode>())
+  const masterRef = useRef<AnalyserNode | null>(null)
   /** クリップごとの AudioBuffer（作り直すと重いので覚えておく。クリップが捨てられたら一緒に消える） */
   const buffers = useRef(new WeakMap<Clip, AudioBuffer>())
   // 再生中に AudioContext の時刻をクリップ上の時刻へ換算するための基準
@@ -33,6 +68,7 @@ export function usePlayer(clip: Clip | null, others: Clip[] = NO_CLIPS, muted = 
       e.disconnect()
     }
     extraRef.current = []
+    analysersRef.current.clear()
   }, [])
 
   const currentTime = useCallback(() => {
@@ -41,6 +77,33 @@ export function usePlayer(clip: Clip | null, others: Clip[] = NO_CLIPS, muted = 
     if (!ctx || !sourceRef.current) return null
     // 開始は少し先の時刻にしているので、始まるまでは開始位置のままにする
     return Math.min(c.end, c.offset + Math.max(0, ctx.currentTime - c.ctxStart))
+  }, [])
+
+  /**
+   * 適用前の音量を、これから鳴る部分に予約する。範囲に入る・出る時刻で音量を切り替える。
+   * 再生中にスライダーを動かしたら呼び直し、今の時刻から先を入れ直す
+   */
+  const scheduleGain = useCallback(() => {
+    const ctx = ctxRef.current
+    const g = gainRef.current?.gain
+    if (!ctx || !g || !sourceRef.current) return
+    const { ctxStart, offset, end } = clockRef.current
+    const lg = liveGainRef.current
+    const target = lg ? 10 ** (lg.db / 20) : 1
+    const now = ctx.currentTime
+    const pos = offset + Math.max(0, now - ctxStart)
+    const inside = (t: number) => !!lg && lg.ranges.some((r) => t >= r.start && t < r.end)
+    g.cancelScheduledValues(now)
+    g.setValueAtTime(inside(pos) ? target : 1, now)
+    if (!lg) return
+    for (const r of lg.ranges) {
+      for (const [t, to] of [[r.start, target], [r.end, 1]] as const) {
+        if (t <= pos || t >= end) continue
+        const when = ctxStart + (t - offset)
+        g.setValueAtTime(to === target ? 1 : target, Math.max(now, when - RAMP_SEC))
+        g.linearRampToValueAtTime(to, when)
+      }
+    }
   }, [])
 
   const play = useCallback(
@@ -65,11 +128,18 @@ export function usePlayer(clip: Clip | null, others: Clip[] = NO_CLIPS, muted = 
       const src = ctx.createBufferSource()
       src.buffer = bufferOf(clip)
       // 鳴らさないときも、再生位置と終わりの基準にするため音源は作る（音量 0 でつなぐ）
-      if (muted) {
-        const g = ctx.createGain()
-        g.gain.value = 0
-        src.connect(g).connect(ctx.destination)
-      } else src.connect(ctx.destination)
+      const gain = ctx.createGain()
+      gainRef.current = gain
+      if (muted) gain.gain.value = 0
+      // 全体の出口（レベルメーター）。AudioContext ごとに1つ
+      if (!masterRef.current || masterRef.current.context !== ctx) {
+        masterRef.current = makeAnalyser(ctx)
+        masterRef.current.connect(ctx.destination)
+      }
+      const master = masterRef.current
+      const meter = makeAnalyser(ctx)
+      analysersRef.current.set(id, meter)
+      src.connect(gain).connect(meter).connect(master)
       src.onended = () => {
         sourceRef.current = null
         setPlaying(false)
@@ -81,20 +151,29 @@ export function usePlayer(clip: Clip | null, others: Clip[] = NO_CLIPS, muted = 
       src.start(at, start, end - start)
       sourceRef.current = src
       extraRef.current = others
-        .filter((o) => clipDuration(o) > start)
+        .filter((o) => clipDuration(o.clip) > start)
         .map((o) => {
           const e = ctx.createBufferSource()
-          e.buffer = bufferOf(o)
-          e.connect(ctx.destination)
-          e.start(at, start, Math.min(end, clipDuration(o)) - start)
+          e.buffer = bufferOf(o.clip)
+          const m = makeAnalyser(ctx)
+          analysersRef.current.set(o.id, m)
+          e.connect(m).connect(master)
+          e.start(at, start, Math.min(end, clipDuration(o.clip)) - start)
           return e
         })
       clockRef.current = { ctxStart: at, offset: start, end }
+      if (!muted) scheduleGain()
       setPosition(start)
       setPlaying(true)
     },
-    [clip, others, muted, stopSource],
+    [clip, id, others, muted, stopSource, scheduleGain],
   )
+
+  // 再生中に適用前の音量が変わったら、すぐ反映する
+  const gainKey = liveGain ? `${liveGain.db}:${liveGain.ranges.map((r) => `${r.start}-${r.end}`).join(',')}` : ''
+  useEffect(() => {
+    if (!muted) scheduleGain()
+  }, [gainKey, muted, scheduleGain])
 
   const pause = useCallback(() => {
     const t = currentTime()
@@ -128,5 +207,10 @@ export function usePlayer(clip: Clip | null, others: Clip[] = NO_CLIPS, muted = 
   positionRef.current = position
   const livePosition = useCallback(() => currentTime() ?? positionRef.current, [currentTime])
 
-  return { playing, position, livePosition, play, pause, seek }
+  /** トラック `id` のレベルメーター（再生していなければ null） */
+  const analyser = useCallback((trackId: string) => analysersRef.current.get(trackId) ?? null, [])
+  /** 全体のレベルメーター（再生していなければ null） */
+  const masterAnalyser = useCallback(() => (sourceRef.current ? masterRef.current : null), [])
+
+  return { playing, position, livePosition, play, pause, seek, analyser, masterAnalyser }
 }

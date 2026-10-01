@@ -2,6 +2,7 @@ import { Box, Tab, Tabs } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackMix } from '../../audio/tracks'
 import { MixToggle } from './TrackLanes'
 import { useT } from '../../i18n/i18n'
+import LevelMeter from '../LevelMeter'
 
 interface Props {
   tracks: Track[]
@@ -12,6 +13,8 @@ interface Props {
   onToggleMute: (id: string) => void
   onToggleSolo: (id: string) => void
   onContextMenu: (id: string, x: number, y: number) => void
+  /** トラック `id` のレベルメーター（再生していなければ null） */
+  meter: ((id: string) => AnalyserNode | null) | null
 }
 
 /** タブで並べるトラック（2本以上のときだけ出す）。下線が選んでいるトラック、右クリックで操作のメニュー */
@@ -42,8 +45,11 @@ export default function TrackTabs(p: Props) {
               }}
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                  <Box component="span" sx={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: audible ? 1 : 0.45 }}>
-                    {tr.name}
+                  <Box component="span" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.25 }}>
+                    <Box component="span" sx={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: audible ? 1 : 0.45 }}>
+                      {tr.name}
+                    </Box>
+                    {p.meter && <LevelMeter source={() => p.meter?.(tr.id) ?? null} width={56} height={2} label={t('meter.track', { name: tr.name })} />}
                   </Box>
                   <MixToggle label="M" title={t('track.mute')} on={m.mute} color="warning.main" onClick={() => p.onToggleMute(tr.id)} />
                   <MixToggle label="S" title={t('track.solo')} on={m.solo} color="success.main" onClick={() => p.onToggleSolo(tr.id)} />
