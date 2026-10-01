@@ -64,6 +64,9 @@ export function useShortcuts(handlers: Handlers) {
         plain.ArrowUp = () => shift(step)
         plain.ArrowDown = () => shift(-step)
       }
+      // 画面の文字を選んでいるときの Ctrl+C / Ctrl+X は、ブラウザの文字のコピーに任せる
+      const sel = window.getSelection()
+      if (mod && (k === 'c' || k === 'x') && sel && !sel.isCollapsed) return
       const action = mod ? withMod[k] : plain[e.code]
       if (!action) return
       e.preventDefault()
