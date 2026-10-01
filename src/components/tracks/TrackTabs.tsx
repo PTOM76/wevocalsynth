@@ -31,7 +31,13 @@ export default function TrackTabs(p: Props) {
   const drag = useTrackDrag(p.tracks, 'x', p.disabled, p.onMove)
   if (p.tracks.length < 2) return null
   return (
-    <Box>
+    // 収まらないときは、マウスのホイール（縦）でも横に動かせる
+    <Box
+      onWheel={(e) => {
+        const scroller = e.currentTarget.querySelector<HTMLElement>('.MuiTabs-scroller')
+        if (scroller && !e.shiftKey && Math.abs(e.deltaY) > Math.abs(e.deltaX)) scroller.scrollLeft += e.deltaY
+      }}
+    >
       <Tabs
         value={p.activeId}
         onChange={(e, id: string) => !p.disabled && p.onSelect(id, pickMods(e as React.MouseEvent))}
