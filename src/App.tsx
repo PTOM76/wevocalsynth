@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, PevenLabels, jaLabels, enLabels } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, PevenLabels, jaLabels, enLabels, WindowModeContext, autoWindowMode } from 'pevenmui'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
 import { useAppMenus } from './hooks/useAppMenus'
@@ -304,6 +304,7 @@ export default function App() {
   return (
     <LangContext.Provider value={lang}>
       <PevenLabels.Provider value={lang === 'ja_jp' ? jaLabels : enLabels}>
+      <WindowModeContext.Provider value={settings.dialogWindow === 'auto' ? autoWindowMode() : settings.dialogWindow}>
       {!mobile && <GlobalStyles styles={desktopStyles} />}
       {/* アプリとして画面の高さにぴったり収め、ページ全体はスクロールさせない */}
       <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.default' }}>
@@ -468,6 +469,7 @@ export default function App() {
           </Alert>
         ) : undefined}
       </Snackbar>
+      </WindowModeContext.Provider>
       </PevenLabels.Provider>
     </LangContext.Provider>
   )

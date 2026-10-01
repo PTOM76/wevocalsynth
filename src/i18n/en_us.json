@@ -186,7 +186,7 @@
   "settings.groupDebug": "Debug",
   "settings.showDebug": "Debug overlay",
   "settings.showDebugHelp": "Shown at the bottom left. Toggle with Ctrl+Shift+D",
-  "settings.dialogWindow": "Dialog display (experimental, settings only)",
+  "settings.dialogWindow": "Dialog display",
   "settings.windowDialog": "Dialog",
   "settings.windowPopup": "Popup",
   "settings.windowSub": "Sub-window",

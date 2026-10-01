@@ -126,10 +126,11 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
       <Group title={t('settings.groupDebug')}>
         <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
         <Row label={t('settings.dialogWindow')}>
-          <Choice<WindowMode>
+          <Choice<WindowMode | 'auto'>
             value={draft.dialogWindow}
             onChange={(v) => set({ dialogWindow: v })}
             options={[
+              ['auto', t('settings.auto')],
               ['dialog', t('settings.windowDialog')],
               ['nativeDialog', '<dialog>'],
               ['popover', 'Popover API'],

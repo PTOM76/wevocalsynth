@@ -64,8 +64,8 @@ export interface Settings {
   showMeters: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
-  /** ダイアログの出し方（試験的。今は設定画面のみ）。別窓を開けないブラウザではふつうのダイアログ */
-  dialogWindow: WindowMode
+  /** ダイアログの出し方（今は設定画面のみ）。auto は PWA かつ Chromium 系ならポップアップ、ほかはダイアログ。別窓を開けなければダイアログ */
+  dialogWindow: WindowMode | 'auto'
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -88,7 +88,7 @@ export const DEFAULT_SETTINGS: Settings = {
   f0SilenceDb: -50,
   historyLimit: 50,
   historyMemoryMb: 512,
-  dialogWindow: 'dialog',
+  dialogWindow: 'auto',
 }
 const DEFAULTS = DEFAULT_SETTINGS
 const STORAGE_KEY = 'wevocalsynth.settings'

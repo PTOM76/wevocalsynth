@@ -1,10 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import {
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControl,
   InputLabel,
   LinearProgress,
@@ -16,7 +14,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material'
-import { enterToSubmit } from 'pevenmui'
+import { enterToSubmit, WindowDialog } from 'pevenmui'
 import { EXPORT_EXT, MP3_SAMPLE_RATES, OPUS_SAMPLE_RATE, canEncodeOpus, type ExportFormat, type WavFormat } from 'wevocal-lib'
 import { useT } from '../i18n/i18n'
 
@@ -109,14 +107,16 @@ export default function ExportDialog(p: Props) {
   const kbps = kbpsOptions.includes(s.kbps) ? s.kbps : 128
 
   return (
-    <Dialog
+    <WindowDialog
       open={p.open}
       onClose={p.busy ? undefined : p.onClose}
-      fullWidth
-      maxWidth="xs"
+      title={t('export.title')}
+      name="export"
+      width={444}
+      height={600}
+      dialogProps={{ fullWidth: true, maxWidth: 'xs' }}
       onKeyDown={enterToSubmit(() => p.onExport({ ...s, sampleRate: rate, kbps }), !p.busy && !!s.fileName.trim())}
     >
-      <DialogTitle>{t('export.title')}</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
           <ToggleButtonGroup
@@ -215,6 +215,6 @@ export default function ExportDialog(p: Props) {
           {t('export.run')}
         </Button>
       </DialogActions>
-    </Dialog>
+    </WindowDialog>
   )
 }

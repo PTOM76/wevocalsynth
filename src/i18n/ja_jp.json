@@ -186,7 +186,7 @@
   "settings.groupDebug": "デバッグ",
   "settings.showDebug": "デバッグ表示",
   "settings.showDebugHelp": "画面左下に表示します。Ctrl+Shift+D でも切り替えできます",
-  "settings.dialogWindow": "ダイアログの表示（試験的・設定画面のみ）",
+  "settings.dialogWindow": "ダイアログの表示",
   "settings.windowDialog": "ダイアログ",
   "settings.windowPopup": "ポップアップ",
   "settings.windowSub": "サブウィンドウ",

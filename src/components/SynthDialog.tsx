@@ -3,10 +3,8 @@ import {
   Box,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControlLabel,
   MenuItem,
   Radio,
@@ -14,7 +12,7 @@ import {
   Select,
   Typography,
 } from '@mui/material'
-import { enterToSubmit } from 'pevenmui'
+import { enterToSubmit, WindowDialog } from 'pevenmui'
 import type { Clip } from '../audio/types'
 import { parseMidi, type MidiFile } from '../audio/midi'
 import { PEAK_DB, synthesize, type SynthNote, type Timbre } from '../audio/synth'
@@ -160,14 +158,16 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
   }
 
   return (
-    <Dialog
+    <WindowDialog
       open={p.open}
       onClose={() => !busy && p.onClose()}
-      fullWidth
-      maxWidth="xs"
+      title={t('synth.title')}
+      name="synth"
+      width={444}
+      height={640}
+      dialogProps={{ fullWidth: true, maxWidth: 'xs' }}
       onKeyDown={enterToSubmit(() => void create(), !busy && !(source === 'midi' && !midi))}
     >
-      <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('synth.title')}</DialogTitle>
       <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Row label={t('synth.timbre')}>
           <Select size="small" fullWidth value={timbre} onChange={(e) => setTimbre(e.target.value)} sx={{ fontSize: 13, '& .MuiSelect-select': { py: 0.5 } }}>
@@ -282,6 +282,6 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
           {t('synth.create')}
         </Button>
       </DialogActions>
-    </Dialog>
+    </WindowDialog>
   )
 }
