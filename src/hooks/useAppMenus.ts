@@ -38,6 +38,8 @@ interface Actions {
   pitchReady: boolean
   /** 選択範囲のピッチを強制表示（1）・強制非表示（-1）・解析のまま（0）にする */
   setVoicing: (value: 1 | -1 | 0) => void
+  /** 右クリックした帯がピッチの帯か（ピッチの強制表示などはそのときだけ出す） */
+  pitchLane: boolean
   /** ボーカル抽出（追加機能）。対象は選択範囲、なければ全体 */
   extract: (stem: 'vocals' | 'accompaniment') => void
   /** 選んでいるトラックを、ボーカルと伴奏の2トラックに分ける */
@@ -130,10 +132,14 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('play.loopPreview'), disabled: noClip, onClick: a.toggleLoop },
     { divider: true },
     ...edit,
-    { divider: true },
-    { label: t('voicing.force'), disabled: noVoicing, onClick: () => a.setVoicing(1) },
-    { label: t('voicing.mute'), disabled: noVoicing, onClick: () => a.setVoicing(-1) },
-    { label: t('voicing.reset'), disabled: noVoicing, onClick: () => a.setVoicing(0) },
+    ...(a.pitchLane
+      ? [
+          { divider: true as const },
+          { label: t('voicing.force'), disabled: noVoicing, onClick: () => a.setVoicing(1) },
+          { label: t('voicing.mute'), disabled: noVoicing, onClick: () => a.setVoicing(-1) },
+          { label: t('voicing.reset'), disabled: noVoicing, onClick: () => a.setVoicing(0) },
+        ]
+      : []),
   ]
 
   // スマホの ⋮ は短くする。切り取りなどは長押しメニュー、元に戻すは上部バー、

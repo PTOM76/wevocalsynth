@@ -16,6 +16,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material'
+import { enterToSubmit } from './dialogKeys'
 import type { WavFormat } from '../audio/wav'
 import { EXPORT_EXT, type ExportFormat } from '../audio/export/exportAudio'
 import { MP3_SAMPLE_RATES, OPUS_SAMPLE_RATE, canEncodeOpus } from '../audio/export/formats'
@@ -110,7 +111,13 @@ export default function ExportDialog(p: Props) {
   const kbps = kbpsOptions.includes(s.kbps) ? s.kbps : 128
 
   return (
-    <Dialog open={p.open} onClose={p.busy ? undefined : p.onClose} fullWidth maxWidth="xs">
+    <Dialog
+      open={p.open}
+      onClose={p.busy ? undefined : p.onClose}
+      fullWidth
+      maxWidth="xs"
+      onKeyDown={enterToSubmit(() => p.onExport({ ...s, sampleRate: rate, kbps }), !p.busy && !!s.fileName.trim())}
+    >
       <DialogTitle>{t('export.title')}</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} sx={{ pt: 1 }}>

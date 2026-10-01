@@ -15,6 +15,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import { enterToSubmit } from '../components/dialogKeys'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faChevronRight, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { DEFAULT_SETTINGS, type Settings } from './settings'
@@ -88,7 +89,8 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
       }}
       placeholder={t('settings.search')}
       slotProps={{
-        htmlInput: { 'aria-label': t('settings.search') },
+        // 検索欄の Enter で設定画面を閉じない
+        htmlInput: { 'aria-label': t('settings.search'), 'data-no-submit': true },
         input: {
           // PC は右側の選択欄と同じくらいの高さに詰める（スマホは押しやすい既定の高さ）
           sx: { fontSize: narrow ? 15 : 13, '& .MuiInputBase-input': { py: narrow ? undefined : 0.5 } },
@@ -156,7 +158,16 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
 
   return (
     // PC ではカテゴリの一覧と項目を並べても窮屈にならない大きさにする
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth={false} slotProps={{ paper: { sx: { maxWidth: 720, height: 'min(600px, calc(100% - 64px))' } } }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      onKeyDown={enterToSubmit(() => {
+        onChange(draft)
+        onClose()
+      })}
+      fullWidth
+      maxWidth={false}
+      slotProps={{ paper: { sx: { maxWidth: 720, height: 'min(600px, calc(100% - 64px))' } } }}>
       <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('settings.title')}</DialogTitle>
       <DialogContent dividers sx={{ display: 'flex', gap: 2, p: 0 }}>
         {/* ↑↓ で分類を切り替え、Home / End で最初・最後へ（右の項目へは Tab で移る） */}

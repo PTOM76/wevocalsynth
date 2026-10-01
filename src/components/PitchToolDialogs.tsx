@@ -15,6 +15,7 @@ import {
   Slider,
   Typography,
 } from '@mui/material'
+import { enterToSubmit } from './dialogKeys'
 import { rateForBpm, type SnapOptions, type VibratoOptions } from '../audio/pitchTools'
 import { noteName } from '../audio/notes'
 import { COMPACT_SLIDER_SX, NumberInput } from './inspector/Inspector'
@@ -38,7 +39,16 @@ export function SliderRow(p: { label: string; value: number; onChange: (v: numbe
 export function ToolDialog(p: { open: boolean; title: string; hasSelection: boolean; onClose: () => void; onRun: () => void; children: ReactNode }) {
   const t = useT()
   return (
-    <Dialog open={p.open} onClose={p.onClose} fullWidth maxWidth="xs">
+    <Dialog
+      open={p.open}
+      onClose={p.onClose}
+      fullWidth
+      maxWidth="xs"
+      onKeyDown={enterToSubmit(() => {
+        p.onRun()
+        p.onClose()
+      })}
+    >
       <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{p.title}</DialogTitle>
       <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>

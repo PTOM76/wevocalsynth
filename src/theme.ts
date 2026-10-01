@@ -52,6 +52,10 @@ export const createAppTheme = (desktop: boolean) => createTheme({
       },
     },
     MuiButton: { defaultProps: { disableElevation: true } },
+    // Tab で移ったときに、どのボタンにフォーカスがあるかを枠で分かるようにする（マウスで押したときは出ない）
+    MuiButtonBase: {
+      styleOverrides: { root: ({ theme }) => ({ '&.Mui-focusVisible': { outline: `2px solid ${theme.palette.primary.main}`, outlineOffset: -2 } }) },
+    },
     MuiCard: { defaultProps: { variant: 'outlined' } },
     MuiChip: { styleOverrides: { root: { borderRadius: 4 } } },
     // ページ自体はスクロールしないので、開いたときのスクロールロックは使わない。

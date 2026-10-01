@@ -14,6 +14,7 @@ import {
   Select,
   Typography,
 } from '@mui/material'
+import { enterToSubmit } from './dialogKeys'
 import type { Clip } from '../audio/types'
 import { parseMidi, type MidiFile } from '../audio/midi'
 import { PEAK_DB, synthesize, type SynthNote, type Timbre } from '../audio/synth'
@@ -159,7 +160,13 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
   }
 
   return (
-    <Dialog open={p.open} onClose={() => !busy && p.onClose()} fullWidth maxWidth="xs">
+    <Dialog
+      open={p.open}
+      onClose={() => !busy && p.onClose()}
+      fullWidth
+      maxWidth="xs"
+      onKeyDown={enterToSubmit(() => void create(), !busy && !(source === 'midi' && !midi))}
+    >
       <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('synth.title')}</DialogTitle>
       <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Row label={t('synth.timbre')}>

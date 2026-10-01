@@ -122,6 +122,7 @@ export default function App() {
     toggleFormant: () => ed.setShowFormant(!ed.showFormant),
     pitchReady: ed.showPitch && !!ed.pitch,
     setVoicing: (v) => ed.voicing.set(ed.selections, v),
+    pitchLane: ed.focusLane === 'pitch',
     extract: (stem) => void ed.extract(stem),
     splitStems: () => void ed.splitStems(),
     duplicateTrack: () => ed.tracks.duplicate(),
