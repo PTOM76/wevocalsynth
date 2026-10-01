@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Box,
   Button,
@@ -68,6 +68,22 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
 
   const choice = TIMBRES.find((x) => x.value === timbre) ?? TIMBRES[0]
 
+  // 試聴: 今の設定で合成して鳴らす。設定が同じなら前の結果を使い回す（作成のときも）
+  const cache = useRef<{ key: string; clip: Clip } | null>(null)
+  const audio = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const stop = () => {
+    audio.current?.src.stop()
+    void audio.current?.ctx.close()
+    audio.current = null
+    setPlaying(false)
+  }
+  // 閉じたら止める
+  useEffect(() => {
+    if (!p.open) stop()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.open])
+
   const openMidi = async (f: File) => {
     try {
       const file = parseMidi(await f.arrayBuffer())
@@ -88,12 +104,47 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
     return (midi.file.tracks[track]?.notes ?? []).map((n) => ({ note: n.note, start: n.start * scale, end: n.end * scale }))
   }
 
-  const create = async () => {
+  /** 今の設定で合成した音（同じ設定なら前の結果） */
+  const render = async () => {
     const list = notes()
-    if (!list.length) return
+    if (!list.length) return null
+    const vib = vibrato ? { depth, rate } : null
+    const key = JSON.stringify({ list, timbre: choice.timbre, vib })
+    if (cache.current?.key === key) return cache.current.clip
+    const clip = await synthesize(list, { timbre: choice.timbre, vibrato: vib })
+    cache.current = { key, clip }
+    return clip
+  }
+
+  const preview = async () => {
+    if (playing) return stop()
     setBusy(true)
     try {
-      const clip = await synthesize(list, { timbre: choice.timbre, vibrato: vibrato ? { depth, rate } : null })
+      const clip = await render()
+      if (!clip) return
+      const ctx = new AudioContext()
+      const buf = ctx.createBuffer(1, clip.channels[0].length, clip.sampleRate)
+      buf.copyToChannel(clip.channels[0] as Float32Array<ArrayBuffer>, 0)
+      const src = ctx.createBufferSource()
+      src.buffer = buf
+      src.connect(ctx.destination)
+      src.onended = () => stop()
+      src.start()
+      audio.current = { ctx, src }
+      setPlaying(true)
+    } catch (e) {
+      setError(String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const create = async () => {
+    stop()
+    setBusy(true)
+    try {
+      const clip = await render()
+      if (!clip) return
       const what = source === 'single' ? noteName(note) : (midi?.file.tracks[track]?.name ?? 'MIDI')
       p.onCreate(clip, t('synth.trackName', { timbre: t(choice.label), what }))
       p.onClose()
@@ -202,6 +253,14 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
         <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{t('synth.hint')}</Typography>
       </DialogContent>
       <DialogActions>
+        <Button
+          size="small"
+          disabled={busy || (source === 'midi' && !midi)}
+          onClick={() => void preview()}
+          sx={{ mr: 'auto' }}
+        >
+          {t(playing ? 'common.stop' : 'play.preview')}
+        </Button>
         <Button size="small" disabled={busy} onClick={p.onClose}>
           {t('common.cancel')}
         </Button>
