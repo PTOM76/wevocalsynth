@@ -300,6 +300,8 @@
   "addon.modelStandard": "Standard model (Spleeter fp16)",
   "addon.modelFast": "Fast model (Spleeter int8)",
   "addon.modelPrecise": "High-precision model (Spleeter fp32)",
+  "settings.search": "Search settings",
+  "settings.noResults": "No matching settings",
   "settings.title": "Settings",
   "settings.autoRestore": "Autosave work and restore it next time",
   "settings.autoRestoreHelp": "Audio is stored only in this browser and never uploaded",

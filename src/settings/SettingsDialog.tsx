@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   Box,
   Button,
@@ -8,18 +8,20 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  InputAdornment,
   IconButton,
   List,
   ListItemButton,
   MenuItem,
   Select,
   Switch,
+  TextField,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faChevronRight, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { DEFAULT_SETTINGS, type CtrlSAction, type F0Voicing, type InitialMode, type Settings, type ThemeSetting, type VocalModel } from './settings'
 import { NumberInput } from '../components/inspector/Inspector'
 import UpdateSection from './UpdateSection'
@@ -27,6 +29,7 @@ import DataSection from './DataSection'
 import AddonSection from './AddonSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
 import { useT, type LangSetting } from '../i18n/i18n'
+import { SearchContext, matchCategories, useHighlight, type Category } from './settingsSearch'
 
 interface Props {
   open: boolean
@@ -34,9 +37,6 @@ interface Props {
   settings: Settings
   onChange: (patch: Partial<Settings>) => void
 }
-
-type Category = 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'vocal' | 'data' | 'debug'
-const CATEGORIES: Category[] = ['general', 'display', 'pitch', 'tempo', 'keys', 'vocal', 'data', 'debug']
 
 /** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
 const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
@@ -46,16 +46,17 @@ const NarrowContext = createContext(false)
 
 /** 枠線と見出しで項目をまとめる（PC は Windows のグループボックス風、スマホは Android の設定風の見出し） */
 function Group({ title, children }: { title: string; children: ReactNode }) {
+  const hit = useHighlight(title)
   if (useContext(NarrowContext))
     return (
       <Box sx={{ mb: 3 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'primary.main', mb: 1 }}>{title}</Typography>
+        <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'primary.main', mb: 1, width: 'fit-content', ...hit }}>{title}</Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{children}</Box>
       </Box>
     )
   return (
     <Box component="fieldset" sx={{ m: 0, mb: 2, px: 1.5, pt: 0.5, pb: 1.5, border: 1, borderColor: 'divider', borderRadius: 0.5 }}>
-      <Typography component="legend" sx={{ px: 0.5, fontSize: 12, color: 'text.secondary' }}>
+      <Typography component="legend" sx={{ px: 0.5, fontSize: 12, color: 'text.secondary', ...hit }}>
         {title}
       </Typography>
       {/* ラベル列は一番長いラベルに合わせ、入力列は残りの幅に収める（長い選択肢は省略表示） */}
@@ -68,16 +69,17 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 
 /** 左にラベル、右に入力欄の1行（スマホはラベルの下に入力欄） */
 function Row({ label, children }: { label: string; children: ReactNode }) {
+  const hit = useHighlight(label)
   if (useContext(NarrowContext))
     return (
       <Box>
-        <Typography sx={{ fontSize: 14, mb: 0.75 }}>{label}</Typography>
+        <Typography sx={{ fontSize: 14, mb: 0.75, width: 'fit-content', ...hit }}>{label}</Typography>
         {children}
       </Box>
     )
   return (
     <>
-      <Typography sx={{ fontSize: 13, whiteSpace: 'nowrap' }}>{label}</Typography>
+      <Typography sx={{ fontSize: 13, whiteSpace: 'nowrap', justifySelf: 'start', ...hit }}>{label}</Typography>
       <Box sx={{ minWidth: 0 }}>{children}</Box>
     </>
   )
@@ -98,12 +100,14 @@ function Choice<T extends string>(p: { value: T; onChange: (v: T) => void; optio
 }
 
 function Check(p: { checked: boolean; onChange: (v: boolean) => void; label: string; help?: string }) {
+  // 項目名か説明文が検索語に一致したら、項目名に色を付ける
+  const hit = useHighlight(p.label, p.help)
   // スマホは Android の設定と同じく、行全体を押せる右寄せのスイッチにする
   if (useContext(NarrowContext))
     return (
       <Box component="label" sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
         <Box sx={{ flex: 1 }}>
-          <Typography sx={{ fontSize: 14 }}>{p.label}</Typography>
+          <Typography sx={{ fontSize: 14, width: 'fit-content', ...hit }}>{p.label}</Typography>
           {p.help && <Typography className="selectable" sx={{ fontSize: 12, color: 'text.secondary' }}>{p.help}</Typography>}
         </Box>
         <Switch checked={p.checked} onChange={(e) => p.onChange(e.target.checked)} />
@@ -115,7 +119,7 @@ function Check(p: { checked: boolean; onChange: (v: boolean) => void; label: str
       <FormControlLabel
         control={<Checkbox size="small" checked={p.checked} onChange={(e) => p.onChange(e.target.checked)} />}
         label={p.label}
-        slotProps={{ typography: { sx: { fontSize: 13 } } }}
+        slotProps={{ typography: { sx: { fontSize: 13, ...hit } } }}
       />
       {p.help && <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary', ml: 4, mt: -0.5 }}>{p.help}</Typography>}
     </Box>
@@ -131,12 +135,25 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
   const theme = useTheme()
   const narrow = useMediaQuery(theme.breakpoints.down('sm'))
   const [category, setCategory] = useState<Category>('general')
+  // 設定の検索。一致する項目がある分類だけを一覧に出す
+  const [query, setQuery] = useState('')
+  // 開いたときだけ、選ばれている分類にフォーカスを置く（autoFocus だと、検索で選ばれる分類が変わるたびに検索欄からフォーカスを奪う）
+  const tabListRef = useRef<HTMLUListElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const id = requestAnimationFrame(() => tabListRef.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus())
+    return () => cancelAnimationFrame(id)
+  }, [open])
+  const shownCategories = matchCategories(query, t)
+  // 選んでいた分類が絞り込みで消えたら、残った最初の分類を出す
+  const current = shownCategories.includes(category) ? category : (shownCategories[0] ?? category)
   const [draft, setDraft] = useState(settings)
   // 開くたびに今の設定から始める
   useEffect(() => {
     if (open) {
       setDraft(settings)
       setPage(null)
+      setQuery('')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -305,14 +322,47 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
 
   const label = (c: Category) => t(`settings.cat.${c}`)
 
+  const searchField = (
+    <TextField
+      size="small"
+      fullWidth
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      // Esc: 入力があればまず検索語を消す（空なら今までどおり設定画面を閉じる）
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && query) {
+          e.stopPropagation()
+          setQuery('')
+        }
+      }}
+      placeholder={t('settings.search')}
+      slotProps={{
+        htmlInput: { 'aria-label': t('settings.search') },
+        input: {
+          // PC は右側の選択欄と同じくらいの高さに詰める（スマホは押しやすい既定の高さ）
+          sx: { fontSize: narrow ? 15 : 13, '& .MuiInputBase-input': { py: narrow ? undefined : 0.5 } },
+          startAdornment: (
+            <InputAdornment position="start">
+              <FontAwesomeIcon icon={faMagnifyingGlass} style={{ fontSize: 12, opacity: 0.6 }} />
+            </InputAdornment>
+          ),
+        },
+      }}
+    />
+  )
+  const noResults = !shownCategories.length && (
+    <Typography sx={{ fontSize: 13, color: 'text.secondary', p: 2 }}>{t('settings.noResults')}</Typography>
+  )
+
   /** 分類の一覧での ↑↓ / Home / End。分類を切り替えて、その項目にフォーカスを移す */
   const moveCategory = (e: React.KeyboardEvent<HTMLElement>) => {
-    const i = CATEGORIES.indexOf(category)
-    const next = { ArrowUp: i - 1, ArrowDown: i + 1, Home: 0, End: CATEGORIES.length - 1 }[e.key]
-    if (next === undefined) return
+    const list = shownCategories
+    const i = list.indexOf(current)
+    const next = { ArrowUp: i - 1, ArrowDown: i + 1, Home: 0, End: list.length - 1 }[e.key]
+    if (next === undefined || !list.length) return
     e.preventDefault()
-    const j = Math.max(0, Math.min(CATEGORIES.length - 1, next))
-    setCategory(CATEGORIES[j])
+    const j = Math.max(0, Math.min(list.length - 1, next))
+    setCategory(list[j])
     const tabs = e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')
     tabs[j]?.focus()
   }
@@ -330,10 +380,14 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
           </Box>
           <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
             {page ? (
-              <Box sx={{ p: 2 }}>{pages[page]}</Box>
+              <Box sx={{ p: 2 }}>
+                <SearchContext.Provider value={query}>{pages[page]}</SearchContext.Provider>
+              </Box>
             ) : (
               <List>
-                {CATEGORIES.map((c) => (
+                <Box sx={{ px: 2, pb: 1 }}>{searchField}</Box>
+                {noResults}
+                {shownCategories.map((c) => (
                   <ListItemButton key={c} onClick={() => setPage(c)} sx={{ py: 1.5 }}>
                     <Typography sx={{ flex: 1, fontSize: 15 }}>{label(c)}</Typography>
                     <FontAwesomeIcon icon={faChevronRight} style={{ opacity: 0.5 }} />
@@ -355,24 +409,29 @@ export default function SettingsDialog({ open, onClose, settings, onChange }: Pr
       <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('settings.title')}</DialogTitle>
       <DialogContent dividers sx={{ display: 'flex', gap: 2, p: 0 }}>
         {/* ↑↓ で分類を切り替え、Home / End で最初・最後へ（右の項目へは Tab で移る） */}
-        <List dense role="tablist" aria-orientation="vertical" onKeyDown={moveCategory} sx={{ width: 180, flexShrink: 0, borderRight: 1, borderColor: 'divider', py: 0.5 }}>
-          {CATEGORIES.map((c) => (
+        <Box sx={{ width: 180, flexShrink: 0, borderRight: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ p: 1, pb: 0 }}>{searchField}</Box>
+          <List ref={tabListRef} dense role="tablist" aria-orientation="vertical" onKeyDown={moveCategory} sx={{ py: 0.5 }}>
+          {shownCategories.map((c) => (
             <ListItemButton
               key={c}
               role="tab"
-              aria-selected={c === category}
-              selected={c === category}
-              autoFocus={c === category}
+              aria-selected={c === current}
+              selected={c === current}
               // 選ばれている分類だけを Tab で止まる場所にする（ほかへは矢印キーで移る）
-              tabIndex={c === category ? 0 : -1}
+              tabIndex={c === current ? 0 : -1}
               onClick={() => setCategory(c)}
               sx={{ fontSize: 13 }}
             >
               {label(c)}
             </ListItemButton>
           ))}
-        </List>
-        <Box sx={{ flex: 1, minWidth: 0, overflowX: 'hidden', py: 2, pr: 2 }}>{pages[category]}</Box>
+          </List>
+          {noResults}
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0, overflowX: 'hidden', py: 2, pr: 2 }}>
+          {shownCategories.length > 0 && <SearchContext.Provider value={query}>{pages[current]}</SearchContext.Provider>}
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button size="small" onClick={() => setDraft(DEFAULT_SETTINGS)} sx={{ mr: 'auto' }}>

@@ -300,6 +300,8 @@
   "addon.modelStandard": "標準モデル（Spleeter fp16）",
   "addon.modelFast": "高速モデル（Spleeter int8）",
   "addon.modelPrecise": "高精度モデル（Spleeter fp32）",
+  "settings.search": "設定を検索",
+  "settings.noResults": "一致する設定がありません",
   "settings.title": "設定",
   "settings.autoRestore": "作業を自動保存し、次回開いたときに復元する",
   "settings.autoRestoreHelp": "音声はこのブラウザ内にだけ保存され、外部には送信されません",
