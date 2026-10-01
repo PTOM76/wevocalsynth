@@ -19,7 +19,7 @@ export interface AutosaveMeta {
   fileName: string
   params: EditParams
   /** トラックの並び。音声は trackKey(id) に置く */
-  tracks?: { id: string; name: string; volume?: number; pan?: number }[]
+  tracks?: { id: string; name: string; volume?: number; pan?: number; mute?: boolean; solo?: boolean; overlay?: boolean }[]
   active?: number
 }
 
@@ -62,6 +62,9 @@ export async function loadAutosave(): Promise<{ project: Project; ids: string[] 
         name: t.name,
         volume: t.volume,
         pan: t.pan,
+        mute: t.mute,
+        solo: t.solo,
+        overlay: t.overlay,
         original: await idbGet(trackKey(t.id, 'original')),
         edited: await idbGet(trackKey(t.id, 'edited')),
       })),

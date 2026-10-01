@@ -13,7 +13,7 @@ export interface Track {
   clip: Clip
 }
 
-/** トラックの鳴らし方。元に戻す履歴には入れない（聴き方の切り替えなので） */
+/** トラックの鳴らし方。元に戻す履歴には入れない（聴き方の切り替えなので）が、プロジェクトファイルと自動保存には保存する */
 export interface TrackMix {
   mute: boolean
   solo: boolean

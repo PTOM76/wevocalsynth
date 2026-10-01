@@ -182,9 +182,12 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
         : [makeTrack(name, clip)]
       history.reset(list, list[project ? project.active : 0].id)
       // フェーダーはプロジェクトに保存した値から（新しいファイルは中立）
-      tracks.resetMix(
-        Object.fromEntries((project?.tracks ?? []).map((tr, i) => [list[i].id, { db: tr.volume ?? 0, pan: tr.pan ?? 0 }])),
-      )
+      const saved = project?.tracks ?? []
+      tracks.resetMix({
+        faders: Object.fromEntries(saved.map((tr, i) => [list[i].id, { db: tr.volume ?? 0, pan: tr.pan ?? 0 }])),
+        mix: Object.fromEntries(saved.map((tr, i) => [list[i].id, { mute: !!tr.mute, solo: !!tr.solo }])),
+        overlay: saved.flatMap((tr, i) => (tr.overlay ? [list[i].id] : [])),
+      })
       setGainDb(0)
       setPan(0)
       setSource('edited')
@@ -283,7 +286,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const saveProjectFile = () =>
     task.run(t('task.saving'), async () => {
       if (!original || !edited) return
-      const list = history.tracks.map((tr) => ({ name: tr.name, original: tr.original, edited: tr.clip, volume: tracks.faderOf(tr.id).db, pan: tracks.faderOf(tr.id).pan }))
+      const list = history.tracks.map((tr) => ({ name: tr.name, original: tr.original, edited: tr.clip, volume: tracks.faderOf(tr.id).db, pan: tracks.faderOf(tr.id).pan, mute: tracks.mix[tr.id]?.mute, solo: tracks.mix[tr.id]?.solo, overlay: tracks.overlay.has(tr.id) }))
       const active = Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId))
       downloadBlob(saveProject({ fileName, params, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
       setToast({ severity: 'success', message: t('toast.saved') })
@@ -344,7 +347,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   // 作業状態の自動保存と、起動時の復元
   useAutosave(
     settings.autoRestore,
-    { fileName, tracks: history.tracks, activeId: history.activeId, faders: tracks.faders },
+    { fileName, tracks: history.tracks, activeId: history.activeId, faders: tracks.faders, mix: tracks.mix, overlay: tracks.overlay },
     params,
     (project, ids) => {
       openClip(project.tracks[project.active].edited, project.fileName, project, ids)

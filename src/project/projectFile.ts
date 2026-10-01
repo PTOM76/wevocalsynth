@@ -23,6 +23,10 @@ export interface ProjectTrack {
   /** フェーダー（音量 dB・パン）。古いファイルには無い */
   volume?: number
   pan?: number
+  /** 鳴らし方と、大きな波形の後ろに重ねるか。古いファイルには無い */
+  mute?: boolean
+  solo?: boolean
+  overlay?: boolean
 }
 
 export interface Project {
@@ -40,7 +44,7 @@ interface Header {
   fileName: string
   params: EditParams
   /** 版 2: トラックごとの名前。クリップは2つずつ（原音・加工後）並ぶ */
-  tracks?: { name: string; volume?: number; pan?: number }[]
+  tracks?: { name: string; volume?: number; pan?: number; mute?: boolean; solo?: boolean; overlay?: boolean }[]
   active?: number
   clips: ClipInfo[]
 }
@@ -67,6 +71,15 @@ function fromLittleEndian(buf: ArrayBuffer, offset: number, length: number): Flo
   return ch
 }
 
+/** ヘッダのトラック情報のうち、音声以外（フェーダー・鳴らし方・重ねる表示） */
+const pickTrackState = (i?: { volume?: number; pan?: number; mute?: boolean; solo?: boolean; overlay?: boolean }) => ({
+  volume: i?.volume,
+  pan: i?.pan,
+  mute: i?.mute,
+  solo: i?.solo,
+  overlay: i?.overlay,
+})
+
 export const isProjectFile = (file: File) => file.name.toLowerCase().endsWith(PROJECT_EXT)
 
 async function transform(data: Blob, stream: CompressionStream | DecompressionStream): Promise<ArrayBuffer> {
@@ -80,7 +93,7 @@ export function saveProject(p: Project): Blob {
     version: VERSION,
     fileName: p.fileName,
     params: p.params,
-    tracks: p.tracks.map((t) => ({ name: t.name, volume: t.volume, pan: t.pan })),
+    tracks: p.tracks.map((t) => ({ name: t.name, volume: t.volume, pan: t.pan, mute: t.mute, solo: t.solo, overlay: t.overlay })),
     active: p.active,
     clips: clips.map((c) => ({ sampleRate: c.sampleRate, channels: c.channels.length, length: c.channels[0].length })),
   }
@@ -121,6 +134,6 @@ export async function loadProject(file: File): Promise<Project> {
       return ch
     }),
   }))
-  const tracks = names.map((name, i) => ({ name, original: clips[i * 2], edited: clips[i * 2 + 1], volume: infos?.[i]?.volume, pan: infos?.[i]?.pan }))
+  const tracks = names.map((name, i) => ({ name, original: clips[i * 2], edited: clips[i * 2 + 1], ...pickTrackState(infos?.[i]) }))
   return { fileName: header.fileName, params: header.params, tracks, active: Math.min(header.active ?? 0, tracks.length - 1) }
 }

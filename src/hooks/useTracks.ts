@@ -122,11 +122,11 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     faders,
     faderOf,
     setFader: (id: string, patch: Partial<TrackFader>) => setFaders((f) => ({ ...f, [id]: { ...(f[id] ?? DEFAULT_FADER), ...patch } })),
-    /** ファイルを開き直したときに、鳴らし方と重ねる表示を戻し、フェーダーを `initial`（プロジェクトの値）にする */
-    resetMix: (initial: Record<string, TrackFader> = {}) => {
-      setMix({})
-      setOverlay(new Set())
-      setFaders(initial)
+    /** ファイルを開き直したときに、フェーダー・鳴らし方・重ねる表示を `initial`（プロジェクトに保存した値）にする */
+    resetMix: (initial: { faders?: Record<string, TrackFader>; mix?: Record<string, TrackMix>; overlay?: string[] } = {}) => {
+      setMix(initial.mix ?? {})
+      setOverlay(new Set(initial.overlay ?? []))
+      setFaders(initial.faders ?? {})
     },
   }
 }
