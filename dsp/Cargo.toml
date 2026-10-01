@@ -3,6 +3,9 @@ name = "wevocal-dsp"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+wevocal-lib = { path = "../wevocal-lib" }
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 

@@ -11,12 +11,12 @@
 pub mod curve;
 pub mod f0;
 mod ffi;
-mod fft;
+// FFT とリサンプルは wevocal-lib（WeVocalExtractor と共有）のものを使う。`crate::fft` などのパスは今までどおり
+use wevocal_lib::fft;
 pub mod formant;
 mod pipeline;
 pub mod psola;
 pub mod pv;
-mod resample;
 pub mod sola;
 pub mod spec;
 pub mod tempo;
@@ -27,6 +27,7 @@ mod wsola;
 mod tests;
 
 pub use pipeline::{process, process_with_progress, Algorithm, Formant};
-pub use resample::{resample, resample_with};
+// `resample` はモジュールと関数の両方を指す（`crate::resample::...` も `crate::resample(...)` も使える）
+pub use wevocal_lib::{resample, resample_with};
 pub use timemap::TimeMap;
 pub use wsola::{wsola, wsola_map, wsola_with_progress};
