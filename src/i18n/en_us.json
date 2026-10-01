@@ -373,6 +373,8 @@
   "synth.create": "Create",
   "synth.trackName": "{timbre} {what}",
   "synth.hint": "The sound becomes a new track. Use it as material for pitch, length and formant editing",
+  "synth.formant": "Formant",
+  "synth.volume": "Volume",
   "settings.title": "Settings",
   "settings.autoRestore": "Autosave work and restore it next time",
   "settings.autoRestoreHelp": "Audio is stored only in this browser and never uploaded",

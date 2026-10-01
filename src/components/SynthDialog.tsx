@@ -16,7 +16,7 @@ import {
 } from '@mui/material'
 import type { Clip } from '../audio/types'
 import { parseMidi, type MidiFile } from '../audio/midi'
-import { synthesize, type SynthNote, type Timbre } from '../audio/synth'
+import { PEAK_DB, synthesize, type SynthNote, type Timbre } from '../audio/synth'
 import { noteName } from '../audio/notes'
 import { NumberInput } from './inspector/Inspector'
 import { SliderRow } from './PitchToolDialogs'
@@ -63,6 +63,8 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
   const [vibrato, setVibrato] = useState(true)
   const [depth, setDepth] = useState(0.3)
   const [rate, setRate] = useState(5.5)
+  const [formant, setFormant] = useState(0)
+  const [volume, setVolume] = useState(PEAK_DB)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -109,9 +111,10 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
     const list = notes()
     if (!list.length) return null
     const vib = vibrato ? { depth, rate } : null
-    const key = JSON.stringify({ list, timbre: choice.timbre, vib })
+    const formantShift = choice.timbre.kind === 'voice' ? formant : 0
+    const key = JSON.stringify({ list, timbre: choice.timbre, vib, formantShift, volume })
     if (cache.current?.key === key) return cache.current.clip
-    const clip = await synthesize(list, { timbre: choice.timbre, vibrato: vib })
+    const clip = await synthesize(list, { timbre: choice.timbre, vibrato: vib, formantShift, peakDb: volume })
     cache.current = { key, clip }
     return clip
   }
@@ -168,6 +171,10 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
             ))}
           </Select>
         </Row>
+        {choice.timbre.kind === 'voice' && (
+          <SliderRow label={t('synth.formant')} value={formant} onChange={setFormant} min={-12} max={12} step={0.5} unit={t('process.semitoneUnit')} />
+        )}
+        <SliderRow label={t('synth.volume')} value={volume} onChange={setVolume} min={-30} max={0} step={0.5} unit="dB" />
         <RadioGroup value={source} onChange={(e) => setSource(e.target.value as 'single' | 'midi')}>
           <FormControlLabel value="single" control={<Radio size="small" />} label={t('synth.single')} slotProps={{ typography: { sx: { fontSize: 13 } } }} />
           <FormControlLabel value="midi" control={<Radio size="small" />} label={t('synth.midi')} slotProps={{ typography: { sx: { fontSize: 13 } } }} />

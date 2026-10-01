@@ -23,6 +23,10 @@ export interface SynthOptions {
   timbre: Timbre
   /** ビブラート（深さは半音、速さは Hz）。null なら付けない */
   vibrato: { depth: number; rate: number } | null
+  /** 声のフォルマント（響き）をずらす量（半音）。上げると子どもっぽく、下げると太い声になる。楽器では使わない */
+  formantShift?: number
+  /** 仕上がりのピーク（dB）。既定は PEAK_DB */
+  peakDb?: number
   sampleRate?: number
 }
 
@@ -40,8 +44,8 @@ const ATTACK_SEC = 0.02
 const RELEASE_SEC = 0.06
 /** 音符が変わるときに、音の高さをならす時間（秒） */
 const GLIDE_SEC = 0.015
-/** 仕上がりのピーク（dB） */
-const PEAK_DB = -3
+/** 仕上がりのピークの既定値（dB） */
+export const PEAK_DB = -3
 
 /** `notes` を合成した音（モノラル）。長さは最後の音符の終わり＋減衰まで */
 export async function synthesize(notes: SynthNote[], o: SynthOptions): Promise<Clip> {
@@ -76,12 +80,13 @@ export async function synthesize(notes: SynthNote[], o: SynthOptions): Promise<C
   }
 
   if (o.timbre.kind === 'voice') {
-    // フォルマント: 帯域通過フィルターを並べて足す
+    // フォルマント: 帯域通過フィルターを並べて足す。ずらすときは周波数と帯域幅を同じ比率で動かす（Q は変わらない）
+    const ratio = 2 ** ((o.formantShift ?? 0) / 12)
     const sum = ctx.createGain()
     for (const [f, bw, amp] of FORMANTS[o.timbre.vowel]) {
       const bp = ctx.createBiquadFilter()
       bp.type = 'bandpass'
-      bp.frequency.value = f
+      bp.frequency.value = Math.min(sr / 2 - 100, f * ratio)
       bp.Q.value = f / bw
       const g = ctx.createGain()
       g.gain.value = amp
@@ -99,11 +104,11 @@ export async function synthesize(notes: SynthNote[], o: SynthOptions): Promise<C
   osc.start(0)
 
   const out = (await ctx.startRendering()).getChannelData(0)
-  // ピークを PEAK_DB にそろえる
+  // ピークを指定の大きさ（既定は PEAK_DB）にそろえる
   let peak = 0
   for (let i = 0; i < out.length; i++) peak = Math.max(peak, Math.abs(out[i]))
   if (peak > 0) {
-    const g = 10 ** (PEAK_DB / 20) / peak
+    const g = 10 ** ((o.peakDb ?? PEAK_DB) / 20) / peak
     for (let i = 0; i < out.length; i++) out[i] *= g
   }
   return { sampleRate: sr, channels: [out] }
