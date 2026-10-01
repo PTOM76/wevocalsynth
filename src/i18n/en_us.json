@@ -253,7 +253,7 @@
   "addon.installTitle": "Install add-on",
   "addon.installText": "\"{name}\" is an add-on. Install it?",
   "addon.downloadSize": "Download: about {size}",
-  "addon.installHelp": "Once installed, it works offline. You can remove it from Settings > Add-ons",
+  "addon.installHelp": "Once installed, it works offline. You can remove it in Settings",
   "addon.checking": "Checking…",
   "addon.downloading": "Downloading… {percent}%",
   "addon.install": "Install",

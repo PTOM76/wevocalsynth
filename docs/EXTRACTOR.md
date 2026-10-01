@@ -84,7 +84,7 @@ ex.dispose()
 | fp32 | 79MB | WASM・WebGPU | 選べる |
 
 - 設定の「ボーカル抽出のモデル」で選ぶ。未導入のモデルで抽出しようとしたら、導入の確認ダイアログを出す
-- モデルごとの導入・削除は、設定の「追加機能」でいつでもできる（使わなくなったモデルだけ消せる）
+- モデルごとの導入・削除は、設定の「ボーカル抽出」でいつでもできる（使わなくなったモデルだけ消せる）
 - 実行方法は自動で決める: WebGPU が使え、モデルが対応していれば WebGPU、それ以外は WASM
 - 入出力: `[2ch, 分割数, 512 フレーム, 1024 ビン]` の振幅スペクトログラム。ボーカル用・伴奏用の2つのモデルを両方動かし、比率のマスク（`v² / (v² + a²)`）を元の STFT に掛けて逆STFT する
 - STFT: 44.1kHz、n_fft 4096、hop 1024、Hann 窓、center なし
@@ -137,7 +137,7 @@ ex.dispose()
 | 保存先 | アプリ本体とは別の Cache Storage（`wevocalsynth-addons`）。アプリ本体のキャッシュは更新のたびに入れ替わるため分ける。「オフライン用キャッシュ」の削除では消さず、「すべてのデータ」の削除では消す |
 | 読み込み | Service Worker が `addons/` へのリクエストを保存先から返す（なければネットワーク）。`loadAddon` で `import()` する |
 | 確認ダイアログ | `useAddonInstall`（[AddonInstallDialog.tsx](../src/addons/AddonInstallDialog.tsx)）。機能を使う直前に `ensure(id)` を呼び、未導入ならダイアログを出す |
-| 更新・削除 | 設定の「追加機能」（[AddonSection.tsx](../src/settings/AddonSection.tsx)）。配信中のバージョンと違えば「更新」を出す。勝手には取得しない |
+| 更新・削除 | 追加機能に関わる設定の画面に置く（ボーカル抽出なら設定の「ボーカル抽出」。[AddonSection.tsx](../src/settings/AddonSection.tsx)）。配信中のバージョンと違えば「更新」を出す。勝手には取得しない |
 | 容量 | 導入できたら「データを削除されにくくする」を申請する（断られても使える） |
 | ビルド | 追加機能ごとに `dist/addons/<id>/` に出力する。アプリ本体のプリキャッシュには入れない（`globIgnores`） |
 
@@ -145,7 +145,7 @@ Service Worker は保存先から返すだけで、自分では保存しない�
 取得するときは URL にクエリを付ける（`?v=` / `?t=`）。付けないと、導入済みの古い版が Service Worker から返る。
 
 #### 確認用の追加機能
-`test`（[scripts/gen-addon-test.mjs](../scripts/gen-addon-test.mjs) で作る、40MB のダミー＋`index.js`）。設定 → 開発者向け → デバッグ表示を ON にすると、設定の「追加機能」に出る。
+`test`（[scripts/gen-addon-test.mjs](../scripts/gen-addon-test.mjs) で作る、40MB のダミー＋`index.js`）。設定の「開発者向け」に出る。
 - 本番ビルド: デプロイ時に `dist/addons/test/` に作る
 - 開発サーバー: `node scripts/gen-addon-test.mjs public` で `public/addons/test/` に作る（git には入れない）
 

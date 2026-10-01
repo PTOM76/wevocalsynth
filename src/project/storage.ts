@@ -5,7 +5,7 @@ import { ADDON_CACHE } from '../addons/addons'
  * ブラウザ内に保存しているデータの確認と削除（設定の「データ」）。
  * - 作業データ: 自動保存した音声と作業状態（IndexedDB）
  * - オフライン用キャッシュ: PWA がオフラインで開けるように保存したアプリ本体（Cache Storage と Service Worker）
- * - 追加機能: 導入した追加機能のファイル（別の Cache Storage。設定の「追加機能」で消す）
+ * - 追加機能: 導入した追加機能のファイル（別の Cache Storage。設定の「ボーカル抽出」などで消す）
  * - 設定と画面の状態: localStorage の `wevocalsynth.` で始まる項目
  */
 

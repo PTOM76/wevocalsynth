@@ -253,7 +253,7 @@
   "addon.installTitle": "追加機能の導入",
   "addon.installText": "「{name}」は追加機能です。導入しますか？",
   "addon.downloadSize": "ダウンロード: 約 {size}",
-  "addon.installHelp": "導入後はオフラインでも使えます。設定の「追加機能」から削除できます",
+  "addon.installHelp": "導入後はオフラインでも使えます。設定から削除できます",
   "addon.checking": "情報を取得中…",
   "addon.downloading": "ダウンロード中… {percent}%",
   "addon.install": "導入",

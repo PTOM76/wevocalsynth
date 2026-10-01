@@ -41,7 +41,7 @@ jobs:
           key: addon-models-${{ hashFiles('scripts/build-addons.mjs') }}
       # 追加機能（ボーカル抽出の実行環境とモデル）
       - run: npm run build:addons
-      # 確認用の追加機能（設定 → 追加機能。デバッグ表示が ON のときだけ出る）
+      # 確認用の追加機能（設定の「開発者向け」に出る）
       - run: node scripts/gen-addon-test.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
