@@ -79,7 +79,7 @@ export default function AddonSection({ ids }: { ids: string[] }) {
         return (
           <Box key={a.id} sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%', display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: 13 }}>{t(a.name)}</Typography>
+              <Typography sx={{ fontSize: 13 }}>{t(a.shortName ?? a.name)}</Typography>
               <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{describe(s)}</Typography>
             </Box>
             {a.dev && s?.installed && (
