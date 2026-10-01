@@ -16,6 +16,9 @@ export interface TrackActions {
   mergeAll: () => void
   toggleMute: (id: string) => void
   toggleSolo: (id: string) => void
+  /** 大きな波形の後ろに重ねるトラックと、その切り替え */
+  overlay: ReadonlySet<string>
+  toggleOverlay: (id: string) => void
   remove: (id: string) => void
 }
 
@@ -35,6 +38,8 @@ export function trackMenuEntries(id: string, a: TrackActions): MenuEntry[] {
     { divider: true },
     { label: t('track.mute'), checked: m.mute, onClick: () => a.toggleMute(id) },
     { label: t('track.solo'), checked: m.solo, onClick: () => a.toggleSolo(id) },
+    // 選んでいるトラックは大きな波形そのものなので、重ねられない
+    { label: t('track.overlay'), checked: a.overlay.has(id), disabled: id === a.activeId, onClick: () => a.toggleOverlay(id) },
     { divider: true },
     { label: t('track.remove'), disabled: a.busy || a.tracks.length < 2, onClick: () => a.remove(id) },
   ]

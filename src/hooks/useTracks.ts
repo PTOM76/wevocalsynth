@@ -12,6 +12,8 @@ import { t } from '../i18n/i18n'
 export function useTracks(history: ReturnType<typeof useHistory>) {
   const { tracks, activeId } = history
   const [mix, setMix] = useState<Record<string, TrackMix>>({})
+  // 大きな波形の後ろに重ねるトラック（見え方の切り替えなので履歴に入れない。既定は重ねない）
+  const [overlay, setOverlay] = useState<ReadonlySet<string>>(new Set())
   const active = tracks.find((tr) => tr.id === activeId) ?? null
 
   /** 選んでいるトラックと一緒に鳴らす、ほかのトラックの音 */
@@ -19,6 +21,8 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     () => tracks.filter((tr) => tr.id !== activeId && isAudible(tr.id, mix, tracks)).map((tr) => ({ id: tr.id, clip: tr.clip })),
     [tracks, activeId, mix],
   )
+  /** 大きな波形の後ろに重ねる、ほかのトラックの音 */
+  const ghosts = useMemo(() => tracks.filter((tr) => tr.id !== activeId && overlay.has(tr.id)).map((tr) => tr.clip), [tracks, activeId, overlay])
   const activeMuted = !!active && !isAudible(active.id, mix, tracks)
 
   /** トラック `after`（既定は選んでいるもの）の直後に `added` を入れ、最初のものを選ぶ */
@@ -104,7 +108,18 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     mergeAll,
     toggleMute: (id: string) => setTrackMix(id, { mute: !(mix[id]?.mute ?? false) }),
     toggleSolo: (id: string) => setTrackMix(id, { solo: !(mix[id]?.solo ?? false) }),
-    /** ファイルを開き直したときに、鳴らし方を戻す */
-    resetMix: () => setMix({}),
+    overlay,
+    ghosts,
+    toggleOverlay: (id: string) =>
+      setOverlay((s) => {
+        const n = new Set(s)
+        if (!n.delete(id)) n.add(id)
+        return n
+      }),
+    /** ファイルを開き直したときに、鳴らし方と重ねる表示を戻す */
+    resetMix: () => {
+      setMix({})
+      setOverlay(new Set())
+    },
   }
 }

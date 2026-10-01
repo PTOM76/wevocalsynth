@@ -17,6 +17,7 @@ import {
   drawSpectrogram,
   spectrogramLayer,
   drawWave,
+  drawGhostWave,
   pitchRange,
   type BeatGrid,
   type DrawContext,
@@ -76,6 +77,8 @@ interface Props {
   onPitchPercentChange: (percent: number) => void
   /** 拍の目安線（null なら描かない） */
   beatGrid: BeatGrid | null
+  /** 後ろに薄く重ねる、ほかのトラックの音（トラックの右クリックメニューで選ぶ） */
+  ghosts?: Clip[]
 }
 
 export default function Waveform(props: Props) {
@@ -134,6 +137,8 @@ export default function Waveform(props: Props) {
   }, [])
 
   const peaks = useMemo(() => (width > 0 ? computePeaks(clip, width, view) : null), [clip, width, view])
+  const ghosts = props.ghosts
+  const ghostPeaks = useMemo(() => (width > 0 && ghosts?.length ? ghosts.map((g) => computePeaks(g, width, view)) : []), [ghosts, width, view])
   const range = useMemo(() => (pitch ? pitchRange(pitch) : null), [pitch])
   const { waveH, pitchH, height } = laneHeights(size.height, showPitch, props.pitchPercent)
   const divider = useLaneDivider(canvasRef, { waveH, pitchH }, showPitch, props.onPitchPercentChange)
@@ -159,11 +164,15 @@ export default function Waveform(props: Props) {
     drawRuler(c)
     // スペクトログラムは波形の代わりに表示する。選択範囲は波形などに隠れないよう、最後に重ねる
     if (showSpectrogram) drawSpectrogram(c, spectrogram, specLayer)
-    else drawWave(c, peaks)
+    else {
+      // ほかのトラックは後ろに薄く重ねる
+      for (const gp of ghostPeaks) drawGhostWave(c, gp)
+      drawWave(c, peaks)
+    }
     if (showPitch) drawPitchLane(c, pitch, range, target)
     if (beatGrid) drawBeatGrid(c, beatGrid, height)
     for (const r of selections) drawSelection(c, r, height)
-  }, [beatGrid, lang,peaks, width, height, waveH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
+  }, [beatGrid, lang, peaks, ghostPeaks, width, height, waveH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
 
   // 再生位置の線（再生中は毎フレーム変わるので、こちらだけを描き直す）
   useEffect(() => {

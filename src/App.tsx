@@ -168,6 +168,7 @@ export default function App() {
       pitchPercent={pitchPercent}
       onPitchPercentChange={setPitchPercent}
       beatGrid={beatGrid}
+      ghosts={editing ? ed.tracks.ghosts : undefined}
     />
   ) : (
     <EmptyState onOpen={ed.picker.open} />
@@ -188,6 +189,8 @@ export default function App() {
     mergeAll: () => void ed.tracks.mergeAll(),
     toggleMute: ed.tracks.toggleMute,
     toggleSolo: ed.tracks.toggleSolo,
+    overlay: ed.tracks.overlay,
+    toggleOverlay: ed.tracks.toggleOverlay,
     remove: ed.tracks.remove,
   }
   const trackViewProps = {
