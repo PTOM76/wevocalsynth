@@ -18,6 +18,9 @@ function commitHash(): string {
 }
 const commit = commitHash()
 
+/** OGP に使う配信先の絶対 URL（末尾 /）。CI から SITE_URL で指定する。無ければ GitHub Pages の既定 */
+const siteUrl = (process.env.SITE_URL ?? 'https://ptom76.github.io/wevocalsynth').replace(/\/?$/, '/')
+
 // https://vite.dev/config/
 export default defineConfig({
   // GitHub Pages ではリポジトリ名のサブパスで配信されるため、CI から BASE_PATH で指定する
@@ -26,6 +29,11 @@ export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(pkg.version), __APP_COMMIT__: JSON.stringify(commit) },
   plugins: [
     react(),
+    // OGP のメタタグは絶対 URL が要るので、index.html の %SITE_URL% を置き換える
+    {
+      name: 'site-url',
+      transformIndexHtml: (html) => html.replaceAll('%SITE_URL%', siteUrl),
+    },
     // 更新の通知で「どの版が来たか」を出すため、配信中の版を version.json に書く
     // （オフライン用のキャッシュには入れない＝ globPatterns に json を含めないので、いつもサーバーの最新を読める）
     {

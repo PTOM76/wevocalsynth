@@ -34,6 +34,7 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          SITE_URL: ${{ steps.pages.outputs.base_url }}/
       # 追加機能のモデルは sherpa-onnx の配布物から取る。毎回取らないようキャッシュする
       - uses: actions/cache@v4
         with:
