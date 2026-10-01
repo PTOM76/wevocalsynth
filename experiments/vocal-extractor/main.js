@@ -139,7 +139,10 @@ function wav(ch) {
   v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, n * ch.length * 2, true)
   let o = 44
   for (let i = 0; i < n; i++)
-    for (const c of ch) (v.setInt16(o, Math.max(-1, Math.min(1, c[i])) * 32767, true), (o += 2))
+    for (const c of ch) {
+      v.setInt16(o, Math.max(-1, Math.min(1, c[i])) * 32767, true)
+      o += 2
+    }
   return new Blob([buf], { type: 'audio/wav' })
 }
 
