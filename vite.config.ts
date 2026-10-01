@@ -18,8 +18,8 @@ function commitHash(): string {
 }
 const commit = commitHash()
 
-/** OGP に使う配信先の絶対 URL（末尾 /）。CI から SITE_URL で指定する。無ければ GitHub Pages の既定 */
-const siteUrl = (process.env.SITE_URL ?? 'https://ptom76.github.io/wevocalsynth').replace(/\/?$/, '/')
+/** OGP に使う配信先の絶対 URL（末尾 /）。CI から SITE_URL で指定する。無ければ公開中のドメイン */
+const siteUrl = (process.env.SITE_URL ?? 'https://wevocalsynth.pitan76.net').replace(/\/?$/, '/')
 
 // https://vite.dev/config/
 export default defineConfig({
