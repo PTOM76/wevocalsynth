@@ -11,6 +11,7 @@ import type { EditParams } from '../components/EditPanel'
 import type { useHistory } from './useHistory'
 import type { useTracks } from './useTracks'
 import type { useTask } from './useTask'
+import type { ProjectTempo } from '../project/projectFile'
 import { t } from '../i18n/i18n'
 
 interface Deps {
@@ -18,6 +19,7 @@ interface Deps {
   /** プロジェクト名を自分で変えたか（変えていなければ、書き出しの名前に _wevocal を付ける） */
   named: boolean
   params: EditParams
+  tempo: ProjectTempo
   history: ReturnType<typeof useHistory>
   tracks: ReturnType<typeof useTracks>
   selections: Range[]
@@ -49,7 +51,7 @@ export function useOutput(d: Deps) {
         overlay: tracks.overlay.has(tr.id),
       }))
       const active = Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId))
-      downloadBlob(saveProject({ fileName: d.fileName, named: d.named, params: d.params, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
+      downloadBlob(saveProject({ fileName: d.fileName, named: d.named, params: d.params, tempo: d.tempo, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
       d.notify(t('toast.saved'))
     })
 

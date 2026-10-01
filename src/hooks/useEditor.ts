@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { AUDIO_ACCEPT, decodeFile } from '../audio/decode'
-import { PROJECT_EXT, isProjectFile, loadProject, type Project } from '../project/projectFile'
+import { DEFAULT_TEMPO, PROJECT_EXT, isProjectFile, loadProject, type Project, type ProjectTempo } from '../project/projectFile'
 import { applyFormantCurve, applyGainCurve, applyPitchCurve, spliceProcessed } from '../audio/edit'
 import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
-import { analyzeF0, analyzeSpectrogram, type TempoCandidate } from '../dsp/engine'
+import { analyzeF0, analyzeSpectrogram } from '../dsp/engine'
 import { MODE_SETTINGS, detectMode, type Mode } from '../audio/detectMode'
 import type { EditParams } from '../components/EditPanel'
 import type { Source } from '../components/StatusBar'
@@ -56,12 +56,14 @@ function applyLabel(p: EditParams): string {
   return parts.join('・') || t('common.apply')
 }
 
-/** `onTempo` はテンポを解析できたときに呼ぶ（BPM・1拍目の位置を設定に入れる） */
-export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => void) {
+export function useEditor(settings: Settings) {
   // テンポの自動解析（ファイルを開いた直後）。openClip から最新の関数を呼べるよう ref にも持つ
   const tempo = useTempo()
-  const tempoRef = useRef({ tempo, onTempo })
-  tempoRef.current = { tempo, onTempo }
+  const tempoRef = useRef({ tempo })
+  tempoRef.current = { tempo }
+  // プロジェクトのテンポ（BPM・拍子・1拍目の位置）。プロジェクトファイルと自動保存に入る
+  const [projectTempo, setProjectTempoState] = useState<ProjectTempo>(DEFAULT_TEMPO)
+  const setProjectTempo = useCallback((patch: Partial<ProjectTempo>) => setProjectTempoState((p) => ({ ...p, ...patch })), [])
   // プロジェクト名。初めは開いたファイルの名前（拡張子を除く）で、変えられる。保存・書き出しのファイル名の初期値になる
   const [fileName, setFileName] = useState('')
   // プロジェクト名を自分で変えたか（変えていなければ、書き出しの名前に _wevocal を付ける）
@@ -188,6 +190,8 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
       // 拡張子は除く（以前のプロジェクトファイルは、拡張子付きの名前を持っていた）
       setFileName(name.replace(/\.[^.]+$/, ''))
       setNamed(!!project?.named)
+      // 古いプロジェクト（テンポを持たない）と新しい素材は既定のテンポから（新しい素材は下で解析する）
+      setProjectTempoState(project?.tempo ?? DEFAULT_TEMPO)
       // プロジェクトはトラックごとに。自動保存から戻すときは保存先の ID を引き継ぐ（保存し直さずに済む）
       const list = project
         ? project.tracks.map((tr, i) => ({ id: ids?.[i] || newTrackId(), name: tr.name, original: tr.original, clip: tr.edited }))
@@ -215,12 +219,12 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
       // 新しい素材ならボーカル／楽器を自動判定して初期値にする（プロジェクトは保存時の設定を使う）
       setAutoMode(null)
       tempoRef.current.tempo.reset()
-      // 新しい素材ならテンポを解析して、BPM と1拍目の位置を設定に入れる（プロジェクトは今の設定のまま）
+      // 新しい素材ならテンポを解析して、BPM と1拍目の位置をプロジェクトに入れる（プロジェクトは保存時のテンポのまま）
       if (!project && settings.autoTempo) {
         void tempoRef.current.tempo.analyze(
           clip,
           (best) => {
-            tempoRef.current.onTempo(best)
+            setProjectTempo({ bpm: best.bpm, beatOffset: best.offset })
             setToast({ severity: 'info', message: t('toast.tempoDetected', { bpm: best.bpm }) })
           },
           fail('toast.tempoFailed'),
@@ -237,7 +241,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
           .catch(() => {})
       }
     },
-    [history, tracks, lanes, gainCurve, formantCurve, pitchTarget, cmd, settings.initialMode, settings.autoTempo],
+    [history, tracks, lanes, gainCurve, formantCurve, pitchTarget, cmd, settings.initialMode, settings.autoTempo, setProjectTempo],
   )
 
   const loadFile = useCallback(
@@ -323,6 +327,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
     fileName,
     named,
     params,
+    tempo: projectTempo,
     history,
     tracks,
     selections,
@@ -363,7 +368,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   // 作業状態の自動保存と、起動時の復元
   useAutosave(
     settings.autoRestore,
-    { fileName, named, tracks: history.tracks, activeId: history.activeId, faders: tracks.faders, mix: tracks.mix, overlay: tracks.overlay },
+    { fileName, named, tempo: projectTempo, tracks: history.tracks, activeId: history.activeId, faders: tracks.faders, mix: tracks.mix, overlay: tracks.overlay },
     params,
     (project, ids) => {
       openClip(project.tracks[project.active].edited, project.fileName, project, ids)
@@ -422,7 +427,7 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
 
   return {
     // 素材と履歴
-    fileName, setProjectName: (name: string) => {
+    fileName, projectTempo, setProjectTempo, setProjectName: (name: string) => {
       if (!name.trim()) return
       setFileName(name.trim())
       setNamed(true)

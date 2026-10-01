@@ -29,12 +29,24 @@ export interface ProjectTrack {
   overlay?: boolean
 }
 
+/** プロジェクトのテンポ（拍の線・拍への吸着・ビブラートの速さなどに使う） */
+export interface ProjectTempo {
+  bpm: number
+  /** 1小節の拍数 */
+  beatsPerBar: number
+  /** 1拍目の位置（秒）。曲の頭に無音があるときに合わせる */
+  beatOffset: number
+}
+export const DEFAULT_TEMPO: ProjectTempo = { bpm: 120, beatsPerBar: 4, beatOffset: 0 }
+
 export interface Project {
   /** プロジェクト名 */
   fileName: string
   /** プロジェクト名を自分で変えたか（変えていなければ、書き出しの名前に _wevocal を付ける）。古いファイルには無い */
   named?: boolean
   params: EditParams
+  /** テンポ。古いファイルには無い（以前はアプリの設定に持っていた） */
+  tempo?: ProjectTempo
   tracks: ProjectTrack[]
   /** 編集していたトラックの位置 */
   active: number
@@ -47,6 +59,7 @@ interface Header {
   fileName: string
   named?: boolean
   params: EditParams
+  tempo?: ProjectTempo
   /** 版 2: トラックごとの名前。クリップは2つずつ（原音・加工後）並ぶ */
   tracks?: { name: string; volume?: number; pan?: number; mute?: boolean; solo?: boolean; overlay?: boolean }[]
   active?: number
@@ -98,6 +111,7 @@ export function saveProject(p: Project): Blob {
     fileName: p.fileName,
     named: p.named,
     params: p.params,
+    tempo: p.tempo,
     tracks: p.tracks.map((t) => ({ name: t.name, volume: t.volume, pan: t.pan, mute: t.mute, solo: t.solo, overlay: t.overlay })),
     active: p.active,
     clips: clips.map((c) => ({ sampleRate: c.sampleRate, channels: c.channels.length, length: c.channels[0].length })),
@@ -140,5 +154,5 @@ export async function loadProject(file: File): Promise<Project> {
     }),
   }))
   const tracks = names.map((name, i) => ({ name, original: clips[i * 2], edited: clips[i * 2 + 1], ...pickTrackState(infos?.[i]) }))
-  return { fileName: header.fileName, named: header.named, params: header.params, tracks, active: Math.min(header.active ?? 0, tracks.length - 1) }
+  return { fileName: header.fileName, named: header.named, params: header.params, tempo: header.tempo, tracks, active: Math.min(header.active ?? 0, tracks.length - 1) }
 }

@@ -1,6 +1,6 @@
 import type { Clip } from '../audio/types'
 import type { EditParams } from '../components/EditPanel'
-import type { Project } from './projectFile'
+import type { Project, ProjectTempo } from './projectFile'
 import { idbGet } from './idb'
 import type { AutosaveMessage } from './autosaveWorker'
 
@@ -19,6 +19,7 @@ export interface AutosaveMeta {
   fileName: string
   named?: boolean
   params: EditParams
+  tempo?: ProjectTempo
   /** トラックの並び。音声は trackKey(id) に置く */
   tracks?: { id: string; name: string; volume?: number; pan?: number; mute?: boolean; solo?: boolean; overlay?: boolean }[]
   active?: number
@@ -72,7 +73,7 @@ export async function loadAutosave(): Promise<{ project: Project; ids: string[] 
     )
     if (!tracks.every((t) => isClip(t.original) && isClip(t.edited))) return null
     return {
-      project: { fileName: meta.fileName, named: meta.named, params: meta.params, tracks: tracks as Project['tracks'], active: Math.min(meta.active ?? 0, tracks.length - 1) },
+      project: { fileName: meta.fileName, named: meta.named, params: meta.params, tempo: meta.tempo, tracks: tracks as Project['tracks'], active: Math.min(meta.active ?? 0, tracks.length - 1) },
       ids: meta.tracks.map((t) => t.id),
     }
   }

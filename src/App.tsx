@@ -60,7 +60,7 @@ export default function App() {
   const lang = resolveLang(settings.language)
   setLang(lang)
   // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
-  const ed = useEditor(settings, (c) => updateSettings({ bpm: c.bpm, beatOffset: c.offset }))
+  const ed = useEditor(settings)
   // 設定のテーマ（既定 / ライト / ダーク）を反映する
   const { setMode } = useColorScheme()
   useEffect(() => setMode(settings.theme), [settings.theme, setMode])
@@ -138,7 +138,8 @@ export default function App() {
 
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
   const panelsDisabled = !editing || !edited
-  const { showBeatGrid, bpm, beatsPerBar, beatOffset } = settings
+  const { showBeatGrid } = settings
+  const { bpm, beatsPerBar, beatOffset } = ed.projectTempo
   const beatGrid = useMemo(
     () => (showBeatGrid && bpm > 0 ? { bpm, beatsPerBar: Math.max(1, beatsPerBar), offset: beatOffset } : null),
     [showBeatGrid, bpm, beatsPerBar, beatOffset],
@@ -149,17 +150,17 @@ export default function App() {
 
   const tempoField = (fontSize?: number) => (
     <TempoField
-      bpm={settings.bpm}
+      bpm={bpm}
       candidates={ed.tempo.candidates}
       analyzing={ed.tempo.analyzing}
       disabled={!shown}
       fontSize={fontSize}
-      onChange={(bpm, offset) => updateSettings(offset === undefined ? { bpm } : { bpm, beatOffset: offset })}
+      onChange={(v, offset) => ed.setProjectTempo(offset === undefined ? { bpm: v } : { bpm: v, beatOffset: offset })}
       onAnalyze={() =>
         shown &&
         void ed.tempo.analyze(
           shown,
-          (c) => updateSettings({ bpm: c.bpm, beatOffset: c.offset }),
+          (c) => ed.setProjectTempo({ bpm: c.bpm, beatOffset: c.offset }),
           (e) => ed.setToast({ severity: 'error', message: t('toast.tempoFailed', { error: String(e) }) }),
         )
       }
@@ -433,11 +434,11 @@ export default function App() {
         onClose={() => setPitchDialog(null)}
         hasSelection={!!selection}
         selectionStart={selection ? selection.start : null}
-        bpm={settings.bpm}
-        beatOffset={settings.beatOffset}
+        bpm={bpm}
+        beatOffset={beatOffset}
         pitchTools={ed.pitchTools}
       />
-      <SynthDialog open={synthOpen} bpm={settings.bpm} onClose={() => setSynthOpen(false)} onCreate={ed.addSynth} />
+      <SynthDialog open={synthOpen} bpm={bpm} onClose={() => setSynthOpen(false)} onCreate={ed.addSynth} />
       <HistoryDialog
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
@@ -447,7 +448,10 @@ export default function App() {
       />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} onChange={updateSettings} />
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings}
+        onChange={updateSettings}
+        project={ed.fileName ? { name: ed.fileName, tempo: ed.projectTempo, onRename: ed.setProjectName, onTempoChange: ed.setProjectTempo } : null}
+      />
       {ed.dragOver && <DropOverlay />}
       {settings.showDebug && <DebugOverlay />}
       <UpdatePrompt />

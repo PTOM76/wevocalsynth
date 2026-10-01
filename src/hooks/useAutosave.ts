@@ -3,6 +3,7 @@ import type { Clip } from '../audio/types'
 import type { Track, TrackFader, TrackMix } from '../audio/tracks'
 import type { EditParams } from '../components/EditPanel'
 import type { Project } from '../project/projectFile'
+import type { ProjectTempo } from '../project/projectFile'
 import { clearAutosave, loadAutosave, removeTrackClips, saveMeta, saveTrackClip } from '../project/autosave'
 
 /** 編集が止まってから自動保存するまでの待ち時間（ミリ秒） */
@@ -34,7 +35,7 @@ function whenIdle(fn: () => void): () => void {
  */
 export function useAutosave(
   enabled: boolean,
-  state: { fileName: string; named: boolean; tracks: Track[]; activeId: string; faders: Record<string, TrackFader>; mix: Record<string, TrackMix>; overlay: ReadonlySet<string> },
+  state: { fileName: string; named: boolean; tempo: ProjectTempo; tracks: Track[]; activeId: string; faders: Record<string, TrackFader>; mix: Record<string, TrackMix>; overlay: ReadonlySet<string> },
   params: EditParams,
   onRestore: (project: Project, ids: string[]) => void,
   onError: (e: unknown) => void,
@@ -74,13 +75,14 @@ export function useAutosave(
     void clearAutosave()
   }, [enabled])
 
-  const { fileName, named, tracks, activeId, faders, mix, overlay } = state
+  const { fileName, named, tempo, tracks, activeId, faders, mix, overlay } = state
   /** トラックの並びとパラメータ・フェーダー・鳴らし方を保存する（小さいので、すぐ書いてよい） */
   const writeMeta = () =>
     saveMeta({
       fileName,
       named,
       params: latest.current.params,
+      tempo,
       tracks: tracks.map((t) => ({
         id: t.id,
         name: t.name,
@@ -146,5 +148,5 @@ export function useAutosave(
       }
     }, META_DELAY_MS)
     return () => clearTimeout(timer)
-  }, [enabled, tracks, fileName, named, activeId, faders, mix, overlay])
+  }, [enabled, tracks, fileName, named, tempo, activeId, faders, mix, overlay])
 }
