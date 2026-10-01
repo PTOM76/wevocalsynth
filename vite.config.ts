@@ -45,7 +45,8 @@ export default defineConfig({
             // ページを開く操作は対象外（追加機能のファイルだけを保存先から返す）
             urlPattern: ({ url, request }) => url.pathname.includes('/addons/') && request.mode !== 'navigate',
             handler: 'CacheFirst',
-            options: { cacheName: 'wevocalsynth-addons' },
+            // サーバーが付ける Vary（Origin / Accept-Encoding）で照合が外れないようにする
+            options: { cacheName: 'wevocalsynth-addons', matchOptions: { ignoreVary: true } },
           },
         ],
       },
