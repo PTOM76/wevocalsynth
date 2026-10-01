@@ -19,9 +19,12 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
   const [overlay, setOverlay] = useState<ReadonlySet<string>>(new Set())
   const active = tracks.find((tr) => tr.id === activeId) ?? null
 
-  /** 選んでいるトラックと一緒に鳴らす、ほかのトラックの音 */
+  /**
+   * 選んでいるトラックと一緒に再生する、ほかのトラック。鳴らさないもの（ミュート・ソロ）も含めて渡し、
+   * 再生中にミュート・ソロを切り替えたらすぐ反映できるようにする（`audible` で音量を 0 / 1 にする）
+   */
   const others = useMemo(
-    () => tracks.filter((tr) => tr.id !== activeId && isAudible(tr.id, mix, tracks)).map((tr) => ({ id: tr.id, clip: tr.clip })),
+    () => tracks.filter((tr) => tr.id !== activeId).map((tr) => ({ id: tr.id, clip: tr.clip, audible: isAudible(tr.id, mix, tracks) })),
     [tracks, activeId, mix],
   )
   /** 大きな波形の後ろに重ねる、ほかのトラックの音 */

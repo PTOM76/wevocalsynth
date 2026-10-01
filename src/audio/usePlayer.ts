@@ -6,6 +6,8 @@ import { clipDuration } from './types'
 /** 一緒に鳴らすトラック（id はレベルメーターの対応づけに使う） */
 export interface PlayTrack {
   id: string
+  /** 鳴らすか（ミュート・ソロ）。偽でも再生はしておき、音量 0 にする（再生中の切り替えをすぐ反映するため） */
+  audible: boolean
   clip: Clip
 }
 
@@ -55,7 +57,7 @@ const RAMP_SEC = 0.005
 
 /**
  * メモリ上のクリップを Web Audio で再生する。`others`（ほかのトラックのうち鳴らすもの）も同じ位置から一緒に鳴らす。
- * 再生位置・長さ・終わりは `clip` が基準。`muted` なら `clip` は鳴らさない（ほかのトラックのミュート・ソロで消すとき）。
+ * 再生位置・長さ・終わりは `clip` が基準。`muted` なら `clip` は鳴らさない（ミュート・ソロ。再生中に切り替えてもすぐ反映する）。
  * `liveGain` は適用前の音量で、再生中に変えてもすぐ反映する（`clip` の音だけに効く）。
  * `id` は `clip` のトラックの id。トラックごとと全体のレベルメーター用に、`analyser(id)` / `masterAnalysers()`（左・右）を返す
  */
@@ -68,6 +70,8 @@ export function usePlayer(
   fadersRef.current = faders
   /** トラックごとのフェーダーのノード（再生のたびに作る。動かしたらここへ値を入れる） */
   const faderNodes = useRef(new Map<string, { gain: GainNode; pan: StereoPannerNode }>())
+  /** トラックごとの「鳴らす / 鳴らさない」（音量 1 / 0）。ミュート・ソロを切り替えたらここを変える */
+  const muteNodes = useRef(new Map<string, GainNode>())
   const ctxRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
   /** 一緒に鳴らしているほかのトラックの音 */
@@ -104,6 +108,7 @@ export function usePlayer(
     extraRef.current = []
     analysersRef.current.clear()
     faderNodes.current.clear()
+    muteNodes.current.clear()
   }, [])
 
   const currentTime = useCallback(() => {
@@ -170,7 +175,6 @@ export function usePlayer(
       // 鳴らさないときも、再生位置と終わりの基準にするため音源は作る（音量 0 でつなぐ）
       const gain = ctx.createGain()
       gainRef.current = gain
-      if (muted) gain.gain.value = 0
       // 全体の出口（レベルメーター）。AudioContext ごとに1つ
       if (!masterRef.current || masterRef.current.context !== ctx) {
         masterRef.current = makeAnalyser(ctx)
@@ -193,7 +197,10 @@ export function usePlayer(
       const fader = { gain: ctx.createGain(), pan: makePanner(ctx) }
       setFaderNodes(fader, fadersRef.current[id] ?? DEFAULT_FADER, true)
       faderNodes.current.set(id, fader)
-      src.connect(gain).connect(panner).connect(fader.gain).connect(fader.pan).connect(meter).connect(master)
+      const mute = ctx.createGain()
+      mute.gain.value = muted ? 0 : 1
+      muteNodes.current.set(id, mute)
+      src.connect(gain).connect(panner).connect(fader.gain).connect(fader.pan).connect(mute).connect(meter).connect(master)
       src.onended = () => {
         sourceRef.current = null
         setPlaying(false)
@@ -214,12 +221,15 @@ export function usePlayer(
           const f = { gain: ctx.createGain(), pan: makePanner(ctx) }
           setFaderNodes(f, fadersRef.current[o.id] ?? DEFAULT_FADER, true)
           faderNodes.current.set(o.id, f)
-          e.connect(f.gain).connect(f.pan).connect(m).connect(master)
+          const mute = ctx.createGain()
+          mute.gain.value = o.audible ? 1 : 0
+          muteNodes.current.set(o.id, mute)
+          e.connect(f.gain).connect(f.pan).connect(mute).connect(m).connect(master)
           e.start(at, start, Math.min(end, clipDuration(o.clip)) - start)
           return e
         })
       clockRef.current = { ctxStart: at, offset: start, end }
-      if (!muted) scheduleGain()
+      scheduleGain()
       setPosition(start)
       setPlaying(true)
     },
@@ -234,8 +244,20 @@ export function usePlayer(
   // 再生中に適用前の音量が変わったら、すぐ反映する
   const gainKey = liveGain ? `${liveGain.db}:${liveGain.pan}:${liveGain.ranges.map((r) => `${r.start}-${r.end}`).join(',')}` : ''
   useEffect(() => {
-    if (!muted) scheduleGain()
-  }, [gainKey, muted, scheduleGain])
+    scheduleGain()
+  }, [gainKey, scheduleGain])
+
+  // 再生中にミュート・ソロを切り替えたら、すぐ反映する（途切れないよう少しだけならす）
+  const audibleKey = `${muted ? 0 : 1}|${others.map((o) => `${o.id}:${o.audible ? 1 : 0}`).join(',')}`
+  useEffect(() => {
+    const set = (trackId: string, on: boolean) => {
+      const n = muteNodes.current.get(trackId)
+      if (n) n.gain.setTargetAtTime(on ? 1 : 0, n.context.currentTime, 0.01)
+    }
+    set(id, !muted)
+    for (const o of others) set(o.id, o.audible)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audibleKey, id])
 
   const pause = useCallback(() => {
     const t = currentTime()
