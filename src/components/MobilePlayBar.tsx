@@ -1,4 +1,5 @@
-import { IconButton, Paper, Stack, Typography } from '@mui/material'
+import type { ReactNode } from 'react'
+import { Box, IconButton, Paper, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCirclePlay, faPause, faPlay, faRepeat, faStop } from '@fortawesome/free-solid-svg-icons'
 import { useT } from '../i18n/i18n'
@@ -16,6 +17,8 @@ interface Props {
   onStop: () => void
   onPlaySelection: () => void
   onLoop: () => void
+  /** 全体のレベルメーター（再生時間の下に置く） */
+  meter?: ReactNode
 }
 
 /** スマホ用: 画面下の再生バー（親指で押しやすい位置に大きめのボタンを置く）。画面の縦の並びの最後に置く */
@@ -40,9 +43,12 @@ export default function MobilePlayBar(p: Props) {
         <IconButton aria-label={t('play.loopPreview')} color={p.loopPlaying ? 'primary' : 'default'} onClick={p.onLoop}>
           <FontAwesomeIcon icon={faRepeat} />
         </IconButton>
-        <Typography variant="body2" sx={{ fontFamily: 'monospace', ml: 'auto' }}>
-          <LiveTime position={p.position} playing={p.playing} livePosition={p.livePosition} duration={p.duration} />
-        </Typography>
+        <Box sx={{ ml: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+            <LiveTime position={p.position} playing={p.playing} livePosition={p.livePosition} duration={p.duration} />
+          </Typography>
+          {p.meter}
+        </Box>
       </Stack>
     </Paper>
   )

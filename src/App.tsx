@@ -317,6 +317,7 @@ export default function App() {
                 onStop={playback.stop}
                 onPlaySelection={playback.playSelection}
                 onLoop={playback.toggleLoop}
+                meter={settings.showMeters && <LevelMeter source={player.masterAnalyser} width={96} height={4} label={t('meter.master')} />}
               />
             }
           />
