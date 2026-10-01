@@ -1,5 +1,5 @@
 # コーディング規約
-コードの書き方の決まり。どこに何を置くかは [ARCHITECTURE.md](ARCHITECTURE.md)、実装中に問題を踏んで決まったことは [DECISIONS.md](DECISIONS.md) を参照。
+コードの書き方の決まり。どこに何を置くかは [STRUCTURE.md](STRUCTURE.md)、実装中に問題を踏んで決まったことは [DECISIONS.md](DECISIONS.md) を参照。
 
 関連: [決定事項](DECISIONS.md)、[アーキテクチャ](ARCHITECTURE.md)
 

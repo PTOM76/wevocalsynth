@@ -63,6 +63,10 @@ npm run dev
 | 決定事項 | [docs/DECISIONS.md](docs/DECISIONS.md) |
 | コーディング規約 | [docs/CODING.md](docs/CODING.md) |
 | アーキテクチャ設計 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| ファイル構成 | [docs/STRUCTURE.md](docs/STRUCTURE.md) |
+| 機能の仕組み | [docs/INTERNALS.md](docs/INTERNALS.md) |
+| アルゴリズム | [docs/ALGORITHM.md](docs/ALGORITHM.md) |
+| ボーカル抽出 | [docs/EXTRACTOR.md](docs/EXTRACTOR.md) |
 | ドキュメントの書き方 | [docs/WRITING.md](docs/WRITING.md) |
 
 ## License
