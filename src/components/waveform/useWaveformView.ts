@@ -75,6 +75,8 @@ export function useWaveformView(duration: number, livePosition: () => number, pl
     /** 表示開始位置を変える（スクロールバー用） */
     scrollTo: (start: number) => setView((v) => fit(start, v.dur)),
     showAll: () => setView({ start: 0, dur: duration }),
+    /** 時刻 `t` が画面の外なら、見える位置まで表示範囲を動かす（矢印キーで再生位置を動かしたときなど） */
+    reveal: (t: number) => setView((v) => (t < v.start || t > v.start + v.dur ? fit(t - v.dur * 0.1, v.dur) : v)),
     zoomed: view.dur < duration - 1e-9,
   }
 }

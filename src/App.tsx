@@ -80,6 +80,12 @@ export default function App() {
   const viewCtl = useWaveformView(ed.duration, player.livePosition, player.playing)
   const [pitchPercent, setPitchPercent] = usePersistentNumber('wevocalsynth.pitchPercent', 40)
   const { view } = viewCtl
+  // 止まっているときに再生位置を動かしたら（矢印キーなど）、画面の外なら見える位置まで表示範囲を動かす
+  const { reveal } = viewCtl
+  useEffect(() => {
+    if (!player.playing) reveal(player.position)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player.position])
   const center = view.start + view.dur / 2
 
   const { menus, mobileMenus, context } = useAppMenus({

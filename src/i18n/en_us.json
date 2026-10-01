@@ -375,6 +375,8 @@
   "synth.hint": "The created audio is added as a new track. Use it as material for pitch, length and formant editing",
   "synth.formant": "Formant",
   "synth.volume": "Volume",
+  "shortcuts.seek": "Move the playhead to the previous / next beat (1 s without beat lines, 0.1 s with Shift)",
+  "shortcuts.seekEdge": "Move the playhead to the start / end",
   "settings.title": "Settings",
   "settings.autoRestore": "Autosave work and restore it next time",
   "settings.autoRestoreHelp": "Audio is stored only in this browser and never uploaded",

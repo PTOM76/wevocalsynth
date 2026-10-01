@@ -4,6 +4,8 @@ import { useT, type MessageKey } from '../i18n/i18n'
 /** [キー（文字列または訳文キー）, 説明の訳文キー] */
 const SHORTCUTS: [string | MessageKey, MessageKey][] = [
   ['Space', 'shortcuts.playPause'],
+  ['← / → (Shift)', 'shortcuts.seek'],
+  ['Home / End', 'shortcuts.seekEdge'],
   ['Ctrl+Z / Ctrl+Y', 'shortcuts.undoRedo'],
   ['Ctrl+X / C / V', 'shortcuts.clipboard'],
   ['Ctrl+A / Esc', 'shortcuts.selectAll'],

@@ -16,11 +16,15 @@ interface Handlers {
   exportAudio: () => void
   /** ピッチ帯で曲線を編集できるときだけ渡す: ↑↓ = 半音、Shift+↑↓ = 0.1 半音 */
   pitchShift?: (semitones: number) => void
+  /** ← / →: 再生位置を前後に動かす（`fine` は Shift を押しているとき）。Home / End: 先頭・末尾へ */
+  seekBy: (dir: -1 | 1, fine: boolean) => void
+  seekEdge: (edge: 'start' | 'end') => void
 }
 
 /**
  * キーボード操作: Space = 再生/一時停止、Ctrl+Z / Ctrl+Y（Ctrl+Shift+Z）= 元に戻す/やり直す、
  * Ctrl+X/C/V = 切り取り/コピー/貼り付け、Ctrl+A / Esc = すべて選択 / 選択解除、
+ * ← / → = 再生位置を1拍（拍の線が無ければ1秒、Shift で 0.1 秒）動かす、Home / End = 先頭・末尾へ、
  * Ctrl+O = 開く、Ctrl+S / Ctrl+Shift+S = 保存と書き出し（割り当ては設定）、Ctrl+E = 書き出し。入力欄にフォーカスがあるときは何もしない。
  */
 export function useShortcuts(handlers: Handlers) {
@@ -46,7 +50,14 @@ export function useShortcuts(handlers: Handlers) {
         s: e.shiftKey ? h.saveAlt : h.save,
         e: h.exportAudio,
       }
-      const plain: Record<string, (() => void) | undefined> = { Space: h.togglePlay, Escape: h.clearSelection }
+      const plain: Record<string, (() => void) | undefined> = {
+        Space: h.togglePlay,
+        Escape: h.clearSelection,
+        ArrowLeft: () => h.seekBy(-1, e.shiftKey),
+        ArrowRight: () => h.seekBy(1, e.shiftKey),
+        Home: () => h.seekEdge('start'),
+        End: () => h.seekEdge('end'),
+      }
       if (h.pitchShift) {
         const step = e.shiftKey ? 0.1 : 1
         const shift = h.pitchShift

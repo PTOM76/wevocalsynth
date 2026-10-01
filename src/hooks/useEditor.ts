@@ -366,7 +366,29 @@ export function useEditor(settings: Settings, onTempo: (c: TempoCandidate) => vo
   const selectAll = () => edited && setSelections([{ start: 0, end: clipDuration(edited) }])
   const clearSelection = () => setSelections([])
 
+  /**
+   * 再生位置を前後に動かす（矢印キー）。拍の線を出していれば前後の拍の線へ、出していなければ1秒。`fine` なら 0.1 秒。
+   * 再生中なら、動かした位置から続けて鳴らす（player.seek）
+   */
+  const seekBy = (dir: -1 | 1, fine: boolean) => {
+    if (!shown) return
+    const pos = player.livePosition()
+    let t: number
+    if (fine) t = pos + dir * 0.1
+    else if (settings.showBeatGrid && settings.bpm > 0) {
+      const beat = 60 / settings.bpm
+      const k = (pos - settings.beatOffset) / beat
+      // 今の位置がちょうど拍の線の上なら、隣の線へ
+      const next = dir > 0 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1
+      t = settings.beatOffset + next * beat
+    } else t = pos + dir
+    player.seek(Math.max(0, Math.min(duration, t)))
+  }
+  const seekEdge = (edge: 'start' | 'end') => shown && player.seek(edge === 'start' ? 0 : duration)
+
   useShortcuts({
+    seekBy,
+    seekEdge,
     togglePlay: playback.togglePlay,
     undo: history.undo,
     redo: history.redo,
