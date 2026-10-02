@@ -166,6 +166,46 @@ fn transient_sharpness() {
     assert!(hpss > pv + 0.2, "pv {pv} hpss {hpss}");
 }
 
+/// 立ち上がりの時刻: 続けて鳴る短い音（8 回/秒）を 1.5 倍に伸ばし、各音のピークが元の対応どおりの時刻（入力の時刻 × 1.5）から
+/// ずれないこと。ずれが溜まっていかないこと（以前の Phase Vocoder v2 は、ずれを後から取り戻す形で、続くドラムがだんだんずれた）
+#[test]
+fn transient_timing() {
+    let sr = 48000.0;
+    let period = sr as usize / 8;
+    let x: Vec<f32> = (0..(sr * 3.0) as usize)
+        .map(|i| {
+            let t = (i % period) as f32 / sr;
+            (2.0 * std::f32::consts::PI * 2000.0 * t).sin() * (-t * 300.0).exp() * 0.8
+        })
+        .collect();
+    let alpha = 1.5;
+    // 方式ごとの（最大のずれ、ずれのばらつき = 最大 - 最小）
+    let mut results = Vec::new();
+    for algo in [Algorithm::PhaseVocoder, Algorithm::PhaseVocoder2, Algorithm::Hpss] {
+        let y = &run(&[&x], sr, 0.0, alpha, algo)[0];
+        let (mut worst, mut lo, mut hi) = (0.0f32, f32::MAX, f32::MIN);
+        // 先頭と末尾の音は端の扱いで崩れやすいので除く
+        for j in 1..(x.len() / period) - 1 {
+            let expect = (j * period) as f64 * alpha;
+            let span = (period as f64 * alpha * 0.4) as usize;
+            let (a, b) = (expect as usize - span, (expect as usize + span).min(y.len()));
+            let peak = (a..b).max_by(|&p, &q| y[p].abs().total_cmp(&y[q].abs())).unwrap();
+            // 減衰音のピークは立ち上がりの少し後（2kHz の 1/4 周期ほど）
+            let err = (peak as f64 - expect) as f32 / sr * 1000.0;
+            worst = worst.max(err.abs());
+            lo = lo.min(err);
+            hi = hi.max(err);
+        }
+        println!("{algo:?}: worst {worst:.1}ms, spread {:.1}ms", hi - lo);
+        results.push((worst, hi - lo));
+    }
+    // Phase Vocoder は立ち上がりがにじんでピークの位置が定まらない。v2・HPSS は元の時刻からずれず、ばらつきも小さいこと
+    // （2026-10-02 時点: v2 は最大 0.1ms、HPSS は最大 2.2ms）
+    for (i, &(worst, spread)) in results.iter().enumerate().skip(1) {
+        assert!(worst < 5.0 && spread < 5.0, "algo {i}: worst {worst} spread {spread}");
+    }
+}
+
 /// HPSS の分離: 伸びる成分と打つ成分を足すと元に戻ること。持続音は伸びる成分、短い減衰音は打つ成分に多く入ること
 #[test]
 fn hpss_separation() {

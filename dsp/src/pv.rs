@@ -156,40 +156,101 @@ fn detect_onsets(channels: &[&[f32]], fft: &Fft, window: &[f32], n: usize, hop: 
     let mean = flux.iter().sum::<f32>() / flux.len() as f32;
     let sd = (flux.iter().map(|f| (f - mean) * (f - mean)).sum::<f32>() / flux.len() as f32).sqrt();
     let th = mean + ONSET_SIGMA * sd;
+    // フラックスが最大になるフレームは、立ち上がりが窓のどこにあるかで前後に 2 フレームほどぶれるので、
+    // 窓の範囲の中で、短い区間（32 サンプル）ごとの音量が最も増えた所を立ち上がりの位置にする
+    const BLOCK: usize = 32;
+    let energy = |a: usize| (a..(a + BLOCK).min(len)).map(|i| channels.iter().map(|c| c[i] * c[i]).sum::<f32>()).sum::<f32>();
     (1..flux.len() - 1)
         .filter(|&k| flux[k] > th && flux[k] >= flux[k - 1] && flux[k] > flux[k + 1])
-        // 増え方が最大になるのは、立ち上がりが窓の中ほどに来たフレーム
-        .map(|k| k * hop + n / 2)
+        .map(|k| {
+            let (from, to) = ((k * hop).saturating_sub(n / 2), (k * hop + n).min(len.saturating_sub(BLOCK)));
+            let mut best = (k * hop + n / 2, f32::MIN);
+            let mut prev = energy(from.saturating_sub(BLOCK));
+            let mut a = from;
+            while a < to {
+                let e = energy(a);
+                if e - prev > best.1 {
+                    best = (a, e - prev);
+                }
+                prev = e;
+                a += BLOCK;
+            }
+            best.0
+        })
         .collect()
 }
 
-/// 立ち上がりのまわりでは入力も合成ホップと同じ幅で進め（伸ばさない）、ずれた分はまわりの部分で取り戻す。
-/// 窓が立ち上がりを含むフレーム（開始位置が 立ち上がり - n 〜 立ち上がり + n/4）を立ち上がりの区間とし、
-/// 区間に入る最初のフレームで位相を入力に戻す（`reset`）
-fn keep_transients(positions: &mut [usize], reset: &mut [bool], onsets: &[usize], n: usize, hs: usize, last_pos: usize) {
-    if onsets.is_empty() || positions.len() < 2 {
+/// 立ち上がりのまわりでは入力も合成ホップと同じ幅で進める（伸ばさない）。
+/// 各立ち上がりは元の対応どおりの出力時刻に置き（窓の中ほどに立ち上がりが来るフレームを、元の対応で決まるフレームに固定する）、
+/// その前後 `ZONE_BEFORE` / `ZONE_AFTER` フレームを等倍で進める。区間と区間の間は、端どうしを直線でつなぐ。
+/// 立ち上がりの時刻を固定するので、ずれは溜まらない（ずれを後から少しずつ取り戻す形にすると、続けて鳴るドラムがだんだんずれた）。
+/// 区間の最初のフレームで位相を入力に戻す（`reset`）
+fn keep_transients(positions: &mut [usize], reset: &mut [bool], onsets: &[usize], map: &TimeMap, n: usize, hs: usize, last_pos: usize) {
+    /// 立ち上がりのフレームの前後で等倍にするフレーム数（窓が立ち上がりを含むのは、前後 n / hs / 2 フレームほど）
+    const ZONE_BEFORE: usize = 2;
+    const ZONE_AFTER: usize = 2;
+    let frames = positions.len();
+    if onsets.is_empty() || frames < 2 {
         return;
     }
-    let in_zone = |p: f64| onsets.iter().any(|&o| p > o as f64 - n as f64 && p < o as f64 + n as f64 / 4.0);
     let orig: Vec<f64> = positions.iter().map(|&p| p as f64).collect();
-    let mut cur = orig[0];
-    let mut was_in = false;
-    for k in 1..positions.len() {
-        let step = orig[k] - orig[k - 1];
-        // 元の対応からのずれ（正なら先に進みすぎ）
-        let debt = cur - orig[k - 1];
-        let zone = in_zone(cur);
-        let next = if zone {
-            cur + hs as f64
-        } else {
-            // 区間の外では、ずれを 1 フレームあたり元の進み幅の半分までずつ取り戻す
-            cur + (step - debt.clamp(-step * 0.5, step * 0.5)).max(0.0)
-        };
-        cur = next.clamp(0.0, last_pos as f64);
-        positions[k] = cur.round() as usize;
-        let now_in = in_zone(cur);
-        reset[k] = now_in && !was_in;
-        was_in = now_in;
+    // 入力位置 `x` が来る出力位置（元の対応 `map` を逆にたどる。単調増加なので二分探索）
+    let output_of = |x: f64| {
+        let (mut lo, mut hi) = (0.0f64, map.out_len as f64);
+        for _ in 0..48 {
+            let mid = (lo + hi) / 2.0;
+            if map.input_at(mid) < x { lo = mid } else { hi = mid }
+        }
+        lo
+    };
+    // 立ち上がりごとの区間（フレーム番号の範囲と、区間の最初のフレームの入力位置）。前の区間と重なる・追い越すものは使わない
+    let mut zones: Vec<(usize, usize, f64)> = Vec::new();
+    for &o in onsets {
+        // 立ち上がりが出力で来るべき時刻に、窓の中ほどが来るフレーム。窓の中ほどと立ち上がりの差の分だけ、入力の位置もずらす
+        let t = output_of(o as f64);
+        let k = ((t - n as f64 / 2.0) / hs as f64).round().max(0.0) as usize;
+        if k < ZONE_BEFORE || k + ZONE_AFTER >= frames {
+            continue;
+        }
+        let target = o as f64 - (t - (k * hs) as f64);
+        let (k0, k1) = (k - ZONE_BEFORE, k + ZONE_AFTER);
+        let p0 = target - (ZONE_BEFORE * hs) as f64;
+        let p1 = p0 + ((k1 - k0) * hs) as f64;
+        if p0 < 0.0 || p1 > last_pos as f64 {
+            continue;
+        }
+        if let Some(&(prev_k0, prev_k1, prev_p0)) = zones.last() {
+            let prev_p1 = prev_p0 + ((prev_k1 - prev_k0) * hs) as f64;
+            // 区間どうしが重ならず、区間の間で入力が戻らない（単調）こと
+            if k0 <= prev_k1 || p0 < prev_p1 {
+                continue;
+            }
+        }
+        zones.push((k0, k1, p0));
+    }
+    if zones.is_empty() {
+        return;
+    }
+    // 区間の中は等倍、区間の間は前の区間の終わりと次の区間の始まりを直線でつなぐ
+    let mut anchor_k = 0usize;
+    let mut anchor_p = orig[0];
+    for &(k0, k1, p0) in &zones {
+        for k in anchor_k + 1..k0 {
+            let g = (k - anchor_k) as f64 / (k0 - anchor_k) as f64;
+            positions[k] = (anchor_p + (p0 - anchor_p) * g).round() as usize;
+        }
+        for k in k0..=k1 {
+            positions[k] = (p0 + ((k - k0) * hs) as f64).round() as usize;
+        }
+        reset[k0] = true;
+        anchor_k = k1;
+        anchor_p = p0 + ((k1 - k0) * hs) as f64;
+    }
+    // 最後の区間の後は、元の対応の最後のフレームへ直線でつなぐ
+    let last = frames - 1;
+    for k in anchor_k + 1..=last {
+        let g = (k - anchor_k) as f64 / (last - anchor_k).max(1) as f64;
+        positions[k] = (anchor_p + (orig[last] - anchor_p) * g).round() as usize;
     }
 }
 
@@ -251,7 +312,7 @@ fn stretch_map_with(
     let mut reset = vec![false; frames];
     if transients {
         let onsets = detect_onsets(channels, &fft, &window, n, hs);
-        keep_transients(&mut positions, &mut reset, &onsets, n, hs, last_pos as usize);
+        keep_transients(&mut positions, &mut reset, &onsets, map, n, hs, last_pos as usize);
     }
     let pos_of = |k: usize| positions[k];
 
