@@ -57,6 +57,8 @@
   "edit.reverse": "역재생",
   "edit.selectAll": "모두 선택",
   "edit.clearSelection": "선택 해제",
+  "ruler.playFrom": "여기부터 재생",
+  "ruler.seek": "재생 위치를 여기로",
   "marker.add": "마커 추가",
   "marker.rename": "마커 이름 변경…",
   "marker.remove": "마커 삭제",

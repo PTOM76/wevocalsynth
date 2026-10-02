@@ -57,6 +57,8 @@
   "edit.reverse": "反转",
   "edit.selectAll": "全选",
   "edit.clearSelection": "取消选择",
+  "ruler.playFrom": "从此处播放",
+  "ruler.seek": "将播放位置移到此处",
   "marker.add": "添加标记",
   "marker.rename": "重命名标记…",
   "marker.remove": "删除标记",

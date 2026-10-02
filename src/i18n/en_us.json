@@ -57,6 +57,8 @@
   "edit.reverse": "Reverse",
   "edit.selectAll": "Select all",
   "edit.clearSelection": "Clear selection",
+  "ruler.playFrom": "Play from here",
+  "ruler.seek": "Move playhead here",
   "marker.add": "Add marker",
   "marker.rename": "Rename marker…",
   "marker.remove": "Delete marker",

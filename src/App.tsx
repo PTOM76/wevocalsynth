@@ -77,8 +77,9 @@ export default function App() {
   const theme = useTheme()
   // 大きめのスマホを横向きにすると幅が md を超えるので、横向きのスマホもスマホの配置にする
   const mobile = useMediaQuery(`${theme.breakpoints.down('md').replace('@media ', '')}, ${LANDSCAPE_PHONE}`)
-  // ruler: 目盛りの上で開いたとき（その位置と、そこにあるマーカー）
-  const [contextPos, setContextPos] = useState<{ x: number; y: number; ruler?: { time: number; markerId: string | null } } | null>(null)
+  const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null)
+  // 目盛りの上で開いたとき（その位置と、そこにあるマーカー）。閉じるアニメーション中に中身が変わらないよう、閉じても残す
+  const [rulerAt, setRulerAt] = useState<{ time: number; markerId: string | null } | null>(null)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   // 設定を開いたまま、もう一度「設定」を押したら、別の窓で開いている設定画面を手前に出す
@@ -249,11 +250,16 @@ export default function App() {
   const onWaveSelections = useStableFn((rs: Range[]) => editing && ed.setSelections(rs))
   const onWaveStretch = useStableFn(ed.stretchRange)
   const onWaveRetime = useStableFn(ed.retime)
-  const onWaveContext = useStableFn((x: number, y: number, ruler?: { time: number; markerId: string | null }) => setContextPos({ x, y, ruler }))
-  // 目盛りの上の右クリックメニュー（その位置へのマーカーの追加と、そこにあるマーカーの名前の変更・削除）
-  const rulerAt = contextPos?.ruler
+  const onWaveContext = useStableFn((x: number, y: number, ruler?: { time: number; markerId: string | null }) => {
+    setRulerAt(ruler ?? null)
+    setContextPos({ x, y })
+  })
+  // 目盛りの上の右クリックメニュー（その位置からの再生・マーカーの追加と、そこにあるマーカーの名前の変更・削除）
   const rulerMenu: MenuEntry[] = rulerAt
     ? [
+        { label: t('ruler.playFrom'), onClick: () => playback.playFrom(rulerAt.time) },
+        { label: t('ruler.seek'), onClick: () => onWaveSeek(rulerAt.time) },
+        { divider: true },
         { label: t('marker.add'), onClick: () => ed.markers.add(rulerAt.time) },
         { label: t('marker.rename'), disabled: !rulerAt.markerId, onClick: () => setRenamingMarker(rulerAt.markerId) },
         { label: t('marker.remove'), disabled: !rulerAt.markerId, onClick: () => rulerAt.markerId && ed.markers.remove(rulerAt.markerId) },
