@@ -41,6 +41,7 @@
 | フェーダー（音量 dB・パン） | `useTracks` | できない | する |
 | ミュート・ソロ・重ねる表示 | `useTracks` | できない | する |
 
+- フェーダー・鳴らし方・重ねる表示は `TrackSettings`（`audio/tracks.ts`）にまとめる。保存するときの形（`StoredTrackSettings`。古いファイルと同じく volume・pan・invert・mute・solo・overlay を平らに並べる）との変換は `toStoredSettings`・`fromStoredSettings`・`pickStoredSettings` だけで行い、プロジェクトファイル・自動保存・開き直したときの復元はどれもこれを通す。項目を足すときは `tracks.ts` だけを直す
 - 履歴は1本で、各段は「トラック id と差分」か「トラックの一覧」。元に戻すと、変わったトラックに切り替わる（`audio/tracks.ts`、`hooks/useHistory.ts`）
 - トラックを増やす操作: 複製、ファイルの追加、ボーカルと伴奏に分ける（`separateBoth`、推論は1回）、統合（`mixClips`、一番上のトラックのサンプルレートに合わせる）、音声の作成（`audio/synth.ts`）
 - トラックの欄（`components/tracks/TrackPanel`）: 2本以上のときだけ出す。広げると波形付きの一覧（小さな波形は大きな波形と同じ表示範囲）、折りたたむとタブ

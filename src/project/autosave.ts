@@ -1,4 +1,5 @@
 import type { Clip } from '../audio/types'
+import { pickStoredSettings, type StoredTrackSettings } from '../audio/tracks'
 import type { EditParams } from '../components/EditPanel'
 import type { Project, ProjectTempo } from './projectFile'
 import { idbGet } from './idb'
@@ -22,7 +23,7 @@ export interface AutosaveMeta {
   params: EditParams
   tempo?: ProjectTempo
   /** トラックの並び。音声は trackKey(id) に置く */
-  tracks?: { id: string; name: string; volume?: number; pan?: number; invert?: boolean; mute?: boolean; solo?: boolean; overlay?: boolean }[]
+  tracks?: ({ id: string; name: string } & StoredTrackSettings)[]
   active?: number
 }
 
@@ -132,12 +133,7 @@ export async function loadAutosave(): Promise<{ project: Project; ids: string[] 
     const tracks = await Promise.all(
       meta.tracks.map(async (t) => ({
         name: t.name,
-        volume: t.volume,
-        pan: t.pan,
-        invert: t.invert,
-        mute: t.mute,
-        solo: t.solo,
-        overlay: t.overlay,
+        ...pickStoredSettings(t),
         original: await readClip(trackKey(t.id, 'original')),
         edited: await readClip(trackKey(t.id, 'edited')),
       })),

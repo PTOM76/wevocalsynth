@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Clip } from '../audio/types'
-import type { Track, TrackFader, TrackMix } from '../audio/tracks'
+import { fromStoredSettings, toStoredSettings, type Track, type TrackSettings } from '../audio/tracks'
 import type { EditParams } from '../components/EditPanel'
 import type { Project } from '../project/projectFile'
 import type { ProjectTempo } from '../project/projectFile'
@@ -35,7 +35,8 @@ function whenIdle(fn: () => void): () => void {
  */
 export function useAutosave(
   enabled: boolean,
-  state: { fileName: string; named: boolean; tempo: ProjectTempo; tracks: Track[]; activeId: string; faders: Record<string, TrackFader>; mix: Record<string, TrackMix>; overlay: ReadonlySet<string> },
+  /** `settings` はトラックごとの音声以外の状態（フェーダー・鳴らし方・重ねる表示。useTracks の settings） */
+  state: { fileName: string; named: boolean; tempo: ProjectTempo; tracks: Track[]; activeId: string; settings: Record<string, TrackSettings> },
   params: EditParams,
   onRestore: (project: Project, ids: string[]) => void,
   onError: (e: unknown) => void,
@@ -78,7 +79,7 @@ export function useAutosave(
     void clearAutosave()
   }, [enabled])
 
-  const { fileName, named, tempo, tracks, activeId, faders, mix, overlay } = state
+  const { fileName, named, tempo, tracks, activeId, settings } = state
   /** トラックの並びとパラメータ・フェーダー・鳴らし方を保存する（小さいので、すぐ書いてよい） */
   const writeMeta = () =>
     saveMeta({
@@ -86,16 +87,7 @@ export function useAutosave(
       named,
       params: latest.current.params,
       tempo,
-      tracks: tracks.map((t) => ({
-        id: t.id,
-        name: t.name,
-        volume: faders[t.id]?.db,
-        pan: faders[t.id]?.pan,
-        invert: faders[t.id]?.invert,
-        mute: mix[t.id]?.mute,
-        solo: mix[t.id]?.solo,
-        overlay: overlay.has(t.id),
-      })),
+      tracks: tracks.map((t) => ({ id: t.id, name: t.name, ...toStoredSettings(settings[t.id] ?? fromStoredSettings(undefined)) })),
       active: Math.max(0, tracks.findIndex((t) => t.id === activeId)),
     })
   const writeMetaRef = useRef(writeMeta)
@@ -152,5 +144,5 @@ export function useAutosave(
       }
     }, META_DELAY_MS)
     return () => clearTimeout(timer)
-  }, [enabled, tracks, fileName, named, tempo, activeId, faders, mix, overlay])
+  }, [enabled, tracks, fileName, named, tempo, activeId, settings])
 }

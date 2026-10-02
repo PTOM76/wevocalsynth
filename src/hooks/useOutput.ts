@@ -2,7 +2,7 @@ import type { Clip, Range } from '../audio/types'
 import { applyFader } from '../audio/edit'
 import { sliceRanges } from '../audio/multiRange'
 import { mixClips } from '../audio/mix'
-import { isAudible } from '../audio/tracks'
+import { isAudible, toStoredSettings } from '../audio/tracks'
 import { EXPORT_EXT, downloadBlob, exportAudio } from 'wevocal-lib'
 import { PROJECT_EXT, saveProject } from '../project/projectFile'
 import type { ExportSettings } from '../components/ExportDialog'
@@ -43,12 +43,7 @@ export function useOutput(d: Deps) {
         name: tr.name,
         original: tr.original,
         edited: tr.clip,
-        volume: tracks.faderOf(tr.id).db,
-        pan: tracks.faderOf(tr.id).pan,
-        invert: tracks.faderOf(tr.id).invert,
-        mute: tracks.mix[tr.id]?.mute,
-        solo: tracks.mix[tr.id]?.solo,
-        overlay: tracks.overlay.has(tr.id),
+        ...toStoredSettings(tracks.settingsOf(tr.id)),
       }))
       const active = Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId))
       downloadBlob(saveProject({ fileName: d.fileName, named: d.named, params: d.params, tempo: d.tempo, tracks: list, active }), `${baseName}${PROJECT_EXT}`)

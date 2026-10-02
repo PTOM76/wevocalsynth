@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Clip } from '../audio/types'
-import { DEFAULT_FADER, DEFAULT_MIX, isAudible, makeTrack, type Track, type TrackFader, type TrackMix } from '../audio/tracks'
+import { DEFAULT_FADER, DEFAULT_MIX, isAudible, makeTrack, type Track, type TrackFader, type TrackMix, type TrackSettings } from '../audio/tracks'
 import { mixClips } from '../audio/mix'
 import type { useHistory } from './useHistory'
 import { t } from '../i18n/i18n'
@@ -110,6 +110,16 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
   /** 複数選んだトラックを統合する */
   const mergeMany = (ids: string[]) => merge(ids, t('track.mergeSelected'))
 
+  /** トラック `id` の、音声以外の状態（保存するもの）をまとめて取り出す */
+  const settingsOf = (id: string): TrackSettings => ({ fader: faderOf(id), mix: mix[id] ?? DEFAULT_MIX, overlay: overlay.has(id) })
+  /** 全トラックの `settingsOf`（自動保存などが、変わったかを1つの値で見られるように） */
+  const settings = useMemo(
+    () => Object.fromEntries(tracks.map((tr) => [tr.id, settingsOf(tr.id)])) as Record<string, TrackSettings>,
+    // settingsOf はこの3つと tracks だけで決まる
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tracks, faders, mix, overlay],
+  )
+
   const setTrackMix = (id: string, patch: Partial<TrackMix>) => setMix((m) => ({ ...m, [id]: { ...(m[id] ?? DEFAULT_MIX), ...patch } }))
 
   return {
@@ -147,11 +157,14 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     faders,
     faderOf,
     setFader: (id: string, patch: Partial<TrackFader>) => setFaders((f) => ({ ...f, [id]: { ...(f[id] ?? DEFAULT_FADER), ...patch } })),
-    /** ファイルを開き直したときに、フェーダー・鳴らし方・重ねる表示を `initial`（プロジェクトに保存した値）にする */
-    resetMix: (initial: { faders?: Record<string, TrackFader>; mix?: Record<string, TrackMix>; overlay?: string[] } = {}) => {
-      setMix(initial.mix ?? {})
-      setOverlay(new Set(initial.overlay ?? []))
-      setFaders(initial.faders ?? {})
+    settingsOf,
+    settings,
+    /** ファイルを開き直したときに、トラックごとの状態を `initial`（保存した値。トラック id ごと）にする。無いトラックは既定値 */
+    restoreSettings: (initial: Record<string, TrackSettings> = {}) => {
+      const entries = Object.entries(initial)
+      setFaders(Object.fromEntries(entries.map(([id, s]) => [id, s.fader])))
+      setMix(Object.fromEntries(entries.map(([id, s]) => [id, s.mix])))
+      setOverlay(new Set(entries.filter(([, s]) => s.overlay).map(([id]) => id)))
     },
   }
 }

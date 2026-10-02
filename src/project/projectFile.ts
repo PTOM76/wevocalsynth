@@ -1,4 +1,5 @@
 import type { Clip } from '../audio/types'
+import { pickStoredSettings, type StoredTrackSettings } from '../audio/tracks'
 import type { EditParams } from '../components/EditPanel'
 import { readFile } from 'wevocal-lib'
 import { t } from '../i18n/i18n'
@@ -17,19 +18,11 @@ const MAGIC = 'WVSP'
 const VERSION = 2
 
 /** プロジェクトの1トラック */
-export interface ProjectTrack {
+/** プロジェクトの1トラック。フェーダー・鳴らし方・重ねる表示（`StoredTrackSettings`）は古いファイルには無い */
+export interface ProjectTrack extends StoredTrackSettings {
   name: string
   original: Clip
   edited: Clip
-  /** フェーダー（音量 dB・パン）。古いファイルには無い */
-  volume?: number
-  pan?: number
-  /** 位相の反転。古いファイルには無い */
-  invert?: boolean
-  /** 鳴らし方と、大きな波形の後ろに重ねるか。古いファイルには無い */
-  mute?: boolean
-  solo?: boolean
-  overlay?: boolean
 }
 
 /** プロジェクトのテンポ（拍の線・拍への吸着・ビブラートの速さなどに使う） */
@@ -64,7 +57,7 @@ interface Header {
   params: EditParams
   tempo?: ProjectTempo
   /** 版 2: トラックごとの名前。クリップは2つずつ（原音・加工後）並ぶ */
-  tracks?: { name: string; volume?: number; pan?: number; invert?: boolean; mute?: boolean; solo?: boolean; overlay?: boolean }[]
+  tracks?: ({ name: string } & StoredTrackSettings)[]
   active?: number
   clips: ClipInfo[]
 }
@@ -92,14 +85,7 @@ function fromLittleEndian(buf: ArrayBuffer, offset: number, length: number): Flo
 }
 
 /** ヘッダのトラック情報のうち、音声以外（フェーダー・鳴らし方・重ねる表示） */
-const pickTrackState = (i?: { volume?: number; pan?: number; invert?: boolean; mute?: boolean; solo?: boolean; overlay?: boolean }) => ({
-  volume: i?.volume,
-  pan: i?.pan,
-  invert: i?.invert,
-  mute: i?.mute,
-  solo: i?.solo,
-  overlay: i?.overlay,
-})
+const pickTrackState = pickStoredSettings
 
 export const isProjectFile = (file: File) => file.name.toLowerCase().endsWith(PROJECT_EXT)
 
@@ -116,7 +102,7 @@ export function saveProject(p: Project): Blob {
     named: p.named,
     params: p.params,
     tempo: p.tempo,
-    tracks: p.tracks.map((t) => ({ name: t.name, volume: t.volume, pan: t.pan, invert: t.invert, mute: t.mute, solo: t.solo, overlay: t.overlay })),
+    tracks: p.tracks.map((t) => ({ name: t.name, ...pickStoredSettings(t) })),
     active: p.active,
     clips: clips.map((c) => ({ sampleRate: c.sampleRate, channels: c.channels.length, length: c.channels[0].length })),
   }

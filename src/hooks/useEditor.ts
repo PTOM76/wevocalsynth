@@ -36,7 +36,7 @@ import { useOutput } from './useOutput'
 import { useSeek } from './useSeek'
 import { CURVE_HOP_SEC, useLaneCurve } from './useLaneCurve'
 import { useFormantCurve } from './useFormantCurve'
-import { makeTrack, newTrackId } from '../audio/tracks'
+import { fromStoredSettings, makeTrack, newTrackId } from '../audio/tracks'
 import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
 
@@ -214,13 +214,9 @@ export function useEditor(settings: Settings) {
         ? project.tracks.map((tr, i) => ({ id: ids?.[i] || newTrackId(), name: tr.name, original: tr.original, clip: tr.edited }))
         : [makeTrack(name, clip)]
       history.reset(list, list[project ? project.active : 0].id)
-      // フェーダーはプロジェクトに保存した値から（新しいファイルは中立）
+      // フェーダー・鳴らし方・重ねる表示は、プロジェクトに保存した値から（新しいファイルは既定値）
       const saved = project?.tracks ?? []
-      tracks.resetMix({
-        faders: Object.fromEntries(saved.map((tr, i) => [list[i].id, { db: tr.volume ?? 0, pan: tr.pan ?? 0, invert: !!tr.invert }])),
-        mix: Object.fromEntries(saved.map((tr, i) => [list[i].id, { mute: !!tr.mute, solo: !!tr.solo }])),
-        overlay: saved.flatMap((tr, i) => (tr.overlay ? [list[i].id] : [])),
-      })
+      tracks.restoreSettings(Object.fromEntries(saved.map((tr, i) => [list[i].id, fromStoredSettings(tr)])))
       setGainDb(0)
       setPan(0)
       setSource('edited')
@@ -398,7 +394,7 @@ export function useEditor(settings: Settings) {
   // 作業状態の自動保存と、起動時の復元
   useAutosave(
     settings.autoRestore,
-    { fileName, named, tempo: projectTempo, tracks: history.tracks, activeId: history.activeId, faders: tracks.faders, mix: tracks.mix, overlay: tracks.overlay },
+    { fileName, named, tempo: projectTempo, tracks: history.tracks, activeId: history.activeId, settings: tracks.settings },
     params,
     (project, ids) => {
       openClip(project.tracks[project.active].edited, project.fileName, project, ids)
