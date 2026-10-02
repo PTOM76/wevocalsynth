@@ -120,6 +120,7 @@ export default function App() {
     copy: ed.clip.copy,
     paste: ed.clip.paste,
     trim: ed.clip.trim,
+    reverse: ed.cmd.reverse,
     clearSelection: ed.clearSelection,
     selectAll: ed.selectAll,
     playSelection: playback.playSelection,
@@ -315,6 +316,8 @@ export default function App() {
         currentMidi={ed.rangeNote}
         autoMode={ed.autoMode}
         modes={ed.modes}
+        bpm={ed.projectTempo.bpm}
+        rangeSec={selection ? selection.end - selection.start : ed.duration}
       />
     </Box>
   )

@@ -22,6 +22,8 @@ interface Actions {
   copy: () => void
   paste: () => void
   trim: () => void
+  /** 選択範囲（なければ全体）を逆再生にする */
+  reverse: () => void
   clearSelection: () => void
   selectAll: () => void
   playSelection: () => void
@@ -71,6 +73,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('edit.copy'), shortcut: 'Ctrl+C', disabled: noSel, onClick: a.copy },
     { label: t('edit.paste'), shortcut: 'Ctrl+V', disabled: noClip || !a.hasClipboard, onClick: a.paste },
     { label: t('edit.trim'), disabled: noSel || !a.canTrim, onClick: a.trim },
+    { label: t('edit.reverse'), disabled: noClip, onClick: a.reverse },
     { divider: true },
     { label: t('edit.selectAll'), shortcut: 'Ctrl+A', disabled: noClip, onClick: a.selectAll },
     { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: noSel, onClick: a.clearSelection },

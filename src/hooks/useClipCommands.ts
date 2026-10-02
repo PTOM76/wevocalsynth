@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
-import { fadeRange, gainRange, insertAt, normalizeRange, panRange, silenceRange } from '../audio/edit'
+import { fadeRange, gainRange, insertAt, normalizeRange, panRange, reverseRange, silenceRange } from '../audio/edit'
 import { mapRanges, normalizeRanges, removeRanges, sliceRanges } from '../audio/multiRange'
 import type { VolumeAction } from '../components/VolumePanel'
 import { t } from '../i18n/i18n'
@@ -92,8 +92,15 @@ export function useClipCommands(d: Deps) {
     }
   }
 
+  /** 選択範囲（なければ全体）を逆再生にする（範囲ごとに前後を逆に並べる） */
+  const reverse = () => {
+    if (!edited || !editRanges.length) return
+    d.commit(mapRanges(edited, editRanges, reverseRange), t('edit.reverse'))
+  }
+
   return {
     hasClipboard: !!clipboard,
+    reverse,
     /** ファイルを開き直したときにクリップボードを空にする（サンプルレートが混ざらないように） */
     clearClipboard: () => setClipboard(null),
     copy,

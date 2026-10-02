@@ -370,3 +370,16 @@ export function applyGainCurve(clip: Clip, db: Float32Array, hopSec: number): Cl
 export function silenceRange(clip: Clip, range: Range): Clip {
   return mapGain(clip, range, () => 0)
 }
+
+/** `range` の音を前後逆に並べる（逆再生）。長さは変わらない */
+export function reverseRange(clip: Clip, range: Range): Clip {
+  const [s, e] = toFrames(clip, range)
+  return {
+    sampleRate: clip.sampleRate,
+    channels: clip.channels.map((c) => {
+      const out = c.slice()
+      out.subarray(s, e).reverse()
+      return out
+    }),
+  }
+}

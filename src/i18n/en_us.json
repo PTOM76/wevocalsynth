@@ -51,6 +51,7 @@
   "edit.copy": "Copy",
   "edit.paste": "Paste at playhead",
   "edit.trim": "Trim to selection",
+  "edit.reverse": "Reverse",
   "edit.selectAll": "Select all",
   "edit.clearSelection": "Clear selection",
 
@@ -131,6 +132,9 @@
   "process.formantShift": "Shift",
   "process.formantShiftAria": "Formant shift (semitones)",
   "process.length": "Length",
+  "process.fitBeats": "Beats",
+  "process.beatUnit": "beats",
+  "process.fit": "Fit",
   "process.lengthAria": "Time stretch (ratio)",
   "process.progress": "Processing progress",
   "process.processing": "Processing… {percent}%",

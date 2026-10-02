@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Box,
   Button,
@@ -54,6 +55,9 @@ interface Props {
   autoMode: Mode | null
   /** ボーカル・楽器のモードで使う処理方式（設定の既定値） */
   modes: ModeSettings
+  /** 拍数に合わせるときの基準: プロジェクトの BPM と、範囲（最後に選んだもの、なければ全体）の長さ（秒） */
+  bpm: number
+  rangeSec: number
 }
 
 const MODE_HINT: Record<Mode, MessageKey> = {
@@ -79,6 +83,15 @@ export default function EditPanel(p: Props) {
   // ダブルクリックで既定値（長さ ×1、フォルマントの高さ 0）に戻す（設定で有効なときだけ）
   const resetStretch = useDoubleClickReset(() => set({ stretch: 1 }))
   const resetFormant = useDoubleClickReset(() => set({ formantSemitones: 0 }))
+  // 拍数に合わせる（長さの欄に倍率を入れるだけ。試聴・適用はいつもどおり）
+  const [beats, setBeats] = useState(1)
+  const canFit = p.bpm > 0 && p.rangeSec > 0
+  const fitBeats = () => {
+    if (!canFit) return
+    const ratio = (beats * 60) / p.bpm / p.rangeSec
+    // 長さの欄の範囲（×0.25〜×8）に収める
+    set({ stretch: Math.round(Math.min(8, Math.max(0.25, ratio)) * 10000) / 10000 })
+  }
 
   return (
     <InspectorSection
@@ -130,6 +143,13 @@ export default function EditPanel(p: Props) {
             ×{v}
           </Button>
         ))}
+      </PropRow>
+      {/* 拍数に合わせる: 範囲の長さがその拍数（プロジェクトの BPM）になる倍率を、長さに入れる */}
+      <PropRow label={t('process.fitBeats')}>
+        <NumberInput value={beats} onChange={setBeats} min={0.25} max={64} step={0.25} unit={t('process.beatUnit')} ariaLabel={t('process.fitBeats')} />
+        <Button size="small" variant="outlined" disabled={!canFit} onClick={fitBeats} sx={SMALL_BUTTON_SX}>
+          {t('process.fit')}
+        </Button>
       </PropRow>
 
       {/* フォルマントは「保持」と「高さ」の2行をまとめ、何の設定かを見出しで示す */}

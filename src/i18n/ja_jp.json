@@ -51,6 +51,7 @@
   "edit.copy": "コピー",
   "edit.paste": "再生位置に貼り付け",
   "edit.trim": "選択範囲のみ残す",
+  "edit.reverse": "逆再生",
   "edit.selectAll": "すべて選択",
   "edit.clearSelection": "選択解除",
 
@@ -131,6 +132,9 @@
   "process.formantShift": "高さ",
   "process.formantShiftAria": "フォルマント移動（半音）",
   "process.length": "長さ",
+  "process.fitBeats": "拍数",
+  "process.beatUnit": "拍",
+  "process.fit": "合わせる",
   "process.lengthAria": "時間伸縮（倍率）",
   "process.progress": "処理の進捗",
   "process.processing": "処理中… {percent}%",
