@@ -8,6 +8,8 @@ import type { ProjectSettings } from './ProjectSection'
 interface Props {
   open: boolean
   onClose: () => void
+  /** 変わるたびに、別の窓で開いている設定画面を手前に出す */
+  focusSignal?: number
   settings: Settings
   onChange: (patch: Partial<Settings>) => void
   /** 今のプロジェクト（名前・テンポ）。ファイルを開いていなければ null */
@@ -18,11 +20,12 @@ interface Props {
  * 設定画面。PC は左の分類から選んで右で変え、「OK」「適用」で反映・保存、「キャンセル」なら捨てる。
  * スマホは分類の一覧から各画面へ進み、変更はその場で反映する（外枠は PevenMUI の SettingsDialog）
  */
-export default function SettingsDialog({ open, onClose, settings, onChange, project }: Props) {
+export default function SettingsDialog({ open, onClose, settings, onChange, project, focusSignal }: Props) {
   const t = useT()
   return (
     <PevenSettingsDialog
       open={open}
+      focusSignal={focusSignal}
       onClose={onClose}
       title={t('settings.title')}
       settings={settings}

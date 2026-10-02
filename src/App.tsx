@@ -78,6 +78,8 @@ export default function App() {
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // 設定を開いたまま、もう一度「設定」を押したら、別の窓で開いている設定画面を手前に出す
+  const [settingsFocus, setSettingsFocus] = useState(0)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [synthOpen, setSynthOpen] = useState(false)
@@ -139,7 +141,10 @@ export default function App() {
     addTrack: () => ed.addPicker.open(),
     synth: () => setSynthOpen(true),
     showShortcuts: () => setShortcutsOpen(true),
-    showSettings: () => setSettingsOpen(true),
+    showSettings: () => {
+      setSettingsOpen(true)
+      setSettingsFocus((n) => n + 1)
+    },
     showHistory: () => setHistoryOpen(true),
     showAbout: () => setAboutOpen(true),
     ctrlS: settings.ctrlS,
@@ -483,6 +488,7 @@ export default function App() {
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <SettingsDialog
         open={settingsOpen}
+        focusSignal={settingsFocus}
         onClose={() => setSettingsOpen(false)}
         settings={settings}
         onChange={updateSettings}
