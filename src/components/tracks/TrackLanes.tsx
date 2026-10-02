@@ -161,7 +161,8 @@ export default function TrackLanes(p: Props) {
                     {tr.name}
                   </Typography>
                 </Tooltip>
-                {p.meter && <LevelMeter source={() => p.meter?.(tr.id) ?? null} width={84} height={4} label={t('meter.track', { name: tr.name })} />}
+                {/* メーターは名前の列に収める（固定幅だと M・S・I のボタンにはみ出した） */}
+                {p.meter && <LevelMeter source={() => p.meter?.(tr.id) ?? null} width={80} height={4} label={t('meter.track', { name: tr.name })} />}
               </Box>
               <MixToggle label="M" title={t('track.mute')} on={m.mute} color="warning.main" onClick={() => p.onToggleMute(tr.id)} />
               <MixToggle label="S" title={t('track.solo')} on={m.solo} color="success.main" onClick={() => p.onToggleSolo(tr.id)} />
