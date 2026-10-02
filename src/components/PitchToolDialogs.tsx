@@ -16,8 +16,8 @@ import {
   Typography,
 } from '@mui/material'
 import { enterToSubmit } from 'pevenmui'
-import { rateForBpm, type ScaleType, type SnapOptions, type VibratoOptions } from '../audio/pitchTools'
-import { NOTE_NAMES, noteName } from '../audio/notes'
+import { rateForBpm, type SnapOptions, type VibratoOptions } from '../audio/pitchTools'
+import { noteName } from '../audio/notes'
 import { COMPACT_SLIDER_SX, NumberInput } from './inspector/Inspector'
 import { useT } from '../i18n/i18n'
 
@@ -101,44 +101,14 @@ export function VibratoDialog(p: DialogProps<VibratoOptions> & { bpm: number }) 
   )
 }
 
-/** 音階に揃える（音ごとにキーの音階の近い音へ、近い半音へ、または指定した音へ） */
+/** 音階に揃える（指定した音へ、または音ごとに近い半音へ）。既定は指定した音 */
 export function SnapDialog(p: DialogProps<SnapOptions>) {
   const t = useT()
-  const [o, setO] = useState<SnapOptions>({ mode: 'scale', scaleRoot: 0, scaleType: 'major', note: 60, keepShape: false, strength: 1, speedMs: 0 })
+  const [o, setO] = useState<SnapOptions>({ mode: 'note', note: 60, keepShape: false, strength: 1, speedMs: 0 })
   const set = (patch: Partial<SnapOptions>) => setO((v) => ({ ...v, ...patch }))
   return (
     <ToolDialog open={p.open} title={t('snap.title')} hasSelection={p.hasSelection} onClose={p.onClose} onRun={() => p.onRun(o)}>
       <RadioGroup value={o.mode} onChange={(e) => set({ mode: e.target.value as SnapOptions['mode'] })}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FormControlLabel value="scale" control={<Radio size="small" />} label={t('snap.scale')} slotProps={{ typography: { sx: { fontSize: 13 } } }} />
-          <Select
-            size="small"
-            value={o.scaleRoot}
-            disabled={o.mode !== 'scale'}
-            onChange={(e) => set({ scaleRoot: Number(e.target.value) })}
-            sx={{ fontSize: 13, minWidth: 64, '& .MuiSelect-select': { py: 0.5 } }}
-          >
-            {NOTE_NAMES.map((name, i) => (
-              <MenuItem key={name} value={i} sx={{ fontSize: 13 }}>
-                {name}
-              </MenuItem>
-            ))}
-          </Select>
-          <Select
-            size="small"
-            value={o.scaleType}
-            disabled={o.mode !== 'scale'}
-            onChange={(e) => set({ scaleType: e.target.value as ScaleType })}
-            sx={{ fontSize: 13, minWidth: 90, '& .MuiSelect-select': { py: 0.5 } }}
-          >
-            <MenuItem value="major" sx={{ fontSize: 13 }}>
-              {t('snap.major')}
-            </MenuItem>
-            <MenuItem value="minor" sx={{ fontSize: 13 }}>
-              {t('snap.minor')}
-            </MenuItem>
-          </Select>
-        </Box>
         <FormControlLabel value="nearest" control={<Radio size="small" />} label={t('snap.nearest')} slotProps={{ typography: { sx: { fontSize: 13 } } }} />
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <FormControlLabel value="note" control={<Radio size="small" />} label={t('snap.note')} slotProps={{ typography: { sx: { fontSize: 13 } } }} />
