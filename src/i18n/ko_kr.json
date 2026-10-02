@@ -472,6 +472,8 @@
   "gainCurve.discard": "그린 음량 버리기",
   "gainCurve.label": "음량 곡선",
   "menu.formant": "포먼트",
+  "menu.toNewTrack": "새 트랙으로",
+  "menu.marker": "마커",
   "menu.pitchLine": "피치 선",
   "menu.notes": "음표",
   "wave.showFormant": "포먼트 표시",

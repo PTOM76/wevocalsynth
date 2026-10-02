@@ -472,6 +472,8 @@
   "gainCurve.discard": "捨棄繪製的音量",
   "gainCurve.label": "音量曲線",
   "menu.formant": "共振峰",
+  "menu.toNewTrack": "到新音軌",
+  "menu.marker": "標記",
   "menu.pitchLine": "音高線",
   "menu.notes": "音符",
   "wave.showFormant": "顯示共振峰",

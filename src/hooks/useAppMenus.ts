@@ -131,8 +131,14 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('edit.trim'), disabled: noSel || !a.canTrim, onClick: a.trim },
     { label: t('edit.reverse'), disabled: noClip, onClick: a.reverse },
     { label: t('silence.menu'), disabled: noClip, onClick: a.insertSilence },
-    { label: t('track.copySelection'), disabled: noSel, onClick: () => a.selectionToTrack(false) },
-    { label: t('track.moveSelection'), disabled: noSel, onClick: () => a.selectionToTrack(true) },
+    {
+      label: t('menu.toNewTrack'),
+      disabled: noSel,
+      submenu: [
+        { label: t('track.copySelection'), onClick: () => a.selectionToTrack(false) },
+        { label: t('track.moveSelection'), onClick: () => a.selectionToTrack(true) },
+      ],
+    },
     { divider: true },
     { label: t('edit.selectAll'), shortcut: 'Ctrl+A', disabled: noClip, onClick: a.selectAll },
     { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: noSel, onClick: a.clearSelection },
@@ -175,16 +181,27 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { divider: true },
         ...edit,
         { divider: true },
-        { label: t('marker.add'), shortcut: 'M', disabled: !a.hasClip, onClick: a.addMarker },
-        { label: t('marker.rename'), disabled: !a.hasCurrentMarker, onClick: a.renameMarker },
-        { label: t('marker.remove'), disabled: !a.hasCurrentMarker, onClick: a.removeMarker },
-        { label: t('marker.clear'), disabled: !a.hasMarkers, onClick: a.clearMarkers },
-        { divider: true },
+        {
+          label: t('menu.marker'),
+          disabled: !a.hasClip,
+          submenu: [
+            { label: t('marker.add'), shortcut: 'M', onClick: a.addMarker },
+            { label: t('marker.rename'), disabled: !a.hasCurrentMarker, onClick: a.renameMarker },
+            { label: t('marker.remove'), disabled: !a.hasCurrentMarker, onClick: a.removeMarker },
+            { label: t('marker.clear'), disabled: !a.hasMarkers, onClick: a.clearMarkers },
+          ],
+        },
         // 音量の編集（今は音量の欄にもある）
-        { label: t('volume.fadeIn'), disabled: noClip, onClick: () => a.volumeAction('fadeIn') },
-        { label: t('volume.fadeOut'), disabled: noClip, onClick: () => a.volumeAction('fadeOut') },
-        { label: t('volume.normalize'), disabled: noClip, onClick: () => a.volumeAction('normalize') },
-        { label: t('volume.silence'), disabled: noClip, onClick: () => a.volumeAction('silence') },
+        {
+          label: t('volume.title'),
+          disabled: noClip,
+          submenu: [
+            { label: t('volume.fadeIn'), onClick: () => a.volumeAction('fadeIn') },
+            { label: t('volume.fadeOut'), onClick: () => a.volumeAction('fadeOut') },
+            { label: t('volume.normalize'), onClick: () => a.volumeAction('normalize') },
+            { label: t('volume.silence'), onClick: () => a.volumeAction('silence') },
+          ],
+        },
       ],
     },
     {

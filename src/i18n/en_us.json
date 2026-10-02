@@ -472,6 +472,8 @@
   "gainCurve.discard": "Discard drawn volume",
   "gainCurve.label": "Volume curve",
   "menu.formant": "Formant",
+  "menu.toNewTrack": "To new track",
+  "menu.marker": "Markers",
   "menu.pitchLine": "Pitch line",
   "menu.notes": "Notes",
   "wave.showFormant": "Show formant",
