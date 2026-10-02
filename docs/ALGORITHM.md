@@ -92,6 +92,29 @@ PSOLAv2・WSOLAv2 を作るときに参照した（2026-10-02）。
 
 位相の進め方は identity phase locking（Laroche & Dolson）を使う。スペクトルの山の位相だけを計算し、周りの成分はその山と同じだけ回す。成分ごとにばらばらに回すより、残響のような感じ（フェージー感）が少ない。断片を繰り返さないので大きく伸ばしてもなめらかだが、音の立ち上がりは少しにじむ。
 
+### 和音・楽器向けの候補（未実装）
+
+和音・楽器向けは今 Phase Vocoder だけなので、足す候補を調べた (2026-10-02)。Phase Vocoder の弱点は、残響のような感じ（フェージー感）と、打楽器などの立ち上がり（トランジェント）のにじみ。
+
+| 候補 | 仕組み | 効くところ | 入れ方 |
+| --- | --- | --- | --- |
+| Phase Vocoder ＋ 立ち上がり保持 | 立ち上がりを見つけたら、そこで位相を入力のものに戻す（位相のリセット）。Röbel の方式は、スペクトルの山ごとに群遅延で立ち上がりかどうかを判定し、立ち上がりの山だけを戻す。帯域ごとにまとめて戻す従来の方式は、同じ帯域を通る伸びている音の位相まで壊すため（参考資料 6） | 打楽器・ピアノ・ギターの立ち上がり | 今の `pv.rs` に足せる。小さい |
+| 打楽器分離のハイブリッド（HPSS） | 音を「伸びる成分（和音など）」と「打つ成分（打楽器など）」に分け、前者は Phase Vocoder、後者は短い窓の OLA で伸ばして足し戻す。立ち上がりを見つける代わりに、分けることで暗に扱う（参考資料 7・8） | ドラム入りの曲 | 分離（スペクトログラムの横・縦方向のメディアンフィルタ）を足す。中くらい |
+| PVSOLA | Phase Vocoder の出力に、相互相関で位置を合わせた入力のフレームをそのまま定期的に差し込み、位相のずれが溜まらないようにする。位相ロックが要らない。もとは単音の声向けで、和音向けの改良版もある（参考資料 9・10） | フェージー感 | 論文の方式なので自前で書ける。中くらい |
+| Rubber Band Library | 時間伸縮とピッチ変更のライブラリ（参考資料 11） | 全般 | GPL（または有償の商用ライセンス）。組み込むならアプリ本体とは分けた追加機能にする |
+
+まとめて比べた総説として参考資料 12 がある。
+
+#### 参考資料（和音・楽器向け）
+
+6. A. Röbel, [Transient detection and preservation in the phase vocoder](http://recherche.ircam.fr/anasyn/roebel/paper/icmc2003.pdf), ICMC 2003
+7. J. Driedger, M. Müller, S. Ewert, [Improving Time-Scale Modification of Music Signals Using Harmonic-Percussive Separation](https://www.semanticscholar.org/paper/Improving-Time-Scale-Modification-of-Music-Signals-Driedger-M%C3%BCller/2936759a93ee6d6ce4109221bfbb08de0c7c569b), IEEE Signal Processing Letters 21, 2014
+8. [libtsm](https://github.com/meinardmueller/libtsm): 上の HPSS の方式などを Python で実装した道具箱
+9. A. Moinet, T. Dutoit, [PVSOLA: A Phase Vocoder with Synchronized OverLap-Add](http://recherche.ircam.fr/pub/dafx11/Papers/57_e.pdf), DAFx 2011
+10. [Improved PVSOLA Time-Stretching and Pitch-Shifting for Polyphonic Audio](https://www.dafx12.york.ac.uk/papers/dafx12_submission_26.pdf), DAFx 2012: 正弦波の成分と雑音の成分を分けて、和音にも使えるようにする
+11. [Rubber Band Library](https://breakfastquay.com/rubberband/)
+12. J. Driedger, M. Müller, [A Review of Time-Scale Modification of Music Signals](https://mdpi.com/2076-3417/6/2/57/htm), Applied Sciences 6(2), 2016
+
 ## フォルマント補正
 
 リサンプルは、フォルマントを含むスペクトル全体を一緒に動かしてしまう。そのままだとピッチを上げた声が細く（子どもっぽく）なる。そこで、リサンプルの **前** にスペクトル包絡を逆向きに変形しておき、リサンプル後に元の包絡に戻るようにする（`formant.rs`）。

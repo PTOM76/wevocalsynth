@@ -127,6 +127,43 @@ fn periodicity(y: &[f32], sr: f32, f0: f32) -> f32 {
     total / count as f32
 }
 
+/// 打楽器の立ち上がり: 短い減衰音の連続を 2 倍に伸ばし、立ち上がりのまわりのエネルギーの集中度を比べる。
+/// 立ち上がり保持の Phase Vocoder v2 は、従来の Phase Vocoder よりはっきり鋭いこと
+#[test]
+fn transient_sharpness() {
+    let sr = 48000.0;
+    let n = (sr * 2.0) as usize;
+    let x: Vec<f32> = (0..n)
+        .map(|i| {
+            let t = (i % (sr as usize / 4)) as f32 / sr;
+            // 4 回/秒の、2kHz の短い減衰音
+            (2.0 * std::f32::consts::PI * 2000.0 * t).sin() * (-t * 300.0).exp() * 0.8
+        })
+        .collect();
+    // 伸ばした後の立ち上がりは 0.5 秒ごと（Phase Vocoder は窓の分だけ前後に広がるので、位置は決め打ちしない）。
+    // 各立ち上がりの ±60ms で、いちばん強い 5ms にエネルギーがどれだけ集まっているか（集中度。高いほど鋭い）
+    let concentration = |y: &[f32]| {
+        let (span, w) = ((sr * 0.06) as usize, (sr * 0.005) as usize);
+        let mut total = 0.0;
+        let mut count = 0;
+        let mut onset = (sr * 0.5) as usize;
+        while onset + span < y.len() {
+            let seg: Vec<f32> = y[onset - span..onset + span].iter().map(|v| v * v).collect();
+            let all = seg.iter().sum::<f32>().max(1e-9);
+            let best = seg.windows(w).map(|s| s.iter().sum::<f32>()).fold(0.0f32, f32::max);
+            total += best / all;
+            count += 1;
+            onset += (sr * 0.5) as usize;
+        }
+        total / count as f32
+    };
+    let pv = concentration(&run(&[&x], sr, 0.0, 2.0, Algorithm::PhaseVocoder)[0]);
+    let pv2 = concentration(&run(&[&x], sr, 0.0, 2.0, Algorithm::PhaseVocoder2)[0]);
+    println!("concentration: PhaseVocoder {pv:.4} / PhaseVocoder2 {pv2:.4}");
+    // 2026-10-02 時点: Phase Vocoder 0.41 / v2 0.95
+    assert!(pv2 > pv + 0.3, "pv {pv} pv2 {pv2}");
+}
+
 /// ボーカルを大きく伸ばしたときの周期のきれいさを方式ごとに比べる。PSOLA は WSOLA 以上であること
 #[test]
 fn vocal_stretch_periodicity() {

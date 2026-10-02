@@ -34,6 +34,8 @@ pub enum Algorithm {
     Psola2,
     /// WSOLA の改良版（類似度を正規化した相互相関にする）
     Wsola2,
+    /// Phase Vocoder の改良版（立ち上がりの山の位相を入力に戻し、アタックのにじみを抑える）
+    PhaseVocoder2,
 }
 
 impl Algorithm {
@@ -44,6 +46,7 @@ impl Algorithm {
             3 => Algorithm::Sola,
             4 => Algorithm::Psola2,
             5 => Algorithm::Wsola2,
+            6 => Algorithm::PhaseVocoder2,
             _ => Algorithm::Wsola,
         }
     }
@@ -62,6 +65,7 @@ impl Algorithm {
             Algorithm::Sola => sola::stretch(channels, alpha, sr, progress),
             Algorithm::Psola2 => psola::stretch_with(channels, alpha, sr, psola::Marking::Correlation, progress),
             Algorithm::Wsola2 => wsola2(channels, alpha, sr, progress),
+            Algorithm::PhaseVocoder2 => pv::stretch2(channels, alpha, sr, progress),
         }
     }
 
@@ -79,6 +83,7 @@ impl Algorithm {
             Algorithm::Sola => sola::stretch_map(channels, map, sr, progress),
             Algorithm::Psola2 => psola::stretch_map_with(channels, map, sr, psola::Marking::Correlation, progress),
             Algorithm::Wsola2 => wsola2_map(channels, map, sr, progress),
+            Algorithm::PhaseVocoder2 => pv::stretch_map2(channels, map, sr, progress),
         }
     }
 }
