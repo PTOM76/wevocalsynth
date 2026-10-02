@@ -57,6 +57,12 @@
   "edit.reverse": "역재생",
   "edit.selectAll": "모두 선택",
   "edit.clearSelection": "선택 해제",
+  "marker.add": "마커 추가",
+  "marker.rename": "마커 이름 변경…",
+  "marker.remove": "마커 삭제",
+  "marker.clear": "모든 마커 삭제",
+  "marker.prev": "이전 마커로",
+  "marker.next": "다음 마커로",
 
   "play.playPause": "재생 / 일시정지",
   "play.play": "재생",

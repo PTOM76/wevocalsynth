@@ -3,7 +3,7 @@ import type { Clip } from '../audio/types'
 import { fromStoredSettings, toStoredSettings, type Track, type TrackSettings } from '../audio/tracks'
 import type { EditParams } from '../components/EditPanel'
 import type { Project } from '../project/projectFile'
-import type { ProjectTempo } from '../project/projectFile'
+import type { Marker, ProjectTempo } from '../project/projectFile'
 import { clearAutosave, loadAutosave, removeTrackClips, saveMeta, saveTrackClip } from '../project/autosave'
 
 /** 編集が止まってから自動保存するまでの待ち時間（ミリ秒） */
@@ -36,7 +36,7 @@ function whenIdle(fn: () => void): () => void {
 export function useAutosave(
   enabled: boolean,
   /** `settings` はトラックごとの音声以外の状態（フェーダー・鳴らし方・重ねる表示。useTracks の settings） */
-  state: { fileName: string; named: boolean; tempo: ProjectTempo; tracks: Track[]; activeId: string; settings: Record<string, TrackSettings> },
+  state: { fileName: string; named: boolean; tempo: ProjectTempo; markers: Marker[]; tracks: Track[]; activeId: string; settings: Record<string, TrackSettings> },
   params: EditParams,
   onRestore: (project: Project, ids: string[]) => void,
   onError: (e: unknown) => void,
@@ -79,7 +79,7 @@ export function useAutosave(
     void clearAutosave()
   }, [enabled])
 
-  const { fileName, named, tempo, tracks, activeId, settings } = state
+  const { fileName, named, tempo, markers, tracks, activeId, settings } = state
   /** トラックの並びとパラメータ・フェーダー・鳴らし方を保存する（小さいので、すぐ書いてよい） */
   const writeMeta = () =>
     saveMeta({
@@ -87,6 +87,7 @@ export function useAutosave(
       named,
       params: latest.current.params,
       tempo,
+      markers,
       tracks: tracks.map((t) => ({ id: t.id, name: t.name, ...toStoredSettings(settings[t.id] ?? fromStoredSettings(undefined)) })),
       active: Math.max(0, tracks.findIndex((t) => t.id === activeId)),
     })
@@ -144,5 +145,5 @@ export function useAutosave(
       }
     }, META_DELAY_MS)
     return () => clearTimeout(timer)
-  }, [enabled, tracks, fileName, named, tempo, activeId, settings])
+  }, [enabled, tracks, fileName, named, tempo, markers, activeId, settings])
 }

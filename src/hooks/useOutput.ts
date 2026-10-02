@@ -10,7 +10,7 @@ import type { EditParams } from '../components/EditPanel'
 import type { useHistory } from './useHistory'
 import type { useTracks } from './useTracks'
 import type { useTask } from './useTask'
-import type { ProjectTempo } from '../project/projectFile'
+import type { Marker, ProjectTempo } from '../project/projectFile'
 import { t } from '../i18n/i18n'
 
 interface Deps {
@@ -19,6 +19,7 @@ interface Deps {
   named: boolean
   params: EditParams
   tempo: ProjectTempo
+  markers: Marker[]
   history: ReturnType<typeof useHistory>
   tracks: ReturnType<typeof useTracks>
   selections: Range[]
@@ -46,7 +47,7 @@ export function useOutput(d: Deps) {
         ...toStoredSettings(tracks.settingsOf(tr.id)),
       }))
       const active = Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId))
-      downloadBlob(saveProject({ fileName: d.fileName, named: d.named, params: d.params, tempo: d.tempo, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
+      downloadBlob(saveProject({ fileName: d.fileName, named: d.named, params: d.params, tempo: d.tempo, markers: d.markers, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
       d.notify(t('toast.saved'))
     })
 

@@ -57,6 +57,12 @@
   "edit.reverse": "Reverse",
   "edit.selectAll": "Select all",
   "edit.clearSelection": "Clear selection",
+  "marker.add": "Add marker",
+  "marker.rename": "Rename marker…",
+  "marker.remove": "Delete marker",
+  "marker.clear": "Delete all markers",
+  "marker.prev": "Previous marker",
+  "marker.next": "Next marker",
 
   "play.playPause": "Play / Pause",
   "play.play": "Play",

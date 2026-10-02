@@ -35,6 +35,14 @@ export interface ProjectTempo {
 }
 export const DEFAULT_TEMPO: ProjectTempo = { bpm: 120, beatsPerBar: 4, beatOffset: 0 }
 
+/** 位置に付ける名前付きの目印（全トラック共通） */
+export interface Marker {
+  id: string
+  /** 位置（秒） */
+  time: number
+  name: string
+}
+
 export interface Project {
   /** プロジェクト名 */
   fileName: string
@@ -43,6 +51,8 @@ export interface Project {
   params: EditParams
   /** テンポ。古いファイルには無い（以前はアプリの設定に持っていた） */
   tempo?: ProjectTempo
+  /** マーカー。古いファイルには無い */
+  markers?: Marker[]
   tracks: ProjectTrack[]
   /** 編集していたトラックの位置 */
   active: number
@@ -56,6 +66,7 @@ interface Header {
   named?: boolean
   params: EditParams
   tempo?: ProjectTempo
+  markers?: Marker[]
   /** 版 2: トラックごとの名前。クリップは2つずつ（原音・加工後）並ぶ */
   tracks?: ({ name: string } & StoredTrackSettings)[]
   active?: number
@@ -102,6 +113,7 @@ export function saveProject(p: Project): Blob {
     named: p.named,
     params: p.params,
     tempo: p.tempo,
+    markers: p.markers,
     tracks: p.tracks.map((t) => ({ name: t.name, ...pickStoredSettings(t) })),
     active: p.active,
     clips: clips.map((c) => ({ sampleRate: c.sampleRate, channels: c.channels.length, length: c.channels[0].length })),
@@ -144,5 +156,5 @@ export async function loadProject(file: File, onProgress?: (p: number) => void):
     }),
   }))
   const tracks = names.map((name, i) => ({ name, original: clips[i * 2], edited: clips[i * 2 + 1], ...pickTrackState(infos?.[i]) }))
-  return { fileName: header.fileName, named: header.named, params: header.params, tempo: header.tempo, tracks, active: Math.min(header.active ?? 0, tracks.length - 1) }
+  return { fileName: header.fileName, named: header.named, params: header.params, tempo: header.tempo, markers: header.markers, tracks, active: Math.min(header.active ?? 0, tracks.length - 1) }
 }

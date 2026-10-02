@@ -57,6 +57,12 @@
   "edit.reverse": "反转",
   "edit.selectAll": "全选",
   "edit.clearSelection": "取消选择",
+  "marker.add": "添加标记",
+  "marker.rename": "重命名标记…",
+  "marker.remove": "删除标记",
+  "marker.clear": "删除所有标记",
+  "marker.prev": "上一个标记",
+  "marker.next": "下一个标记",
 
   "play.playPause": "播放 / 暂停",
   "play.play": "播放",

@@ -101,6 +101,15 @@ interface Actions {
   mergeAll: () => void
   // ---- 音量の編集（選択範囲、なければ全体） ----
   volumeAction: (action: 'fadeIn' | 'fadeOut' | 'normalize' | 'silence') => void
+  // ---- マーカー ----
+  hasMarkers: boolean
+  /** 再生位置か、その前にマーカーがあるか（名前の変更・削除の対象） */
+  hasCurrentMarker: boolean
+  addMarker: () => void
+  renameMarker: () => void
+  removeMarker: () => void
+  clearMarkers: () => void
+  seekMarker: (dir: -1 | 1) => void
   /** 新しい版を確認する（ヘルプ） */
   checkUpdate: () => void
 }
@@ -162,6 +171,11 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { divider: true },
         ...edit,
         { divider: true },
+        { label: t('marker.add'), shortcut: 'M', disabled: !a.hasClip, onClick: a.addMarker },
+        { label: t('marker.rename'), disabled: !a.hasCurrentMarker, onClick: a.renameMarker },
+        { label: t('marker.remove'), disabled: !a.hasCurrentMarker, onClick: a.removeMarker },
+        { label: t('marker.clear'), disabled: !a.hasMarkers, onClick: a.clearMarkers },
+        { divider: true },
         // 音量の編集（今は音量の欄にもある）
         { label: t('volume.fadeIn'), disabled: noClip, onClick: () => a.volumeAction('fadeIn') },
         { label: t('volume.fadeOut'), disabled: noClip, onClick: () => a.volumeAction('fadeOut') },
@@ -202,6 +216,8 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { divider: true },
         { label: t('play.toStart'), shortcut: 'Home', disabled: !a.hasClip, onClick: () => a.seekEdge('start') },
         { label: t('play.toEnd'), shortcut: 'End', disabled: !a.hasClip, onClick: () => a.seekEdge('end') },
+        { label: t('marker.prev'), shortcut: 'Ctrl+←', disabled: !a.hasMarkers, onClick: () => a.seekMarker(-1) },
+        { label: t('marker.next'), shortcut: 'Ctrl+→', disabled: !a.hasMarkers, onClick: () => a.seekMarker(1) },
       ],
     },
     {

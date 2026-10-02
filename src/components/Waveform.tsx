@@ -7,6 +7,7 @@ import { useLaneDivider } from './waveform/useLaneDivider'
 import { useLanePen } from './waveform/useLanePen'
 import { usePitchGrab } from './waveform/usePitchGrab'
 import type { NoteGhost } from './waveform/useNoteDrag'
+import type { Marker } from '../project/projectFile'
 import { useRangeEdges, type EdgeDrag } from './waveform/useRangeEdges'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
@@ -71,8 +72,11 @@ interface Props {
   onStretchRange: (range: Range, duration: number) => void
   /** 音符ブロックの移動・伸縮: 区間ごとに長さを変える */
   onRetime: (parts: { start: number; end: number; dur: number }[]) => void
+  /** マーカー（選択範囲の端・再生位置が吸着する）と、目盛りの上のダブルクリックでの名前の変更 */
+  markers?: Marker[]
+  onRenameMarker?: (id: string) => void
   /** 右クリック、またはタッチの長押し（画面上の位置） */
-  onContextMenu: (x: number, y: number) => void
+  onContextMenu: (x: number, y: number, ruler?: { time: number; markerId: string | null }) => void
   /** 表示範囲（拡大縮小・スクロール）。ツールバーと共有するため画面側で持つ */
   viewCtl: ReturnType<typeof useWaveformView>
   /** F0（Hz、`F0_HOP_SEC` 間隔、無声は 0）。解析中は null */
@@ -275,6 +279,25 @@ function Waveform(props: Props) {
       g.setTransform(dpr, 0, 0, dpr, 0, 0)
       g.clearRect(0, 0, width, height)
       for (const r of selections) drawSelection(c, r, height)
+      // マーカー: 縦の点線と、目盛りの上に名前
+      g.font = `11px ${font}`
+      for (const m of props.markers ?? []) {
+        const x = Math.round(((m.time - view.start) / view.dur) * width) + 0.5
+        if (x < -100 || x > width) continue
+        g.strokeStyle = pal.warning.main
+        g.setLineDash([3, 3])
+        g.beginPath()
+        g.moveTo(x, RULER_HEIGHT)
+        g.lineTo(x, height)
+        g.stroke()
+        g.setLineDash([])
+        const w = g.measureText(m.name).width + 8
+        g.fillStyle = pal.warning.main
+        g.fillRect(x, 0, w, RULER_HEIGHT - 2)
+        g.fillStyle = pal.warning.contrastText
+        g.textBaseline = 'middle'
+        g.fillText(m.name, x + 4, (RULER_HEIGHT - 2) / 2)
+      }
       if (noteGhost && range) {
         // ドラッグ中の音符ブロックの行き先
         const top = RULER_HEIGHT + upperH
@@ -299,7 +322,7 @@ function Waveform(props: Props) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH, gainH, formantH, selections, noteGhost, range, upperH])
+  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH, gainH, formantH, selections, noteGhost, range, upperH, props.markers, font])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -307,11 +330,22 @@ function Waveform(props: Props) {
     return Math.max(0, Math.min(duration, t))
   }
 
+  /** 目盛りの上の、その位置にあるマーカー（名札の幅を含む） */
+  const markerAt = (clientX: number) => {
+    const t = timeAt(clientX)
+    const px = view.dur / width
+    return [...(props.markers ?? [])].reverse().find((m) => t >= m.time - 4 * px && t <= m.time + 60 * px) ?? null
+  }
+
   // 拍の線を出しているときは、選択範囲の端・再生位置を近くの拍に吸着させる（Alt を押している間はしない）
   const altRef = useRef(false)
   const snapTime = (clientX: number) => {
     const t = timeAt(clientX)
-    if (!beatGrid || altRef.current) return t
+    if (altRef.current) return t
+    // マーカーは拍より優先して吸着する
+    const near = (props.markers ?? []).reduce<number | null>((b, m) => (b === null || Math.abs(m.time - t) < Math.abs(b - t) ? m.time : b), null)
+    if (near !== null && (Math.abs(near - t) / view.dur) * width <= SNAP_PX) return near
+    if (!beatGrid) return t
     const beat = 60 / beatGrid.bpm
     const b = beatGrid.offset + Math.round((t - beatGrid.offset) / beat) * beat
     const px = (Math.abs(b - t) / view.dur) * width
@@ -414,7 +448,15 @@ function Waveform(props: Props) {
         }}
         onContextMenu={(e) => {
           e.preventDefault()
-          props.onContextMenu(e.clientX, e.clientY)
+          // 目盛りの上なら、その位置（マーカーの追加など）も渡す
+          const ruler = e.clientY - e.currentTarget.getBoundingClientRect().top <= RULER_HEIGHT
+          props.onContextMenu(e.clientX, e.clientY, ruler ? { time: snapTime(e.clientX), markerId: markerAt(e.clientX)?.id ?? null } : undefined)
+        }}
+        onDoubleClick={(e) => {
+          // 目盛りの上のマーカーの名前をダブルクリックで変える
+          if (e.clientY - e.currentTarget.getBoundingClientRect().top > RULER_HEIGHT || !props.onRenameMarker) return
+          const m = markerAt(e.clientX)
+          if (m) props.onRenameMarker(m.id)
         }}
         onPointerDown={(e) => {
           // 押した帯にフォーカスを移す（時間目盛りの上は変えない）

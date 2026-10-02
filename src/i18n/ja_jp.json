@@ -57,6 +57,12 @@
   "edit.reverse": "逆再生",
   "edit.selectAll": "すべて選択",
   "edit.clearSelection": "選択解除",
+  "marker.add": "マーカーを追加",
+  "marker.rename": "マーカーの名前を変更…",
+  "marker.remove": "マーカーを削除",
+  "marker.clear": "マーカーをすべて削除",
+  "marker.prev": "前のマーカーへ",
+  "marker.next": "次のマーカーへ",
 
   "play.playPause": "再生 / 一時停止",
   "play.play": "再生",

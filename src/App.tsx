@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, PevenLabels, LABELS, WindowModeContext, autoWindowMode } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode } from 'pevenmui'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
 import { useAppMenus } from './hooks/useAppMenus'
@@ -77,7 +77,8 @@ export default function App() {
   const theme = useTheme()
   // 大きめのスマホを横向きにすると幅が md を超えるので、横向きのスマホもスマホの配置にする
   const mobile = useMediaQuery(`${theme.breakpoints.down('md').replace('@media ', '')}, ${LANDSCAPE_PHONE}`)
-  const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null)
+  // ruler: 目盛りの上で開いたとき（その位置と、そこにあるマーカー）
+  const [contextPos, setContextPos] = useState<{ x: number; y: number; ruler?: { time: number; markerId: string | null } } | null>(null)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   // 設定を開いたまま、もう一度「設定」を押したら、別の窓で開いている設定画面を手前に出す
@@ -86,6 +87,7 @@ export default function App() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [synthOpen, setSynthOpen] = useState(false)
   const [samplerOpen, setSamplerOpen] = useState(false)
+  const [renamingMarker, setRenamingMarker] = useState<string | null>(null)
   const [renamingProject, setRenamingProject] = useState(false)
   const [pitchDialog, setPitchDialog] = useState<PitchDialogKind>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
@@ -174,6 +176,16 @@ export default function App() {
     toggleMeters: () => updateSettings({ showMeters: !settings.showMeters }),
     showNotes: settings.showNotes,
     toggleNotes: () => updateSettings({ showNotes: !settings.showNotes }),
+    hasMarkers: ed.markers.markers.length > 0,
+    hasCurrentMarker: !!ed.markers.current(player.position),
+    addMarker: ed.addMarker,
+    renameMarker: () => setRenamingMarker(ed.markers.current(player.livePosition())?.id ?? null),
+    removeMarker: () => {
+      const m = ed.markers.current(player.livePosition())
+      if (m) ed.markers.remove(m.id)
+    },
+    clearMarkers: ed.markers.clear,
+    seekMarker: ed.seekMarker,
     showPitchLine: settings.showPitchLine,
     togglePitchLine: () => updateSettings({ showPitchLine: !settings.showPitchLine }),
     trackCount: ed.tracks.tracks.length,
@@ -237,7 +249,16 @@ export default function App() {
   const onWaveSelections = useStableFn((rs: Range[]) => editing && ed.setSelections(rs))
   const onWaveStretch = useStableFn(ed.stretchRange)
   const onWaveRetime = useStableFn(ed.retime)
-  const onWaveContext = useStableFn((x: number, y: number) => setContextPos({ x, y }))
+  const onWaveContext = useStableFn((x: number, y: number, ruler?: { time: number; markerId: string | null }) => setContextPos({ x, y, ruler }))
+  // 目盛りの上の右クリックメニュー（その位置へのマーカーの追加と、そこにあるマーカーの名前の変更・削除）
+  const rulerAt = contextPos?.ruler
+  const rulerMenu: MenuEntry[] = rulerAt
+    ? [
+        { label: t('marker.add'), onClick: () => ed.markers.add(rulerAt.time) },
+        { label: t('marker.rename'), disabled: !rulerAt.markerId, onClick: () => setRenamingMarker(rulerAt.markerId) },
+        { label: t('marker.remove'), disabled: !rulerAt.markerId, onClick: () => rulerAt.markerId && ed.markers.remove(rulerAt.markerId) },
+      ]
+    : []
   const onWaveDraw = useStableFn((from: DrawPoint, to: DrawPoint) => shown && ed.pitch && ed.pitchTarget.draw(shown, ed.pitch, from, to))
   const onWaveGrab = useStableFn((hz: Float32Array) => shown && ed.pitchTarget.replace(shown, hz))
   const onWaveDrawGain = useStableFn((from: CurvePoint, to: CurvePoint) => edited && shown === edited && ed.gainCurve.draw(edited, from, to))
@@ -257,6 +278,8 @@ export default function App() {
       liveSelections={settings.liveSelection}
       onStretchRange={onWaveStretch}
       onRetime={onWaveRetime}
+      markers={ed.markers.markers}
+      onRenameMarker={setRenamingMarker}
       onContextMenu={onWaveContext}
       viewCtl={viewCtl}
       pitch={ed.pitch}
@@ -499,13 +522,19 @@ export default function App() {
         )}
       </Box>
 
-      <ContextMenu position={contextPos} entries={context} onClose={() => setContextPos(null)} />
+      <ContextMenu position={contextPos} entries={rulerAt ? rulerMenu : context} onClose={() => setContextPos(null)} />
       {trackArea.overlays}
       <RenameDialog
         name={renamingProject ? ed.fileName : null}
         title={t('project.rename')}
         onClose={() => setRenamingProject(false)}
         onRename={ed.setProjectName}
+      />
+      <RenameDialog
+        name={ed.markers.markers.find((m) => m.id === renamingMarker)?.name ?? null}
+        title={t('marker.rename')}
+        onClose={() => setRenamingMarker(null)}
+        onRename={(name) => renamingMarker && ed.markers.rename(renamingMarker, name)}
       />
       {edited && (
         <ExportDialog

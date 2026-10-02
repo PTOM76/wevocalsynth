@@ -32,6 +32,7 @@ import { useAutosave } from './useAutosave'
 import { useVocalExtract } from './useVocalExtract'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { useTracks } from './useTracks'
+import { useMarkers } from './useMarkers'
 import { usePitchClipboard } from './usePitchClipboard'
 import { useLanes } from './useLanes'
 import { useOutput } from './useOutput'
@@ -69,6 +70,7 @@ export function useEditor(settings: Settings) {
   const [projectTempo, setProjectTempoState] = useState<ProjectTempo>(defaultTempo)
   // ボーカル・楽器のモードで使う処理方式（設定の既定値）
   const modes = modeSettings(settings)
+  const markers = useMarkers()
   const setProjectTempo = useCallback((patch: Partial<ProjectTempo>) => setProjectTempoState((p) => ({ ...p, ...patch })), [])
   // プロジェクト名。初めは開いたファイルの名前（拡張子を除く）で、変えられる。保存・書き出しのファイル名の初期値になる
   const [fileName, setFileName] = useState('')
@@ -211,6 +213,7 @@ export function useEditor(settings: Settings) {
       setNamed(!!project?.named)
       // 古いプロジェクト（テンポを持たない）と新しい素材は既定のテンポから（新しい素材は下で解析する）
       setProjectTempoState(project?.tempo ?? defaultTempo)
+      markers.reset(project?.markers)
       // プロジェクトはトラックごとに。自動保存から戻すときは保存先の ID を引き継ぐ（保存し直さずに済む）
       const list = project
         ? project.tracks.map((tr, i) => ({ id: ids?.[i] || newTrackId(), name: tr.name, original: tr.original, clip: tr.edited }))
@@ -402,6 +405,7 @@ export function useEditor(settings: Settings) {
     named,
     params,
     tempo: projectTempo,
+    markers: markers.markers,
     history,
     tracks,
     selections,
@@ -450,7 +454,7 @@ export function useEditor(settings: Settings) {
   // 作業状態の自動保存と、起動時の復元
   useAutosave(
     settings.autoRestore,
-    { fileName, named, tempo: projectTempo, tracks: history.tracks, activeId: history.activeId, settings: tracks.settings },
+    { fileName, named, tempo: projectTempo, markers: markers.markers, tracks: history.tracks, activeId: history.activeId, settings: tracks.settings },
     params,
     (project, ids) => {
       openClip(project.tracks[project.active].edited, project.fileName, project, ids)
@@ -463,6 +467,12 @@ export function useEditor(settings: Settings) {
 
   const selectAll = () => edited && setSelections([{ start: 0, end: clipDuration(edited) }])
   const clearSelection = () => setSelections([])
+  /** 再生位置にマーカーを足す / 前後のマーカーへ移る */
+  const addMarker = () => shown && markers.add(player.livePosition())
+  const seekMarker = (dir: -1 | 1) => {
+    const m = markers.neighbor(player.livePosition(), dir)
+    if (m) player.seek(m.time)
+  }
 
   // 矢印キー・Home / End での再生位置の移動
   const { seekBy, seekEdge } = useSeek({ shown, duration, showBeatGrid: settings.showBeatGrid, ...projectTempo, getPosition: player.livePosition, seek: player.seek })
@@ -505,6 +515,8 @@ export function useEditor(settings: Settings) {
     saveAlt: settings.ctrlS === 'export' ? saveProjectFile : openExport,
     exportAudio: openExport,
     pitchShift: showPitch && editing && pitchTools.ready && !busy ? pitchTools.shift : undefined,
+    addMarker,
+    seekMarker,
   })
 
   return {
@@ -526,6 +538,6 @@ export function useEditor(settings: Settings) {
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, retime, placeOnMidi, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker,
+    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker,
   }
 }

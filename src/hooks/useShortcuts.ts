@@ -19,6 +19,9 @@ interface Handlers {
   /** ← / →: 再生位置を前後に動かす（`fine` は Shift を押しているとき）。Home / End: 先頭・末尾へ */
   seekBy: (dir: -1 | 1, fine: boolean) => void
   seekEdge: (edge: 'start' | 'end') => void
+  /** M: 再生位置にマーカーを足す / Ctrl+← →: 前後のマーカーへ */
+  addMarker: () => void
+  seekMarker: (dir: -1 | 1) => void
 }
 
 /**
@@ -49,6 +52,8 @@ export function useShortcuts(handlers: Handlers) {
         o: h.open,
         s: e.shiftKey ? h.saveAlt : h.save,
         e: h.exportAudio,
+        arrowleft: () => h.seekMarker(-1),
+        arrowright: () => h.seekMarker(1),
       }
       const plain: Record<string, (() => void) | undefined> = {
         Space: h.togglePlay,
@@ -57,6 +62,7 @@ export function useShortcuts(handlers: Handlers) {
         ArrowRight: () => h.seekBy(1, e.shiftKey),
         Home: () => h.seekEdge('start'),
         End: () => h.seekEdge('end'),
+        KeyM: h.addMarker,
       }
       if (h.pitchShift) {
         const step = e.shiftKey ? 0.1 : 1

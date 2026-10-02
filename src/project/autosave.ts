@@ -1,7 +1,7 @@
 import type { Clip } from '../audio/types'
 import { pickStoredSettings, type StoredTrackSettings } from '../audio/tracks'
 import type { EditParams } from '../components/EditPanel'
-import type { Project, ProjectTempo } from './projectFile'
+import type { Marker, Project, ProjectTempo } from './projectFile'
 import { idbGet } from './idb'
 import { markActivity } from '../debug/debugStats'
 import type { AutosaveMessage, AutosaveReply } from './autosaveWorker'
@@ -22,6 +22,7 @@ export interface AutosaveMeta {
   named?: boolean
   params: EditParams
   tempo?: ProjectTempo
+  markers?: Marker[]
   /** トラックの並び。音声は trackKey(id) に置く */
   tracks?: ({ id: string; name: string } & StoredTrackSettings)[]
   active?: number
@@ -143,7 +144,7 @@ export async function loadAutosave(): Promise<{ project: Project; ids: string[] 
 
     if (!tracks.every((t) => isClip(t.original) && isClip(t.edited))) return null
     return {
-      project: { fileName: meta.fileName, named: meta.named, params: meta.params, tempo: meta.tempo, tracks: tracks as Project['tracks'], active: Math.min(meta.active ?? 0, tracks.length - 1) },
+      project: { fileName: meta.fileName, named: meta.named, params: meta.params, tempo: meta.tempo, markers: meta.markers, tracks: tracks as Project['tracks'], active: Math.min(meta.active ?? 0, tracks.length - 1) },
       ids: meta.tracks.map((t) => t.id),
     }
   }
