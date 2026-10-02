@@ -181,7 +181,7 @@ fn transient_timing() {
     let alpha = 1.5;
     // 方式ごとの（最大のずれ、ずれのばらつき = 最大 - 最小）
     let mut results = Vec::new();
-    for algo in [Algorithm::PhaseVocoder, Algorithm::PhaseVocoder2, Algorithm::Hpss] {
+    for algo in ALGOS {
         let y = &run(&[&x], sr, 0.0, alpha, algo)[0];
         let (mut worst, mut lo, mut hi) = (0.0f32, f32::MAX, f32::MIN);
         // 先頭と末尾の音は端の扱いで崩れやすいので除く
@@ -197,12 +197,14 @@ fn transient_timing() {
             hi = hi.max(err);
         }
         println!("{algo:?}: worst {worst:.1}ms, spread {:.1}ms", hi - lo);
-        results.push((worst, hi - lo));
+        results.push((algo, worst, hi - lo));
     }
     // Phase Vocoder は立ち上がりがにじんでピークの位置が定まらない。v2・HPSS は元の時刻からずれず、ばらつきも小さいこと
     // （2026-10-02 時点: v2 は最大 0.1ms、HPSS は最大 2.2ms）
-    for (i, &(worst, spread)) in results.iter().enumerate().skip(1) {
-        assert!(worst < 5.0 && spread < 5.0, "algo {i}: worst {worst} spread {spread}");
+    for &(algo, worst, spread) in &results {
+        if matches!(algo, Algorithm::PhaseVocoder2 | Algorithm::Hpss) {
+            assert!(worst < 5.0 && spread < 5.0, "{algo:?}: worst {worst} spread {spread}");
+        }
     }
 }
 
