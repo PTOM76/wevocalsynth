@@ -4,7 +4,9 @@ import { clipDuration } from '../audio/types'
 import { AUDIO_ACCEPT, decodeFile } from 'wevocal-lib'
 import { DEFAULT_TEMPO, PROJECT_EXT, isProjectFile, loadProject, type Project, type ProjectTempo } from '../project/projectFile'
 import { applyFormantCurve, applyGainCurve, applyPitchCurve, spliceProcessed } from '../audio/edit'
-import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
+import { applyEditToRanges, normalizeRanges, sliceRanges } from '../audio/multiRange'
+import { placeOnNotes } from '../audio/sampler'
+import type { SamplerOptions } from '../components/SamplerDialog'
 import { usePlayer } from '../audio/usePlayer'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
 import { analyzeF0, analyzeSpectrogram, processAudio } from '../dsp/engine'
@@ -333,6 +335,17 @@ export function useEditor(settings: Settings) {
       setSelections(result.ranges)
     })
 
+  /** 選択範囲（なければ全体）を素材にして MIDI の音符に並べ、新しいトラックにする */
+  const placeOnMidi = (o: SamplerOptions) =>
+    task.run(t('task.sampler'), async (signal) => {
+      const active = history.tracks.find((tr) => tr.id === history.activeId)
+      if (!edited || !active) return
+      const sample = selections.length ? sliceRanges(edited, selections) : edited
+      const clip = await placeOnNotes(sample, o.notes, o.baseNote, o.fit, { ...params, ...NEUTRAL }, setProgress)
+      if (signal.aborted) return
+      tracks.addClip(clip, t('sampler.trackName', { name: active.name, midi: o.midiName }))
+    })
+
   const applyCurve = () =>
     task.run(t('task.curve'), async (signal) => {
       const target = pitchTarget.target
@@ -499,6 +512,6 @@ export function useEditor(settings: Settings) {
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker,
+    cmd, apply, stretchRange, placeOnMidi, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker,
   }
 }

@@ -54,6 +54,8 @@ interface Actions {
   addTrack: () => void
   /** 音を0から作る（新しいトラック。何も開いていなくても使える） */
   synth: () => void
+  /** 選択範囲を MIDI の音符に並べる */
+  sampler: () => void
   /** プロジェクト名を変える */
   showShortcuts: () => void
   showSettings: () => void
@@ -125,7 +127,12 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('extract.splitMenu'), disabled: noClip, onClick: a.splitStems },
   ]
   // 編集メニューに入れすぎないよう、加工の道具（抽出・音声の作成）は「ツール」にまとめる
-  const tools: MenuEntry[] = [...extract, { divider: true }, { label: t('synth.menu'), disabled: a.busy, onClick: a.synth }]
+  const tools: MenuEntry[] = [
+    ...extract,
+    { divider: true },
+    { label: t('sampler.menu'), disabled: noClip, onClick: a.sampler },
+    { label: t('synth.menu'), disabled: a.busy, onClick: a.synth },
+  ]
 
   const menus: MenuGroup[] = [
     {

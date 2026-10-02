@@ -25,6 +25,7 @@ import EditPanel from './components/EditPanel'
 import VolumePanel from './components/VolumePanel'
 import PitchToolHost, { type PitchDialogKind } from './components/PitchToolHost'
 import SynthDialog from './components/SynthDialog'
+import SamplerDialog from './components/SamplerDialog'
 import { flattenPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
@@ -84,6 +85,7 @@ export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [synthOpen, setSynthOpen] = useState(false)
+  const [samplerOpen, setSamplerOpen] = useState(false)
   const [renamingProject, setRenamingProject] = useState(false)
   const [pitchDialog, setPitchDialog] = useState<PitchDialogKind>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
@@ -147,6 +149,7 @@ export default function App() {
     selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),
     addTrack: () => ed.addPicker.open(),
     synth: () => setSynthOpen(true),
+    sampler: () => setSamplerOpen(true),
     showShortcuts: () => setShortcutsOpen(true),
     showSettings: () => {
       setSettingsOpen(true)
@@ -520,6 +523,13 @@ export default function App() {
         pitchTools={ed.pitchTools}
       />
       <SynthDialog open={synthOpen} bpm={bpm} onClose={() => setSynthOpen(false)} onCreate={ed.addSynth} />
+      <SamplerDialog
+        open={samplerOpen}
+        bpm={bpm}
+        baseNote={ed.rangeNote == null ? null : Math.round(ed.rangeNote)}
+        onClose={() => setSamplerOpen(false)}
+        onRun={(o) => void ed.placeOnMidi(o)}
+      />
       <HistoryDialog
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
