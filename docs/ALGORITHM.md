@@ -26,11 +26,13 @@ WeVocalSynth の音声処理（ピッチ変更・時間伸縮・フォルマン�
 
 たとえば 1 オクターブ上げるときは、2 倍に伸ばしてから 2 倍速で読み直す。長さは元に戻り、高さだけが 2 倍になる。
 
+そのため、処理方式（次の節）はピッチの変更と長さの変更の両方に効く。ピッチだけを変えるときも、中ではピッチ比の分だけ選んだ方式で伸縮している。ピッチと長さで別々の方式は選べない（1 回の伸縮にまとめているため）。
+
 リサンプルは、窓付き sinc 補間で行う（`wevocal-lib/src/resample.rs`）。速く読むときはカットオフを下げて、折り返しノイズ（高い音が低い音に化けること）を防ぐ。
 
-## 時間伸縮
+## 処理方式（時間伸縮）
 
-時間伸縮は 7 つの方式から選べる（v2 は改良版で、従来版も残している）。どれも「出力の各位置が、入力のどこに当たるか」という時間の対応（`timemap.rs`）に沿って、入力から断片を取ってきて並べ直す。一定の倍率の伸縮も、時間ごとに倍率が変わる伸縮（ピッチカーブ）も、同じ仕組みで扱う。
+処理方式は 8 つから選べる（v2 は改良版で、従来版も残している）。どれも時間伸縮の方式で、上のとおりピッチの変更にも使う。どれも「出力の各位置が、入力のどこに当たるか」という時間の対応（`timemap.rs`）に沿って、入力から断片を取ってきて並べ直す。一定の倍率の伸縮も、時間ごとに倍率が変わる伸縮（ピッチカーブ）も、同じ仕組みで扱う。
 
 | 方式 | ファイル | 仕組み | 向いているもの |
 | --- | --- | --- | --- |
@@ -41,6 +43,7 @@ WeVocalSynth の音声処理（ピッチ変更・時間伸縮・フォルマン�
 | WSOLAv2 | `wsola.rs`（`wsola2_map`） | WSOLA の位置合わせを、正規化した相互相関で行う | 子音の多い音声 |
 | Phase Vocoder | `pv.rs` | 周波数成分ごとに位相をそろえて伸ばす | 和音・楽器（楽器の既定） |
 | Phase Vocoder v2 | `pv.rs`（`stretch_map2`） | Phase Vocoder で、立ち上がりのまわりだけ伸ばさずに進める | 打楽器・ピアノなど立ち上がりのある音 |
+| HPSS | `hpss.rs` | 打楽器の成分と伸びる成分に分け、別々の方式で伸ばして足す | ドラム入りの曲。重い |
 
 ステレオでは、全チャンネルで同じ切り貼りの位置を使う。チャンネルごとに位置がずれると、音の定位（左右の位置）が崩れるため。
 
@@ -95,13 +98,24 @@ Phase Vocoder v2 は次のようにする（`detect_onsets` / `keep_transients`�
 
 短い減衰音の連続を 2 倍に伸ばしたテストでは、立ち上がりのまわり ±60ms のエネルギーのうち最も強い 5ms に集まる割合が、Phase Vocoder 0.41 → v2 0.95 になった（`tests/stretch.rs` の `transient_sharpness`、2026-10-02）。区間に入るところで全成分の位相を戻すので、伸びている和音の成分も一瞬つながりが変わる。Röbel の方式は、山ごとに群遅延で立ち上がりかどうかを判定して、立ち上がりの山だけを扱うことでこれを避けている。
 
+### HPSS（打楽器分離のハイブリッド）
+
+Driedger・Müller・Ewert (2014) の方式。立ち上がりを見つける代わりに、音を分けることで暗に扱う（`hpss.rs`）。
+
+1. STFT（約 46ms、75% 重ね）の振幅を、時間方向（17 フレーム）と周波数方向（17 ビン）にそれぞれメディアンフィルタする。持続する音はスペクトログラムで横に伸びるので時間方向のほうが大きく残り、打楽器は縦に伸びるので周波数方向のほうが大きく残る
+2. 大きく残ったほうに各成分を振り分け（2 値のマスク）、「伸びる成分」と「打つ成分」の 2 本の音に戻す。マスクはモノラルにまとめた音で決め、全チャンネルに使う（定位を崩さない）
+3. 伸びる成分は Phase Vocoder、打つ成分は約 10ms の短い窓のオーバーラップ加算（位置合わせなし）で伸ばし、足し戻す
+
+Phase Vocoder は立ち上がりがにじみ、短い窓の OLA は伸びる音がうなるので、それぞれ得意なほうに任せる形。全体の STFT を持つとメモリが大きい（3 分のステレオで数百 MB）ので、時間方向のメディアンに要る前後 17 フレーム分だけを持ちながら順に処理する。
+
+テスト（`tests/stretch.rs`、2026-10-02）では、分けた 2 本を足すと入力と一致し、持続音は伸びる成分、クリックは打つ成分に入る（`hpss_separation`）。短い減衰音の立ち上がりの集中度は Phase Vocoder 0.41 → HPSS 0.67（Phase Vocoder v2 は 0.95）。分離の分だけ重く、3 分のステレオを 2 倍に伸ばすのに約 17 秒かかる（Phase Vocoder は約 6 秒。ネイティブ、開発 PC）。
+
 ### 和音・楽器向けの候補（未実装）
 
-和音・楽器向けの方式を増やすために調べた候補 (2026-10-02)。Phase Vocoder の弱点は、残響のような感じ（フェージー感）と、立ち上がり（トランジェント）のにじみ（後者は Phase Vocoder v2 で対処）。
+和音・楽器向けの方式を増やすために調べた候補のうち、まだ入れていないもの (2026-10-02)。Phase Vocoder の弱点は、残響のような感じ（フェージー感）と、立ち上がり（トランジェント）のにじみ（後者は Phase Vocoder v2・HPSS で対処）。
 
 | 候補 | 仕組み | 効くところ | 入れ方 |
 | --- | --- | --- | --- |
-| 打楽器分離のハイブリッド（HPSS） | 音を「伸びる成分（和音など）」と「打つ成分（打楽器など）」に分け、前者は Phase Vocoder、後者は短い窓の OLA で伸ばして足し戻す。立ち上がりを見つける代わりに、分けることで暗に扱う | ドラム入りの曲 | 分離（スペクトログラムの横・縦方向のメディアンフィルタ）を足す。中くらい |
 | PVSOLA | Phase Vocoder の出力に、相互相関で位置を合わせた入力のフレームをそのまま定期的に差し込み、位相のずれが溜まらないようにする。位相ロックが要らない。もとは単音の声向けで、和音向けの改良版もある | フェージー感 | 論文の方式なので自前で書ける。中くらい |
 | Rubber Band Library | 時間伸縮とピッチ変更のライブラリ | 全般 | GPL（または有償の商用ライセンス）。組み込むならアプリ本体とは分けた追加機能にする |
 
@@ -187,12 +201,13 @@ BPM と 1 拍目の位置を推定する（`tempo.rs`）。
 | A. Röbel, [Transient detection and preservation in the phase vocoder](http://recherche.ircam.fr/anasyn/roebel/paper/icmc2003.pdf) (2003) | Phase Vocoder v2。立ち上がりで位相を戻す従来の方式と、帯域ごとにまとめて戻すと伸びている音の位相まで壊すという指摘。v2 は従来の方式（立ち上がりで伸ばさず、位相を戻す）に近く、Röbel の山ごとの判定は入れていない |
 | [Audio time stretching and pitch scaling](https://en.wikipedia.org/wiki/Audio_time_stretching_and_pitch_scaling)（Wikipedia） | 方式ごとの弱点の整理。PSOLA は同じ断片の繰り返しでブザー音が出やすく、立ち上がりがにじみやすい。SOLA 系は単音には安く良い結果を出すが、和音には弱い |
 
+| J. Driedger, M. Müller, S. Ewert, [Improving Time-Scale Modification of Music Signals Using Harmonic-Percussive Separation](https://www.semanticscholar.org/paper/Improving-Time-Scale-Modification-of-Music-Signals-Driedger-M%C3%BCller/2936759a93ee6d6ce4109221bfbb08de0c7c569b) (2014) | HPSS。メディアンフィルタで伸びる成分と打つ成分に分け、前者を Phase Vocoder、後者を短い窓の OLA で伸ばして足す組み立て |
+
 和音・楽器向けの候補（未実装）を調べたときの資料:
 
 | 資料 | 内容 |
 | --- | --- |
-| J. Driedger, M. Müller, S. Ewert, [Improving Time-Scale Modification of Music Signals Using Harmonic-Percussive Separation](https://www.semanticscholar.org/paper/Improving-Time-Scale-Modification-of-Music-Signals-Driedger-M%C3%BCller/2936759a93ee6d6ce4109221bfbb08de0c7c569b) (2014) | HPSS のハイブリッド |
-| [libtsm](https://github.com/meinardmueller/libtsm) | 上の HPSS の方式などを Python で実装した道具箱 |
+| [libtsm](https://github.com/meinardmueller/libtsm) | HPSS の方式などを Python で実装した道具箱 |
 | A. Moinet, T. Dutoit, [PVSOLA: A Phase Vocoder with Synchronized OverLap-Add](http://recherche.ircam.fr/pub/dafx11/Papers/57_e.pdf) (2011) | PVSOLA |
 | [Improved PVSOLA Time-Stretching and Pitch-Shifting for Polyphonic Audio](https://www.dafx12.york.ac.uk/papers/dafx12_submission_26.pdf) (2012) | 正弦波の成分と雑音の成分を分けて、PVSOLA を和音にも使えるようにする |
 | [Rubber Band Library](https://breakfastquay.com/rubberband/) | GPL（または有償の商用ライセンス） |
