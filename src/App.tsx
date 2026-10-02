@@ -177,7 +177,8 @@ export default function App() {
   )
 
   // 波形に渡す関数は作り直さない（波形は memo してあり、スライダーの操作など関係ない変化では描き直さない）
-  const onWaveSeek = useStableFn((t: number) => (loop.playing && loop.seek(t)) || player.seek(t))
+  // ループ試聴・試聴の再生中は、範囲の中ならその中で移る（範囲の外は通常の移動）
+  const onWaveSeek = useStableFn((t: number) => (loop.playing && loop.seek(t)) || (ed.preview.player.playing && ed.preview.seekSource(t)) || player.seek(t))
   const onWaveSelections = useStableFn((rs: Range[]) => editing && ed.setSelections(rs))
   const onWaveStretch = useStableFn(ed.stretchRange)
   const onWaveContext = useStableFn((x: number, y: number) => setContextPos({ x, y }))
@@ -190,9 +191,9 @@ export default function App() {
     <Waveform
       clip={shown}
       position={player.position}
-      // ループ再生中は、ループの読み位置に線を出す
-      playing={player.playing || loop.playing}
-      livePosition={loop.playing ? loop.livePosition : player.livePosition}
+      // ループ試聴・試聴の再生中は、その位置（元の音声の時刻に換算したもの）に線を出す
+      playing={player.playing || loop.playing || ed.preview.player.playing}
+      livePosition={loop.playing ? loop.livePosition : ed.preview.player.playing ? ed.preview.livePosition : player.livePosition}
       selections={editing ? ed.selections : NO_SELECTIONS}
       // ループ再生中は範囲内ならループの中で移る（範囲外は通常の移動）
       onSeek={onWaveSeek}

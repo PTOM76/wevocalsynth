@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { processRange, type ProcessedRange } from '../audio/edit'
 import { usePlayer } from '../audio/usePlayer'
@@ -76,10 +76,29 @@ export function usePreview(clip: Clip | null, range: Range | null, params: EditP
     }
   }, [enabled, clip, start, end, params, tooLong, matches])
 
+  // 試聴の音は範囲を加工したもので、伸縮すれば長さが変わる。試聴の中の位置と元の範囲の中の位置を、長さの比で換算する
+  const map =
+    matches && preview
+      ? { start: preview.range.start, src: preview.range.end - preview.range.start, out: preview.result.channels[0].length / preview.clip.sampleRate }
+      : null
+  const mapStart = map?.start
+  const mapRatio = map && map.out > 0 ? map.src / map.out : 1
+  const playerLive = player.livePosition
+  /** 試聴している位置を、元の音声の時刻（秒）で（再生位置の線用） */
+  const livePosition = useCallback(() => (mapStart ?? 0) + playerLive() * mapRatio, [mapStart, mapRatio, playerLive])
+  /** 元の音声の時刻 `t` が試聴している範囲の中なら、試聴をそこへ移して true（範囲の外なら何もせず false） */
+  const seekSource = (t: number) => {
+    if (!map || t < map.start || t >= map.start + map.src) return false
+    player.seek((t - map.start) / mapRatio)
+    return true
+  }
+
   const state: PreviewState = tooLong ? 'tooLong' : previewClip ? 'ready' : busy ? 'busy' : 'none'
   return {
     state,
     player,
+    livePosition,
+    seekSource,
     /** 現在の設定と一致するプレビュー結果（なければ null） */
     result: matches && preview ? preview.result : null,
   }
