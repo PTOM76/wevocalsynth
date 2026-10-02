@@ -14,6 +14,9 @@ interface Props {
   /** 再生中の今の位置（時間表示が自分で読む） */
   livePosition: () => number
   duration: number
+  /** 再生位置の直接入力（時間表示を押す） */
+  onSeek?: (t: number) => void
+  timeEditRequest?: number
   hasSelection: boolean
   loopPlaying: boolean
   disabled: boolean
@@ -61,7 +64,7 @@ export default function Toolbar(p: Props) {
         <SmallButton title={t('play.playSelection')} label={t('play.playSelection')} icon={faCirclePlay} disabled={p.disabled || !p.hasSelection} onClick={p.onPlaySelection} />
         <SmallButton title={t('play.repeatTooltip')} label={t('play.repeat')} icon={faRepeat} pressed={p.loopPlaying} disabled={p.disabled} onClick={p.onLoop} />
         <Typography variant="body2" sx={{ fontFamily: 'monospace', ml: 1, minWidth: 150 }}>
-          <LiveTime position={p.position} playing={p.playing} livePosition={p.livePosition} duration={p.duration} />
+          <LiveTime position={p.position} playing={p.playing} livePosition={p.livePosition} duration={p.duration} onSeek={p.disabled ? undefined : p.onSeek} editRequest={p.timeEditRequest} />
         </Typography>
         {p.meter}
       </Stack>

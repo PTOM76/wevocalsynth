@@ -57,6 +57,8 @@
   "edit.reverse": "逆再生",
   "edit.selectAll": "すべて選択",
   "edit.clearSelection": "選択解除",
+  "time.input": "再生位置を入力",
+  "time.inputMenu": "再生位置を入力…",
   "track.addEmpty": "空のトラックを追加",
   "track.emptyName": "空のトラック",
   "silence.menu": "無音を挿入…",

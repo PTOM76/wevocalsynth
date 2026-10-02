@@ -57,6 +57,8 @@
   "edit.reverse": "Reverse",
   "edit.selectAll": "Select all",
   "edit.clearSelection": "Clear selection",
+  "time.input": "Enter playhead position",
+  "time.inputMenu": "Enter position…",
   "track.addEmpty": "Add empty track",
   "track.emptyName": "Empty track",
   "silence.menu": "Insert silence…",

@@ -41,7 +41,7 @@ import { countRender } from './debug/debugStats'
 import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
 import { setFastMath } from './dsp/engine'
-import { checkForUpdate } from 'pevenmui/pwa'
+import { checkForUpdate, promptUpdate } from 'pevenmui/pwa'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 /** 選択範囲なし（描画のたびに新しい空配列を作らない） */
@@ -91,6 +91,8 @@ export default function App() {
   const [samplerOpen, setSamplerOpen] = useState(false)
   const [renamingMarker, setRenamingMarker] = useState<string | null>(null)
   const [silenceOpen, setSilenceOpen] = useState(false)
+  // 再生位置の入力を始める合図（目盛りの右クリックメニューから。増やすたびに始まる）
+  const [timeEditRequest, setTimeEditRequest] = useState(0)
   const [renamingProject, setRenamingProject] = useState(false)
   const [pitchDialog, setPitchDialog] = useState<PitchDialogKind>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
@@ -209,6 +211,8 @@ export default function App() {
     // 新しい版があれば、右下の通知（UpdatePrompt）からそのまま更新できる。ここでは結果だけを知らせる
     checkUpdate: () =>
       void checkForUpdate().then((r) => {
+        // 新しい版があれば、版の表示と更新ボタンのある通知を出す
+        if (r.kind === 'found') return promptUpdate(r.build)
         const l = LABELS[lang]
         const text = { found: l.updateAvailable, latest: l.updateLatest, unsupported: l.updateUnsupported, failed: l.updateFailed }[r.kind]
         ed.setToast({ severity: r.kind === 'failed' ? 'error' : 'info', message: text })
@@ -263,6 +267,8 @@ export default function App() {
     ? [
         { label: t('ruler.playFrom'), onClick: () => playback.playFrom(rulerAt.time) },
         { label: t('ruler.seek'), onClick: () => onWaveSeek(rulerAt.time) },
+        // メニューが閉じてフォーカスが戻ったあとに入力欄を出す
+        { label: t('time.inputMenu'), onClick: () => setTimeout(() => setTimeEditRequest((n) => n + 1), 100) },
         { divider: true },
         { label: t('marker.add'), onClick: () => ed.markers.add(rulerAt.time) },
         { label: t('marker.rename'), disabled: !rulerAt.markerId, onClick: () => setRenamingMarker(rulerAt.markerId) },
@@ -464,6 +470,8 @@ export default function App() {
                 playing={player.playing}
                 position={player.position}
                 livePosition={player.livePosition}
+                onSeek={onWaveSeek}
+                timeEditRequest={timeEditRequest}
                 duration={ed.duration}
                 hasSelection={!!selection}
                 loopPlaying={ed.repeat}
@@ -483,6 +491,8 @@ export default function App() {
                 playing={player.playing}
                 position={player.position}
                 livePosition={player.livePosition}
+                onSeek={onWaveSeek}
+                timeEditRequest={timeEditRequest}
                 duration={ed.duration}
                 hasSelection={!!selection}
                 loopPlaying={ed.repeat}

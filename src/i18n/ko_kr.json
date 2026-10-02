@@ -57,6 +57,8 @@
   "edit.reverse": "역재생",
   "edit.selectAll": "모두 선택",
   "edit.clearSelection": "선택 해제",
+  "time.input": "재생 위치 입력",
+  "time.inputMenu": "재생 위치 입력…",
   "track.addEmpty": "빈 트랙 추가",
   "track.emptyName": "빈 트랙",
   "silence.menu": "무음 삽입…",

@@ -57,6 +57,8 @@
   "edit.reverse": "反轉",
   "edit.selectAll": "全選",
   "edit.clearSelection": "取消選取",
+  "time.input": "輸入播放位置",
+  "time.inputMenu": "輸入播放位置…",
   "track.addEmpty": "新增空音軌",
   "track.emptyName": "空音軌",
   "silence.menu": "插入靜音…",

@@ -11,6 +11,9 @@ interface Props {
   /** 再生中の今の位置（時間表示が自分で読む） */
   livePosition: () => number
   duration: number
+  /** 再生位置の直接入力（時間表示を押す） */
+  onSeek?: (t: number) => void
+  timeEditRequest?: number
   hasSelection: boolean
   loopPlaying: boolean
   onTogglePlay: () => void
@@ -57,7 +60,7 @@ export default function MobilePlayBar(p: Props) {
         </IconButton>
         <Box sx={{ ml: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
           <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-            <LiveTime position={p.position} playing={p.playing} livePosition={p.livePosition} duration={p.duration} />
+            <LiveTime position={p.position} playing={p.playing} livePosition={p.livePosition} duration={p.duration} onSeek={p.onSeek} editRequest={p.timeEditRequest} />
           </Typography>
           {p.meter}
         </Box>
