@@ -37,6 +37,7 @@ import UpdatePrompt from './components/UpdatePrompt'
 import { countRender } from './debug/debugStats'
 import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
+import { setFastMath } from './dsp/engine'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 /** 選択範囲なし（描画のたびに新しい空配列を作らない） */
@@ -64,6 +65,7 @@ export default function App() {
   setLang(lang)
   // 継ぎ目のクロスフェード長（言語と同じく、描画中に設定へ合わせておく）
   setSpliceFadeSec(settings.spliceFadeMs / 1000)
+  setFastMath(settings.fastMath)
   // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
   const ed = useEditor(settings)
   // 設定のテーマ（既定 / ライト / ダーク）を反映する

@@ -188,6 +188,14 @@ export interface ProcessOptions {
   formantSemitones: number
 }
 
+/** フォルマント補正で速い対数・指数の近似を使うか（設定の開発者向け。処理を頼むたびに Worker へ渡す） */
+let fastMath = true
+
+/** フォルマント補正の速い近似を使うかを変える（設定から呼ぶ） */
+export function setFastMath(on: boolean) {
+  fastMath = on
+}
+
 /** プレーナー形式の音声を DSP Worker でピッチ変更・時間伸縮する */
 export function processAudio(
   channels: Float32Array[],
@@ -203,6 +211,7 @@ export function processAudio(
       sampleRate,
       ...opts,
       algorithm: ALGORITHM_ID[opts.algorithm],
+      fastMath,
     },
     onProgress,
   )
@@ -230,6 +239,7 @@ export function processCurve(
       algorithm: ALGORITHM_ID[opts.algorithm],
       preserveFormant: opts.preserveFormant,
       formantSemitones: opts.formantSemitones,
+      fastMath,
     },
     onProgress,
   )
@@ -244,7 +254,7 @@ export function processFormantCurve(
   onProgress?: (p: number) => void,
 ): Promise<Float32Array[]> {
   return send(
-    { kind: 'formant', id: nextId++, channels: channels.map((c) => c.slice()), sampleRate, shifts: shifts.slice(), hopSamples: hopSec * sampleRate },
+    { kind: 'formant', id: nextId++, channels: channels.map((c) => c.slice()), sampleRate, shifts: shifts.slice(), hopSamples: hopSec * sampleRate, fastMath },
     onProgress,
   )
 }

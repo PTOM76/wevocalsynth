@@ -145,6 +145,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
     debug: (
       <Group title={t('settings.groupDebug')}>
         <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
+        <Check checked={draft.fastMath} onChange={(v) => set({ fastMath: v })} label={t('settings.fastMath')} help={t('settings.fastMathHelp')} />
         <Check checked={draft.realtimeAlign} onChange={(v) => set({ realtimeAlign: v })} label={t('settings.realtimeAlign')} help={t('settings.realtimeAlignHelp')} />
         <Row label={t('settings.spliceFade')} help={t('settings.spliceFadeHelp')}>
           <Choice<string>

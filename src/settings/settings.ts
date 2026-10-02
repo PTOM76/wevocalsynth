@@ -73,6 +73,8 @@ export interface Settings {
   spliceFadeMs: number
   /** ループ試聴で、断片の読み始めを前の断片とそろえる（位置合わせ）。切ると従来の方式 */
   realtimeAlign: boolean
+  /** フォルマント補正で速い対数・指数の近似を使う（切ると標準の関数。聴き比べ用） */
+  fastMath: boolean
   /** ダイアログの出し方（今は設定画面のみ）。auto は PWA かつ Chromium 系ならポップアップ、ほかはダイアログ。別窓を開けなければダイアログ */
   dialogWindow: WindowMode | 'auto'
 }
@@ -103,6 +105,7 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultBpm: 120,
   spliceFadeMs: 5,
   realtimeAlign: true,
+  fastMath: true,
 }
 const DEFAULTS = DEFAULT_SETTINGS
 const STORAGE_KEY = 'wevocalsynth.settings'

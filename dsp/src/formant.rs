@@ -13,6 +13,23 @@
 
 use crate::fft::Fft;
 use std::f64::consts::PI;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// 対数・指数に速い近似（`fast_ln` / `fast_exp`）を使うか。既定は使う。設定（開発者向け）で標準の関数に切り替えて聴き比べられる
+static FAST_MATH: AtomicBool = AtomicBool::new(true);
+
+/// 速い近似を使うかを切り替える（Worker が処理の前に設定の値を入れる）
+pub fn set_fast_math(on: bool) {
+    FAST_MATH.store(on, Ordering::Relaxed);
+}
+
+fn ln_of(x: f32, fast: bool) -> f32 {
+    if fast { fast_ln(x) } else { x.ln() }
+}
+
+fn exp_of(x: f32, fast: bool) -> f32 {
+    if fast { fast_exp(x) } else { x.exp() }
+}
 
 const FRAME_SEC: f32 = 0.046;
 const OVERLAP: usize = 4;
@@ -60,6 +77,7 @@ pub fn correct_varying(
         n,
     };
     let scale = 1.0 / n as f32;
+    let fast = FAST_MATH.load(Ordering::Relaxed);
 
     // 端でもオーバーラップが揃うよう、フレームは信号の1フレーム手前から始める。
     let frames = (len + n) / hs + 1;
@@ -111,8 +129,8 @@ pub fn correct_varying(
             // 対数振幅（実数・偶関数）を実部・虚部に詰めて逆変換すると、2フレーム分の実ケプストラムが得られる。
             // 実信号の振幅は左右対称（|X[n-b]| = |X[b]|）なので、半分だけ求めて写す（ln・sqrt の回数が半分になる）
             for b in 0..bins {
-                cre[b] = fast_ln((ar[b] * ar[b] + ai[b] * ai[b]).sqrt() + 1e-9);
-                cim[b] = fast_ln((br[b] * br[b] + bi[b] * bi[b]).sqrt() + 1e-9);
+                cre[b] = ln_of((ar[b] * ar[b] + ai[b] * ai[b]).sqrt() + 1e-9, fast);
+                cim[b] = ln_of((br[b] * br[b] + bi[b] * bi[b]).sqrt() + 1e-9, fast);
             }
             for b in bins..n {
                 cre[b] = cre[n - b];
@@ -126,8 +144,8 @@ pub fn correct_varying(
             }
             // リフタ後も実数・偶関数なので、順変換の実部・虚部がそれぞれの包絡になる
             fft.run(&mut cre, &mut cim, false);
-            envelope_gain(&cre[..bins], if skip_a { 1.0 } else { ca }, &mut ga);
-            envelope_gain(&cim[..bins], if skip_b { 1.0 } else { cb }, &mut gb);
+            envelope_gain(&cre[..bins], if skip_a { 1.0 } else { ca }, &mut ga, fast);
+            envelope_gain(&cim[..bins], if skip_b { 1.0 } else { cb }, &mut gb, fast);
         }
 
         // 補正したスペクトルを Z' = A' + iB' に詰めて逆変換すると、実部・虚部が2フレーム分の波形になる
@@ -218,7 +236,7 @@ pub(crate) fn fast_exp(x: f32) -> f32 {
 }
 
 /// 包絡 `env`（対数）を E(f) から E(c·f) に変えるビンごとのゲイン。ビン間は線形補間
-fn envelope_gain(env: &[f32], c: f64, gain: &mut [f32]) {
+fn envelope_gain(env: &[f32], c: f64, gain: &mut [f32], fast: bool) {
     let bins = env.len();
     for b in 0..bins {
         let t = b as f64 * c;
@@ -229,7 +247,7 @@ fn envelope_gain(env: &[f32], c: f64, gain: &mut [f32]) {
             let g = (t - i as f64) as f32;
             env[i] + (env[i + 1] - env[i]) * g
         };
-        gain[b] = fast_exp((target - env[b]).clamp(-MAX_LOG_GAIN, MAX_LOG_GAIN));
+        gain[b] = exp_of((target - env[b]).clamp(-MAX_LOG_GAIN, MAX_LOG_GAIN), fast);
     }
 }
 

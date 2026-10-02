@@ -37,6 +37,7 @@ interface DspExports {
   analyze_tempo(input: number, frames: number, sampleRate: number): number
   output_u8_ptr(): number
   output_ptr(): number
+  set_fast_math(on: number): void
 }
 
 /** ピッチ変更・時間伸縮のリクエスト */
@@ -52,6 +53,8 @@ export interface ProcessRequest {
   /** ピッチ変更時にフォルマントを保持し、`formantSemitones` だけ移動する */
   preserveFormant: boolean
   formantSemitones: number
+  /** フォルマント補正で速い対数・指数の近似を使うか（省略なら使う） */
+  fastMath?: boolean
 }
 
 /** F0 解析・スペクトログラム・テンポ解析のリクエスト（モノラル） */
@@ -75,6 +78,7 @@ export interface CurveRequest {
   algorithm: number
   preserveFormant: boolean
   formantSemitones: number
+  fastMath?: boolean
 }
 
 /** フォルマントカーブ編集のリクエスト。`shifts[k]` は時刻 k × `hopSamples` のフォルマントのずらし量（半音） */
@@ -85,6 +89,7 @@ export interface FormantCurveRequest {
   sampleRate: number
   shifts: Float32Array
   hopSamples: number
+  fastMath?: boolean
 }
 
 export type DspRequest = ProcessRequest | F0Request | CurveRequest | FormantCurveRequest
@@ -120,6 +125,7 @@ function run(dsp: DspExports, req: ProcessRequest | CurveRequest | FormantCurveR
   const frames = req.channels[0]?.length ?? 0
   const count = req.channels.length
   const total = frames * count
+  dsp.set_fast_math(req.fastMath === false ? 0 : 1)
   const input = dsp.alloc_f32(total)
   try {
     const view = new Float32Array(dsp.memory.buffer, input, total)

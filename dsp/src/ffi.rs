@@ -24,6 +24,12 @@ thread_local! {
     static OUTPUT_U8: RefCell<Vec<u8>> = const { RefCell::new(Vec::new()) };
 }
 
+/// フォルマント補正で速い対数・指数の近似を使うか（0 なら標準の関数）。Worker が処理の前に設定の値を入れる
+#[no_mangle]
+pub extern "C" fn set_fast_math(on: u32) {
+    formant::set_fast_math(on != 0);
+}
+
 /// wasm メモリ上に f32 を `len` 個確保し、そのポインタを返す。
 #[no_mangle]
 pub extern "C" fn alloc_f32(len: usize) -> *mut f32 {

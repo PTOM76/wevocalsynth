@@ -204,6 +204,8 @@
   "settings.groupDebug": "Debug",
   "settings.showDebug": "Debug overlay",
   "settings.showDebugHelp": "Shown at the bottom left. Toggle with Ctrl+Shift+D",
+  "settings.fastMath": "Fast formant math",
+  "settings.fastMathHelp": "Uses approximations. Turn off for standard math (for comparison)",
   "settings.realtimeAlign": "Align loop preview grains",
   "settings.realtimeAlignHelp": "Aligns grain joins for less roughness",
   "settings.spliceFade": "Seam fade",
