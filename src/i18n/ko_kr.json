@@ -235,6 +235,7 @@
   "settings.groupInput": "조작",
   "settings.sliderReset": "더블 클릭으로 슬라이더 되돌리기",
   "settings.sliderResetHelp": "가공·음량 슬라이더를 기본값으로 되돌림",
+  "settings.seekAfterInsert": "붙여넣기·삽입 후 재생 위치를 끝으로",
   "settings.liveSelection": "범위 선택 중에도 수치 갱신",
   "settings.liveSelectionHelp": "끄면 놓을 때 갱신 (가벼움)",
   "settings.tempoStretch": "템포를 바꾸면 전체를 늘이고 줄이기",

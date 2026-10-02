@@ -19,6 +19,8 @@ interface Deps {
   seek: (t: number) => void
   commit: (clip: Clip, label: string) => void
   notify: (message: string) => void
+  /** 貼り付け・無音の挿入のあと、再生位置を入れた範囲の終わりへ移す */
+  seekAfterInsert: boolean
 }
 
 /**
@@ -53,6 +55,7 @@ export function useClipCommands(d: Deps) {
     const at = d.getPosition()
     d.commit(insertAt(edited, clipboard, at), t('history.paste'))
     d.setSelections([{ start: at, end: at + clipDuration(clipboard) }])
+    if (d.seekAfterInsert) d.seek(at + clipDuration(clipboard))
   }
   const trim = () => {
     if (!edited || !hasSel) return
@@ -99,6 +102,7 @@ export function useClipCommands(d: Deps) {
     const silent = { sampleRate: edited.sampleRate, channels: edited.channels.map(() => new Float32Array(n)) }
     d.commit(insertAt(edited, silent, at), t('silence.title'))
     d.setSelections([{ start: at, end: at + sec }])
+    if (d.seekAfterInsert) d.seek(at + sec)
   }
 
   /** 選択範囲（なければ全体）を逆再生にする（範囲ごとに前後を逆に並べる） */

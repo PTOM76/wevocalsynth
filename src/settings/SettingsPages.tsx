@@ -54,6 +54,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             label={t('settings.sliderReset')}
             help={t('settings.sliderResetHelp')}
           />
+          <Check checked={draft.seekAfterInsert} onChange={(v) => set({ seekAfterInsert: v })} label={t('settings.seekAfterInsert')} />
         </Group>
         <Group title={t('settings.groupProcess')}>
           <Row label={t('settings.initialMode')}>

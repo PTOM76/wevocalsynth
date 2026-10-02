@@ -72,6 +72,8 @@ export interface Settings {
   showNotes: boolean
   /** ピッチ帯にピッチの線を出す（音符ブロックとどちらかは出す） */
   showPitchLine: boolean
+  /** 貼り付け・無音の挿入のあと、再生位置を入れた範囲の終わりへ移す */
+  seekAfterInsert: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
   /** ボーカル・楽器のモードで使う処理方式 */
@@ -103,6 +105,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showMeters: true,
   showNotes: false,
   showPitchLine: true,
+  seekAfterInsert: true,
   liveSelection: false,
   followPlayhead: true,
   sliderDoubleClickReset: true,

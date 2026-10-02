@@ -184,6 +184,7 @@ export function useEditor(settings: Settings) {
     seek: player.seek,
     commit,
     notify: (message) => setToast({ severity: 'info', message }),
+    seekAfterInsert: settings.seekAfterInsert,
   })
 
   // ボーカル抽出（追加機能）。未導入なら確認ダイアログ（addonDialog）を出す

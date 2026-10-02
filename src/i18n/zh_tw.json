@@ -235,6 +235,7 @@
   "settings.groupInput": "操作",
   "settings.sliderReset": "按兩下重設滑桿",
   "settings.sliderResetHelp": "將處理·音量滑桿恢復為預設值",
+  "settings.seekAfterInsert": "貼上·插入後將播放位置移到末尾",
   "settings.liveSelection": "選取範圍時即時更新數值",
   "settings.liveSelectionHelp": "關閉時於放開時更新（較輕）",
   "settings.tempoStretch": "變更速度時拉伸全部",

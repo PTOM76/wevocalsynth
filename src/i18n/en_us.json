@@ -235,6 +235,7 @@
   "settings.groupInput": "Input",
   "settings.sliderReset": "Double-click resets sliders",
   "settings.sliderResetHelp": "Resets processing and volume sliders to default",
+  "settings.seekAfterInsert": "Move playhead to end after paste/insert",
   "settings.liveSelection": "Update selection while dragging",
   "settings.liveSelectionHelp": "Off updates on release (lighter)",
   "settings.tempoStretch": "Stretch all tracks when tempo changes",

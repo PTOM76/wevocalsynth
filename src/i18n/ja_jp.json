@@ -235,6 +235,7 @@
   "settings.groupInput": "操作",
   "settings.sliderReset": "ダブルクリックでスライダーを戻す",
   "settings.sliderResetHelp": "加工・音量のスライダーを既定値に戻す",
+  "settings.seekAfterInsert": "貼り付け・挿入のあと再生位置を末尾へ",
   "settings.liveSelection": "範囲選択中も数値を更新",
   "settings.liveSelectionHelp": "切ると離したときに更新（軽い）",
   "settings.tempoStretch": "テンポを変えたら全体を伸縮する",
