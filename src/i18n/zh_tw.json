@@ -263,6 +263,7 @@
   "history.paste": "貼上",
   "history.tempoStretch": "速度變更 {from} → {to} BPM",
   "history.stretch": "拉伸範圍 ×{ratio}",
+  "history.retime": "音符長度·位置",
   "history.curve": "音高曲線",
   "settings.cat.pitch": "音高分析",
   "settings.groupPitch": "音高分析",

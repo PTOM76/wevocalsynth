@@ -263,6 +263,7 @@
   "history.paste": "貼り付け",
   "history.tempoStretch": "テンポ変更 {from} → {to} BPM",
   "history.stretch": "範囲を伸縮 ×{ratio}",
+  "history.retime": "音符の長さ・位置",
   "history.curve": "ピッチカーブ",
   "settings.cat.pitch": "ピッチ解析",
   "settings.groupPitch": "ピッチ（声の高さ）の解析",

@@ -236,6 +236,7 @@ export default function App() {
   const onWaveSeek = useStableFn((t: number) => (loop.playing && loop.seek(t)) || (ed.preview.player.playing && ed.preview.seekSource(t)) || player.seek(t))
   const onWaveSelections = useStableFn((rs: Range[]) => editing && ed.setSelections(rs))
   const onWaveStretch = useStableFn(ed.stretchRange)
+  const onWaveRetime = useStableFn(ed.retime)
   const onWaveContext = useStableFn((x: number, y: number) => setContextPos({ x, y }))
   const onWaveDraw = useStableFn((from: DrawPoint, to: DrawPoint) => shown && ed.pitch && ed.pitchTarget.draw(shown, ed.pitch, from, to))
   const onWaveGrab = useStableFn((hz: Float32Array) => shown && ed.pitchTarget.replace(shown, hz))
@@ -255,6 +256,7 @@ export default function App() {
       onSelectionsChange={onWaveSelections}
       liveSelections={settings.liveSelection}
       onStretchRange={onWaveStretch}
+      onRetime={onWaveRetime}
       onContextMenu={onWaveContext}
       viewCtl={viewCtl}
       pitch={ed.pitch}

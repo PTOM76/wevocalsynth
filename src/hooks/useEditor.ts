@@ -335,6 +335,20 @@ export function useEditor(settings: Settings) {
       setSelections(result.ranges)
     })
 
+  /** 区間ごとに長さを変える（音符ブロックの移動・端の伸縮）。後ろから処理して、前の区間の位置をずらさない */
+  const retime = (parts: { start: number; end: number; dur: number }[]) =>
+    task.run(t('task.stretching'), async (signal) => {
+      if (!edited) return
+      let clip = edited
+      const list = parts.filter((p) => p.end > p.start && p.dur > 0 && Math.abs(p.dur - (p.end - p.start)) > 1e-4).sort((a, b) => b.start - a.start)
+      for (const [i, p] of list.entries()) {
+        const opts = { ...params, ...NEUTRAL, stretch: p.dur / (p.end - p.start) }
+        clip = (await applyEditToRanges(clip, [p], opts, (v) => setProgress((i + v) / list.length))).clip
+        if (signal.aborted) return
+      }
+      if (list.length) commit(clip, t('history.retime'))
+    })
+
   /** 選択範囲（なければ全体）を素材にして MIDI の音符に並べ、新しいトラックにする */
   const placeOnMidi = (o: SamplerOptions) =>
     task.run(t('task.sampler'), async (signal) => {
@@ -512,6 +526,6 @@ export function useEditor(settings: Settings) {
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, placeOnMidi, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker,
+    cmd, apply, stretchRange, retime, placeOnMidi, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker,
   }
 }

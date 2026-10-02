@@ -6,6 +6,7 @@ import { usePalette } from './waveform/usePalette'
 import { useLaneDivider } from './waveform/useLaneDivider'
 import { useLanePen } from './waveform/useLanePen'
 import { usePitchGrab } from './waveform/usePitchGrab'
+import type { NoteGhost } from './waveform/useNoteDrag'
 import { useRangeEdges, type EdgeDrag } from './waveform/useRangeEdges'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
@@ -68,6 +69,8 @@ interface Props {
   liveSelections?: boolean
   /** Shift+右端ドラッグで、範囲 `range` を長さ `duration`（秒）に伸縮する */
   onStretchRange: (range: Range, duration: number) => void
+  /** 音符ブロックの移動・伸縮: 区間ごとに長さを変える */
+  onRetime: (parts: { start: number; end: number; dur: number }[]) => void
   /** 右クリック、またはタッチの長押し（画面上の位置） */
   onContextMenu: (x: number, y: number) => void
   /** 表示範囲（拡大縮小・スクロール）。ツールバーと共有するため画面側で持つ */
@@ -168,7 +171,9 @@ function Waveform(props: Props) {
   const onRuler = (e: React.PointerEvent) => e.clientY - canvasRef.current!.getBoundingClientRect().top < RULER_HEIGHT
   // マウスが何の上にあるか（カーソルの形にだけ使う）。状態にするとマウスを動かすたびに描き直しになるので、
   // ref に持って Canvas の style.cursor を直接書き換える（`updateCursor`）
-  const hoverRef = useRef({ ruler: false, divider: false, grab: false, edge: false })
+  const hoverRef = useRef({ ruler: false, divider: false, grab: false, noteEdge: false, edge: false })
+  // 音符ブロックを横にドラッグしている間の行き先
+  const [noteGhost, setNoteGhost] = useState<NoteGhost | null>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
   // 描いた曲線（ピッチ・音量）は配列の中身だけが変わるので、描き直しのきっかけに使うカウンタ
   const [drawVersion, setDrawVersion] = useState(0)
@@ -270,6 +275,18 @@ function Waveform(props: Props) {
       g.setTransform(dpr, 0, 0, dpr, 0, 0)
       g.clearRect(0, 0, width, height)
       for (const r of selections) drawSelection(c, r, height)
+      if (noteGhost && range) {
+        // ドラッグ中の音符ブロックの行き先
+        const top = RULER_HEIGHT + upperH
+        const per = pitchH / (range.hi - range.lo)
+        const y = top + ((range.hi - noteGhost.note - 0.5) / (range.hi - range.lo)) * pitchH
+        const x0 = ((noteGhost.start - view.start) / view.dur) * width
+        const x1 = ((noteGhost.end - view.start) / view.dur) * width
+        g.strokeStyle = pal.text.primary
+        g.lineWidth = 2
+        g.strokeRect(x0, y, Math.max(1, x1 - x0), Math.max(4, per))
+        g.lineWidth = 1
+      }
       drawPlayhead(c, t, height)
     }
     draw(position)
@@ -282,7 +299,7 @@ function Waveform(props: Props) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH, gainH, formantH, selections])
+  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH, gainH, formantH, selections, noteGhost, range, upperH])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -341,6 +358,12 @@ function Waveform(props: Props) {
     selections,
     timeAt,
     props.onGrabPitch,
+    {
+      duration,
+      secPerPx: () => view.dur / Math.max(1, width),
+      onGhost: setNoteGhost,
+      onRetime: props.onRetime,
+    },
   )
   /** マウスの下にあるものと今のモードから、カーソルの形を決めて Canvas に入れる */
   const updateCursor = () => {
@@ -353,7 +376,9 @@ function Waveform(props: Props) {
         ? 'row-resize'
         : grab.grabbing()
           ? 'grabbing'
-          : h.grab
+          : h.noteEdge
+            ? 'ew-resize'
+            : h.grab
             ? 'grab'
             : penMode && (showPitch || showGain || showFormant)
               ? 'crosshair'
@@ -463,6 +488,7 @@ function Waveform(props: Props) {
               ruler: onRuler(e),
               divider: divider.hit(e),
               grab: grab.hover(e),
+              noteEdge: grab.hoverEdge(e),
               edge: !penMode && !props.grabMode && !!edgeAt(e.clientX),
             }
             updateCursor()

@@ -3,6 +3,7 @@ import type { Range } from '../../audio/types'
 import { F0_HOP_SEC } from '../../dsp/engine'
 import { hzToMidi } from './draw'
 import { noteBlockAt } from '../../audio/noteBlocks'
+import { useNoteDrag, type NoteGhost } from './useNoteDrag'
 
 /** 線を掴める距離（px） */
 const HIT_PX = 10
@@ -33,6 +34,12 @@ export function usePitchGrab(
   selections: Range[],
   timeAt: (clientX: number) => number,
   onChange: (hz: Float32Array) => void,
+  timing: {
+    duration: number
+    secPerPx: () => number
+    onGhost: (g: NoteGhost | null) => void
+    onRetime: (parts: { start: number; end: number; dur: number }[]) => void
+  },
 ) {
   /** 掴んでいる範囲（フレーム）と、掴んだときの曲線・押した y */
   const grab = useRef<{ k0: number; k1: number; base: Float32Array; y0: number; snap: boolean } | null>(null)
@@ -71,14 +78,28 @@ export function usePitchGrab(
     return null
   }
 
+  const note = useNoteDrag(shown, pitch?.length ?? 0, timing.duration, timing.secPerPx, timing.onGhost, timing.onRetime)
+  /** ブロックの端の上か */
+  const onEdge = (e: React.PointerEvent) => {
+    const b = hitBlock(e)
+    return !!b && note.partAt(timeAt(e.clientX), b) !== 'body'
+  }
+
   return {
     /** 掴める線の上か（カーソルの形に使う） */
     hover: (e: React.PointerEvent) => hitFrame(e) !== null || hitBlock(e) !== null,
+    /** ブロックの端の上か（カーソルを左右の矢印にする） */
+    hoverEdge: onEdge,
     /** 掴んでいる途中か */
-    grabbing: () => grab.current !== null,
+    grabbing: () => grab.current !== null || note.active(),
     /** 押した位置の線（またはブロック）を掴めたら true */
     down: (e: React.PointerEvent) => {
-      const block = hitFrame(e) === null ? hitBlock(e) : null
+      // ブロックの端は伸縮、ブロックの中は（線を掴んでいなければ）縦なら音程・横なら移動
+      const hb = hitBlock(e)
+      const part = hb ? note.partAt(timeAt(e.clientX), hb) : null
+      const block = hb && (part !== 'body' || hitFrame(e) === null) ? hb : null
+      if (block && part) note.down(e, block, part)
+      if (block && part !== 'body') return true
       const k = block ? block.k0 : hitFrame(e)
       if (k === null || !pitch) return false
       let k0: number
@@ -107,6 +128,7 @@ export function usePitchGrab(
     },
     /** 掴んでいる途中なら動かして true */
     move: (e: React.PointerEvent) => {
+      if (note.active() && note.move(e)) return true
       const g = grab.current
       const { range } = lane
       if (!g || !range) return !!g
@@ -120,9 +142,11 @@ export function usePitchGrab(
     },
     /** 離す（掴んでいたら true） */
     end: () => {
-      const was = grab.current !== null
+      const g = grab.current
       grab.current = null
-      return was
+      // 横に動かしたなら、ピッチの変更は捨てる（縦横はどちらか一方）
+      const moved = note.end()
+      return moved || g !== null
     },
   }
 }

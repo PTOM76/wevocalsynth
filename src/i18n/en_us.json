@@ -263,6 +263,7 @@
   "history.paste": "Paste",
   "history.tempoStretch": "Tempo {from} → {to} BPM",
   "history.stretch": "Stretch range ×{ratio}",
+  "history.retime": "Note timing",
   "history.curve": "Pitch curve",
   "settings.cat.pitch": "Pitch analysis",
   "settings.groupPitch": "Pitch (voice) analysis",
