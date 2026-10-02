@@ -457,6 +457,7 @@
   "gainCurve.discard": "描いた音量を破棄",
   "gainCurve.label": "音量カーブ",
   "menu.formant": "フォルマント",
+  "menu.pitchLine": "ピッチの線",
   "menu.notes": "音符",
   "wave.showFormant": "フォルマント表示",
   "wave.drawFormant": "フォルマントを描く",

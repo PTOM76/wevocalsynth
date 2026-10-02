@@ -3,6 +3,7 @@ import type { Range } from '../../audio/types'
 import { F0_HOP_SEC, type Spectrogram } from '../../dsp/engine'
 import { renderSpectrogram } from './spectrogramImage'
 import { hzToMidi, noteName } from '../../audio/notes'
+import { noteBlocks } from '../../audio/noteBlocks'
 import { markActivity } from '../../debug/debugStats'
 import { t } from '../../i18n/i18n'
 
@@ -271,7 +272,7 @@ export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float3
 }
 
 /** ピッチ帯: 音名のグリッドと F0 曲線。描いた目標ピッチがあれば元の曲線を薄くして重ねる */
-export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range: PitchRange | null, target: Float32Array | null, showNotes = false) {
+export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range: PitchRange | null, target: Float32Array | null, showNotes = false, showLine = true) {
   const { g, width, view, pal, pitchH } = c
   const top = pitchTop(c)
   g.fillStyle = pal.divider
@@ -322,18 +323,10 @@ export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range:
     g.strokeStyle = pal.primary.main
     g.lineWidth = 1
     g.fillStyle = fill
-    for (let k = k0; k <= k1; ) {
-      if (!(at(k) > 0)) {
-        k++
-        continue
-      }
-      let e = k
-      let sum = 0
-      // 1 半音以上跳んだら別の音にする
-      while (e <= k1 && at(e) > 0 && (e === k || Math.abs(hzToMidi(at(e)) - hzToMidi(at(e - 1))) < 1)) sum += hzToMidi(at(e++))
-      const m = Math.round(sum / (e - k))
-      const x0 = toX(c, k * F0_HOP_SEC)
-      const x1 = toX(c, e * F0_HOP_SEC)
+    for (const b of noteBlocks(at, k0, k1)) {
+      const m = b.note
+      const x0 = toX(c, b.k0 * F0_HOP_SEC)
+      const x1 = toX(c, (b.k1 + 1) * F0_HOP_SEC)
       const y = toY(m + 0.5)
       const h = Math.max(4, perSemitone)
       g.fillRect(x0, y, Math.max(1, x1 - x0), h)
@@ -343,9 +336,9 @@ export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range:
         g.fillText(noteName(m), x0 + 2, y - 7)
         g.fillStyle = fill
       }
-      k = e
     }
   }
+  if (!showLine) return
   g.lineWidth = 2
   g.lineJoin = 'round'
   curve(pitch, edited ? alpha(pal.secondary.main, 0.4) : pal.secondary.main)

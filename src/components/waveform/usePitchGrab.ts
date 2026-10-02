@@ -2,6 +2,7 @@ import { useRef, type RefObject } from 'react'
 import type { Range } from '../../audio/types'
 import { F0_HOP_SEC } from '../../dsp/engine'
 import { hzToMidi } from './draw'
+import { noteBlockAt } from '../../audio/noteBlocks'
 
 /** 線を掴める距離（px） */
 const HIT_PX = 10
@@ -12,6 +13,10 @@ interface Lane {
   height: number
   /** 帯の上端・下端の音高（MIDI） */
   range: { lo: number; hi: number } | null
+  /** 音符ブロックを出しているか（ブロックを掴むと、その音を半音刻みで動かす） */
+  notes?: boolean
+  /** ピッチの線を出しているか（出していなければ線は掴めない） */
+  line?: boolean
 }
 
 /**
@@ -30,15 +35,27 @@ export function usePitchGrab(
   onChange: (hz: Float32Array) => void,
 ) {
   /** 掴んでいる範囲（フレーム）と、掴んだときの曲線・押した y */
-  const grab = useRef<{ k0: number; k1: number; base: Float32Array; y0: number } | null>(null)
+  const grab = useRef<{ k0: number; k1: number; base: Float32Array; y0: number; snap: boolean } | null>(null)
 
   /** 今表示している線（描いたところは目標、ほかは解析した F0） */
   const shown = (k: number) => (target && target[k] > 0 ? target[k] : (pitch?.[k] ?? 0))
 
+  /** 押した位置にある音符ブロック */
+  const hitBlock = (e: React.PointerEvent) => {
+    const { range } = lane
+    if (!grabMode || !lane.enabled || !lane.notes || !pitch || !range || lane.height <= 0) return null
+    const y = e.clientY - canvasRef.current!.getBoundingClientRect().top - lane.top
+    const b = noteBlockAt(shown, Math.round(timeAt(e.clientX) / F0_HOP_SEC), pitch.length)
+    if (!b) return null
+    const per = lane.height / (range.hi - range.lo)
+    const by = ((range.hi - b.note - 0.5) / (range.hi - range.lo)) * lane.height
+    return y >= by - 2 && y <= by + Math.max(4, per) + 2 ? b : null
+  }
+
   /** 押した位置の近くに線があれば、そのフレーム */
   const hitFrame = (e: React.PointerEvent): number | null => {
     const { range } = lane
-    if (!grabMode || !lane.enabled || !pitch || !range || lane.height <= 0) return null
+    if (!grabMode || !lane.enabled || lane.line === false || !pitch || !range || lane.height <= 0) return null
     const rect = canvasRef.current!.getBoundingClientRect()
     const y = e.clientY - rect.top - lane.top
     if (y < 0 || y > lane.height) return null
@@ -56,18 +73,22 @@ export function usePitchGrab(
 
   return {
     /** 掴める線の上か（カーソルの形に使う） */
-    hover: (e: React.PointerEvent) => hitFrame(e) !== null,
+    hover: (e: React.PointerEvent) => hitFrame(e) !== null || hitBlock(e) !== null,
     /** 掴んでいる途中か */
     grabbing: () => grab.current !== null,
-    /** 押した位置の線を掴めたら true */
+    /** 押した位置の線（またはブロック）を掴めたら true */
     down: (e: React.PointerEvent) => {
-      const k = hitFrame(e)
+      const block = hitFrame(e) === null ? hitBlock(e) : null
+      const k = block ? block.k0 : hitFrame(e)
       if (k === null || !pitch) return false
       let k0: number
       let k1: number
       const t = k * F0_HOP_SEC
-      const sel = selections.find((r) => t >= r.start && t < r.end)
-      if (sel) {
+      const sel = block ? undefined : selections.find((r) => t >= r.start && t < r.end)
+      if (block) {
+        k0 = block.k0
+        k1 = block.k1
+      } else if (sel) {
         k0 = Math.max(0, Math.floor(sel.start / F0_HOP_SEC))
         k1 = Math.min(pitch.length - 1, Math.ceil(sel.end / F0_HOP_SEC))
       } else {
@@ -81,7 +102,7 @@ export function usePitchGrab(
       for (let j = 0; j < base.length; j++) base[j] = target?.[j] ?? 0
       // 掴んだ範囲は、まだ描いていないフレームも今の F0 から始める（無声は動かさない）
       for (let j = k0; j <= k1; j++) base[j] = shown(j)
-      grab.current = { k0, k1, base, y0: e.clientY }
+      grab.current = { k0, k1, base, y0: e.clientY, snap: !!block }
       return true
     },
     /** 掴んでいる途中なら動かして true */
@@ -90,7 +111,7 @@ export function usePitchGrab(
       const { range } = lane
       if (!g || !range) return !!g
       let semis = ((g.y0 - e.clientY) / lane.height) * (range.hi - range.lo)
-      if (e.shiftKey) semis = Math.round(semis)
+      if (e.shiftKey || g.snap) semis = Math.round(semis)
       const ratio = 2 ** (semis / 12)
       const hz = g.base.slice()
       for (let j = g.k0; j <= g.k1; j++) if (hz[j] > 0) hz[j] *= ratio

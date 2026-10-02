@@ -457,6 +457,7 @@
   "gainCurve.discard": "Discard drawn volume",
   "gainCurve.label": "Volume curve",
   "menu.formant": "Formant",
+  "menu.pitchLine": "Pitch line",
   "menu.notes": "Notes",
   "wave.showFormant": "Show formant",
   "wave.drawFormant": "Draw formant",

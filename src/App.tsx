@@ -174,6 +174,8 @@ export default function App() {
     toggleMeters: () => updateSettings({ showMeters: !settings.showMeters }),
     showNotes: settings.showNotes,
     toggleNotes: () => updateSettings({ showNotes: !settings.showNotes }),
+    showPitchLine: settings.showPitchLine,
+    togglePitchLine: () => updateSettings({ showPitchLine: !settings.showPitchLine }),
     trackCount: ed.tracks.tracks.length,
     activeMute: activeSettings.mix.mute,
     activeSolo: activeSettings.mix.solo,
@@ -258,6 +260,7 @@ export default function App() {
       pitch={ed.pitch}
       showPitch={ed.showPitch}
       showNotes={settings.showNotes}
+      showPitchLine={settings.showPitchLine || !settings.showNotes}
       target={ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null}
       penMode={ed.penMode && editing}
       onDraw={onWaveDraw}

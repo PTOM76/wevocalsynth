@@ -70,6 +70,8 @@ export interface Settings {
   showMeters: boolean
   /** ピッチ帯に音符ブロック（音ごとの半音の高さ）を出す */
   showNotes: boolean
+  /** ピッチ帯にピッチの線を出す（音符ブロックとどちらかは出す） */
+  showPitchLine: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
   /** ボーカル・楽器のモードで使う処理方式 */
@@ -100,6 +102,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showDebug: false,
   showMeters: true,
   showNotes: true,
+  showPitchLine: true,
   liveSelection: false,
   followPlayhead: true,
   sliderDoubleClickReset: true,
