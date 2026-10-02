@@ -14,6 +14,7 @@ import {
 } from '@mui/material'
 import { enterToSubmit, WindowDialog } from 'pevenmui'
 import type { Clip } from '../audio/types'
+import { startContext } from '../audio/audioContext'
 import { parseMidi, type MidiFile } from '../audio/midi'
 import { PEAK_DB, synthesize, type SynthNote, type Timbre } from '../audio/synth'
 import { noteName } from '../audio/notes'
@@ -121,10 +122,13 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
   const preview = async () => {
     if (playing) return stop()
     setBusy(true)
+    // AudioContext は音を作る前（操作の直後）に作って動かす。iOS は await の後に作ると無音のままになる
+    const ctx = new AudioContext()
+    const started = startContext(ctx, 'synth')
     try {
       const clip = await render()
-      if (!clip) return
-      const ctx = new AudioContext()
+      await started
+      if (!clip) return void ctx.close()
       const buf = ctx.createBuffer(1, clip.channels[0].length, clip.sampleRate)
       buf.copyToChannel(clip.channels[0] as Float32Array<ArrayBuffer>, 0)
       const src = ctx.createBufferSource()
@@ -136,6 +140,7 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
       setPlaying(true)
     } catch (e) {
       setError(String(e))
+      void ctx.close()
     } finally {
       setBusy(false)
     }

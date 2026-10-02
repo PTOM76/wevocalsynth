@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Box } from '@mui/material'
-import { memoryUsage, recentDspJobs, recentStalls, renderCounts } from './debugStats'
+import { audioContextStates, memoryUsage, recentDspJobs, recentStalls, renderCounts } from './debugStats'
 import { APP_BUILD } from '../pwa/updateCheck'
 
 /** 表示を更新する間隔（ミリ秒）。数字が読める速さにする */
@@ -112,6 +112,7 @@ export default function DebugOverlay() {
     ...stats.renders.map(([k, v]) => `render ${k} ${v.toFixed(1)}/s`),
     ...[...memoryUsage()].map(([k, v]) => `mem ${k} ${(v / 2 ** 20).toFixed(0)}MB`),
     ...jobs.map((j) => `dsp ${j.kind} ${j.ms.toFixed(0)}ms`),
+    ...audioContextStates(),
     // 画面が止まった記録と、その間に始まった処理
     ...recentStalls().map(
       (st) => `stall ${st.ms.toFixed(0)}ms @${st.at.toFixed(0)}s${st.heapMb !== null ? ` heap ${st.heapMb.toFixed(0)}MB` : ''}: ${st.during.join(', ')}`,

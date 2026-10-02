@@ -8,6 +8,7 @@ import { applyEditToRanges, normalizeRanges, sliceRanges } from '../audio/multiR
 import { placeOnNotes } from '../audio/sampler'
 import type { SamplerOptions } from '../components/SamplerDialog'
 import { usePlayer } from '../audio/usePlayer'
+import { configurePlayback } from '../audio/audioContext'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
 import { analyzeF0, analyzeSpectrogram, processAudio } from '../dsp/engine'
 import { detectMode, modeSettings, type Mode } from '../audio/detectMode'
@@ -170,6 +171,9 @@ export function useEditor(settings: Settings) {
   const preview = usePreview(edited, multi ? null : (editRanges[0] ?? null), params, editing && !busy)
   const rangeNote = useRangeNote(editing && !multi ? edited : null, editRanges[0] ?? null)
   const loop = useRealtimePreview(edited, multi ? null : (editRanges[0] ?? null), params.semitones, params.stretch, settings.realtimeAlign)
+  // 再生方式の切り替え（開発者向け）を、再生の部品すべてに効かせる
+  const { suspendWhenStopped, playbackSession } = settings
+  useEffect(() => configurePlayback({ suspendWhenStopped, playbackSession }), [suspendWhenStopped, playbackSession])
 
   const commit = (clip: Clip, label: string) => {
     history.commit(clip, label)

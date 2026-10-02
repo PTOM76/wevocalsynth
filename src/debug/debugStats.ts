@@ -29,6 +29,18 @@ export function memoryUsage(): ReadonlyMap<string, number> {
   return memory
 }
 
+/** 再生に使う AudioContext と、直近の resume の失敗（iOS で音が出ないときの調査用） */
+const audioContexts = new Map<string, { ctx: AudioContext; error: string | null }>()
+
+export function reportAudioContext(name: string, ctx: AudioContext, error: string | null = null) {
+  audioContexts.set(name, { ctx, error })
+}
+
+/** 「名前 状態 サンプルレート（失敗）」の行 */
+export function audioContextStates(): string[] {
+  return [...audioContexts].map(([k, { ctx, error }]) => `audio ${k} ${ctx.state} ${ctx.sampleRate}Hz${error ? ` err: ${error}` : ''}`)
+}
+
 /** クリップの音声データの量（バイト） */
 export const clipBytes = (clip: { channels: Float32Array[] } | null | undefined) =>
   clip ? clip.channels.reduce((s, c) => s + c.byteLength, 0) : 0

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from './types'
 import { DEFAULT_FADER, faderGain, type TrackFader } from './tracks'
 import { clipDuration } from './types'
+import { startContext, suspendContext } from './audioContext'
 
 /** 一緒に鳴らすトラック（id はレベルメーターの対応づけに使う） */
 export interface PlayTrack {
@@ -139,8 +140,8 @@ export function usePlayer(
     faderNodes.current.clear()
     muteNodes.current.clear()
     const ctx = ctxRef.current
-    if (suspend && ctx?.state === 'running') void ctx.suspend()
-  }, [])
+    if (suspend && ctx) suspendContext(ctx, id)
+  }, [id])
 
   const currentTime = useCallback(() => {
     const ctx = ctxRef.current
@@ -221,7 +222,7 @@ export function usePlayer(
     async (from: number, to?: number) => {
       if (!clip) return
       const ctx = (ctxRef.current ??= new AudioContext())
-      if (ctx.state === 'suspended') await ctx.resume()
+      await startContext(ctx, id)
       const bufferOf = (c: Clip) => {
         let b = buffers.current.get(c)
         if (!b) {

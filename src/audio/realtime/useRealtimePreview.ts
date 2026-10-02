@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../types'
+import { startContext } from '../audioContext'
 import type { GranularMessage, GranularPosition } from './granularProcessor'
 import processorUrl from './granularProcessor.ts?worker&url'
 
@@ -53,9 +54,11 @@ export function useRealtimePreview(clip: Clip | null, range: Range | null, semit
       ctxRef.current = ctx
       readyRef.current = ctx.audioWorklet.addModule(processorUrl)
     }
+    // resume は読み込みを待つ前に呼ぶ（iOS は操作の後に await を挟むと resume を受け付けない）
+    const started = startContext(ctx, 'loop')
     // 読み込み中に別の start が来ても、同じ読み込みの完了を待つ
     await readyRef.current
-    if (ctx.state === 'suspended') await ctx.resume()
+    await started
     if (gen !== genRef.current) return
     const s = Math.floor(range.start * clip.sampleRate)
     const e = Math.max(s + 1, Math.floor(range.end * clip.sampleRate))
