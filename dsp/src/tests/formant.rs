@@ -53,6 +53,26 @@ fn formant_shift_without_pitch() {
 
 /// 高速版（2フレームずつ FFT）が以前の実装と同じ結果になること。補正率が時間で変わる場合と無音を含む場合で確かめる
 #[test]
+fn fast_math_accuracy() {
+    // フォルマント補正で使う速い ln・exp が標準のものとほぼ一致すること
+    let mut worst_ln = 0.0f32;
+    let mut x = 1e-9f32;
+    while x < 1e6 {
+        worst_ln = worst_ln.max((crate::formant::fast_ln(x) - x.ln()).abs());
+        x *= 1.01;
+    }
+    let mut worst_exp = 0.0f32;
+    let mut y = -3.0f32;
+    while y <= 3.0 {
+        worst_exp = worst_exp.max((crate::formant::fast_exp(y) / y.exp() - 1.0).abs());
+        y += 0.001;
+    }
+    println!("fast ln max abs err {worst_ln:.2e}, fast exp max rel err {worst_exp:.2e}");
+    // exp の相対誤差 2e-4 は約 0.002dB で聞き分けられない（2026-10-02 時点: ln 1.3e-5、exp 8.5e-5）
+    assert!(worst_ln < 5e-5 && worst_exp < 2e-4, "ln {worst_ln} exp {worst_exp}");
+}
+
+#[test]
 fn fast_formant_matches_reference() {
     use crate::formant::{correct_varying, correct_varying_reference};
     let sr = 48000.0;

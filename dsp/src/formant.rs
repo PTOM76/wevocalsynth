@@ -111,8 +111,8 @@ pub fn correct_varying(
             // 対数振幅（実数・偶関数）を実部・虚部に詰めて逆変換すると、2フレーム分の実ケプストラムが得られる。
             // 実信号の振幅は左右対称（|X[n-b]| = |X[b]|）なので、半分だけ求めて写す（ln・sqrt の回数が半分になる）
             for b in 0..bins {
-                cre[b] = ((ar[b] * ar[b] + ai[b] * ai[b]).sqrt() + 1e-9).ln();
-                cim[b] = ((br[b] * br[b] + bi[b] * bi[b]).sqrt() + 1e-9).ln();
+                cre[b] = fast_ln((ar[b] * ar[b] + ai[b] * ai[b]).sqrt() + 1e-9);
+                cim[b] = fast_ln((br[b] * br[b] + bi[b] * bi[b]).sqrt() + 1e-9);
             }
             for b in bins..n {
                 cre[b] = cre[n - b];
@@ -196,6 +196,27 @@ impl Lifter {
     }
 }
 
+/// 速い自然対数（`x > 0`）。指数部と仮数部 m（1〜2）に分け、ln m を t = (m-1)/(m+1) の級数で求める（相対誤差 約 1e-7）。
+/// 標準の ln より速く、ここ（包絡の計算）にはこの精度で足りる
+pub(crate) fn fast_ln(x: f32) -> f32 {
+    let bits = x.to_bits();
+    let e = ((bits >> 23) & 0xff) as i32 - 127;
+    let m = f32::from_bits((bits & 0x007f_ffff) | 0x3f80_0000);
+    let t = (m - 1.0) / (m + 1.0);
+    let t2 = t * t;
+    e as f32 * std::f32::consts::LN_2 + 2.0 * t * (1.0 + t2 * (1.0 / 3.0 + t2 * (1.0 / 5.0 + t2 * (1.0 / 7.0))))
+}
+
+/// 速い指数関数（|x| が数十まで）。2 のべき乗に直し、整数部はビットで、小数部は多項式で求める（相対誤差 約 1e-6）
+pub(crate) fn fast_exp(x: f32) -> f32 {
+    let y = x * std::f32::consts::LOG2_E;
+    let k = y.floor();
+    let f = y - k;
+    // 2^f（0 ≤ f < 1）の多項式近似
+    let p = 1.0 + f * (0.693_147_2 + f * (0.240_226_5 + f * (0.055_504_1 + f * (0.009_618_1 + f * 0.001_333_6))));
+    f32::from_bits(((k as i32 + 127) as u32) << 23) * p
+}
+
 /// 包絡 `env`（対数）を E(f) から E(c·f) に変えるビンごとのゲイン。ビン間は線形補間
 fn envelope_gain(env: &[f32], c: f64, gain: &mut [f32]) {
     let bins = env.len();
@@ -208,7 +229,7 @@ fn envelope_gain(env: &[f32], c: f64, gain: &mut [f32]) {
             let g = (t - i as f64) as f32;
             env[i] + (env[i + 1] - env[i]) * g
         };
-        gain[b] = (target - env[b]).clamp(-MAX_LOG_GAIN, MAX_LOG_GAIN).exp();
+        gain[b] = fast_exp((target - env[b]).clamp(-MAX_LOG_GAIN, MAX_LOG_GAIN));
     }
 }
 
