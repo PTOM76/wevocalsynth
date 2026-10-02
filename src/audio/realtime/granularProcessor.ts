@@ -46,7 +46,7 @@ const ALIGN_SEC = 0.01
  * 音声処理のスレッドで 128 サンプルごとの締め切りに間に合わせるため、比べる点を減らす
  */
 const ALIGN_STRIDE = 8
-const COARSE_STEP = 4
+const COARSE_STEP = 8
 
 // periodic Hann 窓: 50% 重ねると総和がちょうど 1 になる
 const WINDOW = Float32Array.from({ length: GRAIN }, (_, i) => 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / GRAIN))
