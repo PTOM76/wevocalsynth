@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material'
+import { IconButton, Stack, Tooltip, Typography } from '@mui/material'
+import { OverflowRow } from 'pevenmui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCirclePlay, faCopy, faCropSimple, faPaste, faPause, faPlay, faRepeat, faScissors, faStop, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { SmallButton, ToolbarDivider } from './waveform/WaveformToolbar'
@@ -64,18 +65,16 @@ export default function Toolbar(p: Props) {
         </Typography>
         {p.meter}
       </Stack>
-      <Stack direction="row" sx={{ alignItems: 'center' }}>
+      {/* 編集と表示ツールは、入りきらなければ後ろから ▼ の中に入れる（再生まわりは常に出す） */}
+      <OverflowRow>
         <SmallButton title={`${t('edit.cut')} (Ctrl+X)`} label={t('edit.cut')} icon={faScissors} disabled={!p.canEdit || !p.hasSelection} onClick={p.onCut} />
         <SmallButton title={`${t('edit.copy')} (Ctrl+C)`} label={t('edit.copy')} icon={faCopy} disabled={!p.canEdit || !p.hasSelection} onClick={p.onCopy} />
         <SmallButton title={`${t('edit.paste')} (Ctrl+V)`} label={t('edit.paste')} icon={faPaste} disabled={!p.canEdit || !p.hasClipboard} onClick={p.onPaste} />
         <SmallButton title={t('edit.trim')} label={t('edit.trim')} icon={faCropSimple} disabled={!p.canEdit || !p.hasSelection || !p.canTrim} onClick={p.onTrim} />
         <SmallButton title={`${t('edit.clearSelection')} (Esc)`} label={t('edit.clearSelection')} icon={faXmark} disabled={!p.hasSelection} onClick={p.onClearSelection} />
-      </Stack>
-      {/* 中の区切り線もツールバーの高さいっぱいに伸びるよう、この列は上下に伸ばす */}
-      <Stack direction="row" sx={{ alignItems: 'center', alignSelf: 'stretch' }}>
+        <ToolbarDivider gap />
         {p.viewTools}
-      </Stack>
-      <Box sx={{ flexGrow: 1 }} />
+      </OverflowRow>
     </Stack>
   )
 }
