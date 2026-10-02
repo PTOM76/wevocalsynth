@@ -1,7 +1,7 @@
 import type { Clip } from './types'
 import { analyzeF0, F0_HOP_SEC, type Algorithm } from '../dsp/engine'
 
-/** 処理モード。ボーカル = 単音向け（PSOLA＋フォルマント保持）、楽器 = 和音・打楽器向け（Phase Vocoder） */
+/** 処理モード。ボーカル = 単音向け（既定は SOLA＋フォルマント保持）、楽器 = 和音・打楽器向け（既定は Phase Vocoder） */
 export type Mode = 'vocal' | 'instrument'
 
 /** 判定に使う長さ（先頭から、秒） */
@@ -39,9 +39,26 @@ export async function detectMode(clip: Clip): Promise<{ mode: Mode; voicedRatio:
   return { mode: voicedRatio >= VOICED_RATIO ? 'vocal' : 'instrument', voicedRatio }
 }
 
-/** モードに対応する処理方式とフォルマント保持の既定値 */
-export const MODE_SETTINGS: Record<Mode, { algorithm: Algorithm; preserveFormant: boolean }> = {
+export type ModeSettings = Record<Mode, { algorithm: Algorithm; preserveFormant: boolean }>
+
+/** モードに対応する処理方式とフォルマント保持の既定値（設定の「既定値」で処理方式を変えられる。`modeSettings`） */
+export const MODE_SETTINGS: ModeSettings = {
   // ボーカルは SOLA が既定（にじみが少なく、聞き比べて一番自然だった）。PSOLA・WSOLA も処理モードの「…」から選べる
   vocal: { algorithm: 'sola', preserveFormant: true },
   instrument: { algorithm: 'pv', preserveFormant: false },
+}
+
+/** 設定で選んだ処理方式を入れたモードの設定 */
+export function modeSettings(s: { vocalAlgorithm: Algorithm; instrumentAlgorithm: Algorithm }): ModeSettings {
+  return {
+    vocal: { ...MODE_SETTINGS.vocal, algorithm: s.vocalAlgorithm },
+    instrument: { ...MODE_SETTINGS.instrument, algorithm: s.instrumentAlgorithm },
+  }
+}
+
+/** 処理方式から、どちらのモードのボタンを押した状態にするか（どちらの既定でもなければ、Phase Vocoder だけ楽器） */
+export function modeOf(algorithm: Algorithm, modes: ModeSettings): Mode {
+  if (algorithm === modes.vocal.algorithm) return 'vocal'
+  if (algorithm === modes.instrument.algorithm) return 'instrument'
+  return algorithm === 'pv' ? 'instrument' : 'vocal'
 }

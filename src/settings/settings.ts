@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { LangSetting } from '../i18n/i18n'
-import type { F0Params } from '../dsp/engine'
+import type { Algorithm, F0Params } from '../dsp/engine'
 import type { WindowMode } from 'pevenmui'
 
 /** ファイルを開いたときの処理モード。auto は素材から自動判定する */
@@ -64,6 +64,11 @@ export interface Settings {
   showMeters: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
+  /** ボーカル・楽器のモードで使う処理方式 */
+  vocalAlgorithm: Algorithm
+  instrumentAlgorithm: Algorithm
+  /** テンポを自動解析しないとき（設定で切ったときなど）の BPM */
+  defaultBpm: number
   /** ダイアログの出し方（今は設定画面のみ）。auto は PWA かつ Chromium 系ならポップアップ、ほかはダイアログ。別窓を開けなければダイアログ */
   dialogWindow: WindowMode | 'auto'
 }
@@ -89,6 +94,9 @@ export const DEFAULT_SETTINGS: Settings = {
   historyLimit: 50,
   historyMemoryMb: 512,
   dialogWindow: 'auto',
+  vocalAlgorithm: 'sola',
+  instrumentAlgorithm: 'pv',
+  defaultBpm: 120,
 }
 const DEFAULTS = DEFAULT_SETTINGS
 const STORAGE_KEY = 'wevocalsynth.settings'

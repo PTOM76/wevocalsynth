@@ -2,8 +2,8 @@ import type { SettingsCategory } from 'pevenmui'
 import type { MessageKey } from '../i18n/i18n'
 
 /** 設定画面の分類 */
-export type Category = 'project' | 'general' | 'display' | 'pitch' | 'tempo' | 'keys' | 'vocal' | 'data' | 'debug'
-export const CATEGORIES: Category[] = ['project', 'general', 'display', 'pitch', 'tempo', 'keys', 'vocal', 'data', 'debug']
+export type Category = 'project' | 'general' | 'defaults' | 'display' | 'pitch' | 'tempo' | 'keys' | 'vocal' | 'data' | 'debug'
+export const CATEGORIES: Category[] = ['project', 'general', 'defaults', 'display', 'pitch', 'tempo', 'keys', 'vocal', 'data', 'debug']
 
 /**
  * 設定の検索の対象: 分類ごとのグループ名・項目名・説明文の訳文キー。
@@ -16,6 +16,10 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupHistory', 'settings.historyLimit', 'settings.historyMemory',
     'settings.groupProcess', 'settings.initialMode',
     'settings.groupUpdate', 'update.check',
+  ],
+  defaults: [
+    'settings.groupDefaultAlgorithm', 'settings.vocalAlgorithm', 'settings.instrumentAlgorithm',
+    'settings.groupDefaultTempo', 'settings.defaultBpm', 'settings.defaultBpmHelp',
   ],
   display: ['settings.groupAppearance', 'settings.theme', 'settings.language', 'settings.showMeters', 'settings.showMetersHelp'],
   pitch: ['settings.groupPitch', 'settings.f0MinHz', 'settings.f0MaxHz', 'settings.f0Voicing', 'settings.f0SilenceDb'],

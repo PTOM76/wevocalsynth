@@ -285,6 +285,7 @@ export default function App() {
         onLoop={playback.toggleLoop}
         currentMidi={ed.rangeNote}
         autoMode={ed.autoMode}
+        modes={ed.modes}
       />
     </Box>
   )

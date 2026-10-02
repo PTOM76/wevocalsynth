@@ -6,6 +6,8 @@ import DataSection from './DataSection'
 import AddonSection from './AddonSection'
 import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
+import { ALGORITHMS } from '../components/AlgorithmMenu'
+import type { Algorithm } from '../dsp/engine'
 import type { LangSetting, MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
 import { Check, Choice, Group, Row, type WindowMode } from 'pevenmui'
@@ -60,6 +62,24 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
         </Group>
         <Group title={t('settings.groupUpdate')}>
           <UpdateSection />
+        </Group>
+      </>
+    ),
+    defaults: (
+      <>
+        {/* ボーカル・楽器のボタン（と自動判定）で選ばれる処理方式 */}
+        <Group title={t('settings.groupDefaultAlgorithm')}>
+          <Row label={t('settings.vocalAlgorithm')}>
+            <Choice<Algorithm> value={draft.vocalAlgorithm} onChange={(v) => set({ vocalAlgorithm: v })} options={ALGORITHMS.map((a) => [a.value, t(a.label)])} />
+          </Row>
+          <Row label={t('settings.instrumentAlgorithm')}>
+            <Choice<Algorithm> value={draft.instrumentAlgorithm} onChange={(v) => set({ instrumentAlgorithm: v })} options={ALGORITHMS.map((a) => [a.value, t(a.label)])} />
+          </Row>
+        </Group>
+        <Group title={t('settings.groupDefaultTempo')}>
+          <Row label={t('settings.defaultBpm')} help={t('settings.defaultBpmHelp')}>
+            <NumberInput value={draft.defaultBpm} onChange={(v) => set({ defaultBpm: Math.round(v * 100) / 100 })} min={20} max={300} step={1} unit="BPM" width={110} />
+          </Row>
         </Group>
       </>
     ),

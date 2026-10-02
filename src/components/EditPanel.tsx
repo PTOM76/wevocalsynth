@@ -15,7 +15,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRotateLeft, faHeadphones, faRepeat, faStop } from '@fortawesome/free-solid-svg-icons'
 import type { Algorithm } from '../dsp/engine'
-import { MODE_SETTINGS, type Mode } from '../audio/detectMode'
+import { modeOf, type Mode, type ModeSettings } from '../audio/detectMode'
 import type { PreviewState } from '../hooks/usePreview'
 import { formatTime } from '../audio/types'
 import PitchControl from './PitchControl'
@@ -51,6 +51,8 @@ interface Props {
   currentMidi: number | null | undefined
   /** ファイルを開いたときの自動判定の結果（未判定なら null） */
   autoMode: Mode | null
+  /** ボーカル・楽器のモードで使う処理方式（設定の既定値） */
+  modes: ModeSettings
 }
 
 const MODE_HINT: Record<Mode, MessageKey> = {
@@ -71,7 +73,7 @@ export default function EditPanel(p: Props) {
   const t = useT()
   const set = (patch: Partial<EditParams>) => onChange({ ...params, ...patch })
   const unchanged = semitones === 0 && stretch === 1 && !(preserveFormant && formantSemitones !== 0)
-  const mode: Mode = params.algorithm === 'pv' ? 'instrument' : 'vocal'
+  const mode: Mode = modeOf(params.algorithm, p.modes)
 
   return (
     <InspectorSection
@@ -85,7 +87,7 @@ export default function EditPanel(p: Props) {
           fullWidth
           value={mode}
           aria-label={t('process.mode')}
-          onChange={(_, v: Mode | null) => v && set(MODE_SETTINGS[v])}
+          onChange={(_, v: Mode | null) => v && set(p.modes[v])}
           sx={{ '& .MuiToggleButton-root': { height: 24, fontSize: 12, py: 0 } }}
         >
           {(['vocal', 'instrument'] as const).map((m) => (
@@ -94,7 +96,7 @@ export default function EditPanel(p: Props) {
             </Tooltip>
           ))}
         </ToggleButtonGroup>
-        <AlgorithmMenu value={params.algorithm} onChange={(algorithm) => set({ algorithm, preserveFormant: algorithm !== 'pv' })} />
+        <AlgorithmMenu value={params.algorithm} defaults={[p.modes.vocal.algorithm, p.modes.instrument.algorithm]} onChange={(algorithm) => set({ algorithm, preserveFormant: algorithm !== 'pv' })} />
       </PropRow>
 
       <PitchControl semitones={semitones} onChange={(v) => set({ semitones: v })} currentMidi={p.currentMidi} />

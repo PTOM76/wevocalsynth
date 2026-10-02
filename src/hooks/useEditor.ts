@@ -8,7 +8,7 @@ import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
 import { analyzeF0, analyzeSpectrogram } from '../dsp/engine'
-import { MODE_SETTINGS, detectMode, type Mode } from '../audio/detectMode'
+import { detectMode, modeSettings, type Mode } from '../audio/detectMode'
 import type { EditParams } from '../components/EditPanel'
 import type { Source } from '../components/StatusBar'
 import { useHistory } from './useHistory'
@@ -62,7 +62,11 @@ export function useEditor(settings: Settings) {
   const tempoRef = useRef({ tempo })
   tempoRef.current = { tempo }
   // プロジェクトのテンポ（BPM・拍子・1拍目の位置）。プロジェクトファイルと自動保存に入る
-  const [projectTempo, setProjectTempoState] = useState<ProjectTempo>(DEFAULT_TEMPO)
+  // 自動解析しないときの BPM は設定の既定値
+  const defaultTempo: ProjectTempo = { ...DEFAULT_TEMPO, bpm: settings.defaultBpm }
+  const [projectTempo, setProjectTempoState] = useState<ProjectTempo>(defaultTempo)
+  // ボーカル・楽器のモードで使う処理方式（設定の既定値）
+  const modes = modeSettings(settings)
   const setProjectTempo = useCallback((patch: Partial<ProjectTempo>) => setProjectTempoState((p) => ({ ...p, ...patch })), [])
   // プロジェクト名。初めは開いたファイルの名前（拡張子を除く）で、変えられる。保存・書き出しのファイル名の初期値になる
   const [fileName, setFileName] = useState('')
@@ -79,7 +83,7 @@ export function useEditor(settings: Settings) {
   const selection = selections[selections.length - 1] ?? null
   const [params, setParams] = useState<EditParams>({
     ...NEUTRAL,
-    algorithm: MODE_SETTINGS.vocal.algorithm,
+    algorithm: settings.vocalAlgorithm,
     preserveFormant: false,
   })
   // 帯（波形・スペクトログラム・ピッチ・音量・フォルマント）の表示とフォーカス
@@ -190,7 +194,7 @@ export function useEditor(settings: Settings) {
     run: task.run,
     setProgress,
     commit,
-    onVocals: () => setParams((p) => ({ ...p, ...MODE_SETTINGS.vocal })),
+    onVocals: () => setParams((p) => ({ ...p, ...modes.vocal })),
     notify: (message) => setToast({ severity: 'success', message }),
     tracks: history.tracks,
     activeId: history.activeId,
@@ -204,7 +208,7 @@ export function useEditor(settings: Settings) {
       setFileName(name.replace(/\.[^.]+$/, ''))
       setNamed(!!project?.named)
       // 古いプロジェクト（テンポを持たない）と新しい素材は既定のテンポから（新しい素材は下で解析する）
-      setProjectTempoState(project?.tempo ?? DEFAULT_TEMPO)
+      setProjectTempoState(project?.tempo ?? defaultTempo)
       // プロジェクトはトラックごとに。自動保存から戻すときは保存先の ID を引き継ぐ（保存し直さずに済む）
       const list = project
         ? project.tracks.map((tr, i) => ({ id: ids?.[i] || newTrackId(), name: tr.name, original: tr.original, clip: tr.edited }))
@@ -245,12 +249,12 @@ export function useEditor(settings: Settings) {
         )
       }
       if (!project && settings.initialMode !== 'auto') {
-        setParams((p) => ({ ...p, ...MODE_SETTINGS[settings.initialMode as Mode] }))
+        setParams((p) => ({ ...p, ...modes[settings.initialMode as Mode] }))
       } else if (!project) {
         void detectMode(clip)
           .then(({ mode }) => {
             setAutoMode(mode)
-            setParams((p) => ({ ...p, ...MODE_SETTINGS[mode] }))
+            setParams((p) => ({ ...p, ...modes[mode] }))
           })
           .catch(() => {})
       }
@@ -463,7 +467,7 @@ export function useEditor(settings: Settings) {
     // 選択範囲
     selections, selection, setSelections, selectAll, clearSelection, editRanges, multi,
     // 加工パラメータ
-    params, setParams, autoMode, rangeNote,
+    params, setParams, autoMode, rangeNote, modes,
     // 再生
     player, preview, loop, playback, repeat, setRepeat,
     // 表示（ピッチ・スペクトログラム）とピッチ描画

@@ -3,11 +3,10 @@ import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faEllipsis } from '@fortawesome/free-solid-svg-icons'
 import type { Algorithm } from '../dsp/engine'
-import { MODE_SETTINGS } from '../audio/detectMode'
 import { useT, type MessageKey } from '../i18n/i18n'
 
 /** 選べる処理方式。新しい方式を入れても前の方式は残し、ここから選べるようにする */
-const ALGORITHMS: { value: Algorithm; label: MessageKey; hint: MessageKey }[] = [
+export const ALGORITHMS: { value: Algorithm; label: MessageKey; hint: MessageKey }[] = [
   { value: 'sola', label: 'algorithm.sola', hint: 'algorithm.solaHint' },
   { value: 'psola2', label: 'algorithm.psola2', hint: 'algorithm.psola2Hint' },
   { value: 'psola', label: 'algorithm.psola', hint: 'algorithm.psolaHint' },
@@ -16,11 +15,9 @@ const ALGORITHMS: { value: Algorithm; label: MessageKey; hint: MessageKey }[] = 
   { value: 'pv', label: 'algorithm.pv', hint: 'algorithm.pvHint' },
 ]
 
-/** 既定の方式（ボーカル・楽器のボタンで選ばれるもの）か */
-const isDefault = (a: Algorithm) => a === MODE_SETTINGS.vocal.algorithm || a === MODE_SETTINGS.instrument.algorithm
-
-/** 処理モードの「…」。細かい処理方式を選ぶ。既定以外を選んでいるときは強調する */
-export default function AlgorithmMenu({ value, onChange }: { value: Algorithm; onChange: (a: Algorithm) => void }) {
+/** 処理モードの「…」。細かい処理方式を選ぶ。既定（`defaults`。ボーカル・楽器のボタンで選ばれるもの）以外を選んでいるときは強調する */
+export default function AlgorithmMenu({ value, defaults, onChange }: { value: Algorithm; defaults: Algorithm[]; onChange: (a: Algorithm) => void }) {
+  const isDefault = (a: Algorithm) => defaults.includes(a)
   const t = useT()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   return (
