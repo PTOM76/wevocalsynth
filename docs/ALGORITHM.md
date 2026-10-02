@@ -216,7 +216,6 @@ BPM と 1 拍目の位置を推定する（`tempo.rs`）。
 | W. Verhelst, M. Roelands, [An overlap-add technique based on waveform similarity (WSOLA) for high quality time-scale modification of speech](https://www.semanticscholar.org/paper/An-overlap-add-technique-based-on-waveform-(WSOLA)-Verhelst-Roelands/d94abd77e52a56c425e4b86e6c7d692583ea406d) (1993) | WSOLAv2。前の断片の自然な続きと最もよく似た位置を、類似度で選ぶこと |
 | A. Röbel, [Transient detection and preservation in the phase vocoder](http://recherche.ircam.fr/anasyn/roebel/paper/icmc2003.pdf) (2003) | Phase Vocoder v2。立ち上がりで位相を戻す従来の方式と、帯域ごとにまとめて戻すと伸びている音の位相まで壊すという指摘。v2 は従来の方式（立ち上がりで伸ばさず、位相を戻す）に近く、Röbel の山ごとの判定は入れていない |
 | [Audio time stretching and pitch scaling](https://en.wikipedia.org/wiki/Audio_time_stretching_and_pitch_scaling)（Wikipedia） | 方式ごとの弱点の整理。PSOLA は同じ断片の繰り返しでブザー音が出やすく、立ち上がりがにじみやすい。SOLA 系は単音には安く良い結果を出すが、和音には弱い |
-
 | J. Driedger, M. Müller, S. Ewert, [Improving Time-Scale Modification of Music Signals Using Harmonic-Percussive Separation](https://www.semanticscholar.org/paper/Improving-Time-Scale-Modification-of-Music-Signals-Driedger-M%C3%BCller/2936759a93ee6d6ce4109221bfbb08de0c7c569b) (2014) | HPSS。メディアンフィルタで伸びる成分と打つ成分に分け、前者を Phase Vocoder、後者を短い窓の OLA で伸ばして足す組み立て |
 
 和音・楽器向けの候補（未実装）を調べたときの資料:
