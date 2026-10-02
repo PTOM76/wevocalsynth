@@ -2,7 +2,7 @@ import { useRef, type RefObject } from 'react'
 import type { Range } from '../../audio/types'
 import { F0_HOP_SEC } from '../../dsp/engine'
 import { hzToMidi } from './draw'
-import { noteBlockAt } from '../../audio/noteBlocks'
+import { noteBlockAt, noteBlocks } from '../../audio/noteBlocks'
 import { useNoteDrag, type NoteGhost } from './useNoteDrag'
 
 /** 線を掴める距離（px） */
@@ -78,7 +78,18 @@ export function usePitchGrab(
     return null
   }
 
-  const note = useNoteDrag(shown, pitch?.length ?? 0, timing.duration, timing.secPerPx, timing.onGhost, timing.onRetime)
+  /** フレーム k0〜k1 の音を `note` の高さへ（音ごとの揺れは残す） */
+  const overwrite = (k0: number, k1: number, note: number) => {
+    if (!pitch) return
+    const hz = new Float32Array(pitch.length)
+    for (let j = 0; j < hz.length; j++) hz[j] = target?.[j] ?? 0
+    for (const b of noteBlocks(shown, Math.max(0, k0), Math.min(pitch.length - 1, k1))) {
+      const ratio = 2 ** ((note - b.note) / 12)
+      for (let j = b.k0; j <= b.k1; j++) hz[j] = shown(j) * ratio
+    }
+    onChange(hz)
+  }
+  const note = useNoteDrag(shown, pitch?.length ?? 0, timing.duration, timing.secPerPx, timing.onGhost, timing.onRetime, overwrite)
   /** ブロックの端の上か */
   const onEdge = (e: React.PointerEvent) => {
     const b = hitBlock(e)

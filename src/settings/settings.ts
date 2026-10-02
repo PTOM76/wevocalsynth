@@ -101,7 +101,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showBeatGrid: true,
   showDebug: false,
   showMeters: true,
-  showNotes: true,
+  showNotes: false,
   showPitchLine: true,
   liveSelection: false,
   followPlayhead: true,

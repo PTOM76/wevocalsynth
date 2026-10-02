@@ -29,6 +29,9 @@ interface Drag {
   /** 動かせない外側の位置（前・後ろの区間の端） */
   lo: number
   hi: number
+  /** 隣の音の端（ここを越えて端を伸ばしたら、伸縮ではなく隣の音のピッチを上書きする） */
+  prevEnd: number
+  nextStart: number
   note: number
   ghost: NoteGhost | null
 }
@@ -44,6 +47,8 @@ export function useNoteDrag(
   secPerPx: () => number,
   onGhost: (g: NoteGhost | null) => void,
   onRetime: (parts: Seg[]) => void,
+  /** フレーム k0〜k1 のピッチを `note` の高さで上書きする */
+  onOverwrite: (k0: number, k1: number, note: number) => void,
 ) {
   const drag = useRef<Drag | null>(null)
 
@@ -72,7 +77,7 @@ export function useNoteDrag(
       // すき間が短すぎるときは、隣の音ごと伸び縮みさせる
       const lo = start - prevEnd >= MIN_SEC || !prev ? prevEnd : prev.k0 * F0_HOP_SEC
       const hi = nextStart - end >= MIN_SEC || !next ? nextStart : (next.k1 + 1) * F0_HOP_SEC
-      drag.current = { part, x0: e.clientX, y0: e.clientY, axis: part === 'body' ? null : 'x', start, end, lo, hi, note: block.note, ghost: null }
+      drag.current = { part, x0: e.clientX, y0: e.clientY, axis: part === 'body' ? null : 'x', start, end, lo, hi, prevEnd, nextStart, note: block.note, ghost: null }
     },
     /** 縦（ピッチ）に動かすことに決まったか。決まったら、このあとはピッチの掴みに任せる */
     isVertical: () => drag.current?.axis === 'y',
@@ -91,8 +96,9 @@ export function useNoteDrag(
       if (d.axis === 'y') return false
       const dt = (e.clientX - d.x0) * secPerPx()
       let { start, end } = d
-      if (d.part === 'left') start = Math.min(end - MIN_SEC, Math.max(d.lo + MIN_SEC, start + dt))
-      else if (d.part === 'right') end = Math.max(start + MIN_SEC, Math.min(d.hi - MIN_SEC, end + dt))
+      // 端は隣の音の上まで伸ばせる（その部分はピッチの上書き）
+      if (d.part === 'left') start = Math.min(end - MIN_SEC, Math.max(0, start + dt))
+      else if (d.part === 'right') end = Math.max(start + MIN_SEC, Math.min(duration, end + dt))
       else {
         const s = Math.min(d.hi - MIN_SEC - (end - start), Math.max(d.lo + MIN_SEC, start + dt))
         end += s - start
@@ -110,6 +116,22 @@ export function useNoteDrag(
       onGhost(null)
       const g = d.ghost
       if (d.axis !== 'x' || !g) return true
+      // 隣の音にかかったら、かかった所を掴んだ音の高さで上書きする（時間は変えない）
+      if (d.part === 'right' && g.end > d.nextStart) {
+        onOverwrite(Math.round(d.nextStart / F0_HOP_SEC), Math.round(g.end / F0_HOP_SEC) - 1, d.note)
+        return true
+      }
+      if (d.part === 'left' && g.start < d.prevEnd) {
+        onOverwrite(Math.round(g.start / F0_HOP_SEC), Math.round(d.prevEnd / F0_HOP_SEC) - 1, d.note)
+        return true
+      }
+      // 隣の音の手前まで（すき間の中）なら伸縮する
+      const s = Math.max(g.start, d.lo + MIN_SEC)
+      const en = Math.min(g.end, d.hi - MIN_SEC)
+      if (d.part !== 'body') {
+        g.start = s
+        g.end = en
+      }
       onRetime([
         { start: d.lo, end: d.start, dur: g.start - d.lo },
         { start: d.start, end: d.end, dur: g.end - g.start },
