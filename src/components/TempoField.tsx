@@ -51,7 +51,7 @@ export default function TempoField(p: Props) {
       <ButtonBase
         disabled={p.disabled}
         onClick={(e) => setAnchor(e.currentTarget)}
-        sx={{ px: 1, height: '100%', fontSize: p.fontSize ?? 12, whiteSpace: 'nowrap', gap: 0.5, '&:hover': { bgcolor: 'action.hover' } }}
+        sx={{ px: 1, height: '100%', fontFamily: 'inherit', lineHeight: 'inherit', fontSize: p.fontSize ?? 12, whiteSpace: 'nowrap', gap: 0.5, '&:hover': { bgcolor: 'action.hover' } }}
       >
         {p.analyzing && <CircularProgress size={10} />}
         {round2(p.bpm)} BPM

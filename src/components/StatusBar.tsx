@@ -32,7 +32,7 @@ interface Props {
   tempo: ReactNode
 }
 
-const ITEM_SX = { px: 1, height: '100%', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' } as const
+const ITEM_SX = { px: 1, height: '100%', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', lineHeight: 'inherit' } as const
 
 /**
  * PC 用のステータスバー（高さ 24px）。ファイルの情報、選択範囲（クリックで数値入力）、
@@ -44,14 +44,15 @@ export default function StatusBar(p: Props) {
   return (
     <Stack
       direction="row"
-      sx={{ height: 24, fontSize: 12, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper', alignItems: 'center' }}
+      // 行の高さを固定し、英字と日本語のフォントが混ざっても文字の高さがそろうようにする
+      sx={{ height: 24, lineHeight: '23px', fontSize: 12, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper', alignItems: 'center' }}
     >
       {/* プロジェクト名。押すと名前を変えられる（保存・書き出しのファイル名になる） */}
       <Tooltip title={t('project.renameHint')}>
         <ButtonBase
           disabled={!p.clip}
           onClick={p.onRename}
-          sx={{ ...ITEM_SX, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', lineHeight: '24px', fontSize: 12, '&:hover': { bgcolor: 'action.hover' } }}
+          sx={{ ...ITEM_SX, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', fontFamily: 'inherit', fontSize: 12, '&:hover': { bgcolor: 'action.hover' } }}
         >
           {p.fileName || '—'}
         </ButtonBase>

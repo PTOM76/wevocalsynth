@@ -53,10 +53,16 @@ export default function LiveTime(p: { position: number; playing: boolean; livePo
             else if (e.key === 'Escape') setDraft(null)
           }}
           inputProps={{ 'aria-label': t('time.input'), style: { padding: 0, width: '9ch', fontFamily: 'monospace', fontSize: 'inherit' } }}
-          sx={{ fontSize: 'inherit', borderBottom: 1, borderColor: error ? 'error.main' : 'primary.main' }}
+          sx={{ fontSize: 'inherit', lineHeight: 'inherit', verticalAlign: 'baseline', borderBottom: 1, borderColor: error ? 'error.main' : 'primary.main' }}
         />
       ) : p.onSeek ? (
-        <ButtonBase title={t('time.input')} onClick={start} sx={{ font: 'inherit', borderRadius: 0.5, '&:hover': { bgcolor: 'action.hover' } }}>
+        // ボタンの箱で文字の高さがずれないよう、ふつうの文字と同じ並びにする
+        <ButtonBase
+          component="span"
+          title={t('time.input')}
+          onClick={start}
+          sx={{ display: 'inline', verticalAlign: 'baseline', font: 'inherit', lineHeight: 'inherit', p: 0, borderRadius: 0.5, '&:hover': { bgcolor: 'action.hover' } }}
+        >
           {formatTime(now)}
         </ButtonBase>
       ) : (

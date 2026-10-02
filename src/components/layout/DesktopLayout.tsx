@@ -26,7 +26,8 @@ export default function DesktopLayout(p: Props) {
     <>
       {p.toolbar}
       <Stack direction="row" sx={{ flex: 1, minHeight: 0 }}>
-        <Box sx={{ flex: 1, minWidth: 0, p: 1, bgcolor: 'background.paper' }}>{p.editor}</Box>
+        {/* 編集領域は端まで使う（トラックの欄・波形の上に余白を作らない） */}
+        <Box sx={{ flex: 1, minWidth: 0, bgcolor: 'background.paper' }}>{p.editor}</Box>
         {inspector.bar}
         {/* 左の編集領域と同じ背景にし、カードで囲まずに分割バーだけで分ける */}
         <Box sx={{ width: inspector.width, flexShrink: 0, overflowY: 'auto', bgcolor: 'background.paper' }}>

@@ -39,7 +39,7 @@ export default function SelectionField(p: Props) {
       <ButtonBase
         disabled={p.disabled}
         onClick={(e) => setAnchor(e.currentTarget)}
-        sx={{ px: 1, height: '100%', fontSize: p.fontSize ?? 12, whiteSpace: 'nowrap', '&:hover': { bgcolor: 'action.hover' } }}
+        sx={{ px: 1, height: '100%', fontFamily: 'inherit', lineHeight: 'inherit', fontSize: p.fontSize ?? 12, whiteSpace: 'nowrap', '&:hover': { bgcolor: 'action.hover' } }}
       >
         {t('common.selection')}:{' '}
         {sel
