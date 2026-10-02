@@ -157,9 +157,10 @@ function Waveform(props: Props) {
   const dragRef = useRef<{ x0: number; t0: number; dragging: boolean; base: Range[]; edge?: EdgeDrag } | null>(null)
   // 上の時間目盛りの上では、範囲選択ではなく再生位置を動かす（押したまま動かすと付いてくる）
   const scrubRef = useRef(false)
-  const [rulerHover, setRulerHover] = useState(false)
   const onRuler = (e: React.PointerEvent) => e.clientY - canvasRef.current!.getBoundingClientRect().top < RULER_HEIGHT
-  const [edgeHover, setEdgeHover] = useState(false)
+  // マウスが何の上にあるか（カーソルの形にだけ使う）。状態にするとマウスを動かすたびに描き直しになるので、
+  // ref に持って Canvas の style.cursor を直接書き換える（`updateCursor`）
+  const hoverRef = useRef({ ruler: false, divider: false, grab: false, edge: false })
   const [size, setSize] = useState({ width: 0, height: 0 })
   // 描いた曲線（ピッチ・音量）は配列の中身だけが変わるので、描き直しのきっかけに使うカウンタ
   const [drawVersion, setDrawVersion] = useState(0)
@@ -212,7 +213,6 @@ function Waveform(props: Props) {
   const upperH = waveH + specH
   const lowerH = pitchH + gainH + formantH
   const divider = useLaneDivider(canvasRef, { waveH: upperH, pitchH: lowerH }, lowerH > 0 && upperH > 0, props.onPitchPercentChange)
-  const [dividerHover, setDividerHover] = useState(false)
   const specLayer = useMemo(
     () => (showSpectrogram && spectrogram && width > 0 && specH > 0 ? spectrogramLayer(spectrogram, width, specH, view) : null),
     [showSpectrogram, spectrogram, width, specH, view],
@@ -334,7 +334,27 @@ function Waveform(props: Props) {
     timeAt,
     props.onGrabPitch,
   )
-  const [grabHover, setGrabHover] = useState(false)
+  /** マウスの下にあるものと今のモードから、カーソルの形を決めて Canvas に入れる */
+  const updateCursor = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const h = hoverRef.current
+    canvas.style.cursor = h.ruler
+      ? 'pointer'
+      : h.divider
+        ? 'row-resize'
+        : grab.grabbing()
+          ? 'grabbing'
+          : h.grab
+            ? 'grab'
+            : penMode && (showPitch || showGain || showFormant)
+              ? 'crosshair'
+              : h.edge
+                ? 'ew-resize'
+                : 'text'
+  }
+  // モードや帯の表示が変わったときもカーソルを合わせ直す
+  useEffect(updateCursor)
 
   const cancelLongPress = () => {
     if (longPressRef.current) clearTimeout(longPressRef.current.timer)
@@ -358,7 +378,6 @@ function Waveform(props: Props) {
           width: '100%',
           height,
           display: 'block',
-          cursor: rulerHover ? 'pointer' : dividerHover ? 'row-resize' : grab.grabbing() ? 'grabbing' : grabHover ? 'grab' : penMode && (showPitch || showGain || showFormant) ? 'crosshair' : edgeHover ? 'ew-resize' : 'text',
         }}
         onContextMenu={(e) => {
           e.preventDefault()
@@ -407,6 +426,7 @@ function Waveform(props: Props) {
           if (pen.down(e)) return
           if (grab.down(e)) {
             cancelLongPress()
+            updateCursor()
             return
           }
           const t0 = snapTime(e.clientX)
@@ -431,10 +451,13 @@ function Waveform(props: Props) {
           if (grab.move(e)) return
           const d = dragRef.current
           if (!d) {
-            setRulerHover(onRuler(e))
-            setDividerHover(divider.hit(e))
-            setGrabHover(grab.hover(e))
-            setEdgeHover(!penMode && !props.grabMode && !!edgeAt(e.clientX))
+            hoverRef.current = {
+              ruler: onRuler(e),
+              divider: divider.hit(e),
+              grab: grab.hover(e),
+              edge: !penMode && !props.grabMode && !!edgeAt(e.clientX),
+            }
+            updateCursor()
             return
           }
           if (d.edge) return dragEdge(d.edge, e.clientX)
@@ -461,7 +484,7 @@ function Waveform(props: Props) {
             return
           }
           if (pen.end()) return
-          if (grab.end()) return
+          if (grab.end()) return updateCursor()
           const d = dragRef.current
           dragRef.current = null
           const edge = d?.edge
