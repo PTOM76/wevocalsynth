@@ -120,7 +120,7 @@ export const DEFAULT_SETTINGS: Settings = {
   historyLimit: 50,
   historyMemoryMb: 512,
   dialogWindow: 'auto',
-  vocalAlgorithm: 'sola',
+  vocalAlgorithm: 'sola2',
   instrumentAlgorithm: 'pv',
   defaultBpm: 120,
   tempoStretch: false,
