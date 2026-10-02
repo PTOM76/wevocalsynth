@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Clip } from '../audio/types'
 import { DEFAULT_FADER, DEFAULT_MIX, isAudible, makeTrack, type Track, type TrackFader, type TrackMix, type TrackSettings } from '../audio/tracks'
 import { mixClips } from '../audio/mix'
@@ -18,6 +18,15 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
   // 大きな波形の後ろに重ねるトラック（見え方の切り替えなので履歴に入れない。既定は重ねない）
   const [overlay, setOverlay] = useState<ReadonlySet<string>>(new Set())
   const active = tracks.find((tr) => tr.id === activeId) ?? null
+
+  // トラックが1本になったら、ミュート・ソロ・位相反転を解除する。トラックの欄（M・S・I のボタン）は2本以上のときしか出ないので、
+  // そのままだと1本でミュートされたまま戻せなくなる（1本ではミュート・ソロに意味がなく、位相反転もほかのトラックと比べるためのもの）
+  const onlyId = tracks.length === 1 ? tracks[0].id : null
+  useEffect(() => {
+    if (!onlyId) return
+    setMix((m) => (m[onlyId]?.mute || m[onlyId]?.solo ? { ...m, [onlyId]: DEFAULT_MIX } : m))
+    setFaders((f) => (f[onlyId]?.invert ? { ...f, [onlyId]: { ...f[onlyId], invert: false } } : f))
+  }, [onlyId])
 
   /**
    * 選んでいるトラックと一緒に再生する、ほかのトラック。鳴らさないもの（ミュート・ソロ）も含めて渡し、
