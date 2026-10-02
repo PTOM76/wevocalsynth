@@ -127,7 +127,24 @@ export default memo(Waveform)
 
 function Waveform(props: Props) {
   countRender('Waveform')
-  const { clip, position, playing, livePosition, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram, beatGrid } = props
+  const { clip, position, playing, livePosition, pitch, showPitch, target, penMode, spectrogram, showSpectrogram, beatGrid } = props
+  // ドラッグ中の選択範囲は、ここだけで持って描き、離したときに `onSelectionsChange` で渡す
+  // （動かすたびに渡すと、画面全体（App）が描き直されて重かった）
+  const [draftSelections, setDraftSelections] = useState<Range[] | null>(null)
+  const draftRef = useRef<Range[] | null>(null)
+  const selections = draftSelections ?? props.selections
+  const changeSelections = (rs: Range[]) => {
+    draftRef.current = rs
+    setDraftSelections(rs)
+  }
+  /** ドラッグ中の選択範囲を確定して渡す */
+  const commitSelections = () => {
+    const rs = draftRef.current
+    if (!rs) return
+    draftRef.current = null
+    setDraftSelections(null)
+    props.onSelectionsChange(rs)
+  }
   const { pal, dark, font } = usePalette()
   const t = useT()
   // 言語が変わったら Canvas の文字（「解析中…」）も描き直す
@@ -287,7 +304,7 @@ function Waveform(props: Props) {
   // タッチし始めたときの選択範囲。ピンチになったら、1本目の指で始まりかけた選択を取り消してここに戻す
   const selectionsAtTouch = useRef<Range[]>(selections)
 
-  const { edgeAt, dragEdge } = useRangeEdges(canvasRef, view, selections, snapTime, props.onSelectionsChange)
+  const { edgeAt, dragEdge } = useRangeEdges(canvasRef, view, selections, snapTime, changeSelections)
 
   // ペンで描ける帯（ピッチ: Shift で半音に吸着、Alt で消す / 音量・フォルマント: Shift で 1 刻みに吸着、Alt で元に戻す）
   const pen = useLanePen(canvasRef, penMode, timeAt, [
@@ -359,7 +376,11 @@ function Waveform(props: Props) {
           if (touch.down(e)) {
             // 2本目の指が触れたらピンチ。進行中の選択・長押し・再生位置のドラッグはやめる
             cancelLongPress()
-            if (dragRef.current?.dragging) props.onSelectionsChange(selectionsAtTouch.current)
+            if (dragRef.current?.dragging) {
+              draftRef.current = null
+              setDraftSelections(null)
+              props.onSelectionsChange(selectionsAtTouch.current)
+            }
             dragRef.current = null
             pen.end()
             scrubRef.current = false
@@ -420,16 +441,19 @@ function Waveform(props: Props) {
           if (!d.dragging && Math.abs(e.clientX - d.x0) < DRAG_THRESHOLD_PX) return
           d.dragging = true
           const t = snapTime(e.clientX)
-          props.onSelectionsChange([...d.base, { start: Math.min(d.t0, t), end: Math.max(d.t0, t) }])
+          changeSelections([...d.base, { start: Math.min(d.t0, t), end: Math.max(d.t0, t) }])
         }}
         onPointerCancel={(e) => {
           cancelLongPress()
           edgeScroll.stop()
+          commitSelections()
           touch.up(e)
         }}
         onPointerUp={(e) => {
           cancelLongPress()
           edgeScroll.stop()
+          // ドラッグ中の範囲を先に確定する（このあとの伸縮は確定した範囲をもとに選び直す）
+          commitSelections()
           if (touch.up(e)) return
           if (divider.dragging()) return divider.end()
           if (scrubRef.current) {
