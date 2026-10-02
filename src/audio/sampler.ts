@@ -32,20 +32,18 @@ export async function placeOnNotes(
   const total = Math.ceil(Math.max(0, ...list.map((n) => n.end)) * sr)
   const out = sample.channels.map(() => new Float32Array(total))
   const sampleSec = sample.channels[0].length / sr
-  // 伸縮しないときは、同じ高さの加工結果を使い回す
-  const byPitch = new Map<number, Float32Array[]>()
+  // 同じ高さ（伸縮なら長さも）の加工結果は使い回す
+  const cache = new Map<string, Float32Array[]>()
   const process = (semitones: number, stretch: number, i: number) =>
     processAudio(sample.channels, sr, { ...opts, semitones, stretch }, (p) => onProgress?.((i + p) / list.length))
 
   for (const [i, n] of list.entries()) {
     const semitones = n.note - baseNote
     const dur = n.end - n.start
-    let src: Float32Array[]
-    if (fit === 'stretch') src = await process(semitones, dur / sampleSec, i)
-    else {
-      src = byPitch.get(semitones) ?? (await process(semitones, 1, i))
-      byPitch.set(semitones, src)
-    }
+    const stretch = fit === 'stretch' ? dur / sampleSec : 1
+    const key = `${semitones}:${stretch.toFixed(3)}`
+    const src = cache.get(key) ?? (await process(semitones, stretch, i))
+    cache.set(key, src)
     const at = Math.round(n.start * sr)
     const len = Math.min(Math.round(dur * sr), total - at)
     const fade = Math.max(1, Math.round(FADE_SEC * sr))
