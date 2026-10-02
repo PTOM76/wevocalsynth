@@ -47,6 +47,14 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             <NumberInput value={draft.historyMemoryMb} onChange={(v) => set({ historyMemoryMb: Math.round(v) })} min={64} max={4096} step={64} unit="MB" width={110} />
           </Row>
         </Group>
+        <Group title={t('settings.groupInput')}>
+          <Check
+            checked={draft.sliderDoubleClickReset}
+            onChange={(v) => set({ sliderDoubleClickReset: v })}
+            label={t('settings.sliderReset')}
+            help={t('settings.sliderResetHelp')}
+          />
+        </Group>
         <Group title={t('settings.groupProcess')}>
           <Row label={t('settings.initialMode')}>
             <Choice<InitialMode>

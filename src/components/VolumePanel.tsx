@@ -1,7 +1,7 @@
 import { Box, Button, IconButton, Slider, Tooltip, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRotateLeft } from '@fortawesome/free-solid-svg-icons'
-import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow } from './inspector/Inspector'
+import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow, useDoubleClickReset } from './inspector/Inspector'
 import { useT, type MessageKey } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import { panLabel } from '../hooks/useClipCommands'
@@ -42,6 +42,9 @@ function Heading({ children }: { children: string }) {
 
 /** 音量（dB）とパンの2行。トラックのフェーダーと、選択範囲の適用前の値で同じ形を使う */
 function GainPanRows(p: { db: number; onDb: (v: number) => void; pan: number; onPan: (v: number) => void; dbAria: string; panAria: string; dbLabel: string; panLabel: string }) {
+  // ダブルクリックで 0 dB・中央に戻す（設定で有効なときだけ）
+  const resetDb = useDoubleClickReset(() => p.onDb(0))
+  const resetPan = useDoubleClickReset(() => p.onPan(0))
   return (
     <>
       <PropRow label={p.dbLabel}>
@@ -55,6 +58,7 @@ function GainPanRows(p: { db: number; onDb: (v: number) => void; pan: number; on
           valueLabelDisplay="auto"
           valueLabelFormat={(v) => `${v > 0 ? '+' : ''}${v} dB`}
           onChange={(_, v) => p.onDb(v as number)}
+          {...resetDb}
           sx={COMPACT_SLIDER_SX}
         />
         <NumberInput value={p.db} onChange={p.onDb} min={-24} max={12} step={0.5} unit="dB" ariaLabel={p.dbAria} />
@@ -70,6 +74,7 @@ function GainPanRows(p: { db: number; onDb: (v: number) => void; pan: number; on
           valueLabelDisplay="auto"
           valueLabelFormat={(v) => panLabel(v / 100)}
           onChange={(_, v) => p.onPan((v as number) / 100)}
+          {...resetPan}
           sx={COMPACT_SLIDER_SX}
         />
         <NumberInput value={Math.round(p.pan * 100)} onChange={(v) => p.onPan(v / 100)} min={-100} max={100} step={1} ariaLabel={p.panAria} />

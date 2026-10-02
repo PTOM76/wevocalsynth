@@ -14,6 +14,7 @@ const INDEX: Record<Category, MessageKey[]> = {
   general: [
     'settings.groupStartup', 'settings.autoRestore', 'settings.autoRestoreHelp',
     'settings.groupHistory', 'settings.historyLimit', 'settings.historyMemory',
+    'settings.groupInput', 'settings.sliderReset', 'settings.sliderResetHelp',
     'settings.groupProcess', 'settings.initialMode',
     'settings.groupUpdate', 'update.check',
   ],

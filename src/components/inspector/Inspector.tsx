@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 import { Box, ButtonBase, InputBase, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons'
@@ -99,6 +99,14 @@ export function NumberInput(p: {
 }
 
 /** インスペクタ用の細いスライダーの見た目（目盛りの数字は出さず、行の高さに収める） */
+/** スライダーのダブルクリックで既定値に戻すか（設定。誤って戻さないよう既定は切る） */
+export const SliderResetContext = createContext(false)
+
+/** スライダーに付ける、ダブルクリックで `reset` する指定（設定で切っていれば何も付けない） */
+export function useDoubleClickReset(reset: () => void) {
+  return useContext(SliderResetContext) ? { onDoubleClick: reset } : {}
+}
+
 export const COMPACT_SLIDER_SX = {
   flex: 1,
   py: '10px !important',

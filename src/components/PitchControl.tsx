@@ -2,7 +2,7 @@ import { IconButton, Slider, Tooltip, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnet } from '@fortawesome/free-solid-svg-icons'
 import { describePitch } from '../audio/notes'
-import { COMPACT_SLIDER_SX, NumberInput, PropRow } from './inspector/Inspector'
+import { COMPACT_SLIDER_SX, NumberInput, PropRow, useDoubleClickReset } from './inspector/Inspector'
 import { useT } from '../i18n/i18n'
 
 interface Props {
@@ -21,6 +21,7 @@ const round3 = (v: number) => Math.round(v * 1000) / 1000
 export default function PitchControl({ semitones, onChange, currentMidi }: Props) {
   const t = useT()
   const target = currentMidi != null ? currentMidi + semitones : null
+  const resetOnDouble = useDoubleClickReset(() => onChange(0))
 
   return (
     <>
@@ -35,6 +36,7 @@ export default function PitchControl({ semitones, onChange, currentMidi }: Props
           valueLabelDisplay="auto"
           valueLabelFormat={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}`}
           onChange={(_, v) => onChange(round2(v as number))}
+          {...resetOnDouble}
           sx={COMPACT_SLIDER_SX}
         />
         <NumberInput value={semitones} onChange={onChange} min={-24} max={24} step={0.01} unit={t('process.semitoneUnit')} ariaLabel={t('process.pitchAria')} />

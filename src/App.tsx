@@ -10,6 +10,7 @@ import { EmptyState } from './components/EmptyState'
 import Waveform, { type DrawPoint } from './components/Waveform'
 import type { CurvePoint } from './hooks/useLaneCurve'
 import { useStableFn } from './hooks/useStableFn'
+import { SliderResetContext } from './components/inspector/Inspector'
 import LevelMeter from './components/LevelMeter'
 import { useTrackArea } from './components/tracks/useTrackArea'
 import RenameDialog from './components/tracks/RenameDialog'
@@ -332,6 +333,7 @@ export default function App() {
     <LangContext.Provider value={lang}>
       <PevenLabels.Provider value={lang === 'ja_jp' ? jaLabels : enLabels}>
       <WindowModeContext.Provider value={settings.dialogWindow === 'auto' ? autoWindowMode() : settings.dialogWindow}>
+      <SliderResetContext.Provider value={settings.sliderDoubleClickReset}>
       {!mobile && <GlobalStyles styles={desktopStyles} />}
       {/* アプリとして画面の高さにぴったり収め、ページ全体はスクロールさせない */}
       <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.default' }}>
@@ -496,6 +498,7 @@ export default function App() {
           </Alert>
         ) : undefined}
       </Snackbar>
+      </SliderResetContext.Provider>
       </WindowModeContext.Provider>
       </PevenLabels.Provider>
     </LangContext.Provider>

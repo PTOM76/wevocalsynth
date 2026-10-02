@@ -74,13 +74,15 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { divider: true },
     { label: t('edit.selectAll'), shortcut: 'Ctrl+A', disabled: noClip, onClick: a.selectAll },
     { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: noSel, onClick: a.clearSelection },
-    { divider: true },
+  ]
+  // ボーカル抽出（選択範囲、なければ全体）。メニューバーでは「ツール」、右クリックメニューでは編集の後ろに出す
+  const extract: MenuEntry[] = [
     { label: t('extract.vocalsMenu'), disabled: noClip, onClick: () => a.extract('vocals') },
     { label: t('extract.accompanimentMenu'), disabled: noClip, onClick: () => a.extract('accompaniment') },
     { label: t('extract.splitMenu'), disabled: noClip, onClick: a.splitStems },
-    { divider: true },
-    { label: t('track.duplicate'), disabled: noClip, onClick: a.duplicateTrack },
   ]
+  // 編集メニューに入れすぎないよう、加工の道具（抽出・音声の作成）は「ツール」にまとめる
+  const tools: MenuEntry[] = [...extract, { divider: true }, { label: t('synth.menu'), disabled: a.busy, onClick: a.synth }]
 
   const menus: MenuGroup[] = [
     {
@@ -88,7 +90,6 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       entries: [
         { label: t('menu.open'), shortcut: 'Ctrl+O', disabled: a.busy, onClick: a.open },
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
-        { label: t('synth.menu'), disabled: a.busy, onClick: a.synth },
         { label: t('menu.saveProject'), shortcut: a.ctrlS === 'project' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.save },
         { divider: true },
         { label: t('menu.export'), shortcut: a.ctrlS === 'export' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.openExport },
@@ -104,6 +105,8 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('history.menu'), disabled: noClip, onClick: a.showHistory },
         { divider: true },
         ...edit,
+        { divider: true },
+        { label: t('track.duplicate'), disabled: noClip, onClick: a.duplicateTrack },
       ],
     },
     {
@@ -116,6 +119,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.formant'), checked: a.showFormant, disabled: !a.hasClip, onClick: a.toggleFormant },
       ],
     },
+    { label: t('menu.tools'), entries: tools },
     {
       label: t('menu.help'),
       entries: [
@@ -132,6 +136,10 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('play.repeat'), disabled: noClip, onClick: a.toggleLoop },
     { divider: true },
     ...edit,
+    { divider: true },
+    ...extract,
+    { divider: true },
+    { label: t('track.duplicate'), disabled: noClip, onClick: a.duplicateTrack },
     ...(a.pitchLane
       ? [
           { divider: true as const },
@@ -150,7 +158,6 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       entries: [
         { label: t('menu.open'), disabled: a.busy, onClick: a.open },
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
-        { label: t('synth.menu'), disabled: a.busy, onClick: a.synth },
         { label: t('menu.saveProject'), disabled: noClip, onClick: a.save },
         { label: t('menu.export'), disabled: noClip, onClick: a.openExport },
       ],
@@ -163,6 +170,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('history.menu'), disabled: noClip, onClick: a.showHistory },
       ],
     },
+    { label: t('menu.tools'), entries: tools },
     {
       label: t('menu.help'),
       entries: [

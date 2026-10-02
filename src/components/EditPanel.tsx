@@ -20,7 +20,7 @@ import type { PreviewState } from '../hooks/usePreview'
 import { formatTime } from '../audio/types'
 import PitchControl from './PitchControl'
 import AlgorithmMenu from './AlgorithmMenu'
-import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow } from './inspector/Inspector'
+import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow, useDoubleClickReset } from './inspector/Inspector'
 import { useT, type MessageKey } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 
@@ -76,6 +76,9 @@ export default function EditPanel(p: Props) {
   const set = (patch: Partial<EditParams>) => onChange({ ...params, ...patch })
   const unchanged = semitones === 0 && stretch === 1 && !(preserveFormant && formantSemitones !== 0)
   const mode: Mode = modeOf(params.algorithm, p.modes)
+  // ダブルクリックで既定値（長さ ×1、フォルマントの高さ 0）に戻す（設定で有効なときだけ）
+  const resetStretch = useDoubleClickReset(() => set({ stretch: 1 }))
+  const resetFormant = useDoubleClickReset(() => set({ formantSemitones: 0 }))
 
   return (
     <InspectorSection
@@ -116,6 +119,7 @@ export default function EditPanel(p: Props) {
           valueLabelDisplay="auto"
           valueLabelFormat={(v) => `×${v.toFixed(2)}`}
           onChange={(_, v) => set({ stretch: round2(2 ** (v as number)) })}
+          {...resetStretch}
           sx={COMPACT_SLIDER_SX}
         />
         <NumberInput value={stretch} onChange={(v) => set({ stretch: v })} min={0.25} max={8} step={0.05} unit="×" ariaLabel={t('process.lengthAria')} />
@@ -146,6 +150,7 @@ export default function EditPanel(p: Props) {
           valueLabelDisplay="auto"
           valueLabelFormat={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}`}
           onChange={(_, v) => set({ formantSemitones: round2(v as number) })}
+          {...resetFormant}
           sx={COMPACT_SLIDER_SX}
         />
         </Tooltip>
