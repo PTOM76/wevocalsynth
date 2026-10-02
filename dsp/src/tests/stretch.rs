@@ -159,9 +159,35 @@ fn transient_sharpness() {
     };
     let pv = concentration(&run(&[&x], sr, 0.0, 2.0, Algorithm::PhaseVocoder)[0]);
     let pv2 = concentration(&run(&[&x], sr, 0.0, 2.0, Algorithm::PhaseVocoder2)[0]);
-    println!("concentration: PhaseVocoder {pv:.4} / PhaseVocoder2 {pv2:.4}");
+    let hpss = concentration(&run(&[&x], sr, 0.0, 2.0, Algorithm::Hpss)[0]);
+    println!("concentration: PhaseVocoder {pv:.4} / PhaseVocoder2 {pv2:.4} / Hpss {hpss:.4}");
     // 2026-10-02 時点: Phase Vocoder 0.41 / v2 0.95
     assert!(pv2 > pv + 0.3, "pv {pv} pv2 {pv2}");
+    assert!(hpss > pv + 0.2, "pv {pv} hpss {hpss}");
+}
+
+/// HPSS の分離: 伸びる成分と打つ成分を足すと元に戻ること。持続音は伸びる成分、短い減衰音は打つ成分に多く入ること
+#[test]
+fn hpss_separation() {
+    let sr = 48000.0;
+    let n = sr as usize;
+    let tone: Vec<f32> = (0..n).map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sr).sin() * 0.5).collect();
+    let click: Vec<f32> = (0..n)
+        .map(|i| {
+            let t = (i % (sr as usize / 4)) as f32 / sr;
+            if t < 0.002 { (1.0 - t / 0.002) * 0.8 * if i % 2 == 0 { 1.0 } else { -1.0 } } else { 0.0 }
+        })
+        .collect();
+    let mix: Vec<f32> = tone.iter().zip(&click).map(|(a, b)| a + b).collect();
+    let (h, p) = crate::hpss::separate(&[&mix], sr, &mut |_| {});
+    let err = mix.iter().zip(h[0].iter().zip(&p[0])).map(|(x, (a, b))| (x - a - b).abs()).fold(0.0f32, f32::max);
+    let energy = |y: &[f32], r: &[f32]| y.iter().zip(r).map(|(a, b)| a * b).sum::<f32>();
+    // 持続音との相関は伸びる成分、クリックとの相関は打つ成分のほうが大きい
+    let (th, tp) = (energy(&h[0], &tone), energy(&p[0], &tone));
+    let (ch, cp) = (energy(&h[0], &click), energy(&p[0], &click));
+    println!("hpss: max err {err:.5}, tone H/P {th:.1}/{tp:.1}, click H/P {ch:.2}/{cp:.2}");
+    assert!(err < 1e-3, "{err}");
+    assert!(th > tp * 10.0 && cp > ch, "tone {th}/{tp} click {ch}/{cp}");
 }
 
 /// ボーカルを大きく伸ばしたときの周期のきれいさを方式ごとに比べる。PSOLA は WSOLA 以上であること

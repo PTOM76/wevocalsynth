@@ -88,6 +88,8 @@
   "algorithm.psola2Hint": "Improved PSOLA. Less roughness",
   "algorithm.wsola2": "WSOLAv2",
   "algorithm.wsola2Hint": "Improved WSOLA. Less smearing",
+  "algorithm.hpss": "HPSS",
+  "algorithm.hpssHint": "Stretches drums and tones separately. For songs with drums (slow)",
   "algorithm.pv2": "PhaseV v2",
   "algorithm.pv2Hint": "Improved PhaseV. Sharper attacks",
   "algorithm.pv": "PhaseV",

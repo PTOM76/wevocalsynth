@@ -14,6 +14,7 @@ mod ffi;
 // FFT とリサンプルは wevocal-lib（WeVocalExtractor と共有）のものを使う。`crate::fft` などのパスは今までどおり
 use wevocal_lib::fft;
 pub mod formant;
+pub mod hpss;
 mod pipeline;
 pub mod psola;
 pub mod pv;

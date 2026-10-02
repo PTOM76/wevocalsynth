@@ -20,7 +20,7 @@ pub fn freq(x: &[f32], sr: f32) -> f32 {
     crossings as f32 / (m.len() as f32 / sr)
 }
 
-pub const ALGOS: [Algorithm; 7] = [
+pub const ALGOS: [Algorithm; 8] = [
     Algorithm::Wsola,
     Algorithm::PhaseVocoder,
     Algorithm::Psola,
@@ -28,6 +28,7 @@ pub const ALGOS: [Algorithm; 7] = [
     Algorithm::Psola2,
     Algorithm::Wsola2,
     Algorithm::PhaseVocoder2,
+    Algorithm::Hpss,
 ];
 
 pub fn run(x: &[&[f32]], sr: f32, semi: f64, alpha: f64, algo: Algorithm) -> Vec<Vec<f32>> {

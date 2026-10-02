@@ -3,10 +3,10 @@ import { markActivity, recordDspJob } from '../debug/debugStats'
 
 /** DSPエンジンの時間伸縮方式 */
 /** wsola / pv は従来の方式、psola はボーカル向けの新しい方式（Rust 側 `Algorithm::from_id` と対応） */
-export type Algorithm = 'wsola' | 'pv' | 'psola' | 'sola' | 'psola2' | 'wsola2' | 'pv2'
+export type Algorithm = 'wsola' | 'pv' | 'psola' | 'sola' | 'psola2' | 'wsola2' | 'pv2' | 'hpss'
 
-// psola2 / wsola2 / pv2 は改良版（PSOLAv2 / WSOLAv2 / Phase Vocoder v2）。従来版も残して選べる
-const ALGORITHM_ID: Record<Algorithm, number> = { wsola: 0, pv: 1, psola: 2, sola: 3, psola2: 4, wsola2: 5, pv2: 6 }
+// psola2 / wsola2 / pv2 は改良版（PSOLAv2 / WSOLAv2 / Phase Vocoder v2）。従来版も残して選べる。hpss は打楽器分離のハイブリッド
+const ALGORITHM_ID: Record<Algorithm, number> = { wsola: 0, pv: 1, psola: 2, sola: 3, psola2: 4, wsola2: 5, pv2: 6, hpss: 7 }
 
 type Pending = {
   resolve: (r: Float32Array[] | Uint8Array) => void

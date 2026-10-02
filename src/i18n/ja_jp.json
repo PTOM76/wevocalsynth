@@ -88,6 +88,8 @@
   "algorithm.psola2Hint": "PSOLAの改良版。かすれにくい",
   "algorithm.wsola2": "WSOLAv2",
   "algorithm.wsola2Hint": "WSOLAの改良版。にじみにくい",
+  "algorithm.hpss": "HPSS",
+  "algorithm.hpssHint": "打楽器と和音を分けて伸ばす。ドラム入りの曲向け（重い）",
   "algorithm.pv2": "PhaseV v2",
   "algorithm.pv2Hint": "PhaseVの改良版。アタックがにじみにくい",
   "algorithm.pv": "PhaseV",

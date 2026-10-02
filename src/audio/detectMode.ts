@@ -63,7 +63,7 @@ export function modeOf(algorithm: Algorithm, modes: ModeSettings): Mode {
   return isInstrumentAlgorithm(algorithm) ? 'instrument' : 'vocal'
 }
 
-/** 和音・楽器向けの方式か（Phase Vocoder 系。フォルマント保持を既定で切る） */
+/** 和音・楽器向けの方式か（Phase Vocoder 系と HPSS。フォルマント保持を既定で切る） */
 export function isInstrumentAlgorithm(a: Algorithm) {
-  return a === 'pv' || a === 'pv2'
+  return a === 'pv' || a === 'pv2' || a === 'hpss'
 }
