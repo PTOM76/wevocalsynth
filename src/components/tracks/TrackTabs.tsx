@@ -1,5 +1,5 @@
 import { Box, Tab, Tabs, Tooltip } from '@mui/material'
-import { DEFAULT_MIX, isAudible, type Track, type TrackMix } from '../../audio/tracks'
+import { DEFAULT_MIX, isAudible, type Track, type TrackFader, type TrackMix } from '../../audio/tracks'
 import { MixToggle } from './TrackLanes'
 import { useT } from '../../i18n/i18n'
 import LevelMeter from '../LevelMeter'
@@ -19,6 +19,9 @@ interface Props {
   onMove: (id: string, to: number) => void
   onToggleMute: (id: string) => void
   onToggleSolo: (id: string) => void
+  /** 位相の反転（フェーダーの invert）と、その切り替え */
+  faders: Record<string, TrackFader>
+  onToggleInvert: (id: string) => void
   onContextMenu: (id: string, x: number, y: number) => void
   /** トラック `id` のレベルメーター（再生していなければ null） */
   meter: ((id: string) => AnalyserNode | null) | null
@@ -74,6 +77,7 @@ export default function TrackTabs(p: Props) {
                   </Box>
                   <MixToggle label="M" title={t('track.mute')} on={m.mute} color="warning.main" onClick={() => p.onToggleMute(tr.id)} />
                   <MixToggle label="S" title={t('track.solo')} on={m.solo} color="success.main" onClick={() => p.onToggleSolo(tr.id)} />
+                  <MixToggle label="I" title={t('track.invert')} on={!!p.faders[tr.id]?.invert} color="info.main" onClick={() => p.onToggleInvert(tr.id)} />
                 </Box>
               }
               sx={{

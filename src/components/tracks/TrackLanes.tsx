@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Box, ButtonBase, Tooltip, Typography } from '@mui/material'
-import { DEFAULT_MIX, isAudible, type Track, type TrackMix } from '../../audio/tracks'
+import { DEFAULT_MIX, isAudible, type Track, type TrackFader, type TrackMix } from '../../audio/tracks'
 import { computePeaks } from '../waveform/peaks'
 import { prepareCanvas, type View } from '../waveform/draw'
 import { usePalette } from '../waveform/usePalette'
@@ -28,12 +28,15 @@ interface Props {
   onMove: (id: string, to: number) => void
   onToggleMute: (id: string) => void
   onToggleSolo: (id: string) => void
+  /** 位相の反転（フェーダーの invert）と、その切り替え */
+  faders: Record<string, TrackFader>
+  onToggleInvert: (id: string) => void
   onContextMenu: (id: string, x: number, y: number) => void
   /** トラック `id` のレベルメーター（再生していなければ null） */
   meter: ((id: string) => AnalyserNode | null) | null
 }
 
-/** M / S の小さな切り替え（オンなら色を付ける） */
+/** M / S / I の小さな切り替え（オンなら色を付ける） */
 export function MixToggle(p: { label: string; title: string; on: boolean; color: string; onClick: () => void }) {
   return (
     <Tooltip title={p.title}>
@@ -162,6 +165,7 @@ export default function TrackLanes(p: Props) {
               </Box>
               <MixToggle label="M" title={t('track.mute')} on={m.mute} color="warning.main" onClick={() => p.onToggleMute(tr.id)} />
               <MixToggle label="S" title={t('track.solo')} on={m.solo} color="success.main" onClick={() => p.onToggleSolo(tr.id)} />
+              <MixToggle label="I" title={t('track.invert')} on={!!p.faders[tr.id]?.invert} color="info.main" onClick={() => p.onToggleInvert(tr.id)} />
             </Box>
             {/* 鳴らないトラックは薄く出す */}
             <Box sx={{ flex: 1, minWidth: 0, opacity: audible ? 1 : 0.35, py: 0.25 }}>

@@ -45,6 +45,7 @@ export function useOutput(d: Deps) {
         edited: tr.clip,
         volume: tracks.faderOf(tr.id).db,
         pan: tracks.faderOf(tr.id).pan,
+        invert: tracks.faderOf(tr.id).invert,
         mute: tracks.mix[tr.id]?.mute,
         solo: tracks.mix[tr.id]?.solo,
         overlay: tracks.overlay.has(tr.id),
@@ -66,7 +67,7 @@ export function useOutput(d: Deps) {
       const render = (c: Clip, id: string) => {
         const part = s.selectionOnly && d.selections.length ? sliceRanges(c, d.selections) : c
         const f = tracks.faderOf(id)
-        return applyFader(part, f.db, f.pan)
+        return applyFader(part, f.db, f.pan, f.invert)
       }
       // ミックス: 再生と同じく、ミュート・ソロに従って鳴るトラックだけを混ぜる（サンプルレートは選んでいるトラックに合わせる）
       const audible = history.tracks.filter((tr) => isAudible(tr.id, tracks.mix, history.tracks))

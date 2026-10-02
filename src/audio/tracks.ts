@@ -30,11 +30,61 @@ export interface TrackFader {
   db: number
   /** パン（-1 = 左 … 0 = 中央 … 1 = 右） */
   pan: number
+  /** 位相（極性）を反転する（波形の上下を逆にする。ほかのトラックとの打ち消し合いを直す・確かめるとき） */
+  invert?: boolean
 }
 
 export const DEFAULT_FADER: TrackFader = { db: 0, pan: 0 }
 
-export const isNeutralFader = (f: TrackFader) => f.db === 0 && f.pan === 0
+export const isNeutralFader = (f: TrackFader) => f.db === 0 && f.pan === 0 && !f.invert
+
+/** フェーダーの音量の倍率（位相の反転は負の倍率として掛ける） */
+export const faderGain = (f: TrackFader) => 10 ** (f.db / 20) * (f.invert ? -1 : 1)
+
+/**
+ * トラックごとの、音声以外の状態（フェーダー・鳴らし方・重ねる表示）。プロジェクトファイルと自動保存に保存する。
+ * 項目を足すときは、ここと `StoredTrackSettings`・`toStoredSettings`・`fromStoredSettings` だけを直す
+ * （保存・読み込み・開き直したときの復元は、どれもこの変換を通す）
+ */
+export interface TrackSettings {
+  fader: TrackFader
+  mix: TrackMix
+  /** 大きな波形の後ろに重ねて表示する */
+  overlay: boolean
+}
+
+/**
+ * ファイルに書く形。古いファイルと同じく項目を平らに並べ、どれも省略できる（無ければ既定値）。
+ * 名前は保存済みのファイルと互換なので変えない
+ */
+export interface StoredTrackSettings {
+  volume?: number
+  pan?: number
+  invert?: boolean
+  mute?: boolean
+  solo?: boolean
+  overlay?: boolean
+}
+
+/** `StoredTrackSettings` の項目名（保存したものから、この項目だけを取り出すのに使う） */
+const STORED_KEYS = ['volume', 'pan', 'invert', 'mute', 'solo', 'overlay'] as const satisfies readonly (keyof StoredTrackSettings)[]
+
+export function toStoredSettings(s: TrackSettings): StoredTrackSettings {
+  return { volume: s.fader.db, pan: s.fader.pan, invert: s.fader.invert, mute: s.mix.mute, solo: s.mix.solo, overlay: s.overlay }
+}
+
+export function fromStoredSettings(s: StoredTrackSettings | undefined): TrackSettings {
+  return {
+    fader: { db: s?.volume ?? 0, pan: s?.pan ?? 0, invert: !!s?.invert },
+    mix: { mute: !!s?.mute, solo: !!s?.solo },
+    overlay: !!s?.overlay,
+  }
+}
+
+/** 保存したもの（ヘッダなど、ほかの項目も入っている）から、トラックの設定の項目だけを取り出す */
+export function pickStoredSettings(s: StoredTrackSettings | undefined): StoredTrackSettings {
+  return Object.fromEntries(STORED_KEYS.map((k) => [k, s?.[k]])) as StoredTrackSettings
+}
 
 let nextId = 1
 export const newTrackId = () => `t${Date.now().toString(36)}${(nextId++).toString(36)}`

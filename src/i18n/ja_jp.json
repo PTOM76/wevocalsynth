@@ -350,6 +350,7 @@
   "track.remove": "トラックを削除",
   "track.mute": "ミュート",
   "track.solo": "ソロ",
+  "track.invert": "位相反転",
   "track.vocalsName": "{name}（ボーカル）",
   "track.accompanimentName": "{name}（伴奏）",
   "extract.splitMenu": "ボーカルと伴奏を別トラックに分ける",

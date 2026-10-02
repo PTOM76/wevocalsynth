@@ -22,7 +22,7 @@ export interface AutosaveMeta {
   params: EditParams
   tempo?: ProjectTempo
   /** トラックの並び。音声は trackKey(id) に置く */
-  tracks?: { id: string; name: string; volume?: number; pan?: number; mute?: boolean; solo?: boolean; overlay?: boolean }[]
+  tracks?: { id: string; name: string; volume?: number; pan?: number; invert?: boolean; mute?: boolean; solo?: boolean; overlay?: boolean }[]
   active?: number
 }
 
@@ -134,6 +134,7 @@ export async function loadAutosave(): Promise<{ project: Project; ids: string[] 
         name: t.name,
         volume: t.volume,
         pan: t.pan,
+        invert: t.invert,
         mute: t.mute,
         solo: t.solo,
         overlay: t.overlay,

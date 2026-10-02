@@ -350,6 +350,7 @@
   "track.remove": "Remove track",
   "track.mute": "Mute",
   "track.solo": "Solo",
+  "track.invert": "Invert phase",
   "track.vocalsName": "{name} (vocals)",
   "track.accompanimentName": "{name} (accompaniment)",
   "extract.splitMenu": "Split into vocal and accompaniment tracks",

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from './types'
-import { DEFAULT_FADER, type TrackFader } from './tracks'
+import { DEFAULT_FADER, faderGain, type TrackFader } from './tracks'
 import { clipDuration } from './types'
 
 /** 一緒に鳴らすトラック（id はレベルメーターの対応づけに使う） */
@@ -28,13 +28,14 @@ function makePanner(ctx: AudioContext) {
  * 再生を始めるとき（`immediate`）はそのまま入れる（出だしの音量がずれないように）
  */
 function setFaderNodes(n: { gain: GainNode; pan: StereoPannerNode }, f: TrackFader, immediate = false) {
+  // 位相の反転は負の倍率として掛ける（書き出しの applyFader と同じ）
   if (immediate) {
-    n.gain.gain.value = 10 ** (f.db / 20)
+    n.gain.gain.value = faderGain(f)
     n.pan.pan.value = f.pan
     return
   }
   const t = n.gain.context.currentTime
-  n.gain.gain.setTargetAtTime(10 ** (f.db / 20), t, 0.01)
+  n.gain.gain.setTargetAtTime(faderGain(f), t, 0.01)
   n.pan.pan.setTargetAtTime(f.pan, t, 0.01)
 }
 

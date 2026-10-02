@@ -76,6 +76,7 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
   const onMove = useStableFn(tr.move)
   const onToggleMute = useStableFn(tr.toggleMute)
   const onToggleSolo = useStableFn(tr.toggleSolo)
+  const onToggleInvert = useStableFn(tr.toggleInvert)
   const onContextMenu = useStableFn((id: string, x: number, y: number) => setMenu({ id, x, y }))
 
   // トラックが2本以上あるときだけ出る（広げると波形付きの一覧、折りたたむとタブ）
@@ -91,6 +92,8 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
       onMove={onMove}
       onToggleMute={onToggleMute}
       onToggleSolo={onToggleSolo}
+      faders={tr.faders}
+      onToggleInvert={onToggleInvert}
       onContextMenu={onContextMenu}
       meter={meter}
     />

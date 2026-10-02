@@ -322,9 +322,10 @@ export function panRange(clip: Clip, range: Range, pan: number): Clip {
  * トラックのフェーダー（音量 `db`・パン `pan`）を、クリップ全体に掛けた音声（書き出し用）。
  * 再生（usePlayer の GainNode → StereoPannerNode）と同じ計算。どちらも中立なら元のクリップを返す
  */
-export function applyFader(clip: Clip, db: number, pan: number): Clip {
-  if (db === 0 && pan === 0) return clip
-  const g = 10 ** (db / 20)
+export function applyFader(clip: Clip, db: number, pan: number, invert = false): Clip {
+  if (db === 0 && pan === 0 && !invert) return clip
+  // 位相の反転は負の倍率（再生の usePlayer と同じ）
+  const g = 10 ** (db / 20) * (invert ? -1 : 1)
   if (pan === 0) return { sampleRate: clip.sampleRate, channels: clip.channels.map((c) => c.map((v) => v * g)) }
   const [l0, r0] = clip.channels.length >= 2 ? clip.channels : [clip.channels[0], clip.channels[0]]
   const n = l0.length

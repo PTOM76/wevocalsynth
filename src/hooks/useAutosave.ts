@@ -91,6 +91,7 @@ export function useAutosave(
         name: t.name,
         volume: faders[t.id]?.db,
         pan: faders[t.id]?.pan,
+        invert: faders[t.id]?.invert,
         mute: mix[t.id]?.mute,
         solo: mix[t.id]?.solo,
         overlay: overlay.has(t.id),

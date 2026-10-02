@@ -134,6 +134,8 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     setSoloMany: (ids: string[], on: boolean) => ids.forEach((id) => setTrackMix(id, { solo: on })),
     toggleMute: (id: string) => setTrackMix(id, { mute: !(mix[id]?.mute ?? false) }),
     toggleSolo: (id: string) => setTrackMix(id, { solo: !(mix[id]?.solo ?? false) }),
+    /** 位相（極性）の反転を切り替える（フェーダーの一部として、再生と書き出しに掛かる） */
+    toggleInvert: (id: string) => setFaders((f) => ({ ...f, [id]: { ...(f[id] ?? DEFAULT_FADER), invert: !f[id]?.invert } })),
     overlay,
     ghosts,
     toggleOverlay: (id: string) =>

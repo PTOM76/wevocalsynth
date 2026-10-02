@@ -217,7 +217,7 @@ export function useEditor(settings: Settings) {
       // フェーダーはプロジェクトに保存した値から（新しいファイルは中立）
       const saved = project?.tracks ?? []
       tracks.resetMix({
-        faders: Object.fromEntries(saved.map((tr, i) => [list[i].id, { db: tr.volume ?? 0, pan: tr.pan ?? 0 }])),
+        faders: Object.fromEntries(saved.map((tr, i) => [list[i].id, { db: tr.volume ?? 0, pan: tr.pan ?? 0, invert: !!tr.invert }])),
         mix: Object.fromEntries(saved.map((tr, i) => [list[i].id, { mute: !!tr.mute, solo: !!tr.solo }])),
         overlay: saved.flatMap((tr, i) => (tr.overlay ? [list[i].id] : [])),
       })
