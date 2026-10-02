@@ -74,6 +74,15 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     history.setTracks([...rest.slice(0, i + 1), made, ...rest.slice(i + 1)], made.id, t(move ? 'track.moveSelection' : 'track.copySelection'))
   }
 
+  /** 無音の新しいトラックを足す（長さ・サンプルレート・チャンネル数は選んでいるトラックに合わせる） */
+  const addEmpty = () => {
+    const src = tracks.find((tr) => tr.id === activeId)
+    if (!src) return
+    const n = src.clip.channels[0].length
+    const clip = { sampleRate: src.clip.sampleRate, channels: src.clip.channels.map(() => new Float32Array(n)) }
+    insertAfter([makeTrack(t('track.emptyName'), clip)], t('track.addEmpty'))
+  }
+
   /** 音声を新しいトラックとして足す（ファイルの追加） */
   const addClip = (clip: Clip, name: string) => insertAfter([makeTrack(name, clip)], t('track.add'))
 
@@ -161,6 +170,7 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     select: history.select,
     duplicate,
     fromSelection,
+    addEmpty,
     addClip,
     split,
     remove,

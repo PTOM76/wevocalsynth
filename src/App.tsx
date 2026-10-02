@@ -26,6 +26,7 @@ import VolumePanel from './components/VolumePanel'
 import PitchToolHost, { type PitchDialogKind } from './components/PitchToolHost'
 import SynthDialog from './components/SynthDialog'
 import SamplerDialog from './components/SamplerDialog'
+import SilenceDialog from './components/SilenceDialog'
 import { flattenPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
@@ -89,6 +90,7 @@ export default function App() {
   const [synthOpen, setSynthOpen] = useState(false)
   const [samplerOpen, setSamplerOpen] = useState(false)
   const [renamingMarker, setRenamingMarker] = useState<string | null>(null)
+  const [silenceOpen, setSilenceOpen] = useState(false)
   const [renamingProject, setRenamingProject] = useState(false)
   const [pitchDialog, setPitchDialog] = useState<PitchDialogKind>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
@@ -149,6 +151,8 @@ export default function App() {
     extract: (stem) => void ed.extract(stem),
     splitStems: () => void ed.splitStems(),
     duplicateTrack: () => ed.tracks.duplicate(),
+    addEmptyTrack: ed.tracks.addEmpty,
+    insertSilence: () => setSilenceOpen(true),
     selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),
     addTrack: () => ed.addPicker.open(),
     synth: () => setSynthOpen(true),
@@ -566,6 +570,15 @@ export default function App() {
         pitchTools={ed.pitchTools}
       />
       <SynthDialog open={synthOpen} bpm={bpm} onClose={() => setSynthOpen(false)} onCreate={ed.addSynth} />
+      <SilenceDialog
+        open={silenceOpen}
+        bpm={bpm}
+        beatsPerBar={ed.projectTempo.beatsPerBar}
+        defaultSec={selection ? selection.end - selection.start : null}
+        onClose={() => setSilenceOpen(false)}
+        // 選択範囲があればその頭に、なければ再生位置に入れる
+        onInsert={(sec) => ed.cmd.insertSilence(selection ? selection.start : player.livePosition(), sec)}
+      />
       <SamplerDialog
         open={samplerOpen}
         bpm={bpm}

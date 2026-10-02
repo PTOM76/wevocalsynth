@@ -10,6 +10,7 @@ export interface TrackActions {
   busy: boolean
   select: (id: string) => void
   duplicate: (id: string) => void
+  addEmpty: () => void
   rename: (id: string) => void
   splitStems: (id: string) => void
   mergeDown: (id: string) => void
@@ -36,6 +37,7 @@ export function trackMenuEntries(id: string, a: TrackActions): MenuEntry[] {
   return [
     { label: t('track.rename'), disabled: a.busy, onClick: () => a.rename(id) },
     { label: t('track.duplicate'), disabled: a.busy, onClick: () => a.duplicate(id) },
+    { label: t('track.addEmpty'), disabled: a.busy, onClick: a.addEmpty },
     { label: t('extract.splitMenu'), disabled: a.busy, onClick: () => a.splitStems(id) },
     { divider: true },
     { label: t('track.mergeDown'), disabled: a.busy || i + 1 >= a.tracks.length, onClick: () => a.mergeDown(id) },

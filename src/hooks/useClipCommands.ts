@@ -92,6 +92,15 @@ export function useClipCommands(d: Deps) {
     }
   }
 
+  /** `at`（秒）に `sec` 秒の無音を差し込む（後ろはずれる） */
+  const insertSilence = (at: number, sec: number) => {
+    if (!edited || !(sec > 0)) return
+    const n = Math.round(sec * edited.sampleRate)
+    const silent = { sampleRate: edited.sampleRate, channels: edited.channels.map(() => new Float32Array(n)) }
+    d.commit(insertAt(edited, silent, at), t('silence.title'))
+    d.setSelections([{ start: at, end: at + sec }])
+  }
+
   /** 選択範囲（なければ全体）を逆再生にする（範囲ごとに前後を逆に並べる） */
   const reverse = () => {
     if (!edited || !editRanges.length) return
@@ -101,6 +110,7 @@ export function useClipCommands(d: Deps) {
   return {
     hasClipboard: !!clipboard,
     reverse,
+    insertSilence,
     /** ファイルを開き直したときにクリップボードを空にする（サンプルレートが混ざらないように） */
     clearClipboard: () => setClipboard(null),
     copy,

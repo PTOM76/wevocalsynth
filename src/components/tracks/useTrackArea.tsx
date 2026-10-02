@@ -53,6 +53,7 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
     busy,
     select: tr.select,
     duplicate: tr.duplicate,
+    addEmpty: tr.addEmpty,
     rename: setRenaming,
     splitStems: (id: string) => void ed.splitStems(id),
     mergeDown: (id: string) => void tr.mergeDown(id),
