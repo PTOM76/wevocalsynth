@@ -80,15 +80,16 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progre
     };
     let sq_err = |a: i64, b: i64, n: usize| -> f32 { seg(a, n).iter().zip(seg(b, n)).map(|(x, y)| (x - y) * (x - y)).sum() };
     let at = |c: &[f32], p: i64| if p >= 0 && (p as usize) < len { c[p as usize] } else { 0.0 };
-    // `from` から 1 周期（`t`）進めた・戻した位置を、`from` の 1 周期分の波形と最も似ている所にそろえる。入力に収まらなければ None
-    let neighbor = |from: i64, t: i64, dir: i64| {
+    // `from` から 1 周期（`t`）進めた・戻した位置を、中心の周期（`center`）の 1 周期分の波形と最も似ている所にそろえる。
+    // 隣どうしでそろえると、外側の周期ほどずれがたまり、重ねたときにうなり（震え）になる。入力に収まらなければ None
+    let neighbor = |from: i64, center: i64, t: i64, dir: i64| {
         let guess = from + dir * t;
         if guess - t / 4 < 0 || guess + t / 4 > last_pos {
             return None;
         }
         let mut best = (guess, f32::MAX);
         for cand in guess - t / 4..=guess + t / 4 {
-            let e = sq_err(from, cand, t as usize);
+            let e = sq_err(center, cand, t as usize);
             if e < best.1 {
                 best = (cand, e);
             }
@@ -158,7 +159,7 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progre
                     if w <= 0.0 {
                         break;
                     }
-                    match neighbor(p, t, dir) {
+                    match neighbor(p, pos, t, dir) {
                         Some(q) => p = q,
                         None => break,
                     }
