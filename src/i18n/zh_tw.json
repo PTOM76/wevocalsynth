@@ -106,6 +106,8 @@
   "algorithm.psolaHint": "依聲音週期切割拼接。適合人聲",
   "algorithm.sola": "SOLA",
   "algorithm.solaHint": "短片段重疊拼接。模糊少",
+  "algorithm.sola2": "SOLAv2",
+  "algorithm.sola2Hint": "SOLA 的改良版。大幅拉伸也不易粗糙",
   "algorithm.wsola": "WSOLA",
   "algorithm.wsolaHint": "依相似波形重疊。擅長子音，速度快",
   "algorithm.psola2": "PSOLAv2",

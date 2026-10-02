@@ -7,6 +7,7 @@ import { useT, type MessageKey } from '../i18n/i18n'
 
 /** 選べる処理方式。新しい方式を入れても前の方式は残し、ここから選べるようにする */
 export const ALGORITHMS: { value: Algorithm; label: MessageKey; hint: MessageKey }[] = [
+  { value: 'sola2', label: 'algorithm.sola2', hint: 'algorithm.sola2Hint' },
   { value: 'sola', label: 'algorithm.sola', hint: 'algorithm.solaHint' },
   { value: 'psola2', label: 'algorithm.psola2', hint: 'algorithm.psola2Hint' },
   { value: 'psola', label: 'algorithm.psola', hint: 'algorithm.psolaHint' },

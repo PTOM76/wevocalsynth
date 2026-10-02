@@ -106,6 +106,8 @@
   "algorithm.psolaHint": "Splices at pitch periods. For voice",
   "algorithm.sola": "SOLA",
   "algorithm.solaHint": "Short crossfades. Less smearing",
+  "algorithm.sola2": "SOLAv2",
+  "algorithm.sola2Hint": "Improved SOLA. Stays clean on long stretches",
   "algorithm.wsola": "WSOLA",
   "algorithm.wsolaHint": "Overlaps similar waveforms. Fast, good for consonants",
   "algorithm.psola2": "PSOLAv2",

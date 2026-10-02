@@ -30,3 +30,4 @@ public/addons
 
 # 追加機能のモデルの取得先（scripts/build-addons.mjs）
 .cache
+sample/*

@@ -19,6 +19,7 @@ mod pipeline;
 pub mod psola;
 pub mod pv;
 pub mod sola;
+pub mod sola2;
 pub mod spec;
 pub mod tempo;
 mod timemap;

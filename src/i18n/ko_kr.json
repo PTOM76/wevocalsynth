@@ -106,6 +106,8 @@
   "algorithm.psolaHint": "목소리의 주기마다 잘라 붙임. 목소리용",
   "algorithm.sola": "SOLA",
   "algorithm.solaHint": "짧게 겹쳐 이음. 번짐이 적음",
+  "algorithm.sola2": "SOLAv2",
+  "algorithm.sola2Hint": "SOLA 개선판. 길게 늘려도 거칠어지지 않음",
   "algorithm.wsola": "WSOLA",
   "algorithm.wsolaHint": "비슷한 파형으로 겹침. 자음에 강하고 빠름",
   "algorithm.psola2": "PSOLAv2",
