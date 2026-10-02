@@ -10,7 +10,7 @@ import { ALGORITHMS } from '../components/AlgorithmMenu'
 import type { Algorithm } from '../dsp/engine'
 import type { LangSetting, MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
-import { Check, Choice, Group, Row, type WindowMode } from 'pevenmui'
+import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
 
 /** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
 const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
@@ -105,15 +105,12 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
           />
         </Row>
         <Check checked={draft.showMeters} onChange={(v) => set({ showMeters: v })} label={t('settings.showMeters')} help={t('settings.showMetersHelp')} />
-        <Check checked={draft.liveSelection} onChange={(v) => set({ liveSelection: v })} label={t('settings.liveSelection')} help={t('settings.liveSelectionHelp')} />        <Row label={t('settings.language')}>
+        <Check checked={draft.liveSelection} onChange={(v) => set({ liveSelection: v })} label={t('settings.liveSelection')} help={t('settings.liveSelectionHelp')} />
+        <Row label={t('settings.language')}>
           <Choice<LangSetting>
             value={draft.language}
             onChange={(v) => set({ language: v })}
-            options={[
-              ['auto', t('settings.languageAuto')],
-              ['ja_jp', '日本語'],
-              ['en_us', 'English'],
-            ]}
+            options={[['auto', t('settings.languageAuto')], ...LANG_NAMES]}
           />
         </Row>
       </Group>

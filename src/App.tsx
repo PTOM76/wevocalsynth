@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, PevenLabels, jaLabels, enLabels, WindowModeContext, autoWindowMode } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, PevenLabels, LABELS, WindowModeContext, autoWindowMode } from 'pevenmui'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
 import { useAppMenus } from './hooks/useAppMenus'
@@ -184,7 +184,7 @@ export default function App() {
     // 新しい版があれば、右下の通知（UpdatePrompt）からそのまま更新できる。ここでは結果だけを知らせる
     checkUpdate: () =>
       void checkForUpdate().then((r) => {
-        const l = lang === 'ja_jp' ? jaLabels : enLabels
+        const l = LABELS[lang]
         const text = { found: l.updateAvailable, latest: l.updateLatest, unsupported: l.updateUnsupported, failed: l.updateFailed }[r.kind]
         ed.setToast({ severity: r.kind === 'failed' ? 'error' : 'info', message: text })
       }),
@@ -379,7 +379,7 @@ export default function App() {
 
   return (
     <LangContext.Provider value={lang}>
-      <PevenLabels.Provider value={lang === 'ja_jp' ? jaLabels : enLabels}>
+      <PevenLabels.Provider value={LABELS[lang]}>
       <WindowModeContext.Provider value={settings.dialogWindow === 'auto' ? autoWindowMode() : settings.dialogWindow}>
       <SliderResetContext.Provider value={settings.sliderDoubleClickReset}>
       {!mobile && <GlobalStyles styles={desktopStyles} />}
