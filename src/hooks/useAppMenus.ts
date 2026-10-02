@@ -87,6 +87,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
   const menus: MenuGroup[] = [
     {
       label: t('menu.file'),
+      accessKey: 'F',
       entries: [
         { label: t('menu.open'), shortcut: 'Ctrl+O', disabled: a.busy, onClick: a.open },
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
@@ -99,6 +100,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     },
     {
       label: t('menu.edit'),
+      accessKey: 'E',
       entries: [
         { label: t('common.undo'), shortcut: 'Ctrl+Z', disabled: !a.canUndo || a.busy, onClick: a.undo },
         { label: t('common.redo'), shortcut: 'Ctrl+Y', disabled: !a.canRedo || a.busy, onClick: a.redo },
@@ -111,6 +113,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     },
     {
       label: t('menu.view'),
+      accessKey: 'V',
       entries: [
         { label: t('menu.spectrogram'), checked: a.showSpectrogram, disabled: !a.hasClip, onClick: a.toggleSpectrogram },
         { label: t('menu.wave'), checked: a.showWave, disabled: !a.hasClip || (a.showWave && !a.showPitch && !a.showSpectrogram && !a.showGain && !a.showFormant), onClick: a.toggleWave },
@@ -119,9 +122,10 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.formant'), checked: a.showFormant, disabled: !a.hasClip, onClick: a.toggleFormant },
       ],
     },
-    { label: t('menu.tools'), entries: tools },
+    { label: t('menu.tools'), accessKey: 'T', entries: tools },
     {
       label: t('menu.help'),
+      accessKey: 'H',
       entries: [
         { label: t('menu.userGuide'), onClick: () => openExternal(USER_GUIDE_URL) },
         { label: t('menu.shortcuts'), onClick: a.showShortcuts },
