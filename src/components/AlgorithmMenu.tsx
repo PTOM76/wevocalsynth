@@ -5,21 +5,30 @@ import { faCheck, faEllipsis } from '@fortawesome/free-solid-svg-icons'
 import type { Algorithm } from '../dsp/engine'
 import { useT, type MessageKey } from '../i18n/i18n'
 
-/** 選べる処理方式。新しい方式を入れても前の方式は残し、ここから選べるようにする */
-export const ALGORITHMS: { value: Algorithm; label: MessageKey; hint: MessageKey }[] = [
+/**
+ * 選べる処理方式。新しい方式を入れても前の方式は残し、ここから選べるようにする。
+ * `legacy` は改良版がある従来の方式で、設定の「従来の処理方式も表示する」を入れたときだけ出す（多すぎて選びにくいため）
+ */
+export const ALGORITHMS: { value: Algorithm; label: MessageKey; hint: MessageKey; legacy?: true }[] = [
   { value: 'sola2', label: 'algorithm.sola2', hint: 'algorithm.sola2Hint' },
-  { value: 'sola', label: 'algorithm.sola', hint: 'algorithm.solaHint' },
+  { value: 'sola3', label: 'algorithm.sola3', hint: 'algorithm.sola3Hint' },
+  { value: 'sola', label: 'algorithm.sola', hint: 'algorithm.solaHint', legacy: true },
   { value: 'psola2', label: 'algorithm.psola2', hint: 'algorithm.psola2Hint' },
-  { value: 'psola', label: 'algorithm.psola', hint: 'algorithm.psolaHint' },
+  { value: 'psola', label: 'algorithm.psola', hint: 'algorithm.psolaHint', legacy: true },
   { value: 'wsola2', label: 'algorithm.wsola2', hint: 'algorithm.wsola2Hint' },
-  { value: 'wsola', label: 'algorithm.wsola', hint: 'algorithm.wsolaHint' },
+  { value: 'wsola', label: 'algorithm.wsola', hint: 'algorithm.wsolaHint', legacy: true },
   { value: 'hpss', label: 'algorithm.hpss', hint: 'algorithm.hpssHint' },
   { value: 'pv2', label: 'algorithm.pv2', hint: 'algorithm.pv2Hint' },
   { value: 'pv', label: 'algorithm.pv', hint: 'algorithm.pvHint' },
 ]
 
+/** 表示する処理方式。従来の方式は `showLegacy` のときだけ。ただし `keep`（今選んでいるもの）は隠さない */
+export function visibleAlgorithms(showLegacy: boolean, keep: Algorithm[] = []) {
+  return ALGORITHMS.filter((a) => showLegacy || !a.legacy || keep.includes(a.value))
+}
+
 /** 処理モードの「…」。細かい処理方式を選ぶ。既定（`defaults`。ボーカル・楽器のボタンで選ばれるもの）以外を選んでいるときは強調する */
-export default function AlgorithmMenu({ value, defaults, onChange }: { value: Algorithm; defaults: Algorithm[]; onChange: (a: Algorithm) => void }) {
+export default function AlgorithmMenu({ value, defaults, showLegacy, onChange }: { value: Algorithm; defaults: Algorithm[]; showLegacy: boolean; onChange: (a: Algorithm) => void }) {
   const isDefault = (a: Algorithm) => defaults.includes(a)
   const t = useT()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
@@ -37,7 +46,7 @@ export default function AlgorithmMenu({ value, defaults, onChange }: { value: Al
         </IconButton>
       </Tooltip>
       <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)}>
-        {ALGORITHMS.map((a) => (
+        {visibleAlgorithms(showLegacy, [value, ...defaults]).map((a) => (
           <MenuItem
             key={a.value}
             dense

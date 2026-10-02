@@ -6,7 +6,7 @@ import DataSection from './DataSection'
 import AddonSection from './AddonSection'
 import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
-import { ALGORITHMS } from '../components/AlgorithmMenu'
+import { visibleAlgorithms } from '../components/AlgorithmMenu'
 import type { Algorithm } from '../dsp/engine'
 import type { LangSetting, MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
@@ -27,6 +27,10 @@ interface PageProps {
  * 設定画面の分類ごとの中身。項目を足したら settingsSearch.ts の検索の対象にも足す
  */
 export function settingsPages({ draft, set, onClose, t, project }: PageProps): Record<Category, ReactNode> {
+  // 既定の処理方式の選択肢（従来の方式は、表示する設定か、今選んでいるときだけ）
+  const algorithmOptions = visibleAlgorithms(draft.showLegacyAlgorithms, [draft.vocalAlgorithm, draft.instrumentAlgorithm]).map(
+    (a): [Algorithm, string] => [a.value, t(a.label)],
+  )
   return {
     project: <ProjectSection project={project} />,
     general: (
@@ -79,11 +83,12 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
         {/* ボーカル・楽器のボタン（と自動判定）で選ばれる処理方式 */}
         <Group title={t('settings.groupDefaultAlgorithm')}>
           <Row label={t('settings.vocalAlgorithm')}>
-            <Choice<Algorithm> value={draft.vocalAlgorithm} onChange={(v) => set({ vocalAlgorithm: v })} options={ALGORITHMS.map((a) => [a.value, t(a.label)])} />
+            <Choice<Algorithm> value={draft.vocalAlgorithm} onChange={(v) => set({ vocalAlgorithm: v })} options={algorithmOptions} />
           </Row>
           <Row label={t('settings.instrumentAlgorithm')}>
-            <Choice<Algorithm> value={draft.instrumentAlgorithm} onChange={(v) => set({ instrumentAlgorithm: v })} options={ALGORITHMS.map((a) => [a.value, t(a.label)])} />
+            <Choice<Algorithm> value={draft.instrumentAlgorithm} onChange={(v) => set({ instrumentAlgorithm: v })} options={algorithmOptions} />
           </Row>
+          <Check checked={draft.showLegacyAlgorithms} onChange={(v) => set({ showLegacyAlgorithms: v })} label={t('settings.showLegacyAlgorithms')} help={t('settings.showLegacyAlgorithmsHelp')} />
         </Group>
         <Group title={t('settings.groupDefaultTempo')}>
           <Row label={t('settings.defaultBpm')} help={t('settings.defaultBpmHelp')}>

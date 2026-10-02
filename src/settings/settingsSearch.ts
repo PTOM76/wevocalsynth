@@ -19,7 +19,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupUpdate', 'update.check',
   ],
   defaults: [
-    'settings.groupDefaultAlgorithm', 'settings.vocalAlgorithm', 'settings.instrumentAlgorithm',
+    'settings.groupDefaultAlgorithm', 'settings.vocalAlgorithm', 'settings.instrumentAlgorithm', 'settings.showLegacyAlgorithms', 'settings.showLegacyAlgorithmsHelp',
     'settings.groupDefaultTempo', 'settings.defaultBpm', 'settings.defaultBpmHelp',
   ],
   display: ['settings.groupAppearance', 'settings.theme', 'settings.language', 'settings.showMeters', 'settings.showMetersHelp', 'settings.liveSelection', 'settings.liveSelectionHelp'],

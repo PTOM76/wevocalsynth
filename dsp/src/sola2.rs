@@ -1,9 +1,12 @@
-//! SOLA の改良版（SOLAv2）。声のある所は、切り貼りの単位を声の 1 周期にし、隣の周期と混ぜて少しずつ移り変わらせる。
+//! SOLA の改良版（SOLAv2）。声のある所は、切り貼りの単位を声の 1 周期にし、近くの周期と混ぜて少しずつ移り変わらせる。
 //!
 //! SOLA は約50msのブロックを繰り返すので、ブロックの中の立ち上がりや揺れがまとめて二重になり、
 //! 大きく伸ばすとガサガサする。ここでは声のある所のブロックを 1 周期にし、つなぎ方は SOLA と同じく
 //! 短いクロスフェードと2乗誤差での位置合わせにする。声のない所は `UNVOICED_SEC` の固定長。
 //! 数周期をまとめて繰り返すと、その長さの周期で低いうなりが出る（2 周期で試して悪化した）ため 1 周期にしている。
+//!
+//! 混ぜる周期の広さ（`spread`）を広げた版（`stretch_clean`）は、前後数周期の平均で周期ごとの揺らぎや息のノイズが打ち消し合い、
+//! 原音より整った（周期的で滑らかな）声になる。元の声らしさを残す通常版と、選んで使い分ける。
 
 use crate::{f0, TimeMap};
 use std::f64::consts::PI;
@@ -14,19 +17,41 @@ const UNVOICED_SEC: f64 = 0.012;
 const FADE_SEC: f64 = 0.005;
 /// 声のない所の探索幅（秒）
 const UNVOICED_TOLERANCE_SEC: f64 = 0.006;
+/// 混ぜる周期の広さ（周期数）。通常版は隣の周期との直線補間（1）、整える版は前後約 3 周期の三角の重み
+const SPREAD: f64 = 1.0;
+const SPREAD_CLEAN: f64 = 3.0;
 
 /// 全チャンネルを `alpha` 倍に時間伸縮する（出力長 = 入力長 × alpha）。
 pub fn stretch(channels: &[&[f32]], alpha: f64, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
-    let len = channels.first().map_or(0, |c| c.len());
-    if (alpha - 1.0).abs() < 1e-9 {
-        return channels.iter().map(|c| c.to_vec()).collect();
-    }
-    let out_len = (len as f64 * alpha).round() as usize;
-    stretch_map(channels, &TimeMap::linear(len, out_len), sample_rate, progress)
+    stretch_with(channels, alpha, sample_rate, SPREAD, progress)
 }
 
 /// 任意の時間対応 `map` で全チャンネルを伸縮する。全チャンネルで同じ区切り位置を使う。
 pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
+    run(channels, map, sample_rate, SPREAD, progress)
+}
+
+/// 整える版（前後数周期を平均する）。
+pub fn stretch_clean(channels: &[&[f32]], alpha: f64, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
+    stretch_with(channels, alpha, sample_rate, SPREAD_CLEAN, progress)
+}
+
+/// 整える版の、任意の時間対応での伸縮。
+pub fn stretch_map_clean(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
+    run(channels, map, sample_rate, SPREAD_CLEAN, progress)
+}
+
+fn stretch_with(channels: &[&[f32]], alpha: f64, sample_rate: f32, spread: f64, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
+    let len = channels.first().map_or(0, |c| c.len());
+    // 整える版は等倍でも平均をかける（等倍で何もしないと、伸縮しない部分だけ整わない）
+    if (alpha - 1.0).abs() < 1e-9 && spread <= SPREAD {
+        return channels.iter().map(|c| c.to_vec()).collect();
+    }
+    let out_len = (len as f64 * alpha).round() as usize;
+    run(channels, &TimeMap::linear(len, out_len), sample_rate, spread, progress)
+}
+
+fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
     let len = channels.first().map_or(0, |c| c.len());
     let out_len = map.out_len;
     if len == 0 || out_len == 0 {
@@ -55,6 +80,21 @@ pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progres
     };
     let sq_err = |a: i64, b: i64, n: usize| -> f32 { seg(a, n).iter().zip(seg(b, n)).map(|(x, y)| (x - y) * (x - y)).sum() };
     let at = |c: &[f32], p: i64| if p >= 0 && (p as usize) < len { c[p as usize] } else { 0.0 };
+    // `from` から 1 周期（`t`）進めた・戻した位置を、`from` の 1 周期分の波形と最も似ている所にそろえる。入力に収まらなければ None
+    let neighbor = |from: i64, t: i64, dir: i64| {
+        let guess = from + dir * t;
+        if guess - t / 4 < 0 || guess + t / 4 > last_pos {
+            return None;
+        }
+        let mut best = (guess, f32::MAX);
+        for cand in guess - t / 4..=guess + t / 4 {
+            let e = sq_err(from, cand, t as usize);
+            if e < best.1 {
+                best = (cand, e);
+            }
+        }
+        Some(best.0)
+    };
 
     let mut out = vec![vec![0.0f32; out_len + max_block]; channels.len()];
     let mut wsum = vec![0.0f32; out_len + max_block];
@@ -62,6 +102,8 @@ pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progres
     let (mut out_pos, mut prev_end): (usize, i64) = (0, 0);
     let mut prev_fade = 0usize;
     let (mut prev_nominal, mut reversed) = (0i64, false);
+    // 混ぜる周期（入力位置と重み）。ブロックごとに作り直す
+    let mut taps: Vec<(i64, f32)> = Vec::new();
     while out_pos < out_len {
         progress(0.4 + 0.6 * out_pos as f64 / out_len as f64);
         // 末尾で行き過ぎないよう、最後のブロックが入力の最後に来る対応にする（`TimeMap::frame_pos` 参照）
@@ -99,29 +141,32 @@ pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progres
             }
             best.0
         };
-        // 声のある所は、隣の周期（予定位置の側）と、予定位置までの近さに応じて混ぜる。
-        // 同じ周期を何度か繰り返してから次の周期へ飛ぶと、その飛び目が周期数個おきのブツブツになるため（波形補間の考え方）
-        let (pos_b, g) = match (voiced && out_pos > 0).then_some(hop as i64) {
-            Some(t) => {
-                let frac = ((nominal - pos) as f64 / t as f64).clamp(-1.0, 1.0);
-                let guess = pos + if frac >= 0.0 { t } else { -t };
-                // 隣の周期が入力に収まらない（先頭・末尾）ときは混ぜない。切り詰めた位置と混ぜると打ち消し合う
-                if guess - t / 4 < 0 || guess + t / 4 > last_pos {
-                    (pos, 0.0)
-                } else {
-                    // 隣の周期の位置は、今の周期の波形全体と最も似ている所にそろえる（ずれたまま混ぜると音がこもる）
-                    let mut best = (guess, f32::MAX);
-                    for cand in guess - t / 4..=guess + t / 4 {
-                        let e = sq_err(pos, cand, hop);
-                        if e < best.1 {
-                            best = (cand, e);
-                        }
+        // 声のある所は、予定位置（選んだ周期から frac 周期ずれた所）を中心に、近くの周期を三角の重みで混ぜる。
+        // 同じ周期を何度か繰り返してから次の周期へ飛ぶと、その飛び目が周期数個おきのブツブツになるため（波形補間の考え方）。
+        // 隣の周期が入力に収まらない（先頭・末尾）方向は混ぜない。切り詰めた位置と混ぜると打ち消し合う
+        taps.clear();
+        taps.push((pos, 1.0));
+        if voiced && out_pos > 0 {
+            let t = hop as i64;
+            let frac = ((nominal - pos) as f64 / t as f64).clamp(-1.0, 1.0);
+            let weight = |k: i64| (1.0 - (k as f64 - frac).abs() / spread).max(0.0) as f32;
+            taps[0].1 = weight(0);
+            for dir in [-1i64, 1] {
+                let mut p = pos;
+                for k in 1.. {
+                    let w = weight(dir * k);
+                    if w <= 0.0 {
+                        break;
                     }
-                    (best.0, frac.abs() as f32)
+                    match neighbor(p, t, dir) {
+                        Some(q) => p = q,
+                        None => break,
+                    }
+                    taps.push((p, w));
                 }
             }
-            None => (pos, 0.0),
-        };
+        }
+        let total: f32 = taps.iter().map(|t| t.1).sum();
         // 1ブロック = 前の重なり（fade）+ 本体（hop - fade）+ 次の重なり（fade）
         let n = hop + fade;
         for i in 0..n {
@@ -136,11 +181,14 @@ pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progres
             } else {
                 1.0
             };
-            let src = if reversed { pos + (n - 1 - i) as i64 } else { pos + i as i64 };
-            let src_b = pos_b + i as i64;
             wsum[o] += w;
             for (oc, c) in out.iter_mut().zip(channels) {
-                oc[o] += w * ((1.0 - g) * at(c, src) + g * at(c, src_b));
+                let v = if reversed {
+                    at(c, pos + (n - 1 - i) as i64)
+                } else {
+                    taps.iter().map(|&(p, tw)| tw * at(c, p + i as i64)).sum::<f32>() / total
+                };
+                oc[o] += w * v;
             }
         }
         prev_end = pos + hop as i64;

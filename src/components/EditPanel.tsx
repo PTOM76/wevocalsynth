@@ -55,6 +55,8 @@ interface Props {
   autoMode: Mode | null
   /** ボーカル・楽器のモードで使う処理方式（設定の既定値） */
   modes: ModeSettings
+  /** 従来の処理方式（改良版があるもの）も「…」に出す */
+  showLegacyAlgorithms: boolean
   /** 拍数に合わせるときの基準: プロジェクトの BPM と、範囲（最後に選んだもの、なければ全体）の長さ（秒） */
   bpm: number
   rangeSec: number
@@ -114,7 +116,7 @@ export default function EditPanel(p: Props) {
             </Tooltip>
           ))}
         </ToggleButtonGroup>
-        <AlgorithmMenu value={params.algorithm} defaults={[p.modes.vocal.algorithm, p.modes.instrument.algorithm]} onChange={(algorithm) => set({ algorithm, preserveFormant: !isInstrumentAlgorithm(algorithm) })} />
+        <AlgorithmMenu value={params.algorithm} defaults={[p.modes.vocal.algorithm, p.modes.instrument.algorithm]} showLegacy={p.showLegacyAlgorithms} onChange={(algorithm) => set({ algorithm, preserveFormant: !isInstrumentAlgorithm(algorithm) })} />
       </PropRow>
 
       <PitchControl semitones={semitones} onChange={(v) => set({ semitones: v })} currentMidi={p.currentMidi} />

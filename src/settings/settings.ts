@@ -95,6 +95,8 @@ export interface Settings {
   suspendWhenStopped: boolean
   /** iOS のオーディオセッションを playback にする（消音スイッチでも鳴る） */
   playbackSession: boolean
+  /** 従来の処理方式（改良版があるもの）も選べるように表示する */
+  showLegacyAlgorithms: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -126,6 +128,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dialogWindow: 'auto',
   suspendWhenStopped: true,
   playbackSession: true,
+  showLegacyAlgorithms: false,
   vocalAlgorithm: 'sola2',
   instrumentAlgorithm: 'pv',
   defaultBpm: 120,

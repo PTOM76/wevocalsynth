@@ -1,4 +1,4 @@
-﻿//! テスト共通の信号生成・計測ヘルパ。
+//! テスト共通の信号生成・計測ヘルパ。
 
 mod analysis;
 mod curve;
@@ -20,7 +20,7 @@ pub fn freq(x: &[f32], sr: f32) -> f32 {
     crossings as f32 / (m.len() as f32 / sr)
 }
 
-pub const ALGOS: [Algorithm; 9] = [
+pub const ALGOS: [Algorithm; 10] = [
     Algorithm::Wsola,
     Algorithm::PhaseVocoder,
     Algorithm::Psola,
@@ -30,6 +30,7 @@ pub const ALGOS: [Algorithm; 9] = [
     Algorithm::PhaseVocoder2,
     Algorithm::Hpss,
     Algorithm::Sola2,
+    Algorithm::Sola3,
 ];
 
 pub fn run(x: &[&[f32]], sr: f32, semi: f64, alpha: f64, algo: Algorithm) -> Vec<Vec<f32>> {

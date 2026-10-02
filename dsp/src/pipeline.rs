@@ -38,8 +38,10 @@ pub enum Algorithm {
     PhaseVocoder2,
     /// 打楽器分離のハイブリッド（伸びる成分は Phase Vocoder、打つ成分は短い窓の OLA）
     Hpss,
-    /// SOLA の改良版（子音や音の切り替わりは伸ばさず、定常部分を多めに伸ばす）
+    /// SOLA の改良版（声のある所は 1 周期ずつ切り貼りし、隣の周期と混ぜる）
     Sola2,
+    /// SOLAv2 の整える版（前後数周期を平均し、周期的で滑らかな声にする）
+    Sola3,
 }
 
 impl Algorithm {
@@ -53,6 +55,7 @@ impl Algorithm {
             6 => Algorithm::PhaseVocoder2,
             7 => Algorithm::Hpss,
             8 => Algorithm::Sola2,
+            9 => Algorithm::Sola3,
             _ => Algorithm::Wsola,
         }
     }
@@ -74,6 +77,7 @@ impl Algorithm {
             Algorithm::PhaseVocoder2 => pv::stretch2(channels, alpha, sr, progress),
             Algorithm::Hpss => hpss::stretch(channels, alpha, sr, progress),
             Algorithm::Sola2 => sola2::stretch(channels, alpha, sr, progress),
+            Algorithm::Sola3 => sola2::stretch_clean(channels, alpha, sr, progress),
         }
     }
 
@@ -94,6 +98,7 @@ impl Algorithm {
             Algorithm::PhaseVocoder2 => pv::stretch_map2(channels, map, sr, progress),
             Algorithm::Hpss => hpss::stretch_map(channels, map, sr, progress),
             Algorithm::Sola2 => sola2::stretch_map(channels, map, sr, progress),
+            Algorithm::Sola3 => sola2::stretch_map_clean(channels, map, sr, progress),
         }
     }
 }

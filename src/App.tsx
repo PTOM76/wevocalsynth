@@ -414,6 +414,7 @@ export default function App() {
         currentMidi={ed.rangeNote}
         autoMode={ed.autoMode}
         modes={ed.modes}
+        showLegacyAlgorithms={settings.showLegacyAlgorithms}
         bpm={ed.projectTempo.bpm}
         rangeSec={selection ? selection.end - selection.start : ed.duration}
       />
