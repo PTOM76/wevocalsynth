@@ -239,7 +239,7 @@ export function useEditor(settings: Settings) {
           clip,
           (best) => {
             setProjectTempo({ bpm: best.bpm, beatOffset: best.offset })
-            setToast({ severity: 'info', message: t('toast.tempoDetected', { bpm: best.bpm }) })
+            setToast({ severity: 'info', message: t('toast.tempoDetected', { bpm: Math.round(best.bpm * 100) / 100 }) })
           },
           fail('toast.tempoFailed'),
         )
