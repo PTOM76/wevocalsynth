@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCirclePlay, faCopy, faCropSimple, faPaste, faPause, faPlay, faRepeat, faScissors, faStop, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { SmallButton, ToolbarDivider } from './waveform/WaveformToolbar'
 import { useT } from '../i18n/i18n'
+import { countRender } from '../debug/debugStats'
 import LiveTime from './LiveTime'
 
 interface Props {
@@ -37,6 +38,7 @@ interface Props {
 
 /** PC 用のツールバー（高さ 40px）。再生操作・再生位置、編集（切り取りなど）、波形の表示ツールを1行に並べる */
 export default function Toolbar(p: Props) {
+  countRender('Toolbar')
   const t = useT()
   return (
     <Stack

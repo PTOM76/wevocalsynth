@@ -24,6 +24,7 @@ import {
   faSliders,
 } from '@fortawesome/free-solid-svg-icons'
 import { useT } from '../../i18n/i18n'
+import { countRender } from '../../debug/debugStats'
 
 /** ツールチップ付きの小さいアイコンボタン。`pressed` を渡すと ON/OFF の切替ボタンになる */
 export function SmallButton(props: {
@@ -127,6 +128,7 @@ const Sep = () => <ToolbarDivider gap />
 
 /** 波形の表示ツール（拡大縮小・表示の切替・ピッチ描画）。PC はツールバー、スマホは波形のすぐ下に置く */
 export default function WaveformToolbar(p: Props) {
+  countRender('WaveformToolbar')
   const t = useT()
   const off = !!p.disabled
   // ピッチの加工は、ピッチを表示して解析が済んでから

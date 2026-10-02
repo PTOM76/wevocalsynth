@@ -1,4 +1,6 @@
+import { memo } from 'react'
 import { Box, IconButton, Tooltip } from '@mui/material'
+import { countRender } from '../../debug/debugStats'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
 import type { Track, TrackMix } from '../../audio/tracks'
@@ -35,7 +37,11 @@ const KEY = 'wevocalsynth.tracksCollapsed'
  * トラックの欄（2本以上のときだけ出す）。広げると波形付きの一覧、折りたたむとタブになる。
  * 右端のボタンで切り替え、状態は次に開いたときも引き継ぐ
  */
-export default function TrackPanel(p: Props) {
+/** 渡すものが変わったときだけ描き直す（memo）。関数は作り直さずに渡すこと（useTrackArea は useStableFn で包んでいる） */
+export default memo(TrackPanel)
+
+function TrackPanel(p: Props) {
+  countRender('TrackPanel')
   const t = useT()
   const [state, setState] = usePersistentNumber(KEY, 1)
   if (p.tracks.length < 2) return null

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useStableFn } from '../../hooks/useStableFn'
 import type { useEditor } from '../../hooks/useEditor'
 import type { View } from '../waveform/draw'
 import { ContextMenu } from 'pevenmui'
@@ -18,8 +19,12 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
   // 複数選んだトラック（右クリックメニューでまとめて操作する対象）。編集するのは今までどおり選んでいる1本だけ。
   // 消えたトラックは除き、選んでいるトラックは必ず含める
   const [pickedRaw, setPicked] = useState<ReadonlySet<string>>(new Set())
-  const picked = new Set([...pickedRaw].filter((id) => tr.tracks.some((x) => x.id === id)))
-  picked.add(tr.activeId)
+  // 選び直したとき・トラックが変わったときだけ作り直す（トラックの欄は memo なので、毎回作ると描き直しになる）
+  const picked = useMemo(() => {
+    const s = new Set([...pickedRaw].filter((id) => tr.tracks.some((x) => x.id === id)))
+    s.add(tr.activeId)
+    return s
+  }, [pickedRaw, tr.tracks, tr.activeId])
 
   /** 押したとき: そのまま押せば1本だけ選んで編集する。Ctrl は足す・外す、Shift は選んでいるトラックからの範囲 */
   const select = (id: string, mods: PickMods) => {
@@ -66,6 +71,13 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
   /** 複数選んだトラックの上で右クリックしたらまとめての操作、それ以外はそのトラックの操作 */
   const menuFor = (id: string) => (picked.size > 1 && picked.has(id) ? multiTrackMenuEntries(tr.tracks.filter((x) => picked.has(x.id)).map((x) => x.id), actions) : trackMenuEntries(id, actions))
 
+  // トラックの欄に渡す関数は作り直さない（トラックの欄は memo してあり、関係ない操作では描き直さない）
+  const onSelect = useStableFn(select)
+  const onMove = useStableFn(tr.move)
+  const onToggleMute = useStableFn(tr.toggleMute)
+  const onToggleSolo = useStableFn(tr.toggleSolo)
+  const onContextMenu = useStableFn((id: string, x: number, y: number) => setMenu({ id, x, y }))
+
   // トラックが2本以上あるときだけ出る（広げると波形付きの一覧、折りたたむとタブ）
   const panel = (view: View) => (
     <TrackPanel
@@ -74,12 +86,12 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
       mix={tr.mix}
       view={view}
       disabled={busy}
-      onSelect={select}
+      onSelect={onSelect}
       picked={picked}
-      onMove={tr.move}
-      onToggleMute={tr.toggleMute}
-      onToggleSolo={tr.toggleSolo}
-      onContextMenu={(id, x, y) => setMenu({ id, x, y })}
+      onMove={onMove}
+      onToggleMute={onToggleMute}
+      onToggleSolo={onToggleSolo}
+      onContextMenu={onContextMenu}
       meter={meter}
     />
   )

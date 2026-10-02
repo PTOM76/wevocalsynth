@@ -22,6 +22,7 @@ import PitchControl from './PitchControl'
 import AlgorithmMenu from './AlgorithmMenu'
 import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow } from './inspector/Inspector'
 import { useT, type MessageKey } from '../i18n/i18n'
+import { countRender } from '../debug/debugStats'
 
 export interface EditParams {
   semitones: number
@@ -68,6 +69,7 @@ const SMALL_BUTTON_SX = { minWidth: 0, height: 26, px: 1, fontSize: 12 } as cons
 
 /** インスペクタの「加工」。モード・ピッチ・長さ・フォルマントの行と、試聴・適用 */
 export default function EditPanel(p: Props) {
+  countRender('EditPanel')
   const { params, onChange, busy } = p
   const { semitones, stretch, preserveFormant, formantSemitones } = params
   const t = useT()

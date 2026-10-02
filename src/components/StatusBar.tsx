@@ -4,6 +4,7 @@ import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import type { Clip, Range } from '../audio/types'
 import { formatTime } from '../audio/types'
 import { useT } from '../i18n/i18n'
+import { countRender } from '../debug/debugStats'
 import type { ReactNode } from 'react'
 import SelectionField from './SelectionField'
 
@@ -38,6 +39,7 @@ const ITEM_SX = { px: 1, height: '100%', display: 'flex', alignItems: 'center', 
  * 処理中の進捗、加工後／原音の切替を並べる。常に見えていてほしいが、場所は取りたくない情報を置く
  */
 export default function StatusBar(p: Props) {
+  countRender('StatusBar')
   const t = useT()
   return (
     <Stack

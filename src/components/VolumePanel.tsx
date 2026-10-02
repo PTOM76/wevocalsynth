@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRotateLeft } from '@fortawesome/free-solid-svg-icons'
 import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow } from './inspector/Inspector'
 import { useT, type MessageKey } from '../i18n/i18n'
+import { countRender } from '../debug/debugStats'
 import { panLabel } from '../hooks/useClipCommands'
 import type { TrackFader } from '../audio/tracks'
 
@@ -84,6 +85,7 @@ function GainPanRows(p: { db: number; onDb: (v: number) => void; pan: number; on
  * - フェード・ノーマライズ・無音化は、選択範囲（なければ全体）に対する編集
  */
 export default function VolumePanel({ hasSelection, busy, fader, onFaderChange, db, onDbChange: setDb, pan, onPanChange: setPan, onGain, onAction }: Props) {
+  countRender('VolumePanel')
   const t = useT()
 
   return (
