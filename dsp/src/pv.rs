@@ -10,6 +10,8 @@
 //! 速くするための工夫（結果は素直な実装と同じ）:
 //! - identity phase locking は「各ビンに、最寄りのピークの位相の回し量を複素数で掛ける」形で行う。
 //!   三角関数（atan2・sin/cos）はピークのビンだけで済み、全ビンで求めなくてよい
+//! - ピークの回し量は、位相差を x · conj(前の x) の偏角（atan2 1 回）で、回し量を単位複素数の積と sin/cos 1 回で作る
+//!   （入力・前の入力・前の出力の位相をそれぞれ atan2 で求めると 3 回かかった）
 //! - 同じチャンネルの隣り合う2フレームを、実部と虚部に詰めて1回の複素 FFT でまとめて変換する
 
 use crate::fft::Fft;
@@ -97,19 +99,28 @@ fn advance(
         }
         // ピークごとに、入力の位相から出力の位相への回し量 e^{i(出力位相 - 入力位相)} を求める
         rot.clear();
+        // 単位複素数（大きさ 0 なら 1）
+        let unit = |(r, i): (f32, f32)| {
+            let m = (r * r + i * i).sqrt();
+            if m > 1e-20 { (r / m, i / m) } else { (1.0, 0.0) }
+        };
         for &p in peaks.iter() {
-            // 三角関数は f32 で求める（位相の精度は f32 で足り、ピークの数だけ呼ぶので f64 より速い方がよい）
-            let phase = x[p].1.atan2(x[p].0) as f64;
+            // 位相差は x · conj(前の x) の偏角として 1 回の atan2 で求める（入力・前の入力の位相を別々に求めない）
             if hop > 0 {
                 let ha = hop as f64;
                 let omega = 2.0 * PI * p as f64 / n as f64;
-                let prev_phase = st.prev_x[p].1.atan2(st.prev_x[p].0) as f64;
-                st.inst[p] = omega + wrap(phase - prev_phase - omega * ha) / ha;
+                let (xr, xi) = x[p];
+                let (pr, pi) = st.prev_x[p];
+                let dphi = (xi * pr - xr * pi).atan2(xr * pr + xi * pi) as f64;
+                st.inst[p] = omega + wrap(dphi - omega * ha) / ha;
             }
-            let out_prev = st.prev_y[p].1.atan2(st.prev_y[p].0) as f64;
-            // 回す角度は大きくなりうるので f64 で -π〜π に畳んでから f32 にする
-            let (s, c) = (wrap(out_prev + st.inst[p] * hs as f64 - phase) as f32).sin_cos();
-            rot.push((c, s));
+            // 回し量 = 出力の前の位相 + 進める量 - 入力の位相。偏角を求めず、単位複素数の積で作る
+            let (s, c) = (wrap(st.inst[p] * hs as f64) as f32).sin_cos();
+            let (yr, yi) = unit(st.prev_y[p]);
+            let (xr, xi) = unit(x[p]);
+            // e^{i·出力の前の位相} · e^{-i·入力の位相}
+            let (ar, ai) = (yr * xr + yi * xi, yi * xr - yr * xi);
+            rot.push((ar * c - ai * s, ar * s + ai * c));
         }
         // identity phase locking: 各ビンは最寄りのピーク（境界はピーク間の中点）と同じだけ位相を回す
         let mut pi = 0;

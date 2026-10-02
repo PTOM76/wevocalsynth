@@ -63,6 +63,48 @@ fn stretch_tail_is_steady() {
 /// `cargo test --release -- --ignored --nocapture` で3分のステレオ音声の処理時間を計測する。
 #[test]
 #[ignore]
+/// 処理の段階ごとの時間（3 分・48kHz・ステレオ）。どこが重いかを見て、高速化する所を決めるため
+/// `cargo test --release -- --ignored --nocapture bench_stages`
+fn bench_stages() {
+    let sr = 48000.0;
+    let x = sine(220.0, sr, 180.0);
+    let time = |name: &str, f: &mut dyn FnMut()| {
+        let t = std::time::Instant::now();
+        f();
+        println!("{name}: {:?}", t.elapsed());
+    };
+    let ratio = 2f64.powf(5.0 / 12.0);
+    let stretched = Algorithm::Sola.stretch(&[&x, &x], ratio, sr, &mut |_| {});
+    time("stretch SOLA x1.33", &mut || {
+        Algorithm::Sola.stretch(&[&x, &x], ratio, sr, &mut |_| {});
+    });
+    time("stretch PhaseVocoder x1.33", &mut || {
+        Algorithm::PhaseVocoder.stretch(&[&x, &x], ratio, sr, &mut |_| {});
+    });
+    time("formant correct (2ch)", &mut || {
+        for c in &stretched {
+            crate::formant::correct(c, ratio, sr, &mut |_| {});
+        }
+    });
+    time("resample (2ch)", &mut || {
+        for c in &stretched {
+            crate::resample(c, ratio, x.len());
+        }
+    });
+    // Phase Vocoder と同じ大きさ（2048）の FFT を、3 分ステレオの PV が回す回数（約 2 × 2 × 長さ / 512 / 2）だけ回す
+    let n = 2048;
+    let fft = crate::fft::Fft::new(n);
+    let count = 2 * (x.len() as f64 * ratio / 512.0) as usize;
+    let (mut re, mut im) = (vec![0.1f32; n], vec![0.0f32; n]);
+    time(&format!("fft {n} x {count}"), &mut || {
+        for _ in 0..count {
+            fft.run(&mut re, &mut im, false);
+        }
+    });
+}
+
+#[test]
+#[ignore]
 fn bench_three_minutes() {
     let sr = 48000.0;
     let x = sine(220.0, sr, 180.0);

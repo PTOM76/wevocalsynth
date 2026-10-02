@@ -108,10 +108,15 @@ pub fn correct_varying(
             ga.fill(1.0);
             gb.fill(1.0);
         } else {
-            // 対数振幅（実数・偶関数）を実部・虚部に詰めて逆変換すると、2フレーム分の実ケプストラムが得られる
-            for b in 0..n {
+            // 対数振幅（実数・偶関数）を実部・虚部に詰めて逆変換すると、2フレーム分の実ケプストラムが得られる。
+            // 実信号の振幅は左右対称（|X[n-b]| = |X[b]|）なので、半分だけ求めて写す（ln・sqrt の回数が半分になる）
+            for b in 0..bins {
                 cre[b] = ((ar[b] * ar[b] + ai[b] * ai[b]).sqrt() + 1e-9).ln();
                 cim[b] = ((br[b] * br[b] + bi[b] * bi[b]).sqrt() + 1e-9).ln();
+            }
+            for b in bins..n {
+                cre[b] = cre[n - b];
+                cim[b] = cim[n - b];
             }
             fft.run(&mut cre, &mut cim, true);
             let (cut_a, cut_b) = (lifter.cut(&cre, scale), lifter.cut(&cim, scale));
