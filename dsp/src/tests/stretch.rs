@@ -142,4 +142,7 @@ fn vocal_stretch_periodicity() {
     let score = |a: Algorithm| scores.iter().find(|(x, _)| *x == a).unwrap().1;
     assert!(score(Algorithm::Psola) >= score(Algorithm::Wsola) - 0.005, "{scores:?}");
     assert!(score(Algorithm::Psola) > 0.95, "{scores:?}");
+    // 改良版（v2）は従来版より悪くならないこと
+    assert!(score(Algorithm::Psola2) >= score(Algorithm::Psola) - 0.005, "{scores:?}");
+    assert!(score(Algorithm::Wsola2) >= score(Algorithm::Wsola) - 0.005, "{scores:?}");
 }

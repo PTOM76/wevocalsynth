@@ -41,6 +41,39 @@ pub fn wsola_map(
     sample_rate: f32,
     progress: &mut dyn FnMut(f64),
 ) -> Vec<Vec<f32>> {
+    wsola_map_with(channels, map, sample_rate, progress, false)
+}
+
+/// 改良版（WSOLA 2）。類似度を候補のエネルギーで正規化した相互相関にする。
+/// 正規化しない内積は「似ている位置」より「音の大きい位置」を選びやすく、位置合わせがずれてにじみ・うなりになる。
+/// Verhelst & Roelands (1993) の WSOLA も、候補の選び方には正規化した相互相関などの類似度を使う
+pub fn wsola2_map(
+    channels: &[&[f32]],
+    map: &TimeMap,
+    sample_rate: f32,
+    progress: &mut dyn FnMut(f64),
+) -> Vec<Vec<f32>> {
+    wsola_map_with(channels, map, sample_rate, progress, true)
+}
+
+/// `wsola2_map` の一定倍率版
+pub fn wsola2(channels: &[&[f32]], alpha: f64, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
+    let len = channels.first().map_or(0, |c| c.len());
+    if (alpha - 1.0).abs() < 1e-9 {
+        return channels.iter().map(|c| c.to_vec()).collect();
+    }
+    let out_len = (len as f64 * alpha).round() as usize;
+    wsola2_map(channels, &TimeMap::linear(len, out_len), sample_rate, progress)
+}
+
+/// WSOLA の本体。`normalized` なら類似度を候補のエネルギーで正規化する
+fn wsola_map_with(
+    channels: &[&[f32]],
+    map: &TimeMap,
+    sample_rate: f32,
+    progress: &mut dyn FnMut(f64),
+    normalized: bool,
+) -> Vec<Vec<f32>> {
     let len = channels.first().map_or(0, |c| c.len());
     let out_len = map.out_len;
     if len == 0 || out_len == 0 {
@@ -71,13 +104,14 @@ pub fn wsola_map(
         &mono[s..s + n]
     };
     // 類似度は重なり部分（各フレームの前半）だけで計算する。
+    // `a` は前フレームの自然な続きで探索中は変わらないので、正規化は候補 `b` のエネルギーだけで足りる
     let corr = |a: i64, b: i64, step: usize| -> f32 {
-        seg(a)[..hs]
-            .iter()
-            .step_by(step)
-            .zip(seg(b)[..hs].iter().step_by(step))
-            .map(|(x, y)| x * y)
-            .sum()
+        let (mut dot, mut eb) = (0.0f32, 0.0f32);
+        for (x, y) in seg(a)[..hs].iter().step_by(step).zip(seg(b)[..hs].iter().step_by(step)) {
+            dot += x * y;
+            eb += y * y;
+        }
+        if normalized { dot / (eb.sqrt() + 1e-9) } else { dot }
     };
 
     let mut out = vec![vec![0.0f32; out_len + n]; channels.len()];

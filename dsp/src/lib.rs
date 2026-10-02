@@ -30,4 +30,4 @@ pub use pipeline::{process, process_with_progress, Algorithm, Formant};
 // `resample` はモジュールと関数の両方を指す（`crate::resample::...` も `crate::resample(...)` も使える）
 pub use wevocal_lib::{resample, resample_with};
 pub use timemap::TimeMap;
-pub use wsola::{wsola, wsola_map, wsola_with_progress};
+pub use wsola::{wsola, wsola2, wsola2_map, wsola_map, wsola_with_progress};

@@ -88,10 +88,10 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 
 | ファイル | 担当 |
 | --- | --- |
-| `pipeline.rs` | 上の流れ。`Algorithm`（WSOLA=0 / Phase Vocoder=1 / PSOLA=2 / SOLA=3）と `Formant`（追従 / 保持＋移動） |
-| `psola.rs` | PSOLA。声の周期（ピッチマーク）に合わせて切り貼りする |
+| `pipeline.rs` | 上の流れ。`Algorithm`（WSOLA=0 / Phase Vocoder=1 / PSOLA=2 / SOLA=3 / PSOLAv2=4 / WSOLAv2=5）と `Formant`（追従 / 保持＋移動） |
+| `psola.rs` | PSOLA。声の周期（ピッチマーク）に合わせて切り貼りする。目印の置き方（`Marking`）で PSOLAv2 にもなる |
 | `sola.rs` | SOLA。50ms のブロックを 10ms の sin クロスフェードでつなぎ、区切り位置を2乗誤差で探す。ボーカルの既定 |
-| `wsola.rs` | WSOLA。フレーム 46ms・50% オーバーラップ・探索幅 ±12ms |
+| `wsola.rs` | WSOLA。フレーム 46ms・50% オーバーラップ・探索幅 ±12ms。類似度を正規化した WSOLAv2（`wsola2_map`）も |
 | `pv.rs` | Phase Vocoder（identity phase locking）。フレーム 2048・75% オーバーラップ。楽器の既定。位相の回転を複素数の掛け算にし、隣り合う2フレームを1回の FFT で変換して速くしている |
 | `timemap.rs` | 出力位置→入力位置の対応。一定倍率とピッチカーブの両方を表す |
 | `curve.rs` | ピッチカーブ編集。時間ごとのピッチ比から時間マップを作る |

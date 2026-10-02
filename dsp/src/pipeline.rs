@@ -1,6 +1,6 @@
 //! ピッチ変更・時間伸縮・フォルマント補正をまとめた処理の流れ。
 
-use crate::{formant, psola, pv, sola, resample, wsola_map, wsola_with_progress, TimeMap};
+use crate::{formant, psola, pv, sola, resample, wsola2, wsola2_map, wsola_map, wsola_with_progress, TimeMap};
 
 /// `semitones` 半音のピッチ変更と `stretch` 倍の時間伸縮を1パスで行う。
 /// 出力長はピッチ変更に関係なく 入力長 × stretch。
@@ -30,6 +30,10 @@ pub enum Algorithm {
     Psola,
     /// 2乗誤差で区切り位置を探すクロスフェード方式（重なりが短く、にじみが少ない）
     Sola,
+    /// PSOLA の改良版（目印を前の周期との相関で置く）
+    Psola2,
+    /// WSOLA の改良版（類似度を正規化した相互相関にする）
+    Wsola2,
 }
 
 impl Algorithm {
@@ -38,6 +42,8 @@ impl Algorithm {
             1 => Algorithm::PhaseVocoder,
             2 => Algorithm::Psola,
             3 => Algorithm::Sola,
+            4 => Algorithm::Psola2,
+            5 => Algorithm::Wsola2,
             _ => Algorithm::Wsola,
         }
     }
@@ -54,6 +60,8 @@ impl Algorithm {
             Algorithm::PhaseVocoder => pv::stretch(channels, alpha, sr, progress),
             Algorithm::Psola => psola::stretch(channels, alpha, sr, progress),
             Algorithm::Sola => sola::stretch(channels, alpha, sr, progress),
+            Algorithm::Psola2 => psola::stretch_with(channels, alpha, sr, psola::Marking::Correlation, progress),
+            Algorithm::Wsola2 => wsola2(channels, alpha, sr, progress),
         }
     }
 
@@ -69,6 +77,8 @@ impl Algorithm {
             Algorithm::PhaseVocoder => pv::stretch_map(channels, map, sr, progress),
             Algorithm::Psola => psola::stretch_map(channels, map, sr, progress),
             Algorithm::Sola => sola::stretch_map(channels, map, sr, progress),
+            Algorithm::Psola2 => psola::stretch_map_with(channels, map, sr, psola::Marking::Correlation, progress),
+            Algorithm::Wsola2 => wsola2_map(channels, map, sr, progress),
         }
     }
 }

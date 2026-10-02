@@ -37,6 +37,8 @@ WeVocalSynth の音声処理（ピッチ変更・時間伸縮・フォルマン�
 | PSOLA | `psola.rs` | 声の 1 周期ごとに切り貼りする | 声 |
 | SOLA | `sola.rs` | 約 50ms の断片を、短いクロスフェードでつなぐ | 声・単音（ボーカルの既定） |
 | WSOLA | `wsola.rs` | 約 46ms の断片を、半分ずつ重ねてつなぐ | 子音の多い音声。速い |
+| PSOLAv2 | `psola.rs`（`Marking::Correlation`） | PSOLA の目印を、前の周期と最も似ている位置に置く | 声 |
+| WSOLAv2 | `wsola.rs`（`wsola2_map`） | WSOLA の位置合わせを、正規化した相互相関で行う | 子音の多い音声 |
 | Phase Vocoder | `pv.rs` | 周波数成分ごとに位相をそろえて伸ばす | 和音・楽器（楽器の既定） |
 
 ステレオでは、全チャンネルで同じ切り貼りの位置を使う。チャンネルごとに位置がずれると、音の定位（左右の位置）が崩れるため。
@@ -49,6 +51,14 @@ WeVocalSynth の音声処理（ピッチ変更・時間伸縮・フォルマン�
 
 周期の区切りで切り貼りするので、伸ばしても声の周期の形が崩れにくい。息や子音など周期のない部分は一定間隔で切り出し、同じ断片の繰り返しがブザー音にならないよう、切り出す位置を少しずつずらす。
 
+#### PSOLAv2（目印の置き方の改良）
+
+従来の PSOLA は、予定位置の前後 ±30% で「いちばん大きいサンプル」を目印にしている。声の波形には同じくらいの高さの山が 1 周期に複数あることが多く、選ぶ山が周期ごとに入れ替わると、切り出す位相がずれてかすれた音になる。
+
+PSOLAv2 は、声が続いている間は、前の目印を中心にした 1 周期分の波形と、候補の位置を中心にした波形の正規化相互相関が最大になる位置を目印にする。周期ごとに同じ位相の位置にそろう。声の始まりは比べる前の周期がないので、従来どおり最も大きい山にする。
+
+TD-PSOLA の音質は目印（声門閉鎖の時点、GCI）の正確さで決まるとされ、候補を推定したピッチとの一致度で選ぶ方法や、自己相関・相互相関を組み合わせる方法が提案されている（参考資料 1〜3）。PSOLAv2 はそのうち、前の周期との相互相関で揃える部分だけを取り入れた簡単なもの。
+
 ### SOLA と WSOLA
 
 どちらも、入力から一定の長さの断片を取ってきて、前の断片とつながりのよい位置を探して重ねる。
@@ -57,6 +67,22 @@ WeVocalSynth の音声処理（ピッチ変更・時間伸縮・フォルマン�
 - **WSOLA**: 断片の半分を重ねる。波形が最も似ている位置を探す。なめらかだが、少しにじむ
 
 探す幅は約 12ms。約 83Hz までの低い声の、1 周期分をカバーする。
+
+#### WSOLAv2（類似度の正規化）
+
+従来の WSOLA は、前の断片の自然な続きと候補の内積（正規化しない相互相関）が最大になる位置を選ぶ。内積は波形が似ているかだけでなく音の大きさにも比例するので、「似ている位置」より「大きい位置」が選ばれやすく、位置合わせがずれて、にじみ・うなりになる。
+
+WSOLAv2 は、内積を候補のエネルギーの平方根で割った値（正規化した相互相関。自然な続きの側は探索中に変わらないので割らなくてよい）で選ぶ。WSOLA の元の論文（参考資料 4）は、自然な続きと最もよく似た位置を、相互相関などの類似度で選ぶものとしている。
+
+## 参考資料
+
+PSOLAv2・WSOLAv2 を作るときに参照した（2026-10-02）。
+
+1. [A two-phase pitch marking method for TD-PSOLA synthesis](https://www.researchgate.net/publication/221488978_A_two-phase_pitch_marking_method_for_TD-PSOLA_synthesis): 山・谷の候補を、推定したピッチとの一致度で選び、動的計画法で目印を決める
+2. [Robust pitch marking for prosodic modification of speech using TD-PSOLA](https://www.researchgate.net/publication/228362180_Robust_pitch_marking_for_prosodic_modification_of_spech_using_TD-PSOLA): TD-PSOLA の音質は周期（エポック）の決め方に強く左右される
+3. [An efficient and robust pitch marking algorithm on the speech waveform for TD-PSOLA](https://www.academia.edu/18002556/An_efficient_and_robust_pitch_marking_algorithm_on_the_speech_waveform_for_TD_PSOLA)
+4. W. Verhelst, M. Roelands, [An overlap-add technique based on waveform similarity (WSOLA) for high quality time-scale modification of speech](https://www.semanticscholar.org/paper/An-overlap-add-technique-based-on-waveform-(WSOLA)-Verhelst-Roelands/d94abd77e52a56c425e4b86e6c7d692583ea406d), ICASSP 1993
+5. [Audio time stretching and pitch scaling](https://en.wikipedia.org/wiki/Audio_time_stretching_and_pitch_scaling)（Wikipedia）: PSOLA は同じ断片の繰り返しでブザー音が出やすく、立ち上がりがにじみやすい。SOLA 系は単音には安く良い結果を出すが、和音には弱い
 
 ### Phase Vocoder
 

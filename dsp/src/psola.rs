@@ -25,18 +25,39 @@ struct Mark {
     voiced: bool,
 }
 
+/// 目印の置き方
+#[derive(Clone, Copy, PartialEq)]
+pub enum Marking {
+    /// 予定位置の前後で最も大きいサンプル（従来）
+    Peak,
+    /// 前の周期の波形と最も似ている位置（正規化した相互相関。PSOLA 2）。
+    /// 1周期の中に同じくらいの山が複数あると、最大の山は周期ごとに入れ替わり、切り出す位相がずれてかすれた音になる。
+    /// 前の周期との相関で決めると、周期ごとに同じ位相の位置にそろう
+    Correlation,
+}
+
 /// 全チャンネルを `alpha` 倍に時間伸縮する（出力長 = 入力長 × alpha）。
 pub fn stretch(channels: &[&[f32]], alpha: f64, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
+    stretch_with(channels, alpha, sample_rate, Marking::Peak, progress)
+}
+
+/// 目印の置き方を選べる `stretch`
+pub fn stretch_with(channels: &[&[f32]], alpha: f64, sample_rate: f32, marking: Marking, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
     let len = channels.first().map_or(0, |c| c.len());
     if (alpha - 1.0).abs() < 1e-9 {
         return channels.iter().map(|c| c.to_vec()).collect();
     }
     let out_len = (len as f64 * alpha).round() as usize;
-    stretch_map(channels, &TimeMap::linear(len, out_len), sample_rate, progress)
+    stretch_map_with(channels, &TimeMap::linear(len, out_len), sample_rate, marking, progress)
 }
 
 /// 任意の時間対応 `map` で全チャンネルを伸縮する。
 pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
+    stretch_map_with(channels, map, sample_rate, Marking::Peak, progress)
+}
+
+/// 目印の置き方を選べる `stretch_map`
+pub fn stretch_map_with(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, marking: Marking, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
     let len = channels.first().map_or(0, |c| c.len());
     let out_len = map.out_len;
     if len == 0 || out_len == 0 {
@@ -47,7 +68,7 @@ pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progres
         .map(|i| channels.iter().map(|c| c[i]).sum::<f32>() / channels.len() as f32)
         .collect();
     let f0s = f0::estimate(&mono, sample_rate, &mut |p| progress(p * 0.4));
-    let marks = pitch_marks(&mono, &f0s, sample_rate as f64);
+    let marks = pitch_marks(&mono, &f0s, sample_rate as f64, marking);
     progress(0.5);
 
     let mut out = vec![vec![0.0f32; out_len]; channels.len()];
@@ -103,7 +124,7 @@ fn overlap_add(channels: &[&[f32]], out: &mut [Vec<f32>], wsum: &mut [f32], cent
 }
 
 /// 目印を先頭から順に置く。声のある部分は前の目印から約1周期先の波形の山、ない部分は一定間隔
-fn pitch_marks(x: &[f32], f0s: &[f32], sr: f64) -> Vec<Mark> {
+fn pitch_marks(x: &[f32], f0s: &[f32], sr: f64, marking: Marking) -> Vec<Mark> {
     let hop = sr * f0::HOP_SEC as f64;
     let unvoiced = sr * UNVOICED_PERIOD_SEC;
     let period_at = |i: f64| {
@@ -118,7 +139,13 @@ fn pitch_marks(x: &[f32], f0s: &[f32], sr: f64) -> Vec<Mark> {
                 // 予定位置の前後で最も大きい山を目印にする（周期ごとに同じ位相で切り出すため）
                 let lo = (i - p * SEARCH_RATIO).max(0.0) as usize;
                 let hi = ((i + p * SEARCH_RATIO) as usize).min(x.len() - 1);
-                let peak = (lo..=hi).max_by(|&a, &b| x[a].total_cmp(&x[b])).unwrap_or(i as usize) as f64;
+                let prev_voiced = marks.last().filter(|m: &&Mark| m.voiced).map(|m| m.pos);
+                let peak = match (marking, prev_voiced) {
+                    // 声の続きは、前の目印のまわり1周期分と最も似ている位置
+                    (Marking::Correlation, Some(prev)) => best_match(x, prev as usize, p, lo, hi).unwrap_or(i as usize) as f64,
+                    // 声の始まり（と従来の方式）は最も大きい山
+                    _ => (lo..=hi).max_by(|&a, &b| x[a].total_cmp(&x[b])).unwrap_or(i as usize) as f64,
+                };
                 // 前の目印に近づきすぎたら、予定位置を使う
                 let pos = match marks.last() {
                     Some(Mark { pos, .. }) if peak - pos < p * 0.5 => i,
@@ -134,6 +161,29 @@ fn pitch_marks(x: &[f32], f0s: &[f32], sr: f64) -> Vec<Mark> {
         }
     }
     marks
+}
+
+/// `prev` を中心にした1周期分の波形と、`lo..=hi` の各位置を中心にした波形の正規化相互相関が最大になる位置
+fn best_match(x: &[f32], prev: usize, p: f64, lo: usize, hi: usize) -> Option<usize> {
+    let half = (p / 2.0).round().max(1.0) as usize;
+    if prev < half || prev + half >= x.len() {
+        return None;
+    }
+    let reference = &x[prev - half..prev + half];
+    let mut best: Option<(usize, f32)> = None;
+    for c in lo.max(half)..=hi.min(x.len().saturating_sub(half + 1)) {
+        let cand = &x[c - half..c + half];
+        let (mut dot, mut e) = (0.0f32, 0.0f32);
+        for (a, b) in reference.iter().zip(cand) {
+            dot += a * b;
+            e += b * b;
+        }
+        let score = dot / (e.sqrt() + 1e-9);
+        if best.is_none_or(|(_, s)| score > s) {
+            best = Some((c, score));
+        }
+    }
+    best.map(|(c, _)| c)
 }
 
 /// `t` に最も近い目印の番号

@@ -47,7 +47,7 @@ export interface ProcessRequest {
   sampleRate: number
   semitones: number
   stretch: number
-  /** 0 = WSOLA, 1 = Phase Vocoder（Rust 側 `Algorithm::from_id` と対応） */
+  /** 0 = WSOLA, 1 = Phase Vocoder, 2 = PSOLA, 3 = SOLA, 4 = PSOLAv2, 5 = WSOLAv2（Rust 側 `Algorithm::from_id` と対応） */
   algorithm: number
   /** ピッチ変更時にフォルマントを保持し、`formantSemitones` だけ移動する */
   preserveFormant: boolean
