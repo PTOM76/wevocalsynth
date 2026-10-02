@@ -21,6 +21,10 @@ const MAX_BPM: f64 = 240.0;
 const STEP_BPM: f64 = 0.1;
 /// 返す候補の数
 const CANDIDATES: usize = 6;
+/// 候補の BPM を詰めるときに探す幅と刻み（BPM）と、足し合わせる倍音の数
+const REFINE_RANGE: f64 = 0.6;
+const REFINE_STEP: f64 = 0.01;
+const REFINE_HARMONICS: usize = 4;
 /// 振幅の圧縮の強さ（log(1 + C·振幅)）。小さい音の立ち上がりも拾えるようにする
 const COMPRESS: f32 = 100.0;
 
@@ -72,50 +76,79 @@ pub fn estimate(env: &[f32], progress: &mut dyn FnMut(f64)) -> Vec<Candidate> {
     }
     // 平均を引き、ゆっくりした音量の変化（数秒単位）を取り除く
     let mean = env.iter().map(|&v| v as f64).sum::<f64>() / env.len() as f64;
-    let x: Vec<f64> = env.iter().map(|&v| v as f64 - mean).collect();
+    let n = env.len();
+    // 端で切れることによる漏れ（ピークの位置がずれる）を抑えるため Hann 窓をかける
+    let x: Vec<f64> = env.iter().enumerate().map(|(k, &v)| (v as f64 - mean) * (0.5 - 0.5 * (2.0 * PI * k as f64 / n as f64).cos())).collect();
+    // 拍の頭の位置（offset）は、窓をかける前の信号の位相で求める（窓をかけると時間方向の重みが変わり、位相の基準がずれる）
+    let raw: Vec<f64> = env.iter().map(|&v| v as f64 - mean).collect();
 
     let steps = ((MAX_BPM - MIN_BPM) / STEP_BPM).round() as usize + 1;
-    // 各 BPM での周波数成分（複素数）
-    let mut spec = Vec::with_capacity(steps);
+    // 各 BPM での周波数成分の大きさ
+    let mut mag = Vec::with_capacity(steps);
     for s in 0..steps {
         if s % 200 == 0 {
-            progress(0.8 + 0.2 * s as f64 / steps as f64);
+            progress(0.8 + 0.15 * s as f64 / steps as f64);
         }
-        let bpm = MIN_BPM + s as f64 * STEP_BPM;
-        let w = 2.0 * PI * (bpm / 60.0) * HOP_SEC;
-        // 回転を掛け算で進める（毎回 sin/cos を呼ばない）
-        let (cw, sw) = (w.cos(), w.sin());
-        let (mut c, mut si) = (1.0f64, 0.0f64);
-        let (mut re, mut im) = (0.0f64, 0.0f64);
-        for (k, &v) in x.iter().enumerate() {
-            re += v * c;
-            im -= v * si;
-            let nc = c * cw - si * sw;
-            si = si * cw + c * sw;
-            c = nc;
-            // 丸め誤差で振幅がずれないよう、ときどき正規化する
-            if k % 1024 == 1023 {
-                let n = (c * c + si * si).sqrt();
-                c /= n;
-                si /= n;
-            }
-        }
-        spec.push((bpm, re, im));
+        let (re, im) = component(&x, MIN_BPM + s as f64 * STEP_BPM);
+        mag.push((re * re + im * im).sqrt());
     }
-    let mag: Vec<f64> = spec.iter().map(|&(_, re, im)| (re * re + im * im).sqrt()).collect();
 
     // 山（両隣より大きい所）を強い順に取る
     let mut peaks: Vec<usize> = (1..steps - 1).filter(|&i| mag[i] > mag[i - 1] && mag[i] >= mag[i + 1]).collect();
     peaks.sort_by(|&a, &b| mag[b].total_cmp(&mag[a]));
     let top = peaks.first().map_or(0.0, |&i| mag[i]).max(1e-12);
-    peaks
+    let out = peaks
         .iter()
         .take(CANDIDATES)
         .map(|&i| {
-            let (bpm, re, im) = spec[i];
-            Candidate { bpm: (bpm * 10.0).round() / 10.0, strength: mag[i] / top, offset: beat_offset(bpm, re, im) }
+            let bpm = refine(&x, MIN_BPM + i as f64 * STEP_BPM);
+            let (re, im) = component(&raw, bpm);
+            Candidate { bpm: (bpm * 100.0).round() / 100.0, strength: mag[i] / top, offset: beat_offset(bpm, re, im) }
         })
-        .collect()
+        .collect();
+    progress(1.0);
+    out
+}
+
+/// 信号 `x`（`HOP_SEC` 間隔）の、`bpm` の拍の速さの周波数成分（複素数）
+fn component(x: &[f64], bpm: f64) -> (f64, f64) {
+    let w = 2.0 * PI * (bpm / 60.0) * HOP_SEC;
+    // 回転を掛け算で進める（毎回 sin/cos を呼ばない）
+    let (cw, sw) = (w.cos(), w.sin());
+    let (mut c, mut si) = (1.0f64, 0.0f64);
+    let (mut re, mut im) = (0.0f64, 0.0f64);
+    for (k, &v) in x.iter().enumerate() {
+        re += v * c;
+        im -= v * si;
+        let nc = c * cw - si * sw;
+        si = si * cw + c * sw;
+        c = nc;
+        // 丸め誤差で振幅がずれないよう、ときどき正規化する
+        if k % 1024 == 1023 {
+            let n = (c * c + si * si).sqrt();
+            c /= n;
+            si /= n;
+        }
+    }
+    (re, im)
+}
+
+/// 候補の BPM を詰める。まわり ±`REFINE_RANGE` を細かく探し、拍の速さの成分と、その倍音（2〜4 倍）の大きさの和が最大の所にする。
+/// 倍音は同じずれでもピークの位置が大きく動くので、基本の成分だけより細かく決まる。最後に放物線で補間する
+fn refine(x: &[f64], bpm: f64) -> f64 {
+    let score = |b: f64| (1..=REFINE_HARMONICS).map(|h| { let (re, im) = component(x, b * h as f64); (re * re + im * im).sqrt() }).sum::<f64>();
+    let steps = (2.0 * REFINE_RANGE / REFINE_STEP).round() as usize;
+    let at = |s: usize| bpm - REFINE_RANGE + s as f64 * REFINE_STEP;
+    let scores: Vec<f64> = (0..=steps).map(|s| score(at(s))).collect();
+    let best = (0..=steps).max_by(|&a, &b| scores[a].total_cmp(&scores[b])).unwrap_or(steps / 2);
+    if best == 0 || best == steps {
+        return at(best);
+    }
+    // 放物線の頂点（両隣との差から）
+    let (l, c, r) = (scores[best - 1], scores[best], scores[best + 1]);
+    let denom = l - 2.0 * c + r;
+    let shift = if denom.abs() > 1e-12 { 0.5 * (l - r) / denom } else { 0.0 };
+    at(best) + shift.clamp(-0.5, 0.5) * REFINE_STEP
 }
 
 /// 周波数成分の位相から、最初の拍の時刻（秒、0〜1拍の長さ）を求める。
@@ -174,6 +207,21 @@ mod tests {
             let b = beat_sec(best);
             let d = ((off - offset).rem_euclid(b)).min((offset - off).rem_euclid(b));
             assert!(d < 0.02, "bpm {bpm}: offset {off} expected {offset}");
+        }
+    }
+
+    /// 小数のテンポも細かく当たる（以前は 0.1 刻みの基本の成分だけで、0.5 ほどずれることがあった）
+    #[test]
+    fn fractional_tempo_is_precise() {
+        let sr = 44100.0;
+        // 138 は、以前 137.4 と出ていた例
+        for bpm in [123.4, 97.7, 140.25, 88.8, 138.0] {
+            let x = clicks(bpm, 0.1, 30.0, sr);
+            let env = onset_envelope(&x, sr, &mut |_| {});
+            let cands = estimate(&env, &mut |_| {});
+            let near = cands.iter().map(|c| (c.bpm - bpm).abs()).fold(f64::MAX, f64::min);
+            println!("bpm {bpm}: {:?}", cands.iter().map(|c| c.bpm).collect::<Vec<_>>());
+            assert!(near < 0.1, "bpm {bpm}: nearest error {near} ({cands:?})");
         }
     }
 }

@@ -209,6 +209,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
       <Group title={t('settings.groupTempo')}>
         <Check checked={draft.autoTempo} onChange={(v) => set({ autoTempo: v })} label={t('settings.autoTempo')} help={t('settings.autoTempoHelp')} />
         <Check checked={draft.showBeatGrid} onChange={(v) => set({ showBeatGrid: v })} label={t('settings.showBeatGrid')} />
+        <Check checked={draft.tempoStretch} onChange={(v) => set({ tempoStretch: v })} label={t('settings.tempoStretch')} help={t('settings.tempoStretchHelp')} />
       </Group>
     ),
     keys: (

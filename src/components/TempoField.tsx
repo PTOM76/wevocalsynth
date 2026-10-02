@@ -16,12 +16,15 @@ interface Props {
   analyzing: boolean
   disabled?: boolean
   fontSize?: number
-  /** BPM を決める。1拍目の位置が分かるとき（候補を選んだとき）は一緒に渡す */
+  /** BPM を決める（候補・×2・÷2・タップ。テンポの読み違いを直す操作）。1拍目の位置が分かるとき（候補を選んだとき）は一緒に渡す */
   onChange: (bpm: number, offset?: number) => void
+  /** 数値を手で入れたとき（曲のテンポを変える操作。設定によっては全体の長さも変える）。無ければ onChange */
+  onInput?: (bpm: number) => void
   onAnalyze: () => void
 }
 
-const round1 = (v: number) => Math.round(v * 10) / 10
+/** 0.01 BPM に丸める（自動解析も 0.01 まで求める） */
+const round2 = (v: number) => Math.round(v * 100) / 100
 
 /**
  * BPM の表示（ステータスバー・スマホの波形の下）。押すとパネルが開き、
@@ -40,7 +43,7 @@ export default function TempoField(p: Props) {
     taps.current = [...taps.current, now].slice(-TAP_WINDOW)
     setTapCount(taps.current.length)
     const n = taps.current.length
-    if (n >= 2) p.onChange(round1((60000 * (n - 1)) / (taps.current[n - 1] - taps.current[0])))
+    if (n >= 2) p.onChange(round2((60000 * (n - 1)) / (taps.current[n - 1] - taps.current[0])))
   }
 
   return (
@@ -51,7 +54,7 @@ export default function TempoField(p: Props) {
         sx={{ px: 1, height: '100%', fontSize: p.fontSize ?? 12, whiteSpace: 'nowrap', gap: 0.5, '&:hover': { bgcolor: 'action.hover' } }}
       >
         {p.analyzing && <CircularProgress size={10} />}
-        {round1(p.bpm)} BPM
+        {round2(p.bpm)} BPM
       </ButtonBase>
       <Popover
         open={!!anchor}
@@ -62,11 +65,11 @@ export default function TempoField(p: Props) {
       >
         <Stack spacing={1.25} sx={{ p: 1.5, width: 260, fontSize: 13 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <NumberInput value={round1(p.bpm)} onChange={(v) => p.onChange(v)} min={20} max={400} step={0.1} unit="BPM" width={110} ariaLabel="BPM" />
-            <Button size="small" onClick={() => p.onChange(round1(p.bpm * 2))}>
+            <NumberInput value={round2(p.bpm)} onChange={(v) => (p.onInput ?? p.onChange)(v)} min={20} max={400} step={0.01} unit="BPM" width={110} ariaLabel="BPM" />
+            <Button size="small" onClick={() => p.onChange(round2(p.bpm * 2))}>
               ×2
             </Button>
-            <Button size="small" onClick={() => p.onChange(round1(p.bpm / 2))}>
+            <Button size="small" onClick={() => p.onChange(round2(p.bpm / 2))}>
               ÷2
             </Button>
           </Stack>

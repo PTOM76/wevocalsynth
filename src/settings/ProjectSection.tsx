@@ -11,6 +11,8 @@ export interface ProjectSettings {
   tempo: ProjectTempo
   onRename: (name: string) => void
   onTempoChange: (patch: Partial<ProjectTempo>) => void
+  /** BPM を手で入れたとき（設定によっては全体をそのテンポに合わせて伸縮する） */
+  onBpmInput: (bpm: number) => void
 }
 
 /**
@@ -26,7 +28,7 @@ export default function ProjectSection({ project }: { project: ProjectSettings |
     if (name.trim() && name.trim() !== project.name) project.onRename(name)
     else setName(project.name)
   }
-  const { tempo, onTempoChange } = project
+  const { tempo, onTempoChange, onBpmInput } = project
   return (
     <>
       <Group title={t('settings.groupProject')}>
@@ -45,7 +47,7 @@ export default function ProjectSection({ project }: { project: ProjectSettings |
       </Group>
       <Group title={t('settings.groupTempo')}>
         <Row label={t('settings.bpm')}>
-          <NumberInput value={tempo.bpm} onChange={(v) => onTempoChange({ bpm: v })} min={20} max={400} step={0.01} unit="BPM" width={110} ariaLabel="BPM" />
+          <NumberInput value={tempo.bpm} onChange={onBpmInput} min={20} max={400} step={0.01} unit="BPM" width={110} ariaLabel="BPM" />
         </Row>
         <Row label={t('settings.beatsPerBar')}>
           <NumberInput value={tempo.beatsPerBar} onChange={(v) => onTempoChange({ beatsPerBar: Math.round(v) })} min={1} max={16} step={1} width={110} />

@@ -75,6 +75,8 @@ export interface Settings {
   instrumentAlgorithm: Algorithm
   /** テンポを自動解析しないとき（設定で切ったときなど）の BPM */
   defaultBpm: number
+  /** BPM を手で変えたら、全トラックをそのテンポに合わせて伸縮する（ピッチは変えない） */
+  tempoStretch: boolean
   /** 継ぎ目（範囲の差し戻し・貼り付け・切り取り）のクロスフェード長（ms）。聴き比べて既定を決めるため開発者向けに置く */
   spliceFadeMs: number
   /** ループ試聴で、断片の読み始めを前の断片とそろえる（位置合わせ）。切ると従来の方式 */
@@ -112,6 +114,7 @@ export const DEFAULT_SETTINGS: Settings = {
   vocalAlgorithm: 'sola',
   instrumentAlgorithm: 'pv',
   defaultBpm: 120,
+  tempoStretch: false,
   spliceFadeMs: 5,
   realtimeAlign: true,
   fastMath: true,

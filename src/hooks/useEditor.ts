@@ -7,7 +7,7 @@ import { applyFormantCurve, applyGainCurve, applyPitchCurve, spliceProcessed } f
 import { applyEditToRanges, normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
-import { analyzeF0, analyzeSpectrogram } from '../dsp/engine'
+import { analyzeF0, analyzeSpectrogram, processAudio } from '../dsp/engine'
 import { detectMode, modeSettings, type Mode } from '../audio/detectMode'
 import type { EditParams } from '../components/EditPanel'
 import type { Source } from '../components/StatusBar'
@@ -293,6 +293,35 @@ export function useEditor(settings: Settings) {
       setToast({ severity: 'success', message: t('toast.applied') })
     })
 
+  /**
+   * テンポを手で変える。設定（テンポに合わせて全体を伸縮）が有効なら、全トラックの加工後と原音を「旧 BPM ÷ 新 BPM」倍に
+   * 伸縮し（ピッチは変えない。処理方式は今の加工の欄のもの）、1拍目の位置と選択範囲も同じ比で動かす。
+   * テンポは元に戻す履歴に入らないので、元に戻すと音声だけが戻る
+   */
+  const changeTempo = (bpm: number) => {
+    const old = projectTempo.bpm
+    const same = !(old > 0) || !(bpm > 0) || Math.abs(bpm - old) < 1e-6
+    if (!settings.tempoStretch || same || !history.tracks.length) return setProjectTempo({ bpm })
+    const ratio = old / bpm
+    void task.run(t('task.tempoStretch'), async (signal) => {
+      const opts = { ...params, ...NEUTRAL, stretch: ratio }
+      const list = history.tracks
+      const done: typeof list = []
+      for (const [i, tr] of list.entries()) {
+        const run = async (c: Clip, part: number) =>
+          ({ sampleRate: c.sampleRate, channels: await processAudio(c.channels, c.sampleRate, opts, (p) => setProgress((i + (part + p) / 2) / list.length)) })
+        const clip = await run(tr.clip, 0)
+        // 加工していないトラックは、原音と加工後が同じものなので1回で済ませる
+        const original = tr.original === tr.clip ? clip : await run(tr.original, 1)
+        if (signal.aborted) return
+        done.push({ ...tr, clip, original })
+      }
+      history.setTracks(done, history.activeId, t('history.tempoStretch', { from: old, to: bpm }))
+      setProjectTempo({ bpm, beatOffset: projectTempo.beatOffset * ratio })
+      setSelections(selections.map((r) => ({ start: r.start * ratio, end: r.end * ratio })))
+    })
+  }
+
   // Shift+右端ドラッグ: 範囲をドラッグ後の長さに伸縮する（ピッチは変えない）
   const stretchRange = (r: Range, dur: number) =>
     task.run(t('task.stretching'), async (signal) => {
@@ -453,7 +482,7 @@ export function useEditor(settings: Settings) {
 
   return {
     // 素材と履歴
-    fileName, projectTempo, setProjectTempo, setProjectName: (name: string) => {
+    fileName, projectTempo, setProjectTempo, changeTempo, setProjectName: (name: string) => {
       if (!name.trim()) return
       setFileName(name.trim())
       setNamed(true)

@@ -171,6 +171,8 @@ export default function App() {
       disabled={!shown}
       fontSize={fontSize}
       onChange={(v, offset) => ed.setProjectTempo(offset === undefined ? { bpm: v } : { bpm: v, beatOffset: offset })}
+      // 数値を手で入れたときは、設定によっては全体をそのテンポに合わせて伸縮する
+      onInput={ed.changeTempo}
       onAnalyze={() =>
         shown &&
         void ed.tempo.analyze(
@@ -495,7 +497,7 @@ export default function App() {
         onClose={() => setSettingsOpen(false)}
         settings={settings}
         onChange={updateSettings}
-        project={ed.fileName ? { name: ed.fileName, tempo: ed.projectTempo, onRename: ed.setProjectName, onTempoChange: ed.setProjectTempo } : null}
+        project={ed.fileName ? { name: ed.fileName, tempo: ed.projectTempo, onRename: ed.setProjectName, onTempoChange: ed.setProjectTempo, onBpmInput: ed.changeTempo } : null}
       />
       {settings.showDebug && <DebugOverlay />}
       <UpdatePrompt />
