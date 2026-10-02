@@ -204,6 +204,8 @@
   "settings.groupDebug": "デバッグ",
   "settings.showDebug": "デバッグ表示",
   "settings.showDebugHelp": "画面左下に表示します。Ctrl+Shift+D でも切り替えできます",
+  "settings.liveSelection": "範囲選択中も数値を更新",
+  "settings.liveSelectionHelp": "切ると離したときに更新（軽い）",
   "settings.fastMath": "フォルマント補正の高速計算",
   "settings.fastMathHelp": "近似で速く計算する。切ると標準の計算（聴き比べ用）",
   "settings.realtimeAlign": "ループ試聴の位置合わせ",

@@ -196,6 +196,7 @@ export default function App() {
       // ループ再生中は範囲内ならループの中で移る（範囲外は通常の移動）
       onSeek={onWaveSeek}
       onSelectionsChange={onWaveSelections}
+      liveSelections={settings.liveSelection}
       onStretchRange={onWaveStretch}
       onContextMenu={onWaveContext}
       viewCtl={viewCtl}

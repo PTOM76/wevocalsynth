@@ -64,6 +64,8 @@ interface Props {
   onSeek: (t: number) => void
   /** ドラッグで範囲を選ぶ。Ctrl/⌘ を押しながらなら既存の範囲に追加する */
   onSelectionsChange: (rs: Range[]) => void
+  /** ドラッグ中も `onSelectionsChange` を呼ぶか（偽なら離したときだけ。軽い） */
+  liveSelections?: boolean
   /** Shift+右端ドラッグで、範囲 `range` を長さ `duration`（秒）に伸縮する */
   onStretchRange: (range: Range, duration: number) => void
   /** 右クリック、またはタッチの長押し（画面上の位置） */
@@ -134,6 +136,8 @@ function Waveform(props: Props) {
   const draftRef = useRef<Range[] | null>(null)
   const selections = draftSelections ?? props.selections
   const changeSelections = (rs: Range[]) => {
+    // ドラッグ中も渡す設定なら、そのまま渡す（ステータスバーの数値なども動くが、画面全体が描き直されるので重い）
+    if (props.liveSelections) return props.onSelectionsChange(rs)
     draftRef.current = rs
     setDraftSelections(rs)
   }
