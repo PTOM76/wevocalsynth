@@ -73,10 +73,37 @@ export function shiftPitch(target: Float32Array | null, f0: Float32Array, k0: nu
   return out
 }
 
-/** 音程に揃える設定 */
+/** 音階の種類ごとの、主音から数えた構成音（半音） */
+export const SCALES = {
+  major: [0, 2, 4, 5, 7, 9, 11],
+  minor: [0, 2, 3, 5, 7, 8, 10],
+} as const
+export type ScaleType = keyof typeof SCALES
+
+/** `m`（MIDI、小数あり）に一番近い、主音 `root`（0 = C）・`type` の音階の音 */
+export function nearestInScale(m: number, root: number, type: ScaleType): number {
+  const tones: readonly number[] = SCALES[type]
+  const base = Math.round(m)
+  let best = base
+  let bestDist = Infinity
+  // 音階の音どうしは 2 半音より離れないので、前後 2 半音を調べれば足りる
+  for (let n = base - 2; n <= base + 2; n++) {
+    if (!tones.includes((((n - root) % 12) + 12) % 12)) continue
+    if (Math.abs(n - m) < bestDist) {
+      best = n
+      bestDist = Math.abs(n - m)
+    }
+  }
+  return best
+}
+
+/** 音階に揃える設定 */
 export interface SnapOptions {
-  /** nearest: 音ごとに一番近い半音へ / note: すべて `note` へ */
-  mode: 'nearest' | 'note'
+  /** nearest: 音ごとに一番近い半音へ / scale: 音ごとに一番近い音階の音へ / note: すべて `note` へ */
+  mode: 'nearest' | 'scale' | 'note'
+  /** mode が scale のときの主音（0 = C 〜 11 = B）と種類 */
+  scaleRoot: number
+  scaleType: ScaleType
   /** mode が note のときの揃え先（MIDI ノート番号、C4 = 60） */
   note: number
   /** 揺れ（ビブラートなど）を残して、音の平均だけ動かす */
@@ -88,7 +115,7 @@ export interface SnapOptions {
 }
 
 /**
- * フレーム k0〜k1 のピッチを音程に揃えた目標ピッチを返す。
+ * フレーム k0〜k1 のピッチを音階に揃えた目標ピッチを返す。
  * 途切れずに続く有声の区間を1つの音として扱い、その平均の音高で揃え先を決める
  */
 export function snapPitch(target: Float32Array | null, f0: Float32Array, k0: number, k1: number, o: SnapOptions): Float32Array {
@@ -106,7 +133,7 @@ export function snapPitch(target: Float32Array | null, f0: Float32Array, k0: num
     let sum = 0
     for (let j = k; j <= e; j++) sum += src(j)
     const mean = sum / (e - k + 1)
-    const dest = o.mode === 'note' ? o.note : Math.round(mean)
+    const dest = o.mode === 'note' ? o.note : o.mode === 'scale' ? nearestInScale(mean, o.scaleRoot, o.scaleType) : Math.round(mean)
     for (let j = k; j <= e; j++) {
       const m = src(j)
       const goal = o.keepShape ? m + (dest - mean) : dest
