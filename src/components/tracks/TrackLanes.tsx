@@ -10,8 +10,8 @@ import { pickMods, useTrackDrag, type PickMods } from './useTrackDrag'
 
 /** 1トラックの行の高さ（px） */
 const LANE_H = 30
-/** 左の名前の欄の幅（px） */
-const HEADER_W = 160
+/** 左の名前の欄の幅（px）。名前とメーターの列に、M・S・I の3つのボタンが重ならずに並ぶ幅 */
+const HEADER_W = 180
 
 interface Props {
   tracks: Track[]

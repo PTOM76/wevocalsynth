@@ -62,7 +62,7 @@ export interface Settings {
   vocalKeepHighBand: boolean
   /** 再生中、再生位置が画面の外に出たら表示範囲を追従させる（ツールバーのボタンで切り替える） */
   followPlayhead: boolean
-  /** 加工・音量のスライダーをダブルクリックで既定値に戻す（誤操作を避けるため既定は切る） */
+  /** 加工・音量のスライダーをダブルクリックで既定値に戻す（誤って戻すのが気になる人は切れる） */
   sliderDoubleClickReset: boolean
   /** 範囲をドラッグしている途中も、選択範囲の数値などを更新する（切ると離したときに更新。軽い） */
   liveSelection: boolean
@@ -97,7 +97,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showMeters: true,
   liveSelection: false,
   followPlayhead: true,
-  sliderDoubleClickReset: false,
+  sliderDoubleClickReset: true,
   // int8: CPU でも fp16 より速く、GPU も使える（fp16 は WebGPU で動かない。docs/DECISIONS.md）
   vocalModel: 'int8',
   vocalGpu: true,
