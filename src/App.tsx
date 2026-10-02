@@ -93,6 +93,9 @@ export default function App() {
   const [silenceOpen, setSilenceOpen] = useState(false)
   // 再生位置の入力を始める合図（目盛りの右クリックメニューから。増やすたびに始まる）
   const [timeEditRequest, setTimeEditRequest] = useState(0)
+  // 波形の縦の拡大率（1〜64 倍、2 倍ずつ）。小さい音を見やすくする
+  const [waveScale, setWaveScale] = useState(1)
+  const stepWaveScale = useStableFn((dir: 1 | -1) => setWaveScale((s) => Math.min(64, Math.max(1, dir > 0 ? s * 2 : s / 2))))
   const [renamingProject, setRenamingProject] = useState(false)
   const [pitchDialog, setPitchDialog] = useState<PitchDialogKind>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
@@ -193,6 +196,9 @@ export default function App() {
     },
     clearMarkers: ed.markers.clear,
     seekMarker: ed.seekMarker,
+    waveScale,
+    stepWaveScale,
+    resetWaveScale: () => setWaveScale(1),
     showPitchLine: settings.showPitchLine,
     togglePitchLine: () => updateSettings({ showPitchLine: !settings.showPitchLine }),
     trackCount: ed.tracks.tracks.length,
@@ -295,6 +301,8 @@ export default function App() {
       onStretchRange={onWaveStretch}
       onRetime={onWaveRetime}
       markers={ed.markers.markers}
+      waveScale={waveScale}
+      onWaveScale={stepWaveScale}
       onRenameMarker={setRenamingMarker}
       onContextMenu={onWaveContext}
       viewCtl={viewCtl}

@@ -85,6 +85,10 @@ interface Actions {
   showNotes: boolean
   toggleNotes: () => void
   showPitchLine: boolean
+  /** 波形の縦の拡大率 */
+  waveScale: number
+  stepWaveScale: (dir: 1 | -1) => void
+  resetWaveScale: () => void
   togglePitchLine: () => void
   toggleMeters: () => void
   // ---- トラック（選んでいるトラックに効く） ----
@@ -221,6 +225,15 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('wave.zoomIn'), shortcut: 'Ctrl+Wheel', disabled: !a.hasClip || !a.canZoomIn, onClick: a.zoomIn },
         { label: t('wave.zoomOut'), disabled: !a.hasClip || !a.zoomed, onClick: a.zoomOut },
         { label: t('wave.showAll'), disabled: !a.hasClip || !a.zoomed, onClick: a.showAll },
+        {
+          label: t('wave.vZoom'),
+          disabled: !a.hasClip,
+          submenu: [
+            { label: t('wave.vZoomIn'), shortcut: 'Alt+Wheel', disabled: a.waveScale >= 64, onClick: () => a.stepWaveScale(1) },
+            { label: t('wave.vZoomOut'), disabled: a.waveScale <= 1, onClick: () => a.stepWaveScale(-1) },
+            { label: t('wave.vZoomReset'), disabled: a.waveScale === 1, onClick: a.resetWaveScale },
+          ],
+        },
         { label: t('wave.follow'), checked: a.follow, onClick: a.toggleFollow },
         { divider: true },
         { label: t('settings.showMeters'), checked: a.showMeters, onClick: a.toggleMeters },

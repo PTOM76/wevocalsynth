@@ -74,6 +74,9 @@ interface Props {
   onRetime: (parts: { start: number; end: number; dur: number }[]) => void
   /** マーカー（選択範囲の端・再生位置が吸着する）と、目盛りの上のダブルクリックでの名前の変更 */
   markers?: Marker[]
+  /** 波形の縦の拡大率と、Alt+ホイールでの変更（1: 拡大 / -1: 縮小） */
+  waveScale?: number
+  onWaveScale?: (dir: 1 | -1) => void
   onRenameMarker?: (id: string) => void
   /** 右クリック、またはタッチの長押し（画面上の位置） */
   onContextMenu: (x: number, y: number, ruler?: { time: number; markerId: string | null }) => void
@@ -185,6 +188,7 @@ function Waveform(props: Props) {
   const longPressRef = useRef<{ timer: number; x: number; y: number } | null>(null)
   const duration = clipDuration(clip)
   const { view, scrollTo, zoomed, wheel } = props.viewCtl
+  const waveScale = props.waveScale ?? 1
 
   // 置き場所の大きさに合わせて Canvas を伸び縮みさせる（高さも画面に合わせる）
   useEffect(() => {
@@ -203,11 +207,15 @@ function Waveform(props: Props) {
   // ページ自体がスクロール・拡大しないよう、ホイールは non-passive で登録する
   const wheelRef = useRef(wheel)
   wheelRef.current = wheel
+  const waveScaleRef = useRef(props.onWaveScale)
+  waveScaleRef.current = props.onWaveScale
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
+      // Alt+ホイールは波形の縦の拡大縮小
+      if (e.altKey && waveScaleRef.current) return waveScaleRef.current(e.deltaY < 0 ? 1 : -1)
       wheelRef.current(e, canvas.getBoundingClientRect())
     }
     canvas.addEventListener('wheel', onWheel, { passive: false })
@@ -250,8 +258,8 @@ function Waveform(props: Props) {
     // スペクトログラムは波形の代わりに表示する。選択範囲は波形などに隠れないよう、最後に重ねる
     if (showWave) {
       // ほかのトラックは後ろに薄く重ねる
-      for (const gp of ghostPeaks) drawGhostWave(c, gp)
-      drawWave(c, peaks)
+      for (const gp of ghostPeaks) drawGhostWave(c, gp, waveScale)
+      drawWave(c, peaks, waveScale)
     }
     // スペクトログラムは波形を置き換えず、自分の帯に描く
     if (showSpectrogram) drawSpectrogram(c, spectrogram, specLayer)
@@ -262,7 +270,7 @@ function Waveform(props: Props) {
     // 帯が2本以上あるときだけ、どれにフォーカスしているかを示す
     if ([showWave, showSpectrogram, showPitch, showGain, showFormant].filter(Boolean).length > 1) drawLaneFocus(c, props.focusLane)
     // 選択範囲は上に重ねた Canvas に描く（範囲をドラッグしている間、波形などを描き直さないため）
-  }, [showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, props.showNotes, props.showPitchLine, pitch, range, target, drawVersion])
+  }, [waveScale, showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, props.showNotes, props.showPitchLine, pitch, range, target, drawVersion])
 
   // 選択範囲と再生位置の線（上に重ねた Canvas。再生中は毎フレーム、範囲のドラッグ中は動かすたびに、こちらだけを描き直す）
   useEffect(() => {

@@ -242,33 +242,40 @@ export function drawSelection(c: DrawContext, selection: Range, h: number) {
 }
 
 /** ほかのトラックの波形を、大きな波形の後ろに薄く描く（タイミングを見比べるため。中央線は描かない） */
-export function drawGhostWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }) {
+export function drawGhostWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }, scale = 1) {
   const { g, width, pal, waveH } = c
   const mid = RULER_HEIGHT + waveH / 2
-  const amp = waveH / 2 - 4
+  const amp = (waveH / 2 - 4) * scale
+  const lim = waveH / 2 - 4
   g.fillStyle = alpha(pal.text.secondary, 0.28)
   for (let x = 0; x < width; x++) {
-    const y0 = mid - peaks.max[x] * amp
-    const y1 = mid - peaks.min[x] * amp
+    const y0 = mid - Math.min(lim, peaks.max[x] * amp)
+    const y1 = mid - Math.max(-lim, peaks.min[x] * amp)
     g.fillRect(x, y0, 1, Math.max(1, y1 - y0))
   }
 }
 
 /** 波形（1ピクセル列ごとの最小値〜最大値の縦線）と中央線 */
-export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }) {
+export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }, scale = 1) {
   const { g, width, pal, waveH } = c
   const mid = RULER_HEIGHT + waveH / 2
-  const amp = waveH / 2 - 4
+  // 縦の拡大（`scale` 倍）。帯からはみ出す分は端で切る
+  const amp = (waveH / 2 - 4) * scale
+  const lim = waveH / 2 - 4
   // ダークでは primary（明るい水色）のままだとまぶしく、選択範囲の白い線も埋もれるため、少し沈める。
   // ライトでは primary.dark（紺）だと選択範囲の黒い線と見分けにくいため、primary（青）にする
   g.fillStyle = alpha(pal.primary.main, 0.85)
   for (let x = 0; x < width; x++) {
-    const y0 = mid - peaks.max[x] * amp
-    const y1 = mid - peaks.min[x] * amp
+    const y0 = mid - Math.min(lim, peaks.max[x] * amp)
+    const y1 = mid - Math.max(-lim, peaks.min[x] * amp)
     g.fillRect(x, y0, 1, Math.max(1, y1 - y0))
   }
   g.fillStyle = pal.divider
   g.fillRect(0, mid, width, 1)
+  if (scale > 1) {
+    g.fillStyle = pal.text.secondary
+    g.fillText(`×${scale}`, width - 32, RULER_HEIGHT + 12)
+  }
 }
 
 /** ピッチ帯: 音名のグリッドと F0 曲線。描いた目標ピッチがあれば元の曲線を薄くして重ねる */
