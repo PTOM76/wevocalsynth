@@ -104,7 +104,7 @@ export function VibratoDialog(p: DialogProps<VibratoOptions> & { bpm: number }) 
 /** 音程に揃える（音ごとに近い半音へ、または指定した音へ） */
 export function SnapDialog(p: DialogProps<SnapOptions>) {
   const t = useT()
-  const [o, setO] = useState<SnapOptions>({ mode: 'nearest', note: 60, keepShape: true, strength: 1 })
+  const [o, setO] = useState<SnapOptions>({ mode: 'nearest', note: 60, keepShape: true, strength: 1, speedMs: 0 })
   const set = (patch: Partial<SnapOptions>) => setO((v) => ({ ...v, ...patch }))
   return (
     <ToolDialog open={p.open} title={t('snap.title')} hasSelection={p.hasSelection} onClose={p.onClose} onRun={() => p.onRun(o)}>
@@ -134,6 +134,7 @@ export function SnapDialog(p: DialogProps<SnapOptions>) {
         slotProps={{ typography: { sx: { fontSize: 13 } } }}
       />
       <SliderRow label={t('snap.strength')} value={Math.round(o.strength * 100)} onChange={(v) => set({ strength: v / 100 })} min={0} max={100} step={1} unit="%" />
+      <SliderRow label={t('snap.speed')} value={o.speedMs} onChange={(v) => set({ speedMs: Math.round(v) })} min={0} max={300} step={5} unit="ms" />
     </ToolDialog>
   )
 }

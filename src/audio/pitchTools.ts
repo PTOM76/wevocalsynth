@@ -83,6 +83,8 @@ export interface SnapOptions {
   keepShape: boolean
   /** 揃える強さ（0〜1）。1 でぴったり */
   strength: number
+  /** 揃える速さ（ミリ秒）。音の頭からこの時間をかけて揃える。0 で瞬時 */
+  speedMs: number
 }
 
 /**
@@ -108,7 +110,8 @@ export function snapPitch(target: Float32Array | null, f0: Float32Array, k0: num
     for (let j = k; j <= e; j++) {
       const m = src(j)
       const goal = o.keepShape ? m + (dest - mean) : dest
-      out[j] = midiToHz(m + (goal - m) * o.strength)
+      const ramp = o.speedMs > 0 ? smooth(((j - k) * F0_HOP_SEC * 1000) / o.speedMs) : 1
+      out[j] = midiToHz(m + (goal - m) * o.strength * ramp)
     }
     k = e + 1
   }

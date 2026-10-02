@@ -117,6 +117,7 @@
   "snap.note": "对齐到指定音",
   "snap.keepShape": "保留波动（颤音等）",
   "snap.strength": "强度",
+  "snap.speed": "对齐速度",
   "voicing.force": "强制显示选区的音高",
   "voicing.mute": "强制隐藏选区的音高",
   "voicing.reset": "清除选区的音高指定",

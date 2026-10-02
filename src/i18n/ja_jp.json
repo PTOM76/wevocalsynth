@@ -117,6 +117,7 @@
   "snap.note": "指定した音に揃える",
   "snap.keepShape": "揺れ（ビブラートなど）を残す",
   "snap.strength": "強さ",
+  "snap.speed": "揃える速さ",
   "voicing.force": "選択範囲のピッチを強制表示",
   "voicing.mute": "選択範囲のピッチを強制非表示",
   "voicing.reset": "選択範囲のピッチ指定を解除",
