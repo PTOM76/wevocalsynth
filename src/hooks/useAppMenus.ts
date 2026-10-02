@@ -49,6 +49,8 @@ interface Actions {
   splitStems: () => void
   /** トラックの複製と、ファイルをトラックとして追加 */
   duplicateTrack: () => void
+  /** 選択範囲を同じ位置のまま新しいトラックへ（`move` なら元は無音に） */
+  selectionToTrack: (move: boolean) => void
   addTrack: () => void
   /** 音を0から作る（新しいトラック。何も開いていなくても使える） */
   synth: () => void
@@ -110,6 +112,8 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('edit.paste'), shortcut: 'Ctrl+V', disabled: noClip || !a.hasClipboard, onClick: a.paste },
     { label: t('edit.trim'), disabled: noSel || !a.canTrim, onClick: a.trim },
     { label: t('edit.reverse'), disabled: noClip, onClick: a.reverse },
+    { label: t('track.copySelection'), disabled: noSel, onClick: () => a.selectionToTrack(false) },
+    { label: t('track.moveSelection'), disabled: noSel, onClick: () => a.selectionToTrack(true) },
     { divider: true },
     { label: t('edit.selectAll'), shortcut: 'Ctrl+A', disabled: noClip, onClick: a.selectAll },
     { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: noSel, onClick: a.clearSelection },
@@ -191,6 +195,8 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       entries: [
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
         { label: t('track.duplicate'), disabled: noClip, onClick: a.duplicateTrack },
+        { label: t('track.copySelection'), disabled: noSel, onClick: () => a.selectionToTrack(false) },
+        { label: t('track.moveSelection'), disabled: noSel, onClick: () => a.selectionToTrack(true) },
         { label: t('track.rename'), disabled: noClip, onClick: a.renameTrack },
         { label: t('track.remove'), disabled: noClip || a.trackCount < 2, onClick: a.removeTrack },
         { divider: true },

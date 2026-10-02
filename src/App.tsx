@@ -144,6 +144,7 @@ export default function App() {
     extract: (stem) => void ed.extract(stem),
     splitStems: () => void ed.splitStems(),
     duplicateTrack: () => ed.tracks.duplicate(),
+    selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),
     addTrack: () => ed.addPicker.open(),
     synth: () => setSynthOpen(true),
     showShortcuts: () => setShortcutsOpen(true),

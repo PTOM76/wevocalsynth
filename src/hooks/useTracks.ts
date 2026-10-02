@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Clip } from '../audio/types'
+import { clipDuration, type Clip, type Range } from '../audio/types'
+import { mapRanges, normalizeRanges } from '../audio/multiRange'
+import { silenceRange } from '../audio/edit'
 import { DEFAULT_FADER, DEFAULT_MIX, isAudible, makeTrack, type Track, type TrackFader, type TrackMix, type TrackSettings } from '../audio/tracks'
 import { mixClips } from '../audio/mix'
 import type { useHistory } from './useHistory'
@@ -51,6 +53,25 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     const src = tracks.find((tr) => tr.id === id)
     if (!src) return
     insertAfter([makeTrack(t('track.copyName', { name: src.name }), src.clip, src.original)], t('track.duplicate'), id)
+  }
+
+  /** 選択範囲を同じ位置のまま新しいトラックへ。`move` なら元の範囲は無音にする（1回の操作として履歴に積む） */
+  const fromSelection = (ranges: Range[], move: boolean) => {
+    const src = tracks.find((tr) => tr.id === activeId)
+    const rs = normalizeRanges(ranges)
+    if (!src || !rs.length) return
+    const outside: Range[] = []
+    let from = 0
+    for (const r of rs) {
+      if (r.start > from) outside.push({ start: from, end: r.start })
+      from = r.end
+    }
+    outside.push({ start: from, end: clipDuration(src.clip) })
+    const part = mapRanges(src.clip, outside, silenceRange)
+    const made = makeTrack(t('track.selectionName', { name: src.name }), part)
+    const rest = move ? tracks.map((tr) => (tr === src ? { ...tr, clip: mapRanges(src.clip, rs, silenceRange) } : tr)) : tracks
+    const i = rest.findIndex((tr) => tr.id === src.id)
+    history.setTracks([...rest.slice(0, i + 1), made, ...rest.slice(i + 1)], made.id, t(move ? 'track.moveSelection' : 'track.copySelection'))
   }
 
   /** 音声を新しいトラックとして足す（ファイルの追加） */
@@ -139,6 +160,7 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     activeMuted,
     select: history.select,
     duplicate,
+    fromSelection,
     addClip,
     split,
     remove,
