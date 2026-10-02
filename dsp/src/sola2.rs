@@ -5,8 +5,8 @@
 //! 短いクロスフェードと2乗誤差での位置合わせにする。声のない所は `UNVOICED_SEC` の固定長。
 //! 数周期をまとめて繰り返すと、その長さの周期で低いうなりが出る（2 周期で試して悪化した）ため 1 周期にしている。
 //!
-//! 混ぜる周期の広さ（`spread`）を広げた版（`stretch_clean`）は、前後数周期の平均で周期ごとの揺らぎや息のノイズが打ち消し合い、
-//! 原音より整った（周期的で滑らかな）声になる。元の声らしさを残す通常版と、選んで使い分ける。
+//! SOLAv3（`stretch_clean`）は混ぜる周期の広さ（`spread`）を広げ、前後数周期の平均で周期ごとの揺らぎや息のノイズが打ち消し合い、
+//! 原音より整った（周期的で滑らかな）声になる。元の声らしさを残す SOLAv2 と、選んで使い分ける。
 
 use crate::{f0, TimeMap};
 use std::f64::consts::PI;
@@ -17,7 +17,7 @@ const UNVOICED_SEC: f64 = 0.012;
 const FADE_SEC: f64 = 0.005;
 /// 声のない所の探索幅（秒）
 const UNVOICED_TOLERANCE_SEC: f64 = 0.006;
-/// 混ぜる周期の広さ（周期数）。通常版は隣の周期との直線補間（1）、整える版は前後約 3 周期の三角の重み
+/// 混ぜる周期の広さ（周期数）。SOLAv2 は隣の周期との直線補間（1）、SOLAv3 は前後約 3 周期の三角の重み
 const SPREAD: f64 = 1.0;
 const SPREAD_CLEAN: f64 = 3.0;
 
@@ -31,19 +31,19 @@ pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progres
     run(channels, map, sample_rate, SPREAD, progress)
 }
 
-/// 整える版（前後数周期を平均する）。
+/// SOLAv3（前後数周期を平均する）。
 pub fn stretch_clean(channels: &[&[f32]], alpha: f64, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
     stretch_with(channels, alpha, sample_rate, SPREAD_CLEAN, progress)
 }
 
-/// 整える版の、任意の時間対応での伸縮。
+/// SOLAv3 の、任意の時間対応での伸縮。
 pub fn stretch_map_clean(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
     run(channels, map, sample_rate, SPREAD_CLEAN, progress)
 }
 
 fn stretch_with(channels: &[&[f32]], alpha: f64, sample_rate: f32, spread: f64, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
     let len = channels.first().map_or(0, |c| c.len());
-    // 整える版は等倍でも平均をかける（等倍で何もしないと、伸縮しない部分だけ整わない）
+    // SOLAv3 は等倍でも平均をかける（等倍で何もしないと、伸縮しない部分だけ整わない）
     if (alpha - 1.0).abs() < 1e-9 && spread <= SPREAD {
         return channels.iter().map(|c| c.to_vec()).collect();
     }
