@@ -34,6 +34,7 @@ import DebugOverlay from './debug/DebugOverlay'
 import UpdatePrompt from './components/UpdatePrompt'
 import { countRender } from './debug/debugStats'
 import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
+import { setSpliceFadeSec } from './audio/edit'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 const disabledSx = (disabled: boolean) => (disabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {})
@@ -57,6 +58,8 @@ export default function App() {
   // 子の描画より先に言語を切り替えておく（t() は描画中に参照される）
   const lang = resolveLang(settings.language)
   setLang(lang)
+  // 継ぎ目のクロスフェード長（言語と同じく、描画中に設定へ合わせておく）
+  setSpliceFadeSec(settings.spliceFadeMs / 1000)
   // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
   const ed = useEditor(settings)
   // 設定のテーマ（既定 / ライト / ダーク）を反映する

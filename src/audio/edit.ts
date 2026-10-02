@@ -1,8 +1,16 @@
 import type { Clip, Range } from './types'
 import { F0_HOP_SEC, processAudio, processCurve, processFormantCurve, type ProcessOptions } from '../dsp/engine'
 
-/** 加工部分と未加工部分の継ぎ目のクロスフェード長 */
-const FADE_SEC = 0.005
+/**
+ * 継ぎ目（加工部分と未加工部分の差し戻し・貼り付け・切り取り）のクロスフェード長（秒）。
+ * 低い音では 5ms だと短くてプチッと鳴ることがあるので、設定（開発者向け）で聴き比べられるようにしている
+ */
+let FADE_SEC = 0.005
+
+/** 継ぎ目のクロスフェード長を変える（設定から呼ぶ） */
+export function setSpliceFadeSec(sec: number) {
+  FADE_SEC = sec
+}
 
 /**
  * `clip` の `range` にピッチ変更・時間伸縮を適用して元の位置に差し戻す。

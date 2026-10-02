@@ -145,6 +145,13 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
     debug: (
       <Group title={t('settings.groupDebug')}>
         <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
+        <Row label={t('settings.spliceFade')} help={t('settings.spliceFadeHelp')}>
+          <Choice<string>
+            value={String(draft.spliceFadeMs)}
+            onChange={(v) => set({ spliceFadeMs: Number(v) })}
+            options={['5', '10', '20'].map((ms): [string, string] => [ms, `${ms} ms`])}
+          />
+        </Row>
         <Row label={t('settings.dialogWindow')}>
           <Choice<WindowMode | 'auto'>
             value={draft.dialogWindow}

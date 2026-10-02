@@ -69,6 +69,8 @@ export interface Settings {
   instrumentAlgorithm: Algorithm
   /** テンポを自動解析しないとき（設定で切ったときなど）の BPM */
   defaultBpm: number
+  /** 継ぎ目（範囲の差し戻し・貼り付け・切り取り）のクロスフェード長（ms）。聴き比べて既定を決めるため開発者向けに置く */
+  spliceFadeMs: number
   /** ダイアログの出し方（今は設定画面のみ）。auto は PWA かつ Chromium 系ならポップアップ、ほかはダイアログ。別窓を開けなければダイアログ */
   dialogWindow: WindowMode | 'auto'
 }
@@ -97,6 +99,7 @@ export const DEFAULT_SETTINGS: Settings = {
   vocalAlgorithm: 'sola',
   instrumentAlgorithm: 'pv',
   defaultBpm: 120,
+  spliceFadeMs: 5,
 }
 const DEFAULTS = DEFAULT_SETTINGS
 const STORAGE_KEY = 'wevocalsynth.settings'

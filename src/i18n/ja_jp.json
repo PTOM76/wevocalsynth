@@ -204,6 +204,8 @@
   "settings.groupDebug": "デバッグ",
   "settings.showDebug": "デバッグ表示",
   "settings.showDebugHelp": "画面左下に表示します。Ctrl+Shift+D でも切り替えできます",
+  "settings.spliceFade": "継ぎ目のフェード",
+  "settings.spliceFadeHelp": "加工・貼り付けの境目。短いと低い音でプチッと鳴ることがある",
   "settings.dialogWindow": "ダイアログの表示",
   "settings.windowDialog": "ダイアログ",
   "settings.windowPopup": "ポップアップ",
