@@ -39,6 +39,7 @@ import { countRender } from './debug/debugStats'
 import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
 import { setFastMath } from './dsp/engine'
+import { checkForUpdate } from 'pevenmui/pwa'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 /** 選択範囲なし（描画のたびに新しい空配列を作らない） */
@@ -99,6 +100,10 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player.position])
   const center = view.start + view.dur / 2
+  // トラックの欄（右クリックメニュー・名前の変更を含む）。メニューの「トラック → 名前の変更」からも使う
+  const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null)
+  const activeSettings = ed.tracks.settingsOf(ed.tracks.activeId)
+  const activeIndex = ed.tracks.tracks.findIndex((tr) => tr.id === ed.tracks.activeId)
 
   const { menus, mobileMenus, context } = useAppMenus({
     hasClip: !!edited,
@@ -149,6 +154,40 @@ export default function App() {
     showHistory: () => setHistoryOpen(true),
     showAbout: () => setAboutOpen(true),
     ctrlS: settings.ctrlS,
+    playing: player.playing,
+    togglePlay: playback.togglePlay,
+    stop: playback.stop,
+    seekEdge: ed.seekEdge,
+    repeat: ed.repeat,
+    canZoomIn: viewCtl.canZoomIn,
+    zoomed: viewCtl.zoomed,
+    zoomIn: () => viewCtl.zoomAround(ZOOM_STEP, selection ? (selection.start + selection.end) / 2 : center),
+    zoomOut: () => viewCtl.zoomAround(1 / ZOOM_STEP, center),
+    showAll: viewCtl.showAll,
+    follow: settings.followPlayhead,
+    toggleFollow: () => updateSettings({ followPlayhead: !settings.followPlayhead }),
+    showMeters: settings.showMeters,
+    toggleMeters: () => updateSettings({ showMeters: !settings.showMeters }),
+    trackCount: ed.tracks.tracks.length,
+    activeMute: activeSettings.mix.mute,
+    activeSolo: activeSettings.mix.solo,
+    activeInvert: !!activeSettings.fader.invert,
+    toggleMute: () => ed.tracks.toggleMute(ed.tracks.activeId),
+    toggleSolo: () => ed.tracks.toggleSolo(ed.tracks.activeId),
+    toggleInvert: () => ed.tracks.toggleInvert(ed.tracks.activeId),
+    renameTrack: () => trackArea.openRename(ed.tracks.activeId),
+    removeTrack: () => ed.tracks.remove(ed.tracks.activeId),
+    canMergeDown: activeIndex >= 0 && activeIndex < ed.tracks.tracks.length - 1,
+    mergeDown: () => void ed.tracks.mergeDown(ed.tracks.activeId),
+    mergeAll: () => void ed.tracks.mergeAll(),
+    volumeAction: ed.cmd.volume,
+    // 新しい版があれば、右下の通知（UpdatePrompt）からそのまま更新できる。ここでは結果だけを知らせる
+    checkUpdate: () =>
+      void checkForUpdate().then((r) => {
+        const l = lang === 'ja_jp' ? jaLabels : enLabels
+        const text = { found: l.updateAvailable, latest: l.updateLatest, unsupported: l.updateUnsupported, failed: l.updateFailed }[r.kind]
+        ed.setToast({ severity: r.kind === 'failed' ? 'error' : 'info', message: text })
+      }),
   })
 
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
@@ -236,8 +275,6 @@ export default function App() {
   ) : (
     <EmptyState onOpen={ed.picker.open} onSynth={() => setSynthOpen(true)} />
   )
-  // トラックの欄（右クリックメニュー・名前の変更を含む）
-  const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null)
   // トラックが2本以上あるときだけ、波形の上にトラックの欄を出す（広げると波形付きの一覧、折りたたむとタブ）
   const editor = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>

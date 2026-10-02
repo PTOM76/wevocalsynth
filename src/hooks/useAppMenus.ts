@@ -59,6 +59,42 @@ interface Actions {
   showAbout: () => void
   /** Ctrl+S をどちらに割り当てているか（メニューの表記用） */
   ctrlS: 'project' | 'export'
+  // ---- 再生 ----
+  playing: boolean
+  togglePlay: () => void
+  stop: () => void
+  seekEdge: (edge: 'start' | 'end') => void
+  /** ループ再生（通常再生の繰り返し）がオンか */
+  repeat: boolean
+  // ---- 表示 ----
+  canZoomIn: boolean
+  zoomed: boolean
+  zoomIn: () => void
+  zoomOut: () => void
+  showAll: () => void
+  follow: boolean
+  toggleFollow: () => void
+  showMeters: boolean
+  toggleMeters: () => void
+  // ---- トラック（選んでいるトラックに効く） ----
+  trackCount: number
+  /** 選んでいるトラックのミュート・ソロ・位相反転 */
+  activeMute: boolean
+  activeSolo: boolean
+  activeInvert: boolean
+  toggleMute: () => void
+  toggleSolo: () => void
+  toggleInvert: () => void
+  renameTrack: () => void
+  removeTrack: () => void
+  /** すぐ下にトラックがあるか（すぐ下と統合を使えるか） */
+  canMergeDown: boolean
+  mergeDown: () => void
+  mergeAll: () => void
+  // ---- 音量の編集（選択範囲、なければ全体） ----
+  volumeAction: (action: 'fadeIn' | 'fadeOut' | 'normalize' | 'silence') => void
+  /** 新しい版を確認する（ヘルプ） */
+  checkUpdate: () => void
 }
 
 /** メニューバー（スマホではメニュー一覧）と、波形の右クリックメニューの中身 */
@@ -111,7 +147,11 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { divider: true },
         ...edit,
         { divider: true },
-        { label: t('track.duplicate'), disabled: noClip, onClick: a.duplicateTrack },
+        // 音量の編集（今は音量の欄にもある）
+        { label: t('volume.fadeIn'), disabled: noClip, onClick: () => a.volumeAction('fadeIn') },
+        { label: t('volume.fadeOut'), disabled: noClip, onClick: () => a.volumeAction('fadeOut') },
+        { label: t('volume.normalize'), disabled: noClip, onClick: () => a.volumeAction('normalize') },
+        { label: t('volume.silence'), disabled: noClip, onClick: () => a.volumeAction('silence') },
       ],
     },
     {
@@ -123,6 +163,44 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.pitch'), checked: a.showPitch, disabled: !a.hasClip, onClick: a.togglePitch },
         { label: t('menu.gain'), checked: a.showGain, disabled: !a.hasClip, onClick: a.toggleGain },
         { label: t('menu.formant'), checked: a.showFormant, disabled: !a.hasClip, onClick: a.toggleFormant },
+        { divider: true },
+        { label: t('wave.zoomIn'), shortcut: 'Ctrl+Wheel', disabled: !a.hasClip || !a.canZoomIn, onClick: a.zoomIn },
+        { label: t('wave.zoomOut'), disabled: !a.hasClip || !a.zoomed, onClick: a.zoomOut },
+        { label: t('wave.showAll'), disabled: !a.hasClip || !a.zoomed, onClick: a.showAll },
+        { label: t('wave.follow'), checked: a.follow, onClick: a.toggleFollow },
+        { divider: true },
+        { label: t('settings.showMeters'), checked: a.showMeters, onClick: a.toggleMeters },
+      ],
+    },
+    {
+      label: t('menu.play'),
+      accessKey: 'P',
+      entries: [
+        { label: t(a.playing ? 'play.pause' : 'play.play'), shortcut: 'Space', disabled: !a.hasClip, onClick: a.togglePlay },
+        { label: t('common.stop'), disabled: !a.hasClip, onClick: a.stop },
+        { label: t('play.playSelection'), disabled: noSel, onClick: a.playSelection },
+        { label: t('play.repeat'), checked: a.repeat, disabled: !a.hasClip, onClick: a.toggleLoop },
+        { divider: true },
+        { label: t('play.toStart'), shortcut: 'Home', disabled: !a.hasClip, onClick: () => a.seekEdge('start') },
+        { label: t('play.toEnd'), shortcut: 'End', disabled: !a.hasClip, onClick: () => a.seekEdge('end') },
+      ],
+    },
+    {
+      label: t('menu.track'),
+      accessKey: 'R',
+      entries: [
+        { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
+        { label: t('track.duplicate'), disabled: noClip, onClick: a.duplicateTrack },
+        { label: t('track.rename'), disabled: noClip, onClick: a.renameTrack },
+        { label: t('track.remove'), disabled: noClip || a.trackCount < 2, onClick: a.removeTrack },
+        { divider: true },
+        // ミュート・ソロ・位相反転は2本以上のときだけ（1本では意味がなく、自動で解除する）
+        { label: t('track.mute'), checked: a.activeMute, disabled: noClip || a.trackCount < 2, onClick: a.toggleMute },
+        { label: t('track.solo'), checked: a.activeSolo, disabled: noClip || a.trackCount < 2, onClick: a.toggleSolo },
+        { label: t('track.invert'), checked: a.activeInvert, disabled: noClip || a.trackCount < 2, onClick: a.toggleInvert },
+        { divider: true },
+        { label: t('track.mergeDown'), disabled: noClip || !a.canMergeDown, onClick: a.mergeDown },
+        { label: t('track.mergeAll'), disabled: noClip || a.trackCount < 2, onClick: a.mergeAll },
       ],
     },
     { label: t('menu.tools'), accessKey: 'T', entries: tools },
@@ -133,6 +211,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.userGuide'), onClick: () => openExternal(USER_GUIDE_URL) },
         { label: t('menu.shortcuts'), onClick: a.showShortcuts },
         { divider: true },
+        { label: t('menu.checkUpdate'), onClick: a.checkUpdate },
         { label: t('menu.about'), onClick: a.showAbout },
       ],
     },
@@ -183,6 +262,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       entries: [
         { label: t('menu.settings'), onClick: a.showSettings },
         { label: t('menu.userGuide'), onClick: () => openExternal(USER_GUIDE_URL) },
+        { label: t('menu.checkUpdate'), onClick: a.checkUpdate },
         { label: t('menu.about'), onClick: a.showAbout },
       ],
     },

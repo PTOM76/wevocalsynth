@@ -110,5 +110,6 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
     </>
   )
 
-  return { panel, overlays }
+  // メニュー（トラック → 名前の変更）からも名前の変更を開けるように渡す
+  return { panel, overlays, openRename: setRenaming }
 }

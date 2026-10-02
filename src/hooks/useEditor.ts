@@ -494,7 +494,7 @@ export function useEditor(settings: Settings) {
     // 加工パラメータ
     params, setParams, autoMode, rangeNote, modes,
     // 再生
-    player, preview, loop, playback, repeat, setRepeat,
+    player, preview, loop, playback, repeat, setRepeat, seekEdge,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
