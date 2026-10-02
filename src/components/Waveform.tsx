@@ -225,12 +225,12 @@ function Waveform(props: Props) {
     if (showGain) drawCurveLane(c, gainTop(c), gainH, GAIN_SCALE, props.gainCurve, CURVE_HOP_SEC)
     if (showFormant) drawCurveLane(c, formantTop(c), formantH, FORMANT_SCALE, props.formantCurve, CURVE_HOP_SEC)
     if (beatGrid) drawBeatGrid(c, beatGrid, height)
-    for (const r of selections) drawSelection(c, r, height)
     // 帯が2本以上あるときだけ、どれにフォーカスしているかを示す
     if ([showWave, showSpectrogram, showPitch, showGain, showFormant].filter(Boolean).length > 1) drawLaneFocus(c, props.focusLane)
-  }, [showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, selections, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
+    // 選択範囲は上に重ねた Canvas に描く（範囲をドラッグしている間、波形などを描き直さないため）
+  }, [showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
 
-  // 再生位置の線（再生中は毎フレーム変わるので、こちらだけを描き直す）
+  // 選択範囲と再生位置の線（上に重ねた Canvas。再生中は毎フレーム、範囲のドラッグ中は動かすたびに、こちらだけを描き直す）
   useEffect(() => {
     const canvas = overlayRef.current
     if (!canvas || width <= 0) return
@@ -240,10 +240,12 @@ function Waveform(props: Props) {
       canvas.height = height * dpr
     }
     const g = canvas.getContext('2d')!
+    const c: DrawContext = { g, width, view, pal, dark, waveH, specH, pitchH, gainH, formantH }
     const draw = (t: number) => {
       g.setTransform(dpr, 0, 0, dpr, 0, 0)
       g.clearRect(0, 0, width, height)
-      drawPlayhead({ g, width, view, pal, dark, waveH, specH, pitchH }, t, height)
+      for (const r of selections) drawSelection(c, r, height)
+      drawPlayhead(c, t, height)
     }
     draw(position)
     // 再生中は React の再描画（position は間引いて更新）を待たず、毎フレーム今の位置で描く
@@ -255,7 +257,7 @@ function Waveform(props: Props) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH])
+  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH, gainH, formantH, selections])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
