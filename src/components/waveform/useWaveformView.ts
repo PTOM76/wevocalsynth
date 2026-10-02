@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { View } from './draw'
 
 /** 表示できる最小の時間幅（秒） */
@@ -12,8 +12,20 @@ const FOLLOW_CHECK_MS = 50
  * 波形の表示範囲（拡大縮小・スクロール）。クリップの長さ変更への追従と、再生中の自動スクロールを扱う。
  * ツールバーと波形の両方から操作するため、画面側（App）で持つ。
  */
-export function useWaveformView(duration: number, livePosition: () => number, playing: boolean, follow = true) {
+export function useWaveformView(duration: number, livePosition: () => number, playing: boolean, follow = true, trackId = '') {
   const [view, setView] = useState<View>({ start: 0, dur: duration })
+  // トラックごとの表示範囲。切り替えたら前のトラックの分を覚え、戻ったら復元する
+  const saved = useRef(new Map<string, View>())
+  const viewRef = useRef(view)
+  const prevTrack = useRef(trackId)
+  viewRef.current = view
+  useEffect(() => {
+    if (prevTrack.current === trackId) return
+    saved.current.set(prevTrack.current, viewRef.current)
+    prevTrack.current = trackId
+    const v = saved.current.get(trackId)
+    if (v) setView(v)
+  }, [trackId])
 
   // 表示範囲をクリップ内に収める
   const fit = useCallback(
