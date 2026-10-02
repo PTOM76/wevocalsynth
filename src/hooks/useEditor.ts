@@ -165,7 +165,7 @@ export function useEditor(settings: Settings) {
   const multi = editRanges.length > 1
   const preview = usePreview(edited, multi ? null : (editRanges[0] ?? null), params, editing && !busy)
   const rangeNote = useRangeNote(editing && !multi ? edited : null, editRanges[0] ?? null)
-  const loop = useRealtimePreview(edited, multi ? null : (editRanges[0] ?? null), params.semitones, params.stretch)
+  const loop = useRealtimePreview(edited, multi ? null : (editRanges[0] ?? null), params.semitones, params.stretch, settings.realtimeAlign)
 
   const commit = (clip: Clip, label: string) => {
     history.commit(clip, label)

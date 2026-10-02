@@ -71,6 +71,8 @@ export interface Settings {
   defaultBpm: number
   /** 継ぎ目（範囲の差し戻し・貼り付け・切り取り）のクロスフェード長（ms）。聴き比べて既定を決めるため開発者向けに置く */
   spliceFadeMs: number
+  /** ループ試聴で、断片の読み始めを前の断片とそろえる（位置合わせ）。切ると従来の方式 */
+  realtimeAlign: boolean
   /** ダイアログの出し方（今は設定画面のみ）。auto は PWA かつ Chromium 系ならポップアップ、ほかはダイアログ。別窓を開けなければダイアログ */
   dialogWindow: WindowMode | 'auto'
 }
@@ -100,6 +102,7 @@ export const DEFAULT_SETTINGS: Settings = {
   instrumentAlgorithm: 'pv',
   defaultBpm: 120,
   spliceFadeMs: 5,
+  realtimeAlign: true,
 }
 const DEFAULTS = DEFAULT_SETTINGS
 const STORAGE_KEY = 'wevocalsynth.settings'

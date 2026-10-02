@@ -204,6 +204,8 @@
   "settings.groupDebug": "Debug",
   "settings.showDebug": "Debug overlay",
   "settings.showDebugHelp": "Shown at the bottom left. Toggle with Ctrl+Shift+D",
+  "settings.realtimeAlign": "Align loop preview grains",
+  "settings.realtimeAlignHelp": "Aligns grain joins for less roughness",
   "settings.spliceFade": "Seam fade",
   "settings.spliceFadeHelp": "At edit and paste boundaries. Too short may click on low sounds",
   "settings.dialogWindow": "Dialog display",

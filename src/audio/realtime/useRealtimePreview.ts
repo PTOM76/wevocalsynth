@@ -7,7 +7,7 @@ import processorUrl from './granularProcessor.ts?worker&url'
  * 範囲をループ再生しながら、ピッチ・伸縮率の変更を即座に反映する（AudioWorklet）。
  * 音質は簡易的なグラニュラー方式で、適用時の処理（WSOLA / Phase Vocoder）とは異なる。
  */
-export function useRealtimePreview(clip: Clip | null, range: Range | null, semitones: number, stretch: number) {
+export function useRealtimePreview(clip: Clip | null, range: Range | null, semitones: number, stretch: number, align = true) {
   const ctxRef = useRef<AudioContext | null>(null)
   const nodeRef = useRef<AudioWorkletNode | null>(null)
   const [playing, setPlaying] = useState(false)
@@ -71,6 +71,7 @@ export function useRealtimePreview(clip: Clip | null, range: Range | null, semit
     }
     post({ type: 'load', channels }, channels.map((c) => c.buffer))
     post({ type: 'params', semitones, stretch })
+    post({ type: 'align', on: alignRef.current })
     node.connect(ctx.destination)
     setPlaying(true)
     // semitones / stretch は下の effect で追従させるため、開始時の値だけ使う
@@ -81,6 +82,13 @@ export function useRealtimePreview(clip: Clip | null, range: Range | null, semit
   useEffect(() => {
     if (playing) post({ type: 'params', semitones, stretch })
   }, [playing, semitones, stretch])
+
+  // グレインの位置合わせ（設定の開発者向けで切り替え）。再生中に変えてもすぐ反映する
+  const alignRef = useRef(align)
+  alignRef.current = align
+  useEffect(() => {
+    if (playing) post({ type: 'align', on: align })
+  }, [playing, align])
 
   // 対象のクリップや範囲が変わったら止める
   useEffect(() => stop, [clip, range?.start, range?.end, stop])
