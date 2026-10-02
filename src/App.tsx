@@ -86,7 +86,7 @@ export default function App() {
   // 左上のループは通常再生の繰り返しの切り替え（加工欄のループはリアルタイム試聴）
   const toggleRepeat = () => ed.setRepeat(!ed.repeat)
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
-  const viewCtl = useWaveformView(ed.duration, player.livePosition, player.playing)
+  const viewCtl = useWaveformView(ed.duration, player.livePosition, player.playing, settings.followPlayhead)
   const [pitchPercent, setPitchPercent] = usePersistentNumber('wevocalsynth.pitchPercent', 40)
   const { view } = viewCtl
   // 止まっているときに再生位置を動かしたら（矢印キーなど）、画面の外なら見える位置まで表示範囲を動かす
@@ -244,6 +244,8 @@ export default function App() {
       onZoomOut={() => viewCtl.zoomAround(1 / ZOOM_STEP, center)}
       onZoomIn={() => viewCtl.zoomAround(ZOOM_STEP, selection ? (selection.start + selection.end) / 2 : center)}
       onShowAll={viewCtl.showAll}
+      follow={settings.followPlayhead}
+      onFollowChange={(v) => updateSettings({ followPlayhead: v })}
       showSpectrogram={ed.showSpec}
       onShowSpectrogramChange={ed.setShowSpec}
       showPitch={ed.showPitch}

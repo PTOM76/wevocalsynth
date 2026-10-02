@@ -155,6 +155,8 @@
   "wave.grabPitchTooltip": "Drag the line up or down (inside a selection: that range; otherwise: until the next gap. Shift: semitone steps)",
   "wave.discardCurve": "Discard drawn pitch",
   "wave.showAll": "Show all",
+  "wave.follow": "Follow playhead",
+  "wave.followTooltip": "Follow playhead (off lets you scroll freely while playing)",
   "wave.scroll": "View position",
 
   "shortcuts.pitchShift": "With pitch shown: shift selection pitch by a semitone (Shift: 0.1)",

@@ -60,6 +60,8 @@ export interface Settings {
   vocalGpu: boolean
   /** ボーカル抽出で約 11kHz より上を残す（既定は消す。残すと声は明るいが、シンバルなどが混ざりやすい） */
   vocalKeepHighBand: boolean
+  /** 再生中、再生位置が画面の外に出たら表示範囲を追従させる（ツールバーのボタンで切り替える） */
+  followPlayhead: boolean
   /** 範囲をドラッグしている途中も、選択範囲の数値などを更新する（切ると離したときに更新。軽い） */
   liveSelection: boolean
   /** レベルメーター（全体とトラックごと）を表示する */
@@ -92,6 +94,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showDebug: false,
   showMeters: true,
   liveSelection: false,
+  followPlayhead: true,
   // int8: CPU でも fp16 より速く、GPU も使える（fp16 は WebGPU で動かない。docs/DECISIONS.md）
   vocalModel: 'int8',
   vocalGpu: true,

@@ -12,7 +12,7 @@ const FOLLOW_CHECK_MS = 50
  * 波形の表示範囲（拡大縮小・スクロール）。クリップの長さ変更への追従と、再生中の自動スクロールを扱う。
  * ツールバーと波形の両方から操作するため、画面側（App）で持つ。
  */
-export function useWaveformView(duration: number, livePosition: () => number, playing: boolean) {
+export function useWaveformView(duration: number, livePosition: () => number, playing: boolean, follow = true) {
   const [view, setView] = useState<View>({ start: 0, dur: duration })
 
   // 表示範囲をクリップ内に収める
@@ -54,16 +54,16 @@ export function useWaveformView(duration: number, livePosition: () => number, pl
     setView((v) => (v.dur > duration || v.dur <= 0 ? { start: 0, dur: duration } : fit(v.start, v.dur)))
   }, [duration, fit])
 
-  // 再生中は再生位置が画面内に収まるようにする
+  // 再生中は再生位置が画面内に収まるようにする（`follow` が偽なら追従しない。再生しながら自由に表示範囲を動かせる）
   // （今の位置を定期的に読み、画面の外に出たときだけ表示範囲を変える。中にいる間は描き直さない）
   useEffect(() => {
-    if (!playing) return
+    if (!playing || !follow) return
     const timer = window.setInterval(() => {
       const position = livePosition()
       setView((v) => (position < v.start || position > v.start + v.dur ? fit(position, v.dur) : v))
     }, FOLLOW_CHECK_MS)
     return () => clearInterval(timer)
-  }, [livePosition, playing, fit])
+  }, [livePosition, playing, fit, follow])
 
   // 表示範囲が変わらない限り同じオブジェクトを返す（受け取る波形を、関係ない操作で描き直さないため）
   return useMemo(

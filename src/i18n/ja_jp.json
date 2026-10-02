@@ -155,6 +155,8 @@
   "wave.grabPitchTooltip": "線を掴んで上下に動かす（選択範囲の中ならその範囲、外なら途切れるまで。Shift: 半音刻み）",
   "wave.discardCurve": "描いたピッチを破棄",
   "wave.showAll": "全体表示",
+  "wave.follow": "再生位置に追従",
+  "wave.followTooltip": "再生位置に追従（切ると再生中も表示を自由に動かせる）",
   "wave.scroll": "表示位置",
 
   "shortcuts.pitchShift": "ピッチ表示中: 選択範囲のピッチを半音（Shift で 0.1 半音）上下",

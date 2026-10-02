@@ -2,6 +2,7 @@ import { Button, Divider, IconButton, Tooltip } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
+  faAnglesRight,
   faArrowDown,
   faArrowPointer,
   faArrowUp,
@@ -59,6 +60,9 @@ interface Props {
   onZoomOut: () => void
   onZoomIn: () => void
   onShowAll: () => void
+  /** 再生中に表示範囲を再生位置に追従させるか */
+  follow: boolean
+  onFollowChange: (v: boolean) => void
   showSpectrogram: boolean
   onShowSpectrogramChange: (show: boolean) => void
   showPitch: boolean
@@ -139,6 +143,14 @@ export default function WaveformToolbar(p: Props) {
       <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomOut') })} label={t('wave.zoomOut')} icon={faMagnifyingGlassMinus} disabled={off || !p.zoomed} onClick={p.onZoomOut} />
       <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomIn') })} label={t('wave.zoomIn')} icon={faMagnifyingGlassPlus} disabled={off || !p.canZoomIn} onClick={p.onZoomIn} />
       <SmallButton title={t('wave.showAll')} label={t('wave.showAll')} icon={faExpand} disabled={off || !p.zoomed} onClick={p.onShowAll} />
+      <SmallButton
+        title={t('wave.followTooltip')}
+        label={t('wave.follow')}
+        icon={faAnglesRight}
+        pressed={p.follow}
+        disabled={off}
+        onClick={() => p.onFollowChange(!p.follow)}
+      />
       <Sep />
       <SmallButton
         title={t('wave.showWave')}
