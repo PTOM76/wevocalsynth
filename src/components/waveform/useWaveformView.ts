@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { View } from './draw'
 
 /** 表示できる最小の時間幅（秒） */
@@ -65,18 +65,22 @@ export function useWaveformView(duration: number, livePosition: () => number, pl
     return () => clearInterval(timer)
   }, [livePosition, playing, fit])
 
-  return {
-    view,
-    zoomAround,
-    wheel,
-    canZoomIn: view.dur > MIN_VIEW_SEC,
-    /** 表示範囲を直接決める（ピンチ操作用。クリップ内に収める） */
-    setRange: (start: number, dur: number) => setView(fit(start, dur)),
-    /** 表示開始位置を変える（スクロールバー用） */
-    scrollTo: (start: number) => setView((v) => fit(start, v.dur)),
-    showAll: () => setView({ start: 0, dur: duration }),
-    /** 時刻 `t` が画面の外なら、見える位置まで表示範囲を動かす（矢印キーで再生位置を動かしたときなど） */
-    reveal: (t: number) => setView((v) => (t < v.start || t > v.start + v.dur ? fit(t - v.dur * 0.1, v.dur) : v)),
-    zoomed: view.dur < duration - 1e-9,
-  }
+  // 表示範囲が変わらない限り同じオブジェクトを返す（受け取る波形を、関係ない操作で描き直さないため）
+  return useMemo(
+    () => ({
+      view,
+      zoomAround,
+      wheel,
+      canZoomIn: view.dur > MIN_VIEW_SEC,
+      /** 表示範囲を直接決める（ピンチ操作用。クリップ内に収める） */
+      setRange: (start: number, dur: number) => setView(fit(start, dur)),
+      /** 表示開始位置を変える（スクロールバー用） */
+      scrollTo: (start: number) => setView((v) => fit(start, v.dur)),
+      showAll: () => setView({ start: 0, dur: duration }),
+      /** 時刻 `t` が画面の外なら、見える位置まで表示範囲を動かす（矢印キーで再生位置を動かしたときなど） */
+      reveal: (t: number) => setView((v) => (t < v.start || t > v.start + v.dur ? fit(t - v.dur * 0.1, v.dur) : v)),
+      zoomed: view.dur < duration - 1e-9,
+    }),
+    [view, zoomAround, wheel, fit, duration],
+  )
 }

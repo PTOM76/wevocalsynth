@@ -1,6 +1,6 @@
 import { CURVE_HOP_SEC, type CurvePoint } from '../hooks/useLaneCurve'
 import { FORMANT_SCALE, GAIN_SCALE, curveValueAt, drawCurveLane, type CurveScale } from './waveform/curveLane'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Slider, Stack, Typography } from '@mui/material'
 import { usePalette } from './waveform/usePalette'
 import { useLaneDivider } from './waveform/useLaneDivider'
@@ -119,7 +119,13 @@ const curveLane = (enabled: boolean, top: number, height: number, scale: CurveSc
   draw,
 })
 
-export default function Waveform(props: Props) {
+/**
+ * 波形と帯（スペクトログラム・ピッチ・音量・フォルマント）の Canvas。渡すものが変わったときだけ描き直す（memo）。
+ * 関数は作り直さずに渡すこと（App は useStableFn で包んでいる）
+ */
+export default memo(Waveform)
+
+function Waveform(props: Props) {
   countRender('Waveform')
   const { clip, position, playing, livePosition, selections, pitch, showPitch, target, penMode, spectrogram, showSpectrogram, beatGrid } = props
   const { pal, dark, font } = usePalette()

@@ -7,7 +7,9 @@ import { useAppMenus } from './hooks/useAppMenus'
 import { useWaveformView, ZOOM_STEP } from './components/waveform/useWaveformView'
 import AppHeader from './components/AppHeader'
 import { EmptyState } from './components/EmptyState'
-import Waveform from './components/Waveform'
+import Waveform, { type DrawPoint } from './components/Waveform'
+import type { CurvePoint } from './hooks/useLaneCurve'
+import { useStableFn } from './hooks/useStableFn'
 import LevelMeter from './components/LevelMeter'
 import { useTrackArea } from './components/tracks/useTrackArea'
 import RenameDialog from './components/tracks/RenameDialog'
@@ -37,7 +39,9 @@ import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
-const disabledSx = (disabled: boolean) => (disabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {})
+/** 選択範囲なし（描画のたびに新しい空配列を作らない） */
+const NO_SELECTIONS: Range[] = []
+const disabledSx =(disabled: boolean) => (disabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {})
 
 export default function App() {
   countRender('App')
@@ -169,6 +173,16 @@ export default function App() {
     />
   )
 
+  // 波形に渡す関数は作り直さない（波形は memo してあり、スライダーの操作など関係ない変化では描き直さない）
+  const onWaveSeek = useStableFn((t: number) => (loop.playing && loop.seek(t)) || player.seek(t))
+  const onWaveSelections = useStableFn((rs: Range[]) => editing && ed.setSelections(rs))
+  const onWaveStretch = useStableFn(ed.stretchRange)
+  const onWaveContext = useStableFn((x: number, y: number) => setContextPos({ x, y }))
+  const onWaveDraw = useStableFn((from: DrawPoint, to: DrawPoint) => shown && ed.pitch && ed.pitchTarget.draw(shown, ed.pitch, from, to))
+  const onWaveGrab = useStableFn((hz: Float32Array) => shown && ed.pitchTarget.replace(shown, hz))
+  const onWaveDrawGain = useStableFn((from: CurvePoint, to: CurvePoint) => edited && shown === edited && ed.gainCurve.draw(edited, from, to))
+  const onWaveDrawFormant = useStableFn((from: CurvePoint, to: CurvePoint) => edited && shown === edited && ed.formantCurve.draw(edited, from, to))
+  const onWaveFocus = useStableFn(ed.setFocusLane)
   const waveform = shown ? (
     <Waveform
       clip={shown}
@@ -176,20 +190,20 @@ export default function App() {
       // ループ再生中は、ループの読み位置に線を出す
       playing={player.playing || loop.playing}
       livePosition={loop.playing ? loop.livePosition : player.livePosition}
-      selections={editing ? ed.selections : []}
+      selections={editing ? ed.selections : NO_SELECTIONS}
       // ループ再生中は範囲内ならループの中で移る（範囲外は通常の移動）
-      onSeek={(t) => (loop.playing && loop.seek(t)) || player.seek(t)}
-      onSelectionsChange={editing ? ed.setSelections : () => {}}
-      onStretchRange={ed.stretchRange}
-      onContextMenu={(x, y) => setContextPos({ x, y })}
+      onSeek={onWaveSeek}
+      onSelectionsChange={onWaveSelections}
+      onStretchRange={onWaveStretch}
+      onContextMenu={onWaveContext}
       viewCtl={viewCtl}
       pitch={ed.pitch}
       showPitch={ed.showPitch}
       target={ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null}
       penMode={ed.penMode && editing}
-      onDraw={(from, to) => ed.pitch && ed.pitchTarget.draw(shown, ed.pitch, from, to)}
+      onDraw={onWaveDraw}
       grabMode={ed.grabMode && editing}
-      onGrabPitch={(hz) => ed.pitchTarget.replace(shown, hz)}
+      onGrabPitch={onWaveGrab}
       spectrogram={ed.spec}
       showSpectrogram={ed.showSpec}
       pitchPercent={pitchPercent}
@@ -199,12 +213,12 @@ export default function App() {
       showWave={ed.showWave}
       showGain={ed.showGain}
       gainCurve={ed.gainCurve.curve?.clip === shown ? ed.gainCurve.curve.values : null}
-      onDrawGain={(from, to) => edited && shown === edited && ed.gainCurve.draw(edited, from, to)}
+      onDrawGain={onWaveDrawGain}
       showFormant={ed.showFormant}
       formantCurve={ed.formantCurve.curve?.clip === shown ? ed.formantCurve.curve.values : null}
-      onDrawFormant={(from, to) => edited && shown === edited && ed.formantCurve.draw(edited, from, to)}
+      onDrawFormant={onWaveDrawFormant}
       focusLane={ed.focusLane}
-      onFocusLane={ed.setFocusLane}
+      onFocusLane={onWaveFocus}
     />
   ) : (
     <EmptyState onOpen={ed.picker.open} onSynth={() => setSynthOpen(true)} />
