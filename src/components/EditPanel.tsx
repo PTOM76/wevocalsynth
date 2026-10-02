@@ -15,7 +15,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRotateLeft, faHeadphones, faRepeat, faStop } from '@fortawesome/free-solid-svg-icons'
 import type { Algorithm } from '../dsp/engine'
-import { modeOf, type Mode, type ModeSettings } from '../audio/detectMode'
+import { isInstrumentAlgorithm, modeOf, type Mode, type ModeSettings } from '../audio/detectMode'
 import type { PreviewState } from '../hooks/usePreview'
 import { formatTime } from '../audio/types'
 import PitchControl from './PitchControl'
@@ -96,7 +96,7 @@ export default function EditPanel(p: Props) {
             </Tooltip>
           ))}
         </ToggleButtonGroup>
-        <AlgorithmMenu value={params.algorithm} defaults={[p.modes.vocal.algorithm, p.modes.instrument.algorithm]} onChange={(algorithm) => set({ algorithm, preserveFormant: algorithm !== 'pv' })} />
+        <AlgorithmMenu value={params.algorithm} defaults={[p.modes.vocal.algorithm, p.modes.instrument.algorithm]} onChange={(algorithm) => set({ algorithm, preserveFormant: !isInstrumentAlgorithm(algorithm) })} />
       </PropRow>
 
       <PitchControl semitones={semitones} onChange={(v) => set({ semitones: v })} currentMidi={p.currentMidi} />

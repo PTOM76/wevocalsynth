@@ -56,9 +56,14 @@ export function modeSettings(s: { vocalAlgorithm: Algorithm; instrumentAlgorithm
   }
 }
 
-/** 処理方式から、どちらのモードのボタンを押した状態にするか（どちらの既定でもなければ、Phase Vocoder だけ楽器） */
+/** 処理方式から、どちらのモードのボタンを押した状態にするか（どちらの既定でもなければ、Phase Vocoder 系だけ楽器） */
 export function modeOf(algorithm: Algorithm, modes: ModeSettings): Mode {
   if (algorithm === modes.vocal.algorithm) return 'vocal'
   if (algorithm === modes.instrument.algorithm) return 'instrument'
-  return algorithm === 'pv' ? 'instrument' : 'vocal'
+  return isInstrumentAlgorithm(algorithm) ? 'instrument' : 'vocal'
+}
+
+/** 和音・楽器向けの方式か（Phase Vocoder 系。フォルマント保持を既定で切る） */
+export function isInstrumentAlgorithm(a: Algorithm) {
+  return a === 'pv' || a === 'pv2'
 }

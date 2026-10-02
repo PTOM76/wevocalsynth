@@ -12,6 +12,7 @@ export const ALGORITHMS: { value: Algorithm; label: MessageKey; hint: MessageKey
   { value: 'psola', label: 'algorithm.psola', hint: 'algorithm.psolaHint' },
   { value: 'wsola2', label: 'algorithm.wsola2', hint: 'algorithm.wsola2Hint' },
   { value: 'wsola', label: 'algorithm.wsola', hint: 'algorithm.wsolaHint' },
+  { value: 'pv2', label: 'algorithm.pv2', hint: 'algorithm.pv2Hint' },
   { value: 'pv', label: 'algorithm.pv', hint: 'algorithm.pvHint' },
 ]
 

@@ -88,7 +88,7 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 
 | ファイル | 担当 |
 | --- | --- |
-| `pipeline.rs` | 上の流れ。`Algorithm`（WSOLA=0 / Phase Vocoder=1 / PSOLA=2 / SOLA=3 / PSOLAv2=4 / WSOLAv2=5）と `Formant`（追従 / 保持＋移動） |
+| `pipeline.rs` | 上の流れ。`Algorithm`（WSOLA=0 / Phase Vocoder=1 / PSOLA=2 / SOLA=3 / PSOLAv2=4 / WSOLAv2=5 / Phase Vocoder v2=6）と `Formant`（追従 / 保持＋移動） |
 | `psola.rs` | PSOLA。声の周期（ピッチマーク）に合わせて切り貼りする。目印の置き方（`Marking`）で PSOLAv2 にもなる |
 | `sola.rs` | SOLA。50ms のブロックを 10ms の sin クロスフェードでつなぎ、区切り位置を2乗誤差で探す。ボーカルの既定 |
 | `wsola.rs` | WSOLA。フレーム 46ms・50% オーバーラップ・探索幅 ±12ms。類似度を正規化した WSOLAv2（`wsola2_map`）も |
