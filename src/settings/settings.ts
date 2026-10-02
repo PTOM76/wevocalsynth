@@ -68,6 +68,8 @@ export interface Settings {
   liveSelection: boolean
   /** レベルメーター（全体とトラックごと）を表示する */
   showMeters: boolean
+  /** ピッチ帯に音符ブロック（音ごとの半音の高さ）を出す */
+  showNotes: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
   showDebug: boolean
   /** ボーカル・楽器のモードで使う処理方式 */
@@ -97,6 +99,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showBeatGrid: true,
   showDebug: false,
   showMeters: true,
+  showNotes: true,
   liveSelection: false,
   followPlayhead: true,
   sliderDoubleClickReset: true,

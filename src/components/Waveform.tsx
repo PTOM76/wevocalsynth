@@ -75,6 +75,8 @@ interface Props {
   /** F0（Hz、`F0_HOP_SEC` 間隔、無声は 0）。解析中は null */
   pitch: Float32Array | null
   showPitch: boolean
+  /** ピッチ帯に音符ブロックを出す */
+  showNotes?: boolean
   /** 描いた目標ピッチ（`pitch` と同じ長さ、0 は未編集） */
   target: Float32Array | null
   penMode: boolean
@@ -242,14 +244,14 @@ function Waveform(props: Props) {
     }
     // スペクトログラムは波形を置き換えず、自分の帯に描く
     if (showSpectrogram) drawSpectrogram(c, spectrogram, specLayer)
-    if (showPitch) drawPitchLane(c, pitch, range, target)
+    if (showPitch) drawPitchLane(c, pitch, range, target, props.showNotes)
     if (showGain) drawCurveLane(c, gainTop(c), gainH, GAIN_SCALE, props.gainCurve, CURVE_HOP_SEC)
     if (showFormant) drawCurveLane(c, formantTop(c), formantH, FORMANT_SCALE, props.formantCurve, CURVE_HOP_SEC)
     if (beatGrid) drawBeatGrid(c, beatGrid, height)
     // 帯が2本以上あるときだけ、どれにフォーカスしているかを示す
     if ([showWave, showSpectrogram, showPitch, showGain, showFormant].filter(Boolean).length > 1) drawLaneFocus(c, props.focusLane)
     // 選択範囲は上に重ねた Canvas に描く（範囲をドラッグしている間、波形などを描き直さないため）
-  }, [showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, pitch, range, target, drawVersion])
+  }, [showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, props.showNotes, pitch, range, target, drawVersion])
 
   // 選択範囲と再生位置の線（上に重ねた Canvas。再生中は毎フレーム、範囲のドラッグ中は動かすたびに、こちらだけを描き直す）
   useEffect(() => {

@@ -271,7 +271,7 @@ export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float3
 }
 
 /** ピッチ帯: 音名のグリッドと F0 曲線。描いた目標ピッチがあれば元の曲線を薄くして重ねる */
-export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range: PitchRange | null, target: Float32Array | null) {
+export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range: PitchRange | null, target: Float32Array | null, showNotes = false) {
   const { g, width, view, pal, pitchH } = c
   const top = pitchTop(c)
   g.fillStyle = pal.divider
@@ -314,9 +314,40 @@ export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range:
     }
     g.stroke()
   }
+  const edited = !!target && target.some((v) => v > 0)
+  if (showNotes) {
+    // 音符ブロック: 途切れない有声の区間ごとに、平均に一番近い半音の高さへ横棒を出す
+    const at = (k: number) => (edited && target[k] > 0 ? target[k] : pitch[k])
+    const fill = alpha(pal.primary.main, 0.45)
+    g.strokeStyle = pal.primary.main
+    g.lineWidth = 1
+    g.fillStyle = fill
+    for (let k = k0; k <= k1; ) {
+      if (!(at(k) > 0)) {
+        k++
+        continue
+      }
+      let e = k
+      let sum = 0
+      // 1 半音以上跳んだら別の音にする
+      while (e <= k1 && at(e) > 0 && (e === k || Math.abs(hzToMidi(at(e)) - hzToMidi(at(e - 1))) < 1)) sum += hzToMidi(at(e++))
+      const m = Math.round(sum / (e - k))
+      const x0 = toX(c, k * F0_HOP_SEC)
+      const x1 = toX(c, e * F0_HOP_SEC)
+      const y = toY(m + 0.5)
+      const h = Math.max(4, perSemitone)
+      g.fillRect(x0, y, Math.max(1, x1 - x0), h)
+      g.strokeRect(x0 + 0.5, y + 0.5, Math.max(1, x1 - x0 - 1), h - 1)
+      if (x1 - x0 > 28) {
+        g.fillStyle = pal.text.primary
+        g.fillText(noteName(m), x0 + 2, y - 7)
+        g.fillStyle = fill
+      }
+      k = e
+    }
+  }
   g.lineWidth = 2
   g.lineJoin = 'round'
-  const edited = !!target && target.some((v) => v > 0)
   curve(pitch, edited ? alpha(pal.secondary.main, 0.4) : pal.secondary.main)
   if (edited) curve(target, pal.primary.main)
   g.lineWidth = 1
