@@ -382,7 +382,7 @@
   "track.collapse": "トラックをタブに折りたたむ",
   "meter.master": "全体の音量",
   "meter.track": "{name} の音量",
-  "settings.showMeters": "レベルメーターを表示する",
+  "settings.showMeters": "音量メーターを表示する",
   "settings.showMetersHelp": "再生中の音量を、全体（PC はツールバー、スマホは画面下の再生バー）とトラックごと（トラックの欄）に出します",
   "volume.pan": "パン",
   "volume.panAria": "パン（左 -100 〜 右 100）",
