@@ -8,8 +8,8 @@ import { t } from '../i18n/i18n'
 import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from '../audio/usePlayer'
 
-/** メモリを手放してから抽出を始めるまでの待ち時間（ミリ秒）。止めた Worker のメモリが返るのを待つ */
-const RELEASE_WAIT_MS = 300
+/** メモリを手放してから抽出を始めるまでの待ち時間（ミリ秒）。止めた Worker のメモリは、iOS ではすぐには返らない */
+const RELEASE_WAIT_MS = 1000
 // 型だけ使う（中身は追加機能として後から読み込む）
 import type * as ExtractorModule from '../../extractor/src/index'
 

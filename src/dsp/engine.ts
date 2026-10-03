@@ -73,7 +73,10 @@ import.meta.hot?.dispose(() => {
  */
 export function releaseIdleDsp() {
   for (const [lane, worker] of workers) {
-    if ([...pending.values()].some((p) => p.lane === lane)) continue
+    // 解析中でも止める（解析は中断として扱い、通知しない。iOS は wasm のメモリの数にも上限があり、
+    // 解析中の Worker が残ると抽出の実行環境を作れなかった）。加工は抽出と重ならないので、処理中なら止めない
+    if (lane === 'edit' && [...pending.values()].some((p) => p.lane === lane)) continue
+    failLane(lane, new DOMException('cancelled', 'AbortError'))
     worker.terminate()
     workers.delete(lane)
     reportMemory(`wasm ${lane}`, 0)
