@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Box, Button, Typography } from '@mui/material'
 import { useT } from '../i18n/i18n'
 import type { ExtractOptions } from '../audio/vocalExtract'
-import { diagnoseExtract } from './extractDiagnose'
+import { diagnoseExtract } from './diagnoseExtract'
 
 /** 設定の開発者向け「ボーカル抽出の診断」。結果は選んでコピーできる（不具合の報告に貼る） */
 export default function ExtractDiagnose({ options }: { options: ExtractOptions }) {

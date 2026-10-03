@@ -85,7 +85,7 @@ async function createExtractor(o: ExtractOptions, retry = true) {
   }
 }
 
-/** 診断用（debug/extractDiagnose.ts）: 実行環境を作って手放すだけ。残しておいたものは先に手放す。失敗を隠さないよう、作り直しはしない */
+/** 診断用（debug/diagnoseExtract.ts）: 実行環境を作って手放すだけ。残しておいたものは先に手放す。失敗を隠さないよう、作り直しはしない */
 export async function tryCreateExtractor(o: ExtractOptions) {
   dropKept()
   const extractor = await createExtractor(o, false)
