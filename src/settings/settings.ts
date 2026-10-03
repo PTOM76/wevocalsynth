@@ -148,7 +148,7 @@ export const DEFAULT_SETTINGS: Settings = {
   rememberFolder: true,
   startFolder: 'downloads',
   recentFiles: true,
-  vocalAlgorithm: 'sola2',
+  vocalAlgorithm: 'sola3',
   instrumentAlgorithm: 'pv',
   defaultBpm: 120,
   tempoStretch: false,

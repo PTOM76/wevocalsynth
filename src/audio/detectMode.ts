@@ -44,7 +44,7 @@ export type ModeSettings = Record<Mode, { algorithm: Algorithm; preserveFormant:
 /** モードに対応する処理方式とフォルマント保持の既定値（設定の「既定値」で処理方式を変えられる。`modeSettings`） */
 export const MODE_SETTINGS: ModeSettings = {
   // ボーカルは SOLA が既定（にじみが少なく、聞き比べて一番自然だった）。PSOLA・WSOLA も処理モードの「…」から選べる
-  vocal: { algorithm: 'sola2', preserveFormant: true },
+  vocal: { algorithm: 'sola3', preserveFormant: true },
   instrument: { algorithm: 'pv', preserveFormant: false },
 }
 
