@@ -66,7 +66,7 @@ const KEEP_MS = 20_000
  * 再生用の音声の複製を手放し、少し待ってから始める（iOS はタブのメモリの上限が低い）。
  * メモリ不足で作れなければ、少し待ってから新しい Worker でもう一度作る
  */
-async function createExtractor(o: ExtractOptions) {
+async function createExtractor(o: ExtractOptions, retry = true) {
   releaseIdleDsp()
   releasePlayers()
   await new Promise((r) => setTimeout(r, RELEASE_WAIT_MS))
@@ -79,10 +79,17 @@ async function createExtractor(o: ExtractOptions) {
   try {
     return await attempt()
   } catch (e) {
-    if (!isOutOfMemory(e)) throw e
+    if (!retry || !isOutOfMemory(e)) throw e
     await new Promise((r) => setTimeout(r, RETRY_WAIT_MS))
     return attempt()
   }
+}
+
+/** 診断用（debug/extractDiagnose.ts）: 実行環境を作って手放すだけ。残しておいたものは先に手放す。失敗を隠さないよう、作り直しはしない */
+export async function tryCreateExtractor(o: ExtractOptions) {
+  dropKept()
+  const extractor = await createExtractor(o, false)
+  extractor.dispose()
 }
 
 /** 残しておいた実行環境（設定が同じなら使い回す） */

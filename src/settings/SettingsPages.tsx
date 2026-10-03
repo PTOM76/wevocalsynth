@@ -7,6 +7,7 @@ import AddonSection from './AddonSection'
 import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
 import { visibleAlgorithms } from '../components/AlgorithmMenu'
+import ExtractDiagnose from '../debug/ExtractDiagnose'
 import type { Algorithm } from '../dsp/engine'
 import type { LangSetting, MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
@@ -220,6 +221,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             options={['5', '10', '20'].map((ms): [string, string] => [ms, `${ms} ms`])}
           />
         </Row>
+        <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand }} />
         <Row label={t('settings.dialogWindow')}>
           <Choice<WindowMode | 'auto'>
             value={draft.dialogWindow}
