@@ -423,6 +423,7 @@
   "extract.crashedOk": "Turn on",
   "settings.vocalModelReplaced": "{from} is not compatible with the GPU, so {name} is used for extraction",
   "settings.vocalGpu": "Use GPU",
+  "settings.vocalGpuUnsupported": "This model does not support the GPU, so it is processed on the CPU. For faster processing, choose another model",
   "settings.vocalGpuHelp": "Faster. Falls back to CPU when unavailable or with the light model. Turn this off if the result looks wrong",
   "task.processing": "Processing audio…",
   "task.stretching": "Stretching…",

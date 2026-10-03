@@ -7,6 +7,7 @@ import AddonSection from './AddonSection'
 import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
 import { resolveModel } from '../audio/vocalExtract'
+import { backendAllowed } from '../../extractor/src/compat'
 import { visibleAlgorithms } from '../components/AlgorithmMenu'
 import ExtractDiagnose from '../debug/ExtractDiagnose'
 import type { Algorithm } from '../dsp/engine'
@@ -182,7 +183,14 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             />
           </Row>
           <Check checked={draft.vocalFreshExtract} onChange={(v) => set({ vocalFreshExtract: v })} label={t('settings.vocalFresh')} help={t('settings.vocalFreshHelp')} />
-          <Check checked={draft.vocalGpu} onChange={(v) => set({ vocalGpu: v })} label={t('settings.vocalGpu')} help={t('settings.vocalGpuHelp')} />
+          {/* GPU を使えないモデルでは押せなくし、理由を出す */}
+          <Check
+            checked={draft.vocalGpu && backendAllowed(draft.vocalModel, 'webgpu')}
+            disabled={!backendAllowed(draft.vocalModel, 'webgpu')}
+            onChange={(v) => set({ vocalGpu: v })}
+            label={t('settings.vocalGpu')}
+            help={backendAllowed(draft.vocalModel, 'webgpu') ? t('settings.vocalGpuHelp') : t('settings.vocalGpuUnsupported')}
+          />
           <Check
             checked={draft.vocalKeepHighBand}
             onChange={(v) => set({ vocalKeepHighBand: v })}

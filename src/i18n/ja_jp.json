@@ -423,6 +423,7 @@
   "extract.crashedOk": "有効にする",
   "settings.vocalModelReplaced": "「{from}」は GPU と非互換のため、「{name}」で抽出します",
   "settings.vocalGpu": "GPU処理を利用する",
+  "settings.vocalGpuUnsupported": "このモデルは GPU に対応していないため、CPU で処理します。処理速度を重視する場合は、ほかのモデルを選択してください",
   "settings.vocalGpuHelp": "処理が速くなります。利用できない環境や軽量モデルでは CPU で処理します。結果が不正確な場合は OFF にしてください",
   "task.processing": "音声加工中…",
   "task.stretching": "伸縮中…",

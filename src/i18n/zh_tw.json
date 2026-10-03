@@ -423,6 +423,7 @@
   "extract.crashedOk": "開啟",
   "settings.vocalModelReplaced": "「{from}」與 GPU 不相容，將使用「{name}」擷取",
   "settings.vocalGpu": "使用 GPU 處理",
+  "settings.vocalGpuUnsupported": "此模型不支援 GPU，將使用 CPU 處理。如需更快的處理速度，請選擇其他模型",
   "settings.vocalGpuHelp": "速度更快。不支援的環境或輕量模型會以 CPU 處理。結果異常時請關閉",
   "task.processing": "處理音訊中…",
   "task.stretching": "拉伸中…",
