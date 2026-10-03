@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { ortMemory } from './extractor/ortMemory'
 
 // 追加機能「ボーカル抽出の実行環境」（extractor/）を dist/addons/vocal-extractor/ にビルドする。
 // アプリ本体とは別のファイル一式にし、導入した人だけが取得する（scripts/build-addons.mjs から呼ぶ）。
@@ -20,5 +21,6 @@ export default defineConfig({
       output: { entryFileNames: 'index.js' },
     },
   },
-  worker: { format: 'es' },
+  // ONNX Runtime のメモリの上限を下げる（推論は Worker の中なので Worker のビルドに入れる）
+  worker: { format: 'es', plugins: () => [ortMemory()] },
 })
