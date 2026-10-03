@@ -25,7 +25,7 @@ async function plan(ids: string[], force: boolean): Promise<{ manifests: AddonMa
   const id = ids[0]
   const manifests: AddonManifest[] = []
   let updating = false
-  for (const a of [...new Set(ids.flatMap(withRequires))]) {
+  for (const a of new Set(ids.flatMap(withRequires))) {
     const [installed, latest] = await Promise.all([installedManifest(a), fetchManifest(a)])
     if (a === id) updating = !!installed
     if (!installed || installed.version !== latest.version || (force && a === id)) manifests.push(latest)
