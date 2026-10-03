@@ -3,7 +3,8 @@ import { applyFader } from '../audio/edit'
 import { sliceRanges } from '../audio/multiRange'
 import { mixClips } from '../audio/mix'
 import { isAudible, toStoredSettings } from '../audio/tracks'
-import { EXPORT_EXT, downloadBlob, exportAudio } from 'wevocal-lib'
+import { EXPORT_EXT, exportAudio, type ExportFormat } from 'wevocal-lib'
+import { pickSaveTarget } from '../project/fileAccess'
 import { PROJECT_EXT, saveProject } from '../project/projectFile'
 import type { ExportSettings } from '../components/ExportDialog'
 import type { EditParams } from '../components/EditPanel'
@@ -29,6 +30,9 @@ interface Deps {
   closeExport: () => void
 }
 
+/** 書き出す形式ごとの MIME（保存先を選ぶ画面の、ファイルの種類） */
+const EXPORT_MIME: Record<ExportFormat, string> = { wav: 'audio/wav', mp3: 'audio/mpeg', opus: 'audio/ogg' }
+
 /** プロジェクトの保存（.wvsp）と、音声ファイルの書き出し */
 export function useOutput(d: Deps) {
   const { history, tracks } = d
@@ -36,10 +40,12 @@ export function useOutput(d: Deps) {
   // 書き出しの名前の初期値: ファイル名のままなら、元のファイルと区別できるよう _wevocal を付ける
   const exportName = d.named ? baseName : `${baseName}_wevocal`
 
-  /** 全トラック（音声・フェーダー・鳴らし方・重ねる表示）と、選んでいるトラックを .wvsp にしてダウンロードする */
-  const saveProjectFile = () =>
-    d.task.run(t('task.saving'), async () => {
-      if (!history.present) return
+  /** 全トラック（音声・フェーダー・鳴らし方・重ねる表示）と、選んでいるトラックを .wvsp にして保存する（保存先を先に選ぶ） */
+  const saveProjectFile = async () => {
+    if (!history.present) return
+    const target = await pickSaveTarget(`${baseName}${PROJECT_EXT}`, 'project', { description: t('file.projectType'), mime: 'application/octet-stream', ext: PROJECT_EXT })
+    if (!target) return
+    await d.task.run(t('task.saving'), async () => {
       const list = history.tracks.map((tr) => ({
         name: tr.name,
         original: tr.original,
@@ -47,18 +53,23 @@ export function useOutput(d: Deps) {
         ...toStoredSettings(tracks.settingsOf(tr.id)),
       }))
       const active = Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId))
-      downloadBlob(saveProject({ fileName: d.fileName, named: d.named, params: d.params, tempo: d.tempo, markers: d.markers, tracks: list, active }), `${baseName}${PROJECT_EXT}`)
+      await target.write(saveProject({ fileName: d.fileName, named: d.named, params: d.params, tempo: d.tempo, markers: d.markers, tracks: list, active }))
       d.notify(t('toast.saved'))
     })
+  }
 
   /**
    * 書き出しダイアログの設定で音声ファイルを作る。選んでいるトラックか、全トラックのミックス。
    * 選択範囲のみなら、どのトラックも同じ時間を切り出す（複数の範囲はつなげる）
    */
-  const exportFile = (s: ExportSettings) =>
-    d.task.run(t('task.exporting'), async (signal) => {
-      const edited = history.present
-      if (!edited) return
+  const exportFile = async (s: ExportSettings) => {
+    const edited = history.present
+    if (!edited) return
+    // 保存先は書き出しの前に選ぶ（エンコードに時間がかかると、選ぶ画面を出せなくなる）
+    const ext = EXPORT_EXT[s.format]
+    const target = await pickSaveTarget(`${s.fileName.trim()}${ext}`, 'audio', { description: t('file.audioType'), mime: EXPORT_MIME[s.format], ext })
+    if (!target) return
+    await d.task.run(t('task.exporting'), async (signal) => {
       // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
       const render = (c: Clip, id: string) => {
         const part = s.selectionOnly && d.selections.length ? sliceRanges(c, d.selections) : c
@@ -75,10 +86,11 @@ export function useOutput(d: Deps) {
       const blob = await exportAudio(clip, { ...s, range: null, sampleRate: s.sampleRate || clip.sampleRate }, d.task.setProgress)
       // MP3 などの Worker は止められないので、中断されていたら結果を捨てる
       if (signal.aborted) return
-      downloadBlob(blob, `${s.fileName.trim()}${EXPORT_EXT[s.format]}`)
+      await target.write(blob)
       d.closeExport()
       d.notify(t('toast.exported'))
     })
+  }
 
   return { baseName, exportName, saveProjectFile, exportFile }
 }

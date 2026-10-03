@@ -27,6 +27,8 @@ import { useShortcuts } from './useShortcuts'
 import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
 import { useFilePicker } from './useFilePicker'
+import { useRecentFiles } from './useRecentFiles'
+import { configureFileAccess } from '../project/fileAccess'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
@@ -435,7 +437,14 @@ export function useEditor(settings: Settings) {
   const playback = usePlayback(player, preview.player, loop, curvePreviews, duration, selection)
   playbackRef.current = playback
 
-  const picker = useFilePicker(`${AUDIO_ACCEPT},${PROJECT_EXT}`, (f) => void loadFile(f))
+  const picker = useFilePicker(`${AUDIO_ACCEPT},${PROJECT_EXT}`, (f) => void loadFile(f), t('file.openType'))
+  const recent = useRecentFiles(
+    (f) => void loadFile(f),
+    (name) => setToast({ severity: 'error', message: t('toast.recentMissing', { file: name }) }),
+  )
+  // 保存・開く場所の選択と最近使用したファイルの設定（設定の「全般」→「ファイル」）を反映する
+  const { rememberFolder, startFolder, recentFiles } = settings
+  useEffect(() => configureFileAccess({ rememberFolder, startFolder, recentFiles }), [rememberFolder, startFolder, recentFiles])
   // 開いている作業に、別のファイルを新しいトラックとして足す
   /** 作った音（音を0から作る）を、新しいトラックとして足す。何も開いていなければ、最初のトラックとして開く */
   const addSynth = (clip: Clip, name: string) => {
@@ -452,7 +461,7 @@ export function useEditor(settings: Settings) {
         if (!signal.aborted) setToast({ severity: 'error', message: t('toast.loadFailed', { file: f.name, error: String(e) }) })
       }
     })
-  const addPicker = useFilePicker(AUDIO_ACCEPT, addTrackFile)
+  const addPicker = useFilePicker(AUDIO_ACCEPT, addTrackFile, t('file.audioType'))
   // ドロップした音声は、もう開いているならトラックとして足す（プロジェクトファイルは開き直す）
   useFileDrop((f) => (history.tracks.length && !isProjectFile(f) ? addTrackFile(f) : void loadFile(f)))
 
@@ -543,6 +552,6 @@ export function useEditor(settings: Settings) {
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker,
+    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker, recent,
   }
 }

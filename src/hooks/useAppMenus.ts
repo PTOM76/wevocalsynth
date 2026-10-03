@@ -15,6 +15,8 @@ interface Actions {
   showSpectrogram: boolean
   showPitch: boolean
   open: () => void
+  /** 最近使用したファイル（名前の一覧・開く・一覧を消す） */
+  recent: { names: string[]; open: (i: number) => void; clear: () => void }
   save: () => void
   openExport: () => void
   undo: () => void
@@ -163,6 +165,18 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('sampler.menu'), disabled: noClip, onClick: a.sampler },
     { label: t('synth.menu'), disabled: a.busy, onClick: a.synth },
   ]
+  // 最近使用したファイル（File System Access API が使えるブラウザでだけ記録される）
+  const recentMenu: MenuEntry = {
+    label: t('menu.recent'),
+    disabled: a.busy,
+    submenu: a.recent.names.length
+      ? [
+          ...a.recent.names.map((name, i): MenuEntry => ({ label: name, onClick: () => a.recent.open(i) })),
+          { divider: true },
+          { label: t('menu.recentClear'), onClick: a.recent.clear },
+        ]
+      : [{ label: t('menu.recentEmpty'), disabled: true, onClick: () => {} }],
+  }
 
   const menus: MenuGroup[] = [
     {
@@ -170,6 +184,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       accessKey: 'F',
       entries: [
         { label: t('menu.open'), shortcut: 'Ctrl+O', disabled: a.busy, onClick: a.open },
+        recentMenu,
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
         { label: t('menu.saveProject'), shortcut: a.ctrlS === 'project' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.save },
         { divider: true },
@@ -318,6 +333,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       label: t('menu.file'),
       entries: [
         { label: t('menu.open'), disabled: a.busy, onClick: a.open },
+        recentMenu,
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
         { label: t('menu.saveProject'), disabled: noClip, onClick: a.save },
         { label: t('menu.export'), disabled: noClip, onClick: a.openExport },

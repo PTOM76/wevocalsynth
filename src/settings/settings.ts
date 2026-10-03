@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import type { LangSetting } from '../i18n/i18n'
 import type { Algorithm, F0Params } from '../dsp/engine'
 import type { WindowMode } from 'pevenmui'
+import type { StartFolder } from '../project/fileAccess'
 
 /** ファイルを開いたときの処理モード。auto は素材から自動判定する */
 export type InitialMode = 'auto' | 'vocal' | 'instrument'
@@ -102,6 +103,12 @@ export interface Settings {
   showLegacyAlgorithms: boolean
   /** ホイールでの拡大縮小の割り当て */
   wheelZoom: WheelZoom
+  /** 開く・保存するフォルダを用途ごとに覚える（Chrome・Edge。project/fileAccess.ts） */
+  rememberFolder: boolean
+  /** 保存先の画面で最初に開くフォルダ */
+  startFolder: StartFolder
+  /** 最近使用したファイルを記録する */
+  recentFiles: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -135,6 +142,9 @@ export const DEFAULT_SETTINGS: Settings = {
   playbackSession: true,
   showLegacyAlgorithms: false,
   wheelZoom: 'ctrl',
+  rememberFolder: true,
+  startFolder: 'downloads',
+  recentFiles: true,
   vocalAlgorithm: 'sola2',
   instrumentAlgorithm: 'pv',
   defaultBpm: 120,

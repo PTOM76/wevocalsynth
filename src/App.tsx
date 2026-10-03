@@ -128,6 +128,7 @@ export default function App() {
     showSpectrogram: ed.showSpec,
     showPitch: ed.showPitch,
     open: ed.picker.open,
+    recent: ed.recent,
     save: ed.saveProjectFile,
     openExport: () => ed.setExportOpen(true),
     undo: ed.history.undo,
