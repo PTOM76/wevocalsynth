@@ -57,7 +57,6 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             checked={draft.sliderDoubleClickReset}
             onChange={(v) => set({ sliderDoubleClickReset: v })}
             label={t('settings.sliderReset')}
-            help={t('settings.sliderResetHelp')}
           />
           <Check checked={draft.seekAfterInsert} onChange={(v) => set({ seekAfterInsert: v })} label={t('settings.seekAfterInsert')} />
           <Row label={t('settings.wheelZoom')}>

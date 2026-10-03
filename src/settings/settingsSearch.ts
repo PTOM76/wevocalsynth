@@ -14,7 +14,7 @@ const INDEX: Record<Category, MessageKey[]> = {
   general: [
     'settings.groupStartup', 'settings.autoRestore', 'settings.autoRestoreHelp',
     'settings.groupHistory', 'settings.historyLimit', 'settings.historyMemory',
-    'settings.groupInput', 'settings.sliderReset', 'settings.sliderResetHelp', 'settings.seekAfterInsert', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel', 'settings.groupFile', 'settings.rememberFolder', 'settings.rememberFolderHelp', 'settings.startFolder', 'settings.recentFiles', 'settings.recentFilesHelp',
+    'settings.groupInput', 'settings.sliderReset', 'settings.seekAfterInsert', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel', 'settings.groupFile', 'settings.rememberFolder', 'settings.rememberFolderHelp', 'settings.startFolder', 'settings.recentFiles', 'settings.recentFilesHelp',
     'settings.groupProcess', 'settings.initialMode',
     'settings.groupUpdate', 'update.check',
   ],
