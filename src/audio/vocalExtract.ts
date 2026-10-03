@@ -7,7 +7,7 @@ import type { MessageKey } from '../i18n/i18n'
 import { backendAllowed, effectiveModel } from '../../extractor/src/compat'
 import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from './usePlayer'
-import { isMobile } from '../project/fileAccess'
+import { isMobile } from 'pevenmui/web'
 // 型だけ使う（中身は追加機能として後から読み込む）
 import type * as ExtractorModule from '../../extractor/src/index'
 
