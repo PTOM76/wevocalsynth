@@ -27,6 +27,7 @@ import PitchToolHost, { type PitchDialogKind } from './components/PitchToolHost'
 import SynthDialog from './components/SynthDialog'
 import SamplerDialog from './components/SamplerDialog'
 import SilenceDialog from './components/SilenceDialog'
+import SoundSelectDialog from './components/SoundSelectDialog'
 import { flattenPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
@@ -92,6 +93,7 @@ export default function App() {
   const [samplerOpen, setSamplerOpen] = useState(false)
   const [renamingMarker, setRenamingMarker] = useState<string | null>(null)
   const [silenceOpen, setSilenceOpen] = useState(false)
+  const [soundSelectOpen, setSoundSelectOpen] = useState(false)
   // 再生位置の入力を始める合図（目盛りの右クリックメニューから。増やすたびに始まる）
   const [timeEditRequest, setTimeEditRequest] = useState(0)
   // 波形の縦の拡大率（1〜64 倍、2 倍ずつ）。小さい音を見やすくする
@@ -145,6 +147,7 @@ export default function App() {
     reverse: ed.cmd.reverse,
     clearSelection: ed.clearSelection,
     selectAll: ed.selectAll,
+    selectSounds: () => setSoundSelectOpen(true),
     playSelection: playback.playSelection,
     toggleLoop: toggleRepeat,
     toggleSpectrogram: () => ed.setShowSpec(!ed.showSpec),
@@ -612,6 +615,7 @@ export default function App() {
         // 選択範囲があればその頭に、なければ再生位置に入れる
         onInsert={(sec) => ed.cmd.insertSilence(selection ? selection.start : player.livePosition(), sec)}
       />
+      <SoundSelectDialog open={soundSelectOpen} clip={edited} onClose={() => setSoundSelectOpen(false)} onSelect={(rs) => editing && ed.setSelections(rs)} />
       <SamplerDialog
         open={samplerOpen}
         bpm={bpm}

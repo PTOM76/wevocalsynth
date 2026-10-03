@@ -29,6 +29,8 @@ interface Actions {
   reverse: () => void
   clearSelection: () => void
   selectAll: () => void
+  /** 無音で区切って選択（ダイアログを出す） */
+  selectSounds: () => void
   playSelection: () => void
   toggleLoop: () => void
   toggleSpectrogram: () => void
@@ -153,6 +155,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     },
     { divider: true },
     { label: t('edit.selectAll'), shortcut: 'Ctrl+A', disabled: noClip, onClick: a.selectAll },
+    { label: t('soundSelect.menu'), disabled: noClip, onClick: a.selectSounds },
     { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: noSel, onClick: a.clearSelection },
   ]
   // ボーカル抽出（選択範囲、なければ全体）。メニューバーでは「ツール」、右クリックメニューでは編集の後ろに出す
@@ -351,6 +354,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       label: t('menu.edit'),
       entries: [
         { label: t('edit.selectAll'), disabled: noClip, onClick: a.selectAll },
+        { label: t('soundSelect.menu'), disabled: noClip, onClick: a.selectSounds },
         { label: t('edit.clearSelection'), disabled: noSel, onClick: a.clearSelection },
         { label: t('history.menu'), disabled: noClip, onClick: a.showHistory },
       ],
