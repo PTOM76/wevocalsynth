@@ -46,7 +46,9 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 | 導入 | `install` がファイルを1つずつ取得し、大きさとハッシュを確かめて保存する。マニフェストは最後に保存し、あれば導入済みとみなす。途中で失敗・中断したら、その追加機能をすべて消す |
 | 保存先 | アプリ本体とは別の Cache Storage（`wevocalsynth-addons`）。アプリ本体のキャッシュは更新のたびに入れ替わるため分ける |
 | 読み込み | Service Worker が `addons/` へのリクエストを保存先から返す（なければネットワーク）。`loadAddon` で `import()` し、ファイルは `addonFileUrl` で参照する |
-| 確認ダイアログ | `useAddonInstall`（[AddonInstallDialog.tsx](../src/addons/AddonInstallDialog.tsx)）。機能を使う直前に `ensure(id)` を呼び、未導入ならダイアログを出す。依存するものも一緒に入れる |
+| 確認ダイアログ | `useAddonInstall`（[AddonInstallDialog.tsx](../src/addons/AddonInstallDialog.tsx)）。機能を使う直前に `ensure(id, also)` を呼び、未導入ならダイアログを出す。依存するものと、一緒に要るもの（`also`。抽出なら使う計算の種類の実行環境）もまとめて入れる |
+| 裏でのダウンロード | ダウンロード中にダイアログを閉じても続ける（[downloads.ts](../src/addons/downloads.ts)。同時に 1 つだけ）。進み具合はステータスバー（スマホは再生バー）に出し、× で中止できる。終わったら、待っていた抽出などを続ける。失敗したらダイアログを出し直してエラーを見せる |
+| 一緒に入れるもの | `companion` の追加機能（実行環境の GPU 版・CPU 版）は設定の一覧に出さず、使うもの（モデル）がなくなったら一緒に消す |
 | 更新・削除 | その機能の設定画面に置く（[AddonSection.tsx](../src/settings/AddonSection.tsx)）。配信中のバージョンと違えば「更新」を出す。勝手には取得しない。消すときは、どこからも使われなくなった依存も一緒に消す（`uninstallWithUnused`） |
 | まとめて削除 | 設定の「データ」の「追加機能」と「すべてのデータ」。「オフライン用キャッシュ」の削除では消さない |
 | 容量 | 導入できたら「データを削除されにくくする」を申請する（断られても使える） |
@@ -145,4 +147,8 @@ iPad の PWA で、抽出が `no available backend found. ERR: [wasm] RangeError
 2. 起動時（`main.tsx`）、作業を開く前に進み具合だけの画面（`CleanExtractScreen`）で抽出し、結果を IndexedDB に置いて再読み込みする
 3. 起動時（`useEditor`）、結果を反映した作業を開く。自動保存の復元はしない。元に戻す履歴は、通常の再読み込みと同じく残らない
 
-アプリ側の処理は [useVocalExtract.ts](../src/hooks/useVocalExtract.ts)（導入の確認 → 実行環境とモデルを読み込む → 範囲ごとに抽出して差し戻す）。
+設定「メモリを空けてから抽出する」（`vocalFreshExtract`、既定 OFF）を ON にすると、メモリ不足で失敗するのを待たずに、最初からこの流れで抽出する。
+
+**抽出のあとに落ちたことの検知**（[extractGuard.ts](../src/project/extractGuard.ts)）: iPad で、トラックに分けた直後にタブが落ち（「問題が繰り返し起こりました」）、自動保存から分ける前に戻ることがあった。抽出の前に localStorage に印を付け、結果を反映して 10 秒経ったら外す（失敗・中断ではすぐ外す）。起動時に印が残っていれば、抽出の前後で落ちたとみなし、「メモリを空けてから抽出する」を有効にするかを尋ねる。開き直しての抽出（上の流れ）の前には印を外す (2026-10-03)
+
+アプリ側の処理は [useVocalExtract.ts](../src/hooks/useVocalExtract.ts)（計算の種類を決める → モデルと実行環境の導入を確かめる → 実行環境とモデルを読み込む → 範囲ごとに抽出して差し戻す）。
