@@ -419,6 +419,7 @@
   "settings.vocalFreshHelp": "提取前保存作业并重新打开应用，在释放内存的状态下提取。在 iPad 等设备上提取后应用会关闭时使用。撤销记录会被清除",
   "extract.crashedConfirm": "上次人声提取过程中或刚结束时应用关闭了，可能是内存不足。要开启“先释放内存再提取”吗？（可在设置的“人声提取”中更改）",
   "extract.crashedOk": "开启",
+  "settings.vocalModelReplaced": "此模型与本设备不兼容，将使用“{name}”提取",
   "settings.vocalGpu": "使用 GPU 处理",
   "settings.vocalGpuHelp": "速度更快。不可用的环境或轻量模型会用 CPU 处理。结果异常时请关闭",
   "task.processing": "处理音频中…",

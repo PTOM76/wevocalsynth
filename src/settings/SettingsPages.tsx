@@ -6,10 +6,11 @@ import DataSection from './DataSection'
 import AddonSection from './AddonSection'
 import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
+import { resolveModel } from '../audio/vocalExtract'
 import { visibleAlgorithms } from '../components/AlgorithmMenu'
 import ExtractDiagnose from '../debug/ExtractDiagnose'
 import type { Algorithm } from '../dsp/engine'
-import type { LangSetting, MessageKey } from '../i18n/i18n'
+import { t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
 import { canPickFiles, type PickerMode, type StartFolder } from '../project/fileAccess'
 import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
@@ -169,15 +170,15 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
     vocal: (
       <>
         <Group title={t('settings.groupVocal')}>
-          <Row label={t('settings.vocalModel')}>
+          <Row
+            label={t('settings.vocalModel')}
+            // この端末と非互換のモデルは、抽出のときに代わりのモデルを使う
+            help={resolveModel(draft.vocalModel).replaced ? translate('settings.vocalModelReplaced', { name: t(VOCAL_MODELS[resolveModel(draft.vocalModel).model].label) }) : undefined}
+          >
             <Choice<VocalModel>
               value={draft.vocalModel}
               onChange={(v) => set({ vocalModel: v })}
-              options={[
-                ['fp16', t('addon.modelLight')],
-                ['int8', t('addon.modelStandard')],
-                ['fp32', t('addon.modelPrecise')],
-              ]}
+              options={(Object.keys(VOCAL_MODELS) as VocalModel[]).map((m): [VocalModel, string] => [m, t(VOCAL_MODELS[m].label)])}
             />
           </Row>
           <Check checked={draft.vocalFreshExtract} onChange={(v) => set({ vocalFreshExtract: v })} label={t('settings.vocalFresh')} help={t('settings.vocalFreshHelp')} />

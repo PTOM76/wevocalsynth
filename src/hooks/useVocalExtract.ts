@@ -5,7 +5,7 @@ import type { VocalModel } from '../settings/settings'
 import type { Track } from '../audio/tracks'
 import type { Project } from '../project/projectFile'
 import { t } from '../i18n/i18n'
-import { extractRanges, isOutOfMemory, splitBoth, VOCAL_MODELS, type ExtractOptions, type ExtractStem } from '../audio/vocalExtract'
+import { extractRanges, isOutOfMemory, resolveModel, splitBoth, VOCAL_MODELS, type ExtractOptions, type ExtractStem } from '../audio/vocalExtract'
 import { scheduleCleanExtract, type CleanJobBody } from '../project/cleanExtract'
 import { clearExtracting, crashedDuringExtract, markExtracting } from '../project/extractGuard'
 
@@ -53,7 +53,9 @@ interface Deps {
  */
 export function useVocalExtract(d: Deps) {
   const { confirm, dialog } = useConfirm()
-  const options = (): ExtractOptions => ({ model: d.model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb })
+  // この端末と非互換のモデルなら、代わりのモデルで抽出する（extractor/src/compat.ts。設定は変えない）
+  const model = resolveModel(d.model).model
+  const options = (): ExtractOptions => ({ model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb })
 
   // 前回、抽出の前後でアプリが落ちていたら、メモリを空けてから抽出する設定を勧める
   useEffect(() => {
@@ -85,7 +87,7 @@ export function useVocalExtract(d: Deps) {
     const { edited, editRanges } = d
     if (!edited || !editRanges.length) return
     // 導入の確認ダイアログは、処理中の表示より先に出す
-    if (!(await d.ensure(VOCAL_MODELS[d.model].addon))) return
+    if (!(await d.ensure(VOCAL_MODELS[model].addon))) return
     if (d.fresh && (await runFresh({ mode: 'extract', stem, ranges: editRanges }, d.activeId))) return
     await d.prepare()
     let failure: unknown = null
@@ -116,7 +118,7 @@ export function useVocalExtract(d: Deps) {
     const track = d.tracks.find((tr) => tr.id === id)
     if (!track) return
     const edited = track.clip
-    if (!(await d.ensure(VOCAL_MODELS[d.model].addon))) return
+    if (!(await d.ensure(VOCAL_MODELS[model].addon))) return
     const vocalsName = t('track.vocalsName', { name: track.name })
     const accompanimentName = t('track.accompanimentName', { name: track.name })
     if (d.fresh && (await runFresh({ mode: 'split', vocalsName, accompanimentName }, id))) return

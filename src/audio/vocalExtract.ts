@@ -3,6 +3,8 @@ import { spliceProcessed } from './edit'
 import { normalizeRanges } from './multiRange'
 import { addonFileUrl, loadAddon } from '../addons/addons'
 import type { VocalModel } from '../settings/settings'
+import type { MessageKey } from '../i18n/i18n'
+import { backendAllowed, effectiveModel } from '../../extractor/src/compat'
 import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from './usePlayer'
 import { isMobile } from '../project/fileAccess'
@@ -16,11 +18,20 @@ import type * as ExtractorModule from '../../extractor/src/index'
 
 export type ExtractStem = ExtractorModule.Stem
 
-/** モデルの追加機能 ID と、WebGPU で正しく動くか（fp16 は WebGPU で出力がすべて 0 になる。docs/DECISIONS.md） */
-export const VOCAL_MODELS: Record<VocalModel, { addon: string; webgpu: boolean }> = {
-  fp16: { addon: 'spleeter-fp16', webgpu: false },
-  int8: { addon: 'spleeter-int8', webgpu: true },
-  fp32: { addon: 'spleeter-fp32', webgpu: true },
+/**
+ * モデルの追加機能 ID と、表示する名前。端末との互換性（WebGPU を使えない、別のモデルに替える）は
+ * extractor/src/compat.ts にまとめる（モデルを足したら、ここと互換性の表に足す）
+ */
+export const VOCAL_MODELS: Record<VocalModel, { addon: string; label: MessageKey }> = {
+  fp16: { addon: 'spleeter-fp16', label: 'addon.modelLight' },
+  int8: { addon: 'spleeter-int8', label: 'addon.modelStandard' },
+  fp32: { addon: 'spleeter-fp32', label: 'addon.modelPrecise' },
+}
+
+/** この端末で実際に使うモデル（非互換なら代わりのもの）と、替えたか */
+export function resolveModel(model: VocalModel): { model: VocalModel; replaced: boolean } {
+  const r = effectiveModel(model, Object.keys(VOCAL_MODELS))
+  return { model: r.model as VocalModel, replaced: r.reason !== null }
 }
 
 /** 抽出の設定（設定の「ボーカル抽出」） */
@@ -73,7 +84,7 @@ async function createExtractor(o: ExtractOptions) {
       keepAliveMs: isMobile() ? 0 : undefined,
     })
   // WebGPU で作れなければ WASM で作り直す
-  const gpu = o.gpu && info.webgpu && (await hasWebGpu())
+  const gpu = o.gpu && backendAllowed(o.model, 'webgpu') && (await hasWebGpu())
   return gpu ? create('webgpu').catch(() => create('wasm')) : create('wasm')
 }
 

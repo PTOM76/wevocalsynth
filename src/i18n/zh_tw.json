@@ -419,6 +419,7 @@
   "settings.vocalFreshHelp": "擷取前儲存作業並重新開啟應用程式，在釋放記憶體的狀態下擷取。在 iPad 等裝置上擷取後應用程式會關閉時使用。復原記錄會被清除",
   "extract.crashedConfirm": "上次人聲擷取途中或剛結束時應用程式關閉了，可能是記憶體不足。要開啟「先釋放記憶體再擷取」嗎？（可在設定的「人聲擷取」中變更）",
   "extract.crashedOk": "開啟",
+  "settings.vocalModelReplaced": "此模型與本裝置不相容，將使用「{name}」擷取",
   "settings.vocalGpu": "使用 GPU 處理",
   "settings.vocalGpuHelp": "速度更快。不支援的環境或輕量模型會以 CPU 處理。結果異常時請關閉",
   "task.processing": "處理音訊中…",

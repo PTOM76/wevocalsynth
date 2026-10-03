@@ -4,6 +4,7 @@ import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from '../audio/usePlayer'
 import { diagnoseCompile, diagnoseEnv, diagnoseMemory, diagnoseRuntime, webGpuAvailable, type Log, type RuntimePattern } from '../../extractor/src/diagnose'
 import type { Backend } from '../../extractor/src/types'
+import { backendAllowed } from '../../extractor/src/compat'
 import type { VocalModel } from '../settings/settings'
 
 /**
@@ -24,7 +25,7 @@ export async function diagnoseExtract(o: ExtractOptions, log: Log) {
   await diagnoseCompile(await (await fetch(addonFileUrl('vocal-extractor', ortWasm.path))).arrayBuffer(), log)
   const backends: Backend[] = (await webGpuAvailable()) ? ['wasm', 'webgpu'] : ['wasm']
   if (backends.length === 1) log('WebGPU が使えないため、WebGPU の組み合わせは省略')
-  const current: Backend = o.gpu && VOCAL_MODELS[o.model].webgpu && backends.includes('webgpu') ? 'webgpu' : 'wasm'
+  const current: Backend = o.gpu && backendAllowed(o.model, 'webgpu') && backends.includes('webgpu') ? 'webgpu' : 'wasm'
   await diagnoseRuntime([{ label: `${o.model}、${current}`, create: () => openExtractor(o, current) }], log, '、いまの設定、加工の Worker を残したまま')
   releaseIdleDsp()
   releasePlayers()
