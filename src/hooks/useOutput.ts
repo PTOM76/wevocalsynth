@@ -61,7 +61,7 @@ export function useOutput(d: Deps) {
       await target.write(saveProject({ fileName: d.fileName, named: d.named, params: d.params, tempo: d.tempo, markers: d.markers, tracks: list, active }))
       d.onSaved?.()
       d.notify(t('toast.saved'))
-    })
+    }, 'save')
   }
 
   /**
@@ -97,7 +97,7 @@ export function useOutput(d: Deps) {
       d.onSaved?.()
       d.closeExport()
       d.notify(t('toast.exported'))
-    })
+    }, 'export')
   }
 
   return { baseName, exportName, saveProjectFile, exportFile }

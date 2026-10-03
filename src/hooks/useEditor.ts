@@ -333,7 +333,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
         } catch (e) {
           if (!signal.aborted) setToast({ severity: 'error', message: t('toast.loadFailed', { file: file.name, error: String(e) }) })
         }
-      }),
+      }, 'load'),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [openClip],
   )
@@ -519,7 +519,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
       } catch (e) {
         if (!signal.aborted) setToast({ severity: 'error', message: t('toast.loadFailed', { file: f.name, error: String(e) }) })
       }
-    })
+    }, 'load')
   const addPicker = useFilePicker(AUDIO_ACCEPT, addTrackFile, t('file.audioType'))
   // ドロップした音声は、もう開いているならトラックとして足す（プロジェクトファイルは開き直す）
   useFileDrop((f) => (history.tracks.length && !isProjectFile(f) ? addTrackFile(f) : void loadFile(f)))

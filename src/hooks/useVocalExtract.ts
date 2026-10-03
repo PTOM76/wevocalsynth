@@ -4,6 +4,7 @@ import type { Clip, Range } from '../audio/types'
 import type { VocalModel } from '../settings/settings'
 import type { Track } from '../audio/tracks'
 import type { Project } from '../project/projectFile'
+import type { JobKind } from '../progress/jobs'
 import { t } from '../i18n/i18n'
 import { extractRanges, isOutOfMemory, planBackend, resolveModel, splitBoth, VOCAL_MODELS, type ExtractOptions, type ExtractStem } from '../audio/vocalExtract'
 import { scheduleCleanExtract, type CleanJobBody } from '../project/cleanExtract'
@@ -24,7 +25,7 @@ interface Deps {
   memoryMb: number
   /** 追加機能が導入済みか確かめ、なければ導入の確認ダイアログを出す */
   ensure: (id: string, also?: string[]) => Promise<boolean>
-  run: (label: string, task: (signal: AbortSignal) => Promise<void>) => Promise<void>
+  run: (label: string, task: (signal: AbortSignal) => Promise<void>, kind?: JobKind) => Promise<void>
   setProgress: (p: number) => void
   commit: (clip: Clip, label: string) => void
   /** ボーカルを取り出したあとに呼ぶ（処理モードをボーカルにする） */
@@ -114,7 +115,7 @@ export function useVocalExtract(d: Deps) {
         if (!isOutOfMemory(e)) throw e
         failure = e
       }
-    })
+    }, 'extract')
     // 失敗・中断したら印を外す（反映したときは、少し経ってから外れる）
     if (!done) clearExtracting()
     if (failure) await onFail(failure, { mode: 'extract', stem, ranges: editRanges }, d.activeId, options)
@@ -155,7 +156,7 @@ export function useVocalExtract(d: Deps) {
         if (!isOutOfMemory(e)) throw e
         failure = e
       }
-    })
+    }, 'extract')
     if (!done) clearExtracting()
     if (failure) await onFail(failure, { mode: 'split', vocalsName, accompanimentName }, id, options)
   }

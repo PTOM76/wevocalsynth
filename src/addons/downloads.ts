@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import { addonSize, install, type AddonManifest } from './addons'
 import { requestPersist } from '../project/storage'
+import { startJob } from '../progress/jobs'
+import { t } from '../i18n/i18n'
 
 /**
  * 追加機能のダウンロード（裏で進める）。導入のダイアログを閉じても続き、進み具合はステータスバーに出す。
@@ -41,17 +43,28 @@ export async function installAll(manifests: AddonManifest[], label: string) {
   if (current) throw new Error('another download is running')
   const ctrl = new AbortController()
   update({ label, progress: 0, ctrl })
+  // 進んでいる処理の一覧（ゲージ）にも出す
+  const job = startJob('download', t('addon.downloadingTask', { name: label }), () => ctrl.abort())
   // 全体の大きさに対する進捗にする
   const total = manifests.reduce((s, m) => s + addonSize(m), 0) || 1
   let before = 0
   try {
     for (const m of manifests) {
-      await install(m, (p) => current && update({ ...current, progress: (before + p * addonSize(m)) / total }), ctrl.signal)
+      await install(
+        m,
+        (p) => {
+          const progress = (before + p * addonSize(m)) / total
+          if (current) update({ ...current, progress })
+          job.update(progress)
+        },
+        ctrl.signal,
+      )
       before += addonSize(m)
     }
     // 数十MBを取り直さずに済むよう、消されにくくする申請もしておく（断られても使える）
     void requestPersist()
   } finally {
+    job.end()
     update(null)
   }
 }

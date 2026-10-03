@@ -1,12 +1,11 @@
-import { Box, ButtonBase, IconButton, LinearProgress, Stack, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faXmark } from '@fortawesome/free-solid-svg-icons'
+import { Box, ButtonBase, Stack, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material'
 import type { Clip, Range } from '../audio/types'
 import { formatTime } from '../audio/types'
 import { useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import type { ReactNode } from 'react'
 import SelectionField from './SelectionField'
+import JobGauge from './JobGauge'
 import { stableMemo } from './stableMemo'
 
 export type Source = 'edited' | 'original'
@@ -21,15 +20,6 @@ interface Props {
   selection: Range | null
   selectionCount: number
   onSelectionChange: (r: Range | null) => void
-  busy: boolean
-  progress: number
-  /** 処理中の内容（「音声加工中…」など） */
-  taskLabel: string
-  /** 処理を中断する */
-  onCancelTask: () => void
-  /** 追加機能のダウンロード（裏で進める。処理とは別に出す） */
-  download: { label: string; progress: number } | null
-  onCancelDownload: () => void
   source: Source
   onSourceChange: (s: Source) => void
   /** 原音と加工後の切り替えを出すか（「原音を保持する」が OFF なら原音は加工後と同じなので出さない） */
@@ -40,26 +30,6 @@ interface Props {
 
 const ITEM_SX = { px: 1, height: '100%', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', lineHeight: 'inherit' } as const
 
-/** 進み具合（名前、ゲージ、割合、中断ボタン）。`progress` が負なら割合が分からない */
-function Gauge({ label, progress, onCancel }: { label: string; progress: number; onCancel: () => void }) {
-  const t = useT()
-  return (
-    <Box sx={{ ...ITEM_SX, gap: 1 }}>
-      <Typography variant="caption" sx={{ whiteSpace: 'nowrap' }}>
-        {label}
-      </Typography>
-      <Box sx={{ width: 140, display: 'flex', alignItems: 'center' }}>
-        <LinearProgress variant={progress < 0 ? 'indeterminate' : 'determinate'} value={Math.max(0, progress) * 100} sx={{ flex: 1 }} />
-      </Box>
-      {progress >= 0 && <Typography variant="caption">{Math.round(progress * 100)}%</Typography>}
-      <Tooltip title={t('task.cancel')}>
-        <IconButton size="small" aria-label={t('task.cancel')} onClick={onCancel} sx={{ p: 0.25 }}>
-          <FontAwesomeIcon icon={faXmark} style={{ fontSize: 12 }} />
-        </IconButton>
-      </Tooltip>
-    </Box>
-  )
-}
 /**
  * PC 用のステータスバー（高さ 24px）。ファイルの情報、選択範囲（クリックで数値入力）、
  * 処理中の進捗、加工後／原音の切替を並べる。常に見えていてほしいが、場所は取りたくない情報を置く
@@ -97,8 +67,7 @@ function StatusBar(p: Props) {
       />
       {p.tempo}
       <Box sx={{ flexGrow: 1 }} />
-      {p.download && <Gauge label={p.download.label} progress={p.download.progress} onCancel={p.onCancelDownload} />}
-      {p.busy && <Gauge label={p.taskLabel} progress={p.progress} onCancel={p.onCancelTask} />}
+      <JobGauge />
       {p.showSource && (
         <ToggleButtonGroup
           size="small"
