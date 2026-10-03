@@ -47,6 +47,18 @@ WeVocalSynth の音声処理（ピッチ変更・時間伸縮・フォルマン�
 | Phase Vocoder v2 | `pv.rs`（`stretch_map2`） | Phase Vocoder で、立ち上がりのまわりだけ伸ばさずに進める | 打楽器・ピアノなど立ち上がりのある音 |
 | HPSS | `hpss.rs` | 打楽器の成分と伸びる成分に分け、別々の方式で伸ばして足す | ドラム入りの曲。重い |
 
+画面では方式名の代わりに愛称を表示する（`src/i18n/*.json` の `algorithm.*`）。コードとこのドキュメントでは方式名を使う。
+
+| 方式 | 画面の名前 |
+| --- | --- |
+| SOLA / SOLAv2 / SOLAv3 | Legacy Solis / Solis / Vesola |
+| PSOLA / PSOLAv2 | Legacy Pisol / Pisol |
+| WSOLA / WSOLAv2 | Legacy Wevia / Wevia |
+| Phase Vocoder / Phase Vocoder v2（以前の画面の名前は PhaseV / PhaseV v2） | Phasera / Phasera v2 |
+| HPSS | HPSS |
+
+「Legacy」が付く方式は、改良版がある従来の方式。既定では選択肢に出さない（設定の「従来の処理方式も表示する」）。
+
 ステレオでは、全チャンネルで同じ切り貼りの位置を使う。チャンネルごとに位置がずれると、音の定位（左右の位置）が崩れるため。
 
 ### PSOLA（Pitch-Synchronous Overlap-Add）
