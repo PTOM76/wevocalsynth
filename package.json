@@ -1,7 +1,7 @@
 {
   "name": "wevocalsynth",
   "private": true,
-  "version": "1.1.14",
+  "version": "1.1.15",
   "type": "module",
   "scripts": {
     "build:wasm": "node scripts/build-wasm.mjs",
