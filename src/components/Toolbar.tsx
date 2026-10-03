@@ -7,6 +7,7 @@ import { SmallButton, ToolbarDivider } from './waveform/WaveformToolbar'
 import { useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import LiveTime from './LiveTime'
+import { stableMemo } from './stableMemo'
 
 interface Props {
   playing: boolean
@@ -41,7 +42,7 @@ interface Props {
 }
 
 /** PC 用のツールバー（高さ 40px）。再生操作・再生位置、編集（切り取りなど）、波形の表示ツールを1行に並べる */
-export default function Toolbar(p: Props) {
+function Toolbar(p: Props) {
   countRender('Toolbar')
   const t = useT()
   return (
@@ -81,3 +82,6 @@ export default function Toolbar(p: Props) {
     </Stack>
   )
 }
+
+// 関数の props が作り直されても、ほかが同じなら描き直さない
+export default stableMemo(Toolbar)

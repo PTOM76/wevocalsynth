@@ -27,6 +27,7 @@ import {
 import { useT } from '../../i18n/i18n'
 import { countRender } from '../../debug/debugStats'
 import type { WheelZoom } from '../../settings/settings'
+import { stableMemo } from '../stableMemo'
 
 /** ツールチップ付きの小さいアイコンボタン。`pressed` を渡すと ON/OFF の切替ボタンになる */
 export function SmallButton(props: {
@@ -134,7 +135,7 @@ export function ToolbarDivider({ gap = false }: { gap?: boolean }) {
 const Sep = () => <ToolbarDivider gap />
 
 /** 波形の表示ツール（拡大縮小・表示の切替・ピッチ描画）。PC はツールバー、スマホは波形のすぐ下に置く */
-export default function WaveformToolbar(p: Props) {
+function WaveformToolbar(p: Props) {
   countRender('WaveformToolbar')
   const t = useT()
   const off = !!p.disabled
@@ -300,3 +301,6 @@ export default function WaveformToolbar(p: Props) {
     </>
   )
 }
+
+// 関数の props が作り直されても、ほかが同じなら描き直さない
+export default stableMemo(WaveformToolbar)

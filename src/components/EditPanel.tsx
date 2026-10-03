@@ -24,6 +24,7 @@ import AlgorithmMenu from './AlgorithmMenu'
 import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow, useDoubleClickReset } from './inspector/Inspector'
 import { useT, type MessageKey } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
+import { stableMemo } from './stableMemo'
 
 export interface EditParams {
   semitones: number
@@ -74,7 +75,7 @@ const round2 = (v: number) => Math.round(v * 100) / 100
 const SMALL_BUTTON_SX = { minWidth: 0, height: 26, px: 1, fontSize: 12 } as const
 
 /** インスペクタの「加工」。モード・ピッチ・長さ・フォルマントの行と、試聴・適用 */
-export default function EditPanel(p: Props) {
+function EditPanel(p: Props) {
   countRender('EditPanel')
   const { params, onChange, busy } = p
   const { semitones, stretch, preserveFormant, formantSemitones } = params
@@ -238,3 +239,6 @@ export default function EditPanel(p: Props) {
     </InspectorSection>
   )
 }
+
+// 関数の props が作り直されても、ほかが同じなら描き直さない
+export default stableMemo(EditPanel)

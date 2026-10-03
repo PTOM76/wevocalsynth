@@ -6,6 +6,7 @@ import { useT, type MessageKey } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import { panLabel } from '../hooks/useClipCommands'
 import type { TrackFader } from '../audio/tracks'
+import { stableMemo } from './stableMemo'
 
 export type VolumeAction = 'fadeIn' | 'fadeOut' | 'normalize' | 'silence'
 
@@ -89,7 +90,7 @@ function GainPanRows(p: { db: number; onDb: (v: number) => void; pan: number; on
  * - 選択範囲（範囲を選んでいるときだけ）: 動かすと再生中の音にすぐ反映し、「適用」で音声に書き込む
  * - フェード・ノーマライズ・無音化は、選択範囲（なければ全体）に対する編集
  */
-export default function VolumePanel({ hasSelection, busy, fader, onFaderChange, db, onDbChange: setDb, pan, onPanChange: setPan, onGain, onAction }: Props) {
+function VolumePanel({ hasSelection, busy, fader, onFaderChange, db, onDbChange: setDb, pan, onPanChange: setPan, onGain, onAction }: Props) {
   countRender('VolumePanel')
   const t = useT()
 
@@ -175,3 +176,6 @@ export default function VolumePanel({ hasSelection, busy, fader, onFaderChange, 
     </InspectorSection>
   )
 }
+
+// 関数の props が作り直されても、ほかが同じなら描き直さない
+export default stableMemo(VolumePanel)

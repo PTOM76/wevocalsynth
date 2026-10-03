@@ -7,6 +7,7 @@ import { useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import type { ReactNode } from 'react'
 import SelectionField from './SelectionField'
+import { stableMemo } from './stableMemo'
 
 export type Source = 'edited' | 'original'
 
@@ -38,7 +39,7 @@ const ITEM_SX = { px: 1, height: '100%', display: 'flex', alignItems: 'center', 
  * PC 用のステータスバー（高さ 24px）。ファイルの情報、選択範囲（クリックで数値入力）、
  * 処理中の進捗、加工後／原音の切替を並べる。常に見えていてほしいが、場所は取りたくない情報を置く
  */
-export default function StatusBar(p: Props) {
+function StatusBar(p: Props) {
   countRender('StatusBar')
   const t = useT()
   return (
@@ -101,3 +102,6 @@ export default function StatusBar(p: Props) {
     </Stack>
   )
 }
+
+// 関数の props が作り直されても、ほかが同じなら描き直さない
+export default stableMemo(StatusBar)
