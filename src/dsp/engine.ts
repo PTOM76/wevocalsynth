@@ -1,5 +1,5 @@
 import { SPEC_ROWS, type DspRequest, type DspResponse } from './worker'
-import { markActivity, recordDspJob } from '../debug/debugStats'
+import { markActivity, recordDspJob, reportMemory } from '../debug/debugStats'
 
 /** DSPエンジンの時間伸縮方式 */
 /** wsola / pv は従来の方式、psola はボーカル向けの新しい方式（Rust 側 `Algorithm::from_id` と対応） */
@@ -31,6 +31,8 @@ function getWorker(lane: Lane) {
   if (!worker) {
     worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
     worker.onmessage = (e: MessageEvent<DspResponse>) => {
+      // wasm のメモリの大きさ（デバッグ表示の mem に出す。iOS ではブラウザのメモリ量が見えないため）
+      if ('wasmBytes' in e.data) return reportMemory(`wasm ${lane}`, e.data.wasmBytes)
       const p = pending.get(e.data.id)
       if (!p) return
       if ('progress' in e.data) {
@@ -63,6 +65,21 @@ import.meta.hot?.dispose(() => {
   workers.clear()
 })
 
+/**
+ * 処理していない Worker を止めて、抱えている wasm のメモリを手放す（wasm のメモリは一度増えると縮まない）。
+ * メモリをたくさん使う処理（ボーカル抽出）の前に呼ぶ。iOS はタブのメモリの上限が低く、
+ * 長い音声を解析した後の Worker が残っていると、抽出で RangeError: out of memory になった。
+ * Worker は次のリクエストで作り直される
+ */
+export function releaseIdleDsp() {
+  for (const [lane, worker] of workers) {
+    if ([...pending.values()].some((p) => p.lane === lane)) continue
+    worker.terminate()
+    workers.delete(lane)
+    reportMemory(`wasm ${lane}`, 0)
+  }
+}
+
 /** 中断（`cancelDsp`）で失敗したか。通知せずに済ませるのに使う */
 export const isCancelled = (e: unknown) => e instanceof DOMException && e.name === 'AbortError'
 
@@ -76,6 +93,7 @@ export function cancelDsp() {
   if (!worker) return
   worker.terminate()
   workers.delete('edit')
+  reportMemory('wasm edit', 0)
   failLane('edit', new DOMException('cancelled', 'AbortError'))
 }
 

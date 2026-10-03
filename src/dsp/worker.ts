@@ -99,6 +99,8 @@ export type DspResponse =
   | { id: number; bytes: Uint8Array }
   | { id: number; error: string }
   | { id: number; progress: number }
+  /** 処理のあとの wasm のメモリの大きさ（バイト。デバッグ表示用。wasm のメモリは縮まない） */
+  | { id: number; wasmBytes: number }
 
 // Worker のグローバルは Worker と同じメッセージ API を持つ。webworker lib を読み込まずに済ませるためのキャスト
 const scope = self as unknown as Worker
@@ -235,5 +237,8 @@ scope.onmessage = async (e: MessageEvent<DspRequest>) => {
   } catch (err) {
     const res: DspResponse = { id: req.id, error: String(err) }
     scope.postMessage(res)
+  } finally {
+    const dsp = await ready.catch(() => null)
+    if (dsp) scope.postMessage({ id: -1, wasmBytes: dsp.memory.buffer.byteLength } satisfies DspResponse)
   }
 }

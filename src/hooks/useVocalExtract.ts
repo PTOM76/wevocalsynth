@@ -5,6 +5,7 @@ import { addonFileUrl, loadAddon } from '../addons/addons'
 import type { VocalModel } from '../settings/settings'
 import type { Track } from '../audio/tracks'
 import { t } from '../i18n/i18n'
+import { releaseIdleDsp } from '../dsp/engine'
 // 型だけ使う（中身は追加機能として後から読み込む）
 import type * as ExtractorModule from '../../extractor/src/index'
 
@@ -62,6 +63,8 @@ interface Deps {
  */
 export function useVocalExtract(d: Deps) {
   const createExtractor = async (model: VocalModel, gpu: boolean) => {
+    // 抽出は数百MB使うので、先に加工・解析の Worker のメモリを手放す（iOS でメモリ不足になるのを防ぐ）
+    releaseIdleDsp()
     const info = VOCAL_MODELS[model]
     const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
     const create = async (backend: ExtractorModule.Backend) =>

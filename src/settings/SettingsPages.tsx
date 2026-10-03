@@ -10,7 +10,7 @@ import { visibleAlgorithms } from '../components/AlgorithmMenu'
 import type { Algorithm } from '../dsp/engine'
 import type { LangSetting, MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
-import { canPickFiles, type StartFolder } from '../project/fileAccess'
+import { canPickFiles, type PickerMode, type StartFolder } from '../project/fileAccess'
 import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
 
 /** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
@@ -189,6 +189,17 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
         <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
         <Check checked={draft.fastMath} onChange={(v) => set({ fastMath: v })} label={t('settings.fastMath')} help={t('settings.fastMathHelp')} />
         <Check checked={draft.realtimeAlign} onChange={(v) => set({ realtimeAlign: v })} label={t('settings.realtimeAlign')} help={t('settings.realtimeAlignHelp')} />
+        <Row label={t('settings.filePicker')} help={t('settings.filePickerHelp')}>
+          <Choice<PickerMode>
+            value={draft.filePicker}
+            onChange={(v) => set({ filePicker: v })}
+            options={[
+              ['auto', t('settings.filePickerAuto')],
+              ['api', t('settings.filePickerApi')],
+              ['input', t('settings.filePickerInput')],
+            ]}
+          />
+        </Row>
         <Check checked={draft.suspendWhenStopped} onChange={(v) => set({ suspendWhenStopped: v })} label={t('settings.suspendWhenStopped')} help={t('settings.suspendWhenStoppedHelp')} />
         <Check checked={draft.playbackSession} onChange={(v) => set({ playbackSession: v })} label={t('settings.playbackSession')} help={t('settings.playbackSessionHelp')} />
         <Row label={t('settings.spliceFade')} help={t('settings.spliceFadeHelp')}>

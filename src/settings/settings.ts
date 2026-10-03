@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import type { LangSetting } from '../i18n/i18n'
 import type { Algorithm, F0Params } from '../dsp/engine'
 import type { WindowMode } from 'pevenmui'
-import type { StartFolder } from '../project/fileAccess'
+import type { PickerMode, StartFolder } from '../project/fileAccess'
 
 /** ファイルを開いたときの処理モード。auto は素材から自動判定する */
 export type InitialMode = 'auto' | 'vocal' | 'instrument'
@@ -111,6 +111,8 @@ export interface Settings {
   startFolder: StartFolder
   /** 最近使用したファイルを記録する */
   recentFiles: boolean
+  /** ファイル選択の方式（開発者向け）。auto はパソコンだけ File System Access API を使う */
+  filePicker: PickerMode
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -148,6 +150,7 @@ export const DEFAULT_SETTINGS: Settings = {
   rememberFolder: true,
   startFolder: 'downloads',
   recentFiles: true,
+  filePicker: 'auto',
   vocalAlgorithm: 'sola3',
   instrumentAlgorithm: 'pv',
   defaultBpm: 120,

@@ -111,6 +111,8 @@ export default function DebugOverlay() {
     ...(stats.heapMb !== null ? [`heap ${stats.heapMb.toFixed(0)}MB`] : []),
     ...stats.renders.map(([k, v]) => `render ${k} ${v.toFixed(1)}/s`),
     ...[...memoryUsage()].map(([k, v]) => `mem ${k} ${(v / 2 ** 20).toFixed(0)}MB`),
+    // アプリが把握している分の合計（音声データと、DSP の Worker の wasm）。iOS などブラウザのメモリ量（heap）が見えない環境の目安
+    ...(memoryUsage().size ? [`mem total ${([...memoryUsage().values()].reduce((a, b) => a + b, 0) / 2 ** 20).toFixed(0)}MB`] : []),
     ...jobs.map((j) => `dsp ${j.kind} ${j.ms.toFixed(0)}ms`),
     ...audioContextStates(),
     // 画面が止まった記録と、その間に始まった処理

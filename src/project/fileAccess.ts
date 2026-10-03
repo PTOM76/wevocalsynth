@@ -10,15 +10,22 @@ import { idbGet, idbPut } from './idb'
 /** 保存先の画面で最初に開くフォルダ（ブラウザが用意している既定の場所） */
 export type StartFolder = 'downloads' | 'documents' | 'desktop' | 'music'
 
+/**
+ * ファイル選択の方式（設定の開発者向け）。auto はパソコンだけ File System Access API を使い、スマホやタブレットは input にする
+ * （Android では API の選択画面が端末の標準のファイルマネージャーになり、Google ドライブや外部のファイルマネージャーから選べなくなるため）
+ */
+export type PickerMode = 'auto' | 'api' | 'input'
+
 export interface FileAccessOptions {
   /** 開く・保存するフォルダを、用途ごとにブラウザに覚えさせる */
   rememberFolder: boolean
   startFolder: StartFolder
   /** 最近使用したファイルを記録する */
   recentFiles: boolean
+  pickerMode: PickerMode
 }
 
-const options: FileAccessOptions = { rememberFolder: true, startFolder: 'downloads', recentFiles: true }
+const options: FileAccessOptions = { rememberFolder: true, startFolder: 'downloads', recentFiles: true, pickerMode: 'auto' }
 
 export function configureFileAccess(o: FileAccessOptions) {
   Object.assign(options, o)
@@ -47,8 +54,18 @@ type PickerWindow = Window & {
   showOpenFilePicker?: (o: PickerOptions & { multiple?: boolean }) => Promise<FileHandle[]>
 }
 
-/** 開く・保存する場所を選ぶ画面が使えるか */
-export const canPickFiles = () => typeof window !== 'undefined' && !!(window as PickerWindow).showSaveFilePicker
+/** スマホやタブレットか（iPadOS はパソコンの Safari と同じ名乗りをするので、タッチの点数でも見分ける） */
+const isMobile = () => {
+  const data = (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData
+  if (data?.mobile) return true
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
+}
+
+/** 開く・保存する場所を選ぶ画面（File System Access API）を使うか。ブラウザが対応していて、設定の方式に合うとき */
+export const canPickFiles = () => {
+  if (typeof window === 'undefined' || !(window as PickerWindow).showSaveFilePicker || options.pickerMode === 'input') return false
+  return options.pickerMode === 'api' || !isMobile()
+}
 
 /** 用途（`id`）ごとにフォルダを覚えさせる。覚えさせないときは毎回 `startFolder` から始める */
 const pickerBase = (id: string): PickerOptions => (options.rememberFolder ? { id, startIn: options.startFolder } : { startIn: options.startFolder })
@@ -69,7 +86,7 @@ export async function pickSaveTarget(
 ): Promise<SaveTarget> {
   const download: SaveTarget = { write: async (blob) => downloadBlob(blob, fileName) }
   const pick = (win as PickerWindow).showSaveFilePicker?.bind(win)
-  if (!pick) return download
+  if (!pick || !canPickFiles()) return download
   try {
     const handle = await pick({ suggestedName: fileName, ...pickerBase(`wevocal-${kind}`), types: [{ description: type.description, accept: { [type.mime]: [type.ext] } }] })
     return {
@@ -93,7 +110,7 @@ export async function pickSaveTarget(
  */
 export async function pickOpenFile(exts: string[], description: string): Promise<File | null | undefined> {
   const pick = (window as PickerWindow).showOpenFilePicker
-  if (!pick) return undefined
+  if (!pick || !canPickFiles()) return undefined
   try {
     const [handle] = await pick({ ...pickerBase('wevocal-open'), types: [{ description, accept: { 'application/octet-stream': exts } }] })
     const file = await handle.getFile()

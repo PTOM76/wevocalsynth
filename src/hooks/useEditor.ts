@@ -446,14 +446,15 @@ export function useEditor(settings: Settings) {
   const playback = usePlayback(player, preview.player, loop, curvePreviews, duration, selection)
   playbackRef.current = playback
 
+  // 保存・開く場所の選択、最近使用したファイル、ファイル選択の方式の設定を反映する。
+  // 描画中に反映する（メニューや最近使用したファイルの表示が、最初の描画から設定に合うように。値を入れるだけなので軽い）
+  const { rememberFolder, startFolder, recentFiles, filePicker } = settings
+  configureFileAccess({ rememberFolder, startFolder, recentFiles, pickerMode: filePicker })
   const picker = useFilePicker(`${AUDIO_ACCEPT},${PROJECT_EXT}`, (f) => void loadFile(f), t('file.openType'))
   const recent = useRecentFiles(
     (f) => void loadFile(f),
     (name) => setToast({ severity: 'error', message: t('toast.recentMissing', { file: name }) }),
   )
-  // 保存・開く場所の選択と最近使用したファイルの設定（設定の「全般」→「ファイル」）を反映する
-  const { rememberFolder, startFolder, recentFiles } = settings
-  useEffect(() => configureFileAccess({ rememberFolder, startFolder, recentFiles }), [rememberFolder, startFolder, recentFiles])
   // 開いている作業に、別のファイルを新しいトラックとして足す
   /** 作った音（音を0から作る）を、新しいトラックとして足す。何も開いていなければ、最初のトラックとして開く */
   const addSynth = (clip: Clip, name: string) => {
