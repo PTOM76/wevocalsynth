@@ -53,9 +53,18 @@ async function fetchModel(addon: string, stem: ExtractStem) {
   return res.arrayBuffer()
 }
 
+/** 作り直す前に待つ時間（ミリ秒）。iOS は止めた Worker の wasm のメモリをすぐには返さない */
+const RETRY_WAIT_MS = 1200
+/**
+ * 使い終わった実行環境を残しておく時間（ミリ秒）。続けて抽出するときに作り直さない。
+ * iOS では、手放した直後に作り直すと、前のメモリが返る前に確保しようとして RangeError: Out of memory になった
+ */
+const KEEP_MS = 20_000
+
 /**
  * 抽出の実行環境とモデルを読み込む。抽出は数百MB使うので、先に加工・解析の Worker（wasm のメモリ）と、
- * 再生用の音声の複製・AudioContext を手放し、少し待ってから始める（iOS はタブのメモリの上限が低い）
+ * 再生用の音声の複製を手放し、少し待ってから始める（iOS はタブのメモリの上限が低い）。
+ * メモリ不足で作れなければ、少し待ってから新しい Worker でもう一度作る
  */
 async function createExtractor(o: ExtractOptions) {
   releaseIdleDsp()
@@ -66,20 +75,53 @@ async function createExtractor(o: ExtractOptions) {
   const create = async (backend: ExtractorModule.Backend) =>
     mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend })
   // WebGPU で作れなければ WASM で作り直す
-  if (o.gpu && info.webgpu && (await hasWebGpu())) return create('webgpu').catch(() => create('wasm'))
-  return create('wasm')
+  const attempt = () => (o.gpu && info.webgpu ? hasWebGpu() : Promise.resolve(false)).then((gpu) => (gpu ? create('webgpu').catch(() => create('wasm')) : create('wasm')))
+  try {
+    return await attempt()
+  } catch (e) {
+    if (!isOutOfMemory(e)) throw e
+    await new Promise((r) => setTimeout(r, RETRY_WAIT_MS))
+    return attempt()
+  }
 }
 
-/** 実行環境を作って `f` を行い、終わったら（中断・失敗でも）手放す。中断されたら Worker ごと止める */
+/** 残しておいた実行環境（設定が同じなら使い回す） */
+let kept: { key: string; extractor: ExtractorModule.Extractor; timer: number } | null = null
+const keyOf = (o: ExtractOptions) => `${o.model}:${o.gpu}`
+function dropKept() {
+  if (!kept) return
+  clearTimeout(kept.timer)
+  kept.extractor.dispose()
+  kept = null
+}
+
+/**
+ * 実行環境で `f` を行う。設定が同じなら残しておいたものを使い、終わったら `KEEP_MS` だけ残す。
+ * 中断・失敗したら Worker ごと止める（処理中の separate は失敗する）
+ */
 async function withExtractor<T>(o: ExtractOptions, signal: AbortSignal | undefined, f: (ex: ExtractorModule.Extractor) => Promise<T>) {
-  const extractor = await createExtractor(o)
+  const key = keyOf(o)
+  let extractor: ExtractorModule.Extractor
+  if (kept?.key === key) {
+    clearTimeout(kept.timer)
+    extractor = kept.extractor
+    kept = null
+  } else {
+    dropKept()
+    extractor = await createExtractor(o)
+  }
   const stop = () => extractor.dispose()
   signal?.addEventListener('abort', stop)
   try {
-    return await f(extractor)
+    const result = await f(extractor)
+    if (!signal?.aborted) kept = { key, extractor, timer: window.setTimeout(dropKept, KEEP_MS) }
+    else extractor.dispose()
+    return result
+  } catch (e) {
+    extractor.dispose()
+    throw e
   } finally {
     signal?.removeEventListener('abort', stop)
-    extractor.dispose()
   }
 }
 

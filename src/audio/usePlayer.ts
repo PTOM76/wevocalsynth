@@ -16,7 +16,7 @@ export interface PlayTrack {
 const releasers = new Set<() => void>()
 
 /**
- * 再生していないすべてのプレーヤーの AudioBuffer（音声の複製）と AudioContext を手放す。次に再生するときに作り直す。
+ * 再生していないすべてのプレーヤーの AudioBuffer（音声の複製）を手放す。次に再生するときに作り直す。
  * メモリをたくさん使う処理（ボーカル抽出）の前に呼ぶ（iOS はタブのメモリの上限が低い）
  */
 export function releasePlayers() {
@@ -407,17 +407,12 @@ export function usePlayer(
 
   useEffect(() => () => void ctxRef.current?.close(), [])
 
-  // メモリを手放す（再生中は何もしない）。AudioContext を閉じると、全体の出口のメーターも作り直す
+  // メモリを手放す（再生中は何もしない）。音声の複製（AudioBuffer）だけを手放し、AudioContext は閉じない
+  // （WebKit では AudioContext を閉じると再生のスレッドが残る不具合がある。docs/EXTRACTOR.md）
   useEffect(() => {
     const release = () => {
       if (sourceRef.current) return
       buffers.current = new WeakMap()
-      const ctx = ctxRef.current
-      if (!ctx) return
-      ctxRef.current = null
-      masterRef.current = null
-      masterLRRef.current = null
-      void ctx.close()
     }
     releasers.add(release)
     return () => void releasers.delete(release)
