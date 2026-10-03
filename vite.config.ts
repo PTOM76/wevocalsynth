@@ -70,20 +70,13 @@ export default defineConfig({
           { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         ],
-        // インストールした PWA を、これらのファイルを開くアプリとして OS に登録する（File Handling API。Chrome・Edge のデスクトップ版）。
-        // ダブルクリックで起動したファイルは launchQueue で受け取る（src/hooks/useEditor.ts）
+        // インストールした PWA を、プロジェクトファイル（.wvsp）を開くアプリとして OS に登録する（File Handling API。Chrome、Edge のデスクトップ版）。
+        // 音声ファイル（.mp3 など）は登録しない。ブラウザの確認画面の「次のファイル形式の設定を保存」が登録した形式すべてに効き、
+        // 普段の音声ファイルまでこのアプリで開くようになってしまうため。ダブルクリックで起動したファイルは launchQueue で受け取る（src/hooks/useEditor.ts）
         file_handlers: [
           {
             action: './',
-            accept: {
-              'application/x-wevocalsynth-project': ['.wvsp'],
-              'audio/wav': ['.wav'],
-              'audio/aiff': ['.aif', '.aiff', '.aifc'],
-              'audio/mpeg': ['.mp3'],
-              'audio/mp4': ['.m4a', '.aac'],
-              'audio/flac': ['.flac'],
-              'audio/ogg': ['.ogg', '.oga', '.opus'],
-            },
+            accept: { 'application/x-wevocalsynth-project': ['.wvsp'] },
           },
         ],
         // 複数のファイルを開いたときも、窓は1つで受け取る
