@@ -78,6 +78,8 @@ interface Props {
   waveScale?: number
   onWaveScale?: (dir: 1 | -1) => void
   onRenameMarker?: (id: string) => void
+  /** 目盛りの上でマーカーをドラッグして動かす */
+  onMoveMarker?: (id: string, time: number) => void
   /** 右クリック、またはタッチの長押し（画面上の位置） */
   onContextMenu: (x: number, y: number, ruler?: { time: number; markerId: string | null }) => void
   /** 表示範囲（拡大縮小・スクロール）。ツールバーと共有するため画面側で持つ */
@@ -178,7 +180,9 @@ function Waveform(props: Props) {
   const onRuler = (e: React.PointerEvent) => e.clientY - canvasRef.current!.getBoundingClientRect().top < RULER_HEIGHT
   // マウスが何の上にあるか（カーソルの形にだけ使う）。状態にするとマウスを動かすたびに描き直しになるので、
   // ref に持って Canvas の style.cursor を直接書き換える（`updateCursor`）
-  const hoverRef = useRef({ ruler: false, divider: false, grab: false, noteEdge: false, edge: false })
+  const hoverRef = useRef({ ruler: false, marker: false, divider: false, grab: false, noteEdge: false, edge: false })
+  // 目盛りの上で掴んだマーカー（動かさずに離したらクリック扱いで再生位置を移す）
+  const markerDragRef = useRef<{ id: string; x0: number; moved: boolean } | null>(null)
   // 音符ブロックを横にドラッグしている間の行き先
   const [noteGhost, setNoteGhost] = useState<NoteGhost | null>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -347,11 +351,15 @@ function Waveform(props: Props) {
 
   // 拍の線を出しているときは、選択範囲の端・再生位置を近くの拍に吸着させる（Alt を押している間はしない）
   const altRef = useRef(false)
-  const snapTime = (clientX: number) => {
+  // `exclude` は吸着先にしないマーカー（ドラッグ中のマーカー自身）
+  const snapTime = (clientX: number, exclude?: string) => {
     const t = timeAt(clientX)
     if (altRef.current) return t
     // マーカーは拍より優先して吸着する
-    const near = (props.markers ?? []).reduce<number | null>((b, m) => (b === null || Math.abs(m.time - t) < Math.abs(b - t) ? m.time : b), null)
+    const near = (props.markers ?? []).reduce<number | null>(
+      (b, m) => (m.id === exclude ? b : b === null || Math.abs(m.time - t) < Math.abs(b - t) ? m.time : b),
+      null,
+    )
     if (near !== null && (Math.abs(near - t) / view.dur) * width <= SNAP_PX) return near
     if (!beatGrid) return t
     const beat = 60 / beatGrid.bpm
@@ -412,6 +420,11 @@ function Waveform(props: Props) {
     const canvas = canvasRef.current
     if (!canvas) return
     const h = hoverRef.current
+    // マーカーの掴み・ドラッグ中は手の形を優先する
+    if (markerDragRef.current?.moved || h.marker) {
+      canvas.style.cursor = markerDragRef.current?.moved ? 'grabbing' : 'grab'
+      return
+    }
     canvas.style.cursor = h.ruler
       ? 'pointer'
       : h.divider
@@ -492,6 +505,11 @@ function Waveform(props: Props) {
           if (onRuler(e)) {
             // タッチはタップ・ドラッグ・長押し（横移動）を見分けてから動かす
             if (e.pointerType === 'touch') return touch.rulerDown(e)
+            const m = props.onMoveMarker ? markerAt(e.clientX) : null
+            if (m) {
+              markerDragRef.current = { id: m.id, x0: e.clientX, moved: false }
+              return
+            }
             scrubRef.current = true
             props.onSeek(snapTime(e.clientX))
             return
@@ -529,6 +547,13 @@ function Waveform(props: Props) {
           if (lp && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > LONG_PRESS_SLOP_PX) cancelLongPress()
           if (touch.move(e)) return
           if (divider.dragging()) return divider.move(e)
+          const md = markerDragRef.current
+          if (md) {
+            if (!md.moved && Math.abs(e.clientX - md.x0) < DRAG_THRESHOLD_PX) return
+            md.moved = true
+            props.onMoveMarker?.(md.id, snapTime(e.clientX, md.id))
+            return updateCursor()
+          }
           if (scrubRef.current) return scrubTo(e.clientX)
           if (pen.move(e)) return
           if (grab.move(e)) return
@@ -536,6 +561,7 @@ function Waveform(props: Props) {
           if (!d) {
             hoverRef.current = {
               ruler: onRuler(e),
+              marker: !!props.onMoveMarker && onRuler(e) && !!markerAt(e.clientX),
               divider: divider.hit(e),
               grab: grab.hover(e),
               noteEdge: grab.hoverEdge(e),
@@ -552,6 +578,7 @@ function Waveform(props: Props) {
         }}
         onPointerCancel={(e) => {
           cancelLongPress()
+          markerDragRef.current = null
           edgeScroll.stop()
           commitSelections()
           touch.up(e)
@@ -563,6 +590,13 @@ function Waveform(props: Props) {
           commitSelections()
           if (touch.up(e)) return
           if (divider.dragging()) return divider.end()
+          const md = markerDragRef.current
+          if (md) {
+            markerDragRef.current = null
+            // 動かさずに離したら、目盛りのクリックと同じく再生位置を移す
+            if (!md.moved) props.onSeek(snapTime(e.clientX))
+            return updateCursor()
+          }
           if (scrubRef.current) {
             scrubRef.current = false
             return

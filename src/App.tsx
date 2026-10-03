@@ -264,6 +264,7 @@ export default function App() {
   const onWaveSeek = useStableFn((t: number) => (loop.playing && loop.seek(t)) || (ed.preview.player.playing && ed.preview.seekSource(t)) || player.seek(t))
   const onWaveSelections = useStableFn((rs: Range[]) => editing && ed.setSelections(rs))
   const onWaveStretch = useStableFn(ed.stretchRange)
+  const onMoveMarker = useStableFn(ed.markers.move)
   const onWaveRetime = useStableFn(ed.retime)
   const onWaveContext = useStableFn((x: number, y: number, ruler?: { time: number; markerId: string | null }) => {
     setRulerAt(ruler ?? null)
@@ -305,6 +306,7 @@ export default function App() {
       waveScale={waveScale}
       onWaveScale={stepWaveScale}
       onRenameMarker={setRenamingMarker}
+      onMoveMarker={onMoveMarker}
       onContextMenu={onWaveContext}
       viewCtl={viewCtl}
       pitch={ed.pitch}

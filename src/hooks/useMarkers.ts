@@ -26,6 +26,8 @@ export function useMarkers() {
         return sorted([...list, { id: crypto.randomUUID(), time, name: `M${n}` }])
       }),
     remove: (id: string) => setMarkers((list) => list.filter((m) => m.id !== id)),
+    /** `id` のマーカーを `time` へ動かす（ドラッグ）。ほかのマーカーと同じ位置でも重ねてよい */
+    move: (id: string, time: number) => setMarkers((list) => sorted(list.map((m) => (m.id === id ? { ...m, time } : m)))),
     rename: (id: string, name: string) => setMarkers((list) => list.map((m) => (m.id === id ? { ...m, name: name.trim() || m.name } : m))),
     clear: () => setMarkers([]),
     neighbor,
