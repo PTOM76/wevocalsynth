@@ -8,7 +8,8 @@ import { idbDelete, idbDeletePrefix, idbGet, idbPut } from '../project/idb'
  * 中身を使う前に `restoreClip` で戻す。退避中の Clip を画面や再生に渡さないこと（波形や解析は Clip ごとに覚えるので、空のまま残る）
  */
 
-const PREFIX = 'original:'
+export const ORIGINAL_PREFIX = 'original:'
+const PREFIX = ORIGINAL_PREFIX
 /** 退避中の Clip と、置いたキー */
 const offloaded = new WeakMap<Clip, string>()
 /** 退避の途中（書き込み中）の Clip。途中で戻すように言われたら、退避をやめる */

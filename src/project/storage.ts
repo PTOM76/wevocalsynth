@@ -1,4 +1,5 @@
 import { idbClear } from './idb'
+import { ORIGINAL_PREFIX } from '../audio/originalStore'
 import { ADDON_CACHE } from '../addons/addons'
 
 /**
@@ -20,7 +21,8 @@ export async function storageUsage(): Promise<{ usage: number; quota: number } |
 }
 
 /** 自動保存した作業データを消す */
-export const clearWorkData = () => idbClear()
+// 開いている作業で退避中の原音は残す（消すと戻せなくなる。次の起動時の掃除で消える）
+export const clearWorkData = () => idbClear(ORIGINAL_PREFIX)
 
 /**
  * オフライン用キャッシュを消し、Service Worker の登録を外す。

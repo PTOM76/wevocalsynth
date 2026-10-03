@@ -43,5 +43,23 @@ export async function idbDeletePrefix(prefix: string) {
   }
 }
 
-/** 保存したものをすべて消す（設定の「作業データを削除」） */
-export const idbClear = () => withStore('readwrite', (s) => s.clear()).then(() => {})
+/**
+ * 保存したものをすべて消す（設定の「作業データを削除」）。`keep` で始まるキーは残す
+ * （開いている作業で退避中の原音。消すと戻せなくなる）
+ */
+export async function idbClear(keep?: string) {
+  if (!keep) return withStore('readwrite', (s) => s.clear()).then(() => {})
+  const db = await openDb()
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite')
+      const s = tx.objectStore(STORE)
+      s.delete(IDBKeyRange.upperBound(keep, true))
+      s.delete(IDBKeyRange.lowerBound(`${keep}￿`, true))
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  } finally {
+    db.close()
+  }
+}
