@@ -129,6 +129,8 @@ interface Actions {
   seekMarker: (dir: -1 | 1) => void
   /** 新しい版を確認する（ヘルプ） */
   checkUpdate: () => void
+  /** ライセンス情報を出す */
+  showLicenses: () => void
 }
 
 /** メニューバー（スマホではメニュー一覧）と、波形の右クリックメニューの中身 */
@@ -313,6 +315,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.shortcuts'), onClick: a.showShortcuts },
         { divider: true },
         { label: t('menu.checkUpdate'), onClick: a.checkUpdate },
+        { label: t('menu.licenses'), onClick: a.showLicenses },
         { label: t('menu.about'), onClick: a.showAbout },
       ],
     },
@@ -366,6 +369,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.settings'), onClick: a.showSettings },
         { label: t('menu.userGuide'), onClick: () => openExternal(USER_GUIDE_URL) },
         { label: t('menu.checkUpdate'), onClick: a.checkUpdate },
+        { label: t('menu.licenses'), onClick: a.showLicenses },
         { label: t('menu.about'), onClick: a.showAbout },
       ],
     },

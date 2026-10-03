@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn } from 'pevenmui'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
 import { useAppMenus } from './hooks/useAppMenus'
@@ -37,6 +37,7 @@ import { useSettings } from './settings/settings'
 import SettingsDialog from './settings/SettingsDialog'
 import DebugOverlay from './debug/DebugOverlay'
 import UpdatePrompt from './components/UpdatePrompt'
+import { licenseEntries } from './licenses'
 import { countRender } from './debug/debugStats'
 import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
@@ -86,6 +87,7 @@ export default function App() {
   // 設定を開いたまま、もう一度「設定」を押したら、別の窓で開いている設定画面を手前に出す
   const [settingsFocus, setSettingsFocus] = useState(0)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [licensesOpen, setLicensesOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [synthOpen, setSynthOpen] = useState(false)
   const [samplerOpen, setSamplerOpen] = useState(false)
@@ -174,6 +176,7 @@ export default function App() {
     },
     showHistory: () => setHistoryOpen(true),
     showAbout: () => setAboutOpen(true),
+    showLicenses: () => setLicensesOpen(true),
     ctrlS: settings.ctrlS,
     playing: player.playing,
     togglePlay: playback.togglePlay,
@@ -618,6 +621,7 @@ export default function App() {
         done={ed.history.done}
         onJump={(n) => !busy && ed.history.jumpTo(n)}
       />
+      <LicensesDialog open={licensesOpen} onClose={() => setLicensesOpen(false)} title={t('menu.licenses')} intro={t('licenses.intro')} entries={licenseEntries()} />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} wheelZoom={settings.wheelZoom} />
       <SettingsDialog
