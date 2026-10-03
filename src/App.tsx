@@ -557,6 +557,7 @@ export default function App() {
                 onCancelDownload={cancelDownload}
                 source={ed.source}
                 onSourceChange={ed.setSource}
+                showSource={settings.keepOriginal}
                 tempo={tempoField()}
               />
             }

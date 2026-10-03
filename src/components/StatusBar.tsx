@@ -32,6 +32,8 @@ interface Props {
   onCancelDownload: () => void
   source: Source
   onSourceChange: (s: Source) => void
+  /** 原音と加工後の切り替えを出すか（「原音を保持する」が OFF なら原音は加工後と同じなので出さない） */
+  showSource: boolean
   /** BPM の表示（押すとテンポのパネル） */
   tempo: ReactNode
 }
@@ -96,17 +98,20 @@ function StatusBar(p: Props) {
       {p.tempo}
       <Box sx={{ flexGrow: 1 }} />
       {p.download && <Gauge label={p.download.label} progress={p.download.progress} onCancel={p.onCancelDownload} />}
-      {p.busy && <Gauge label={p.taskLabel} progress={p.progress} onCancel={p.onCancelTask} />}      <ToggleButtonGroup
-        size="small"
-        exclusive
-        value={p.source}
-        disabled={!p.clip}
-        onChange={(_, v: Source | null) => v && p.onSourceChange(v)}
-        sx={{ height: 20, mx: 1, '& .MuiToggleButton-root': { py: 0, px: 1, fontSize: 11 } }}
-      >
-        <ToggleButton value="edited">{t('clip.edited')}</ToggleButton>
-        <ToggleButton value="original">{t('clip.original')}</ToggleButton>
-      </ToggleButtonGroup>
+      {p.busy && <Gauge label={p.taskLabel} progress={p.progress} onCancel={p.onCancelTask} />}
+      {p.showSource && (
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={p.source}
+          disabled={!p.clip}
+          onChange={(_, v: Source | null) => v && p.onSourceChange(v)}
+          sx={{ height: 20, mx: 1, '& .MuiToggleButton-root': { py: 0, px: 1, fontSize: 11 } }}
+        >
+          <ToggleButton value="edited">{t('clip.edited')}</ToggleButton>
+          <ToggleButton value="original">{t('clip.original')}</ToggleButton>
+        </ToggleButtonGroup>
+      )}
     </Stack>
   )
 }

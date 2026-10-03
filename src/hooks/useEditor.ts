@@ -197,6 +197,11 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
   const { suspendWhenStopped, playbackSession } = settings
   useEffect(() => configurePlayback({ suspendWhenStopped, playbackSession }), [suspendWhenStopped, playbackSession])
 
+  // 原音を持たない設定にしたら、加工後の表示に戻す（原音の切り替えは出さない）
+  useEffect(() => {
+    if (!settings.keepOriginal) setSource('edited')
+  }, [settings.keepOriginal])
+
   const commit = (clip: Clip, label: string) => {
     history.commit(clip, label)
     setSource('edited')
