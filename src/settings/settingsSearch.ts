@@ -13,7 +13,7 @@ export const CATEGORIES: Category[] = ['project', 'general', 'defaults', 'displa
 const INDEX: Record<Category, MessageKey[]> = {
   project: ['settings.groupProject', 'project.name', 'settings.bpm', 'settings.beatsPerBar', 'settings.beatOffset'],
   general: [
-    'settings.groupStartup', 'settings.autoRestore', 'settings.autoRestoreHelp',
+    'settings.groupStartup', 'settings.autoRestore', 'settings.autoRestoreHelp', 'settings.confirmClose', 'settings.confirmCloseHelp',
     'settings.groupHistory', 'settings.historyLimit', 'settings.historyMemory',
     'settings.groupInput', 'settings.sliderReset', 'settings.seekAfterInsert', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel',
     // 「ファイル」は File System Access API が使えるときだけ出す（FILE_KEYS）

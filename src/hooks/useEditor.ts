@@ -28,6 +28,7 @@ import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
 import { useFilePicker } from './useFilePicker'
 import { useRecentFiles } from './useRecentFiles'
+import { isStandalone, useLeaveGuard } from './useLeaveGuard'
 import { configureFileAccess, rememberLaunched } from '../project/fileAccess'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
@@ -419,7 +420,15 @@ export function useEditor(settings: Settings) {
     task,
     notify: (message) => setToast({ severity: 'success', message }),
     closeExport: () => setExportOpen(false),
+    onSaved: () => (savedTracksRef.current = history.tracks),
   })
+
+  // 閉じるときの保存確認（自動保存を切っていて、PWA として開いているとき。設定の「全般」）。
+  // 未保存の変更 = 開いてから、または最後に保存・書き出ししてから、操作履歴が変わったか（マーカーやテンポだけの変更は含めない）
+  const savedTracksRef = useRef(history.tracks)
+  // 開いた直後（元に戻す・やり直す操作がない）は保存済みとみなす
+  if (!history.canUndo && !history.canRedo) savedTracksRef.current = history.tracks
+  useLeaveGuard(settings.confirmClose && !settings.autoRestore && isStandalone(), () => history.tracks.length > 0 && history.tracks !== savedTracksRef.current)
 
   // 通常の再生と試聴は、片方を始めたらもう片方を止める
   // ピッチ曲線の加工と試聴（試聴を始めるときはほかの再生を止める）

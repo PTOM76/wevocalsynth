@@ -28,6 +28,8 @@ interface Deps {
   notify: (message: string) => void
   /** 書き出し終わったらダイアログを閉じる */
   closeExport: () => void
+  /** 保存・書き出しが終わったとき（閉じるときの保存確認の基準を更新する） */
+  onSaved?: () => void
 }
 
 /** 書き出す形式ごとの MIME（保存先を選ぶ画面の、ファイルの種類） */
@@ -54,6 +56,7 @@ export function useOutput(d: Deps) {
       }))
       const active = Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId))
       await target.write(saveProject({ fileName: d.fileName, named: d.named, params: d.params, tempo: d.tempo, markers: d.markers, tracks: list, active }))
+      d.onSaved?.()
       d.notify(t('toast.saved'))
     })
   }
@@ -87,6 +90,7 @@ export function useOutput(d: Deps) {
       // MP3 などの Worker は止められないので、中断されていたら結果を捨てる
       if (signal.aborted) return
       await target.write(blob)
+      d.onSaved?.()
       d.closeExport()
       d.notify(t('toast.exported'))
     })

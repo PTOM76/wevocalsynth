@@ -531,6 +531,8 @@
   "settings.title": "设置",
   "settings.autoRestore": "自动保存工作，下次打开时恢复",
   "settings.autoRestoreHelp": "音频只保存在此浏览器中，不会发送到外部",
+  "settings.confirmClose": "关闭时确认保存",
+  "settings.confirmCloseHelp": "自动保存关闭且以应用打开时，如有未保存的更改则确认",
   "settings.initialMode": "打开文件时的模式",
   "settings.auto": "自动判断",
   "settings.language": "语言",

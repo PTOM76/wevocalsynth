@@ -38,6 +38,8 @@ export function f0ParamsFrom(s: Settings): F0Params {
 export interface Settings {
   /** 作業状態を自動保存し、次に開いたとき復元する */
   autoRestore: boolean
+  /** 自動保存を切っていて PWA として開いているとき、未保存の変更があれば閉じる前に確認する */
+  confirmClose: boolean
   initialMode: InitialMode
   /** 表示言語（auto はブラウザの言語に従う） */
   language: LangSetting
@@ -113,6 +115,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   autoRestore: true,
+  confirmClose: true,
   initialMode: 'auto',
   language: 'auto',
   theme: 'system',

@@ -43,6 +43,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             label={t('settings.autoRestore')}
             help={t('settings.autoRestoreHelp')}
           />
+          <Check checked={draft.confirmClose} onChange={(v) => set({ confirmClose: v })} label={t('settings.confirmClose')} help={t('settings.confirmCloseHelp')} />
         </Group>
         <Group title={t('settings.groupHistory')}>
           <Row label={t('settings.historyLimit')}>

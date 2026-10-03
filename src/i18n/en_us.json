@@ -531,6 +531,8 @@
   "settings.title": "Settings",
   "settings.autoRestore": "Autosave work and restore it next time",
   "settings.autoRestoreHelp": "Audio is stored only in this browser and never uploaded",
+  "settings.confirmClose": "Confirm before closing",
+  "settings.confirmCloseHelp": "When autosave is off and running as an app, asks if there are unsaved changes",
   "settings.initialMode": "Mode when opening a file",
   "settings.auto": "Auto detect",
   "settings.language": "Language",

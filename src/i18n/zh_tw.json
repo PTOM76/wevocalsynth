@@ -531,6 +531,8 @@
   "settings.title": "設定",
   "settings.autoRestore": "自動儲存工作，下次開啟時還原",
   "settings.autoRestoreHelp": "音訊只儲存在此瀏覽器中，不會傳送到外部",
+  "settings.confirmClose": "關閉時確認儲存",
+  "settings.confirmCloseHelp": "自動儲存關閉且以應用程式開啟時，如有未儲存的變更則確認",
   "settings.initialMode": "開啟檔案時的模式",
   "settings.auto": "自動判斷",
   "settings.language": "語言",
