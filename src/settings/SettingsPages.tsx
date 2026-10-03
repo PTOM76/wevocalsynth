@@ -6,7 +6,7 @@ import DataSection from './DataSection'
 import AddonSection from './AddonSection'
 import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
-import { resolveModel } from '../audio/vocalExtract'
+import { isMdxModel, resolveModel } from '../audio/vocalExtract'
 import { backendAllowed } from '../../extractor/src/compat'
 import { visibleAlgorithms } from '../components/AlgorithmMenu'
 import ExtractDiagnose from '../debug/ExtractDiagnose'
@@ -184,8 +184,14 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
         <Group title={t('settings.groupVocal')}>
           <Row
             label={t('settings.vocalModel')}
-            // この端末で使えないか向かないモデルは、抽出のときに代わりのモデルを使う
-            help={resolveModel(draft.vocalModel, draft.vocalGpu).replaced ? translate('settings.vocalModelReplaced', { from: t(VOCAL_MODELS[draft.vocalModel].label), name: t(VOCAL_MODELS[resolveModel(draft.vocalModel, draft.vocalGpu).model].label) }) : undefined}
+            // この端末で使えないか向かないモデルは、抽出のときに代わりのモデルを使う。MDX-Net は CPU だととても遅いので知らせる
+            help={
+              resolveModel(draft.vocalModel, draft.vocalGpu).replaced
+                ? translate('settings.vocalModelReplaced', { from: t(VOCAL_MODELS[draft.vocalModel].label), name: t(VOCAL_MODELS[resolveModel(draft.vocalModel, draft.vocalGpu).model].label) })
+                : isMdxModel(draft.vocalModel) && (!draft.vocalGpu || !('gpu' in navigator))
+                  ? t('settings.vocalSlowCpu')
+                  : undefined
+            }
           >
             <Choice<VocalModel>
               value={draft.vocalModel}

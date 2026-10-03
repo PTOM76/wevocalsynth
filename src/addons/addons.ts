@@ -45,6 +45,8 @@ export const ADDONS: AddonInfo[] = [
   { id: 'spleeter-fp16', name: 'addon.spleeterFp16', shortName: 'addon.modelLight', requires: ['vocal-extractor'] },
   { id: 'spleeter-int8', name: 'addon.spleeterInt8', shortName: 'addon.modelStandard', requires: ['vocal-extractor'] },
   { id: 'spleeter-fp32', name: 'addon.spleeterFp32', shortName: 'addon.modelPrecise', requires: ['vocal-extractor'] },
+  { id: 'uvr-mdx-voc-ft', name: 'addon.uvrVocFt', shortName: 'addon.modelVocalHq', requires: ['vocal-extractor'] },
+  { id: 'uvr-mdx-inst-hq4', name: 'addon.uvrInstHq4', shortName: 'addon.modelInstHq', requires: ['vocal-extractor'] },
 ]
 
 /** `id` と、その導入に要る追加機能（依存を先に並べる） */

@@ -20,7 +20,8 @@ export type WheelZoom = 'ctrl' | 'wheel'
 export type F0Voicing = 'strict' | 'normal' | 'loose'
 
 /** ボーカル抽出のモデル（Spleeter 2stems の種類）。fp16 が一番小さい */
-export type VocalModel = 'fp16' | 'int8' | 'fp32'
+/** ボーカル抽出のモデル。fp16・int8・fp32 は Spleeter、voc-ft・inst-hq4 は UVR の MDX-Net（extractor/src/mdxModels.ts） */
+export type VocalModel = 'fp16' | 'int8' | 'fp32' | 'voc-ft' | 'inst-hq4'
 
 /** 判定の厳しさごとの、有声とみなす谷の深さの上限（Rust 側 `f0::Params::voiced_limit`） */
 const VOICED_LIMIT: Record<F0Voicing, number> = { strict: 0.25, normal: 0.35, loose: 0.5 }

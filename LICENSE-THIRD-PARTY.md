@@ -13,8 +13,10 @@ MP3 以外（WAV / Opus）の書き出しと、アプリのほかの部分は la
 
 | 追加機能 | 含むもの | ライセンス |
 | --- | --- | --- |
-| `vocal-extractor` | WeVocalExtractor と ONNX Runtime Web | MIT / MIT（Microsoft） |
+| `vocal-extractor` | WeVocalExtractor | MIT |
+| `vocal-extractor-gpu` / `-cpu` | ONNX Runtime Web の wasm | MIT（Microsoft） |
 | `spleeter-fp16` / `-int8` / `-fp32` | Spleeter 2stems の学習済みモデル（sherpa-onnx の ONNX 版） | 下記 |
+| `uvr-mdx-voc-ft` / `uvr-mdx-inst-hq4` | UVR（Ultimate Vocal Remover）の MDX-Net の学習済みモデル（sherpa-onnx の ONNX 版） | MIT（Copyright (c) 2022 Anjok07, Aufr33）。UVR は、モデルを使うときに UVR とその開発者のクレジットを示すよう求めている |
 
 モデルのライセンスの扱い（学習済みモデルに個別の記載がないこと、など）は、WeVocalExtractor の [LICENSE-THIRD-PARTY.md](https://github.com/PTOM76/wevocalextractor/blob/main/LICENSE-THIRD-PARTY.md) にまとめている（手元では `extractor/LICENSE-THIRD-PARTY.md`）。
 ライセンスの全文は `extractor/licenses/` にあり、追加機能を作るときにそれぞれのフォルダ（`addons/<id>/licenses/`）にも入れて一緒に配っている。

@@ -59,6 +59,8 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 
 
 ## ボーカル抽出の追加機能
+モデルは Spleeter（`spleeter-fp16` / `-int8` / `-fp32`）と、UVR の MDX-Net（`uvr-mdx-voc-ft`: ボーカルを取り出す、`uvr-mdx-inst-hq4`: 伴奏を取り出す。各約 60MB）。MDX-Net は WebGPU で曲の長さの 0.4〜0.6 倍、CPU では約 10 倍かかるので、GPU を使えないときは設定の画面で知らせる。仕組みと値は extractor の docs/MODELS.md の「UVR の MDX-Net」（2026-10-04）
+
 ONNX Runtime の wasm は、計算の種類ごとに別の追加機能にする（`vocal-extractor-gpu`: WebGPU 対応版 28MB / `vocal-extractor-cpu`: WASM 版 14MB）。抽出の前に計算の種類を決め（`planBackend`）、モデルと一緒に要る方だけを入れる。場所は Worker に渡す（`wasmUrl`）。CPU で WebGPU 対応版を使わないのは、Safari 26 で推論のあとにタブが落ちるため（extractor の docs/COMPATIBILITY.md）。CPU だけの端末は 28MB → 14MB になる (2026-10-03)
 
 | 追加機能 | 中身 | 大きさ |

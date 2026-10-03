@@ -4,6 +4,7 @@
 // - vocal-extractor: ボーカル抽出の実行環境（extractor/ をビルド）
 // - vocal-extractor-gpu / -cpu: ONNX Runtime の wasm（WebGPU 対応版 / WASM 版。要る方だけ入れる）
 // - spleeter-<種類>: モデル。sherpa-onnx の配布物を取得し、vocals.onnx / accompaniment.onnx に名前をそろえる
+// - uvr-mdx-<種類>: UVR の MDX-Net のモデル（model.onnx）
 // 各フォルダに manifest.json（ファイルの大きさとハッシュ、内容から決めたバージョン）を書く
 import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -80,4 +81,17 @@ for (const [kind, m] of Object.entries(MODELS)) {
   for (const stem of ['vocals', 'accompaniment']) copyFileSync(join(src, `${stem}.${m.file}`), join(dir, `${stem}.onnx`))
   addLicenses(dir, ['spleeter-MIT.txt', 'sherpa-onnx-Apache-2.0.txt'])
   writeManifest(`spleeter-${kind}`, dir, null)
+}
+
+// UVR の MDX-Net（sherpa-onnx が ONNX にして配っているもの）。1 ファイルを model.onnx に名前をそろえる（extractor/src/mdxModels.ts）
+const MDX = { 'uvr-mdx-voc-ft': 'UVR-MDX-NET-Voc_FT.onnx', 'uvr-mdx-inst-hq4': 'UVR-MDX-NET-Inst_HQ_4.onnx' }
+for (const [id, file] of Object.entries(MDX)) {
+  const src = join(CACHE, file)
+  if (!existsSync(src)) run(`curl -sSfL -o "${src}" ${RELEASE}/${file}`)
+  const dir = join(OUT, id)
+  rmSync(dir, { recursive: true, force: true })
+  mkdirSync(dir, { recursive: true })
+  copyFileSync(src, join(dir, 'model.onnx'))
+  addLicenses(dir, ['uvr-MIT.txt', 'sherpa-onnx-Apache-2.0.txt'])
+  writeManifest(id, dir, null)
 }

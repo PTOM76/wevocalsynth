@@ -5,6 +5,7 @@ import { addonFileUrl, installedManifest, loadAddon } from '../addons/addons'
 import type { VocalModel } from '../settings/settings'
 import type { MessageKey } from '../i18n/i18n'
 import { backendAllowed, effectiveModel } from '../../extractor/src/compat'
+import { MDX_MODELS, type MdxModelId } from '../../extractor/src/mdxModels'
 import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from './usePlayer'
 import { isMobile } from 'pevenmui/web'
@@ -22,11 +23,16 @@ export type ExtractStem = ExtractorModule.Stem
  * モデルの追加機能 ID と、表示する名前。端末との互換性（WebGPU を使えない、別のモデルに替える）は
  * extractor/src/compat.ts にまとめる（モデルを足したら、ここと互換性の表に足す）
  */
-export const VOCAL_MODELS: Record<VocalModel, { addon: string; label: MessageKey }> = {
+export const VOCAL_MODELS: Record<VocalModel, { addon: string; label: MessageKey; mdx?: MdxModelId }> = {
   fp16: { addon: 'spleeter-fp16', label: 'addon.modelLight' },
   int8: { addon: 'spleeter-int8', label: 'addon.modelStandard' },
   fp32: { addon: 'spleeter-fp32', label: 'addon.modelPrecise' },
+  'voc-ft': { addon: 'uvr-mdx-voc-ft', label: 'addon.modelVocalHq', mdx: 'voc-ft' },
+  'inst-hq4': { addon: 'uvr-mdx-inst-hq4', label: 'addon.modelInstHq', mdx: 'inst-hq4' },
 }
+
+/** UVR の MDX-Net か（CPU では曲の長さの約 10 倍かかる。extractor/docs/MODELS.md） */
+export const isMdxModel = (model: VocalModel) => !!VOCAL_MODELS[model].mdx
 
 /** この端末で実際に使うモデル（非互換なら代わりのもの）と、替えたか */
 export function resolveModel(model: VocalModel, gpu: boolean): { model: VocalModel; replaced: boolean } {
@@ -79,9 +85,9 @@ async function wasmUrl(runtime: ExtractorModule.Runtime) {
   return addonFileUrl(id, file.path)
 }
 
-async function fetchModel(addon: string, stem: ExtractStem) {
-  const res = await fetch(addonFileUrl(addon, `${stem}.onnx`))
-  if (!res.ok) throw new Error(`${stem}.onnx: HTTP ${res.status}`)
+async function fetchModel(addon: string, file: ExtractStem | 'model') {
+  const res = await fetch(addonFileUrl(addon, `${file}.onnx`))
+  if (!res.ok) throw new Error(`${file}.onnx: HTTP ${res.status}`)
   return res.arrayBuffer()
 }
 
@@ -89,9 +95,12 @@ async function fetchModel(addon: string, stem: ExtractStem) {
 async function open(o: ExtractOptions, backend: ExtractorModule.Backend, runtime: ExtractorModule.Runtime, keepAliveMs?: number) {
   const info = VOCAL_MODELS[o.model]
   const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
+  // Spleeter はボーカル用・伴奏用の 2 つ、MDX-Net は model.onnx の 1 つ
+  const model = info.mdx
+    ? { mdx: { model: await fetchModel(info.addon, 'model'), params: MDX_MODELS[info.mdx].params } }
+    : { vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment') }
   return mod.createExtractor({
-    vocals: await fetchModel(info.addon, 'vocals'),
-    accompaniment: await fetchModel(info.addon, 'accompaniment'),
+    ...model,
     backend,
     runtime,
     wasmUrl: await wasmUrl(runtime),
