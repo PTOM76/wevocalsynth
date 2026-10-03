@@ -221,6 +221,7 @@ export function useEditor(settings: Settings) {
     model: settings.vocalModel,
     gpu: settings.vocalGpu,
     keepHighBand: settings.vocalKeepHighBand,
+    memoryMb: settings.vocalMemoryMb,
     ensure: addons.ensure,
     run: task.run,
     setProgress,

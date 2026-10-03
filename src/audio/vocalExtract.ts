@@ -29,6 +29,8 @@ export interface ExtractOptions {
   gpu: boolean
   /** 約 11kHz より上を残す（モデルが扱わない帯域。残すと伴奏の高い音が混ざりやすい） */
   keepHighBand: boolean
+  /** 抽出の実行環境の wasm のメモリの上限（MB。設定の開発者向け。なければ既定の 1GB） */
+  memoryMb?: number
 }
 
 /** メモリ不足で失敗したか（iOS は RangeError: out of memory か、実行環境を作れず no available backend found になる） */
@@ -61,7 +63,7 @@ async function createExtractor(o: ExtractOptions) {
   const info = VOCAL_MODELS[o.model]
   const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
   const create = async (backend: ExtractorModule.Backend) =>
-    mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend })
+    mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend, memoryMb: o.memoryMb })
   // WebGPU で作れなければ WASM で作り直す
   const gpu = o.gpu && info.webgpu && (await hasWebGpu())
   return gpu ? create('webgpu').catch(() => create('wasm')) : create('wasm')
@@ -71,7 +73,7 @@ async function createExtractor(o: ExtractOptions) {
 export async function openExtractor(o: ExtractOptions, backend: ExtractorModule.Backend) {
   const info = VOCAL_MODELS[o.model]
   const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
-  return mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend })
+  return mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend, memoryMb: o.memoryMb })
 }
 
 /** 実行環境で `f` を行い、終わったら手放す。中断したら、処理中の separate は次のブロックで止まって失敗する */

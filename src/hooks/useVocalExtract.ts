@@ -18,6 +18,8 @@ interface Deps {
   gpu: boolean
   /** 約 11kHz より上を残す（モデルが扱わない帯域。残すと伴奏の高い音が混ざりやすい） */
   keepHighBand: boolean
+  /** 実行環境のメモリの上限（MB） */
+  memoryMb: number
   /** 追加機能が導入済みか確かめ、なければ導入の確認ダイアログを出す */
   ensure: (id: string) => Promise<boolean>
   run: (label: string, task: (signal: AbortSignal) => Promise<void>) => Promise<void>
@@ -45,7 +47,7 @@ interface Deps {
  */
 export function useVocalExtract(d: Deps) {
   const { confirm, dialog } = useConfirm()
-  const options = (): ExtractOptions => ({ model: d.model, gpu: d.gpu, keepHighBand: d.keepHighBand })
+  const options = (): ExtractOptions => ({ model: d.model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb })
 
   /** メモリ不足なら、再読み込みしてから抽出するかを確かめる。ほかの失敗はそのまま投げる */
   const onFail = async (e: unknown, job: CleanJobBody, trackId: string) => {

@@ -14,6 +14,9 @@ import type { Category } from './settingsSearch'
 import { canPickFiles, type PickerMode, type StartFolder } from '../project/fileAccess'
 import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
 
+/** 抽出の実行環境のメモリの上限の選択肢（MB） */
+const MEMORY_MB = [256, 512, 1024, 2048, 4096]
+
 /** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
 const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
 
@@ -221,7 +224,14 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             options={['5', '10', '20'].map((ms): [string, string] => [ms, `${ms} ms`])}
           />
         </Row>
-        <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand }} />
+        <Row label={t('settings.vocalMemory')} help={t('settings.vocalMemoryHelp')}>
+          <Choice<string>
+            value={String(draft.vocalMemoryMb)}
+            onChange={(v) => set({ vocalMemoryMb: Number(v) })}
+            options={MEMORY_MB.map((mb): [string, string] => [String(mb), mb < 1024 ? `MB` : `GB`])}
+          />
+        </Row>
+        <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand, memoryMb: draft.vocalMemoryMb }} />
         <Row label={t('settings.dialogWindow')}>
           <Choice<WindowMode | 'auto'>
             value={draft.dialogWindow}

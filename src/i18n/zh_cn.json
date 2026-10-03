@@ -288,6 +288,8 @@
   "settings.suspendWhenStoppedHelp": "停止时暂停 AudioContext。iOS 无声时请关闭后尝试",
   "settings.playbackSession": "iOS 静音开关下也播放",
   "settings.playbackSessionHelp": "将音频会话设为播放。关闭则为以前的行为",
+  "settings.vocalMemory": "提取的内存上限",
+  "settings.vocalMemoryHelp": "在 iOS 上无法提取时调低。从下一次提取起生效",
   "settings.extractDiagnose": "人声提取诊断",
   "settings.extractDiagnoseHelp": "在此设备上检查提取内存不足的原因。选择并复制结果，粘贴到报告中",
   "settings.extractDiagnoseRun": "诊断",

@@ -66,6 +66,8 @@ export interface Settings {
   vocalGpu: boolean
   /** ボーカル抽出で約 11kHz より上を残す（既定は消す。残すと声は明るいが、シンバルなどが混ざりやすい） */
   vocalKeepHighBand: boolean
+  /** 抽出の実行環境の wasm のメモリの上限（MB）。iOS は上限の分を予約の枠から差し引くので、抽出できなければ下げる */
+  vocalMemoryMb: number
   /** 再生中、再生位置が画面の外に出たら表示範囲を追従させる（ツールバーのボタンで切り替える） */
   followPlayhead: boolean
   /** 加工・音量のスライダーをダブルクリックで既定値に戻す（誤って戻すのが気になる人は切れる） */
@@ -138,6 +140,7 @@ export const DEFAULT_SETTINGS: Settings = {
   vocalModel: 'int8',
   vocalGpu: true,
   vocalKeepHighBand: false,
+  vocalMemoryMb: 1024,
   f0MinHz: 60,
   f0MaxHz: 1000,
   f0Voicing: 'normal',
