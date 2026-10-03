@@ -408,6 +408,8 @@
   "toast.extracted": "抽出しました",
   "settings.groupVocal": "モデル",
   "settings.vocalModel": "利用するモデル",
+  "addon.runtimeGpu": "ボーカル抽出の実行環境（GPU）",
+  "addon.runtimeCpu": "ボーカル抽出の実行環境（CPU）",
   "addon.vocalExtractor": "ボーカル抽出の実行環境",
   "addon.spleeterFp16": "ボーカル抽出の軽量モデル（Spleeter fp16）",
   "addon.spleeterInt8": "ボーカル抽出の標準モデル（Spleeter int8）",

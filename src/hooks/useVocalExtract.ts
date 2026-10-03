@@ -5,7 +5,7 @@ import type { VocalModel } from '../settings/settings'
 import type { Track } from '../audio/tracks'
 import type { Project } from '../project/projectFile'
 import { t } from '../i18n/i18n'
-import { extractRanges, isOutOfMemory, resolveModel, splitBoth, VOCAL_MODELS, type ExtractOptions, type ExtractStem } from '../audio/vocalExtract'
+import { extractRanges, isOutOfMemory, planBackend, resolveModel, splitBoth, VOCAL_MODELS, type ExtractOptions, type ExtractStem } from '../audio/vocalExtract'
 import { scheduleCleanExtract, type CleanJobBody } from '../project/cleanExtract'
 import { clearExtracting, crashedDuringExtract, markExtracting } from '../project/extractGuard'
 
@@ -23,7 +23,7 @@ interface Deps {
   /** 実行環境のメモリの上限（MB） */
   memoryMb: number
   /** 追加機能が導入済みか確かめ、なければ導入の確認ダイアログを出す */
-  ensure: (id: string) => Promise<boolean>
+  ensure: (id: string, also?: string[]) => Promise<boolean>
   run: (label: string, task: (signal: AbortSignal) => Promise<void>) => Promise<void>
   setProgress: (p: number) => void
   commit: (clip: Clip, label: string) => void
@@ -55,7 +55,13 @@ export function useVocalExtract(d: Deps) {
   const { confirm, dialog } = useConfirm()
   // この端末と非互換のモデルなら、代わりのモデルで抽出する（extractor/src/compat.ts。設定は変えない）
   const model = resolveModel(d.model).model
-  const options = (): ExtractOptions => ({ model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb })
+  const base = (): ExtractOptions => ({ model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb })
+  /** 計算の種類を決め、モデルとそれに要る実行環境（ONNX Runtime の wasm）を導入済みにする。導入しなければ null */
+  const prepareOptions = async (): Promise<ExtractOptions | null> => {
+    const plan = await planBackend(base())
+    if (!(await d.ensure(VOCAL_MODELS[model].addon, [plan.runtimeAddon]))) return null
+    return { ...base(), backend: plan.backend }
+  }
 
   // 前回、抽出の前後でアプリが落ちていたら、メモリを空けてから抽出する設定を勧める
   useEffect(() => {
@@ -66,36 +72,37 @@ export function useVocalExtract(d: Deps) {
   }, [])
 
   /** 作業を保存して開き直し、メモリを空けた状態で抽出する。開き直せなければ false */
-  const runFresh = async (job: CleanJobBody, trackId: string) => {
+  const runFresh = async (job: CleanJobBody, trackId: string, options: ExtractOptions) => {
     const trackIndex = d.tracks.findIndex((tr) => tr.id === trackId)
     if (!d.snapshot() || trackIndex < 0) return false
     await d.restoreAll()
     // 原音を戻してから作業を取る（退避中の原音は中身が空）
-    await scheduleCleanExtract({ ...job, trackIndex, options: options() }, d.snapshot()!)
+    await scheduleCleanExtract({ ...job, trackIndex, options }, d.snapshot()!)
     return true
   }
 
   /** メモリ不足なら、メモリを空けてから抽出するかを確かめる。ほかの失敗はそのまま投げる */
-  const onFail = async (e: unknown, job: CleanJobBody, trackId: string) => {
+  const onFail = async (e: unknown, job: CleanJobBody, trackId: string, options: ExtractOptions) => {
     if (!isOutOfMemory(e)) throw e
     if (!d.snapshot()) throw new Error(t('extract.outOfMemory'))
     if (!(await confirm({ message: t('extract.cleanConfirm'), okLabel: t('extract.cleanOk') }))) return
-    if (!(await runFresh(job, trackId))) throw new Error(t('extract.outOfMemory'))
+    if (!(await runFresh(job, trackId, options))) throw new Error(t('extract.outOfMemory'))
   }
 
   const extract = async (stem: ExtractStem) => {
     const { edited, editRanges } = d
     if (!edited || !editRanges.length) return
     // 導入の確認ダイアログは、処理中の表示より先に出す
-    if (!(await d.ensure(VOCAL_MODELS[model].addon))) return
-    if (d.fresh && (await runFresh({ mode: 'extract', stem, ranges: editRanges }, d.activeId))) return
+    const options = await prepareOptions()
+    if (!options) return
+    if (d.fresh && (await runFresh({ mode: 'extract', stem, ranges: editRanges }, d.activeId, options))) return
     await d.prepare()
     let failure: unknown = null
     let done = false
     markExtracting()
     await d.run(t(stem === 'vocals' ? 'task.extractVocals' : 'task.extractAccompaniment'), async (signal) => {
       try {
-        const clip = await extractRanges(edited, editRanges, stem, options(), d.setProgress, signal)
+        const clip = await extractRanges(edited, editRanges, stem, options, d.setProgress, signal)
         if (signal.aborted) return
         d.commit(clip, t(stem === 'vocals' ? 'extract.vocals' : 'extract.accompaniment'))
         done = true
@@ -110,7 +117,7 @@ export function useVocalExtract(d: Deps) {
     })
     // 失敗・中断したら印を外す（反映したときは、少し経ってから外れる）
     if (!done) clearExtracting()
-    if (failure) await onFail(failure, { mode: 'extract', stem, ranges: editRanges }, d.activeId)
+    if (failure) await onFail(failure, { mode: 'extract', stem, ranges: editRanges }, d.activeId, options)
   }
 
   /** トラック `id`（既定は選んでいるもの）全体を、ボーカルと伴奏の2つのトラックに分ける（推論は1回） */
@@ -118,17 +125,18 @@ export function useVocalExtract(d: Deps) {
     const track = d.tracks.find((tr) => tr.id === id)
     if (!track) return
     const edited = track.clip
-    if (!(await d.ensure(VOCAL_MODELS[model].addon))) return
+    const options = await prepareOptions()
+    if (!options) return
     const vocalsName = t('track.vocalsName', { name: track.name })
     const accompanimentName = t('track.accompanimentName', { name: track.name })
-    if (d.fresh && (await runFresh({ mode: 'split', vocalsName, accompanimentName }, id))) return
+    if (d.fresh && (await runFresh({ mode: 'split', vocalsName, accompanimentName }, id, options))) return
     await d.prepare()
     let failure: unknown = null
     let done = false
     markExtracting()
     await d.run(t('task.splitStems'), async (signal) => {
       try {
-        const r = await splitBoth(edited, options(), d.setProgress, signal)
+        const r = await splitBoth(edited, options, d.setProgress, signal)
         if (signal.aborted) return
         const sr = edited.sampleRate
         d.split(
@@ -149,7 +157,7 @@ export function useVocalExtract(d: Deps) {
       }
     })
     if (!done) clearExtracting()
-    if (failure) await onFail(failure, { mode: 'split', vocalsName, accompanimentName }, id)
+    if (failure) await onFail(failure, { mode: 'split', vocalsName, accompanimentName }, id, options)
   }
 
   return { extract, splitStems, dialog }

@@ -57,6 +57,8 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 
 
 ## ボーカル抽出の追加機能
+ONNX Runtime の wasm は、計算の種類ごとに別の追加機能にする（`vocal-extractor-gpu`: WebGPU 対応版 28MB / `vocal-extractor-cpu`: WASM 版 14MB）。抽出の前に計算の種類を決め（`planBackend`）、モデルと一緒に要る方だけを入れる。場所は Worker に渡す（`wasmUrl`）。CPU で WebGPU 対応版を使わないのは、Safari 26 で推論のあとにタブが落ちるため（extractor の docs/COMPATIBILITY.md）。CPU だけの端末は 28MB → 14MB になる (2026-10-03)
+
 | 追加機能 | 中身 | 大きさ |
 | --- | --- | --- |
 | `vocal-extractor` | 実行環境。WeVocalExtractor（STFT の wasm を含む）と ONNX Runtime Web（WASM・WebGPU 対応の版） | 27MB（gzip で約 7MB） |

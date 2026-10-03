@@ -1,4 +1,4 @@
-import { isExtracting, openExtractor, VOCAL_MODELS, type ExtractOptions } from '../audio/vocalExtract'
+import { isExtracting, openExtractor, RUNTIME_ADDONS, VOCAL_MODELS, type ExtractOptions } from '../audio/vocalExtract'
 import { addonFileUrl, installedManifest } from '../addons/addons'
 import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from '../audio/usePlayer'
@@ -17,16 +17,27 @@ export async function diagnoseExtract(o: ExtractOptions, log: Log) {
   diagnoseEnv(log)
   await diagnoseMemory(log)
   const runtime = await installedManifest('vocal-extractor')
-  const ortWasm = runtime?.files.find((f) => /ort-wasm.*\.wasm$/.test(f.path))
-  if (!runtime || !ortWasm) {
+  if (!runtime) {
     log('ボーカル抽出の実行環境が未導入のため、実行環境の試しは省略')
     return
   }
-  await diagnoseCompile(await (await fetch(addonFileUrl('vocal-extractor', ortWasm.path))).arrayBuffer(), log)
-  const backends: Backend[] = (await webGpuAvailable()) ? ['wasm', 'webgpu'] : ['wasm']
-  if (backends.length === 1) log('WebGPU が使えないため、WebGPU の組み合わせは省略')
+  // 計算の種類ごとの ONNX Runtime（追加機能）。入っているものだけ試す
+  const backends: Backend[] = []
+  for (const [backend, id] of [['wasm', RUNTIME_ADDONS.cpu], ['webgpu', RUNTIME_ADDONS.gpu]] as const) {
+    const wasm = (await installedManifest(id))?.files.find((f) => f.path.endsWith('.wasm'))
+    if (!wasm) {
+      log(`${id} が未導入のため、${backend} の組み合わせは省略`)
+      continue
+    }
+    if (backend === 'webgpu' && !(await webGpuAvailable())) {
+      log('WebGPU が使えないため、WebGPU の組み合わせは省略')
+      continue
+    }
+    await diagnoseCompile(await (await fetch(addonFileUrl(id, wasm.path))).arrayBuffer(), log)
+    backends.push(backend)
+  }
   const current: Backend = o.gpu && backendAllowed(o.model, 'webgpu') && backends.includes('webgpu') ? 'webgpu' : 'wasm'
-  await diagnoseRuntime([{ label: `${o.model}、${current}`, create: () => openExtractor(o, current) }], log, '、いまの設定、加工の Worker を残したまま')
+  if (backends.includes(current)) await diagnoseRuntime([{ label: `${o.model}、${current}`, create: () => openExtractor(o, current) }], log, '、いまの設定、加工の Worker を残したまま')
   releaseIdleDsp()
   releasePlayers()
   await new Promise((r) => setTimeout(r, 3000))

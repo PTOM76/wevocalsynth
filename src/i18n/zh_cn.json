@@ -408,6 +408,8 @@
   "toast.extracted": "已提取",
   "settings.groupVocal": "模型",
   "settings.vocalModel": "使用的模型",
+  "addon.runtimeGpu": "人声提取运行环境（GPU）",
+  "addon.runtimeCpu": "人声提取运行环境（CPU）",
   "addon.vocalExtractor": "人声提取运行环境",
   "addon.spleeterFp16": "人声提取轻量模型（Spleeter fp16）",
   "addon.spleeterInt8": "人声提取标准模型（Spleeter int8）",

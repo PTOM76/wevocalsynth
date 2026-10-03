@@ -20,11 +20,12 @@ interface State {
   resolve: (ok: boolean) => void
 }
 
-/** `id` の導入に要るもののうち、未導入か配信中と版が違うもののマニフェストと、`id` がすでに入っているか */
-async function plan(id: string, force: boolean): Promise<{ manifests: AddonManifest[]; updating: boolean }> {
+/** `ids` の導入に要るもののうち、未導入か配信中と版が違うもののマニフェストと、`id`（最初のもの）がすでに入っているか */
+async function plan(ids: string[], force: boolean): Promise<{ manifests: AddonManifest[]; updating: boolean }> {
+  const id = ids[0]
   const manifests: AddonManifest[] = []
   let updating = false
-  for (const a of withRequires(id)) {
+  for (const a of [...new Set(ids.flatMap(withRequires))]) {
     const [installed, latest] = await Promise.all([installedManifest(a), fetchManifest(a)])
     if (a === id) updating = !!installed
     if (!installed || installed.version !== latest.version || (force && a === id)) manifests.push(latest)
@@ -34,7 +35,7 @@ async function plan(id: string, force: boolean): Promise<{ manifests: AddonManif
 
 /**
  * 追加機能の導入。`request(id)` で確認ダイアログを出し、導入できたら true を返す（依存するものも一緒に入れる）。
- * `ensure(id)` は依存を含めて導入済みならダイアログを出さずに true を返す（機能を使う直前に呼ぶ）。
+ * `ensure(id, also)` は依存を含めて導入済みならダイアログを出さずに true を返す（機能を使う直前に呼ぶ）。`also` は一緒に要るもの（実行環境など）。
  * ダウンロード中に閉じても続き（進み具合はステータスバー）、終わったら resolve する。返す `dialog` を画面のどこかに置く
  */
 export function useAddonInstall() {
@@ -43,10 +44,10 @@ export function useAddonInstall() {
   const download = useDownload()
 
   /** `force` なら `id` は版が同じでも入れ直す（設定の「導入」）。偽なら未導入か古いものだけ入れる */
-  const request = (id: string, force = true) =>
+  const request = (id: string, force = true, also: string[] = []) =>
     new Promise<boolean>((resolve) => {
       setState({ id, manifests: null, updating: false, downloading: false, hidden: false, error: null, resolve })
-      plan(id, force).then(
+      plan([id, ...also], force).then(
         ({ manifests, updating }) => setState((s) => s && { ...s, manifests, updating }),
         (e) => setState((s) => s && { ...s, error: t('addon.unavailable', { error: String(e) }) }),
       )
@@ -56,16 +57,16 @@ export function useAddonInstall() {
    * 依存を含めて導入済みで、配信中と同じ版なら true。未導入か古い版があれば、導入・更新の確認ダイアログを出す
    * （古い実行環境のままだと、アプリが使う関数が無くて失敗するため）。オフラインで配信中の版が分からなければ、今ある版で使う
    */
-  const ensure = async (id: string) => {
+  const ensure = async (id: string, also: string[] = []) => {
     const stale = await Promise.all(
-      withRequires(id).map(async (a) => {
+      [...new Set([id, ...also].flatMap(withRequires))].map(async (a) => {
         const installed = await installedManifest(a)
         if (!installed) return true
         const latest = await fetchManifest(a).catch(() => null)
         return !!latest && latest.version !== installed.version
       }),
     )
-    return stale.some(Boolean) ? request(id, false) : true
+    return stale.some(Boolean) ? request(id, false, also) : true
   }
 
   const close = (ok: boolean) => {

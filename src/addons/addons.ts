@@ -32,11 +32,16 @@ export interface AddonInfo {
   shortName?: MessageKey
   /** 先に導入が要る追加機能（導入するときに一緒に入れる） */
   requires?: string[]
+  /** ほかの追加機能を使うときに一緒に入れるもの（設定の一覧には出さない。使うものがなくなったら一緒に消す） */
+  companion?: boolean
 }
 
 /** 配信している追加機能 */
 export const ADDONS: AddonInfo[] = [
   { id: 'vocal-extractor', name: 'addon.vocalExtractor' },
+  // ONNX Runtime の wasm。WebGPU で動かすなら gpu、CPU なら cpu を入れる（src/audio/vocalExtract.ts）
+  { id: 'vocal-extractor-gpu', name: 'addon.runtimeGpu', requires: ['vocal-extractor'], companion: true },
+  { id: 'vocal-extractor-cpu', name: 'addon.runtimeCpu', requires: ['vocal-extractor'], companion: true },
   { id: 'spleeter-fp16', name: 'addon.spleeterFp16', shortName: 'addon.modelLight', requires: ['vocal-extractor'] },
   { id: 'spleeter-int8', name: 'addon.spleeterInt8', shortName: 'addon.modelStandard', requires: ['vocal-extractor'] },
   { id: 'spleeter-fp32', name: 'addon.spleeterFp32', shortName: 'addon.modelPrecise', requires: ['vocal-extractor'] },
@@ -153,8 +158,11 @@ export async function uninstallWithUnused(id: string) {
   const installed = new Set<string>()
   for (const a of ADDONS) if (await installedManifest(a.id)) installed.add(a.id)
   for (const dep of withRequires(id).filter((d) => d !== id)) {
-    const used = ADDONS.some((a) => installed.has(a.id) && a.id !== dep && withRequires(a.id).includes(dep))
-    if (!used) await uninstall(dep)
+    // 一緒に入れるもの（companion）以外に、使っているものがなければ消す。そのとき一緒に入れたものも消す
+    const used = ADDONS.some((a) => installed.has(a.id) && a.id !== dep && !a.companion && withRequires(a.id).includes(dep))
+    if (used) continue
+    for (const c of ADDONS.filter((a) => a.companion && withRequires(a.id).includes(dep))) await uninstall(c.id)
+    await uninstall(dep)
   }
 }
 

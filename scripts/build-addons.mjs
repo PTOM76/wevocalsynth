@@ -1,12 +1,13 @@
 // 追加機能を <出力先>/addons/ に作る。docs/EXTRACTOR.md
 //   node scripts/build-addons.mjs          … dist（npm run build の後に実行する。CI はこちら）
 //   node scripts/build-addons.mjs public   … public（npm run dev でも使える。npm run build でも dist にコピーされる）
-// - vocal-extractor: ボーカル抽出の実行環境（extractor/ をビルド。ONNX Runtime Web を含む）
+// - vocal-extractor: ボーカル抽出の実行環境（extractor/ をビルド）
+// - vocal-extractor-gpu / -cpu: ONNX Runtime の wasm（WebGPU 対応版 / WASM 版。要る方だけ入れる）
 // - spleeter-<種類>: モデル。sherpa-onnx の配布物を取得し、vocals.onnx / accompaniment.onnx に名前をそろえる
 // 各フォルダに manifest.json（ファイルの大きさとハッシュ、内容から決めたバージョン）を書く
 import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 const OUT = `${process.argv[2] ?? 'dist'}/addons`
@@ -50,11 +51,23 @@ const addLicenses = (dir, names) => {
   for (const n of names) copyFileSync(join('extractor', 'licenses', n), join(dir, 'licenses', n))
 }
 
-// 実行環境
+// 実行環境。ONNX Runtime の wasm は大きいので、使う計算の種類ごとの追加機能に分け、要る方だけを入れる
+// （gpu: WebGPU 対応版 28MB / cpu: WASM 版 14MB。アプリが場所を Worker に渡す。src/audio/vocalExtract.ts）
 process.env.ADDONS_OUT = OUT
 run('npx vite build -c vite.addons.config.ts')
-addLicenses(join(OUT, 'vocal-extractor'), ['onnxruntime-MIT.txt'])
-writeManifest('vocal-extractor', join(OUT, 'vocal-extractor'), 'index.js')
+const base = join(OUT, 'vocal-extractor')
+for (const [id, pattern] of [['vocal-extractor-gpu', /^ort-wasm-simd-threaded\.jsep-.*\.wasm$/], ['vocal-extractor-cpu', /^ort-wasm-simd-threaded-.*\.wasm$/]]) {
+  const dir = join(OUT, id)
+  rmSync(dir, { recursive: true, force: true })
+  mkdirSync(dir, { recursive: true })
+  const files = readdirSync(join(base, 'assets')).filter((n) => pattern.test(n))
+  if (files.length !== 1) throw new Error(`${id}: ONNX Runtime の wasm が見つからない（${files.join(', ')}）`)
+  renameSync(join(base, 'assets', files[0]), join(dir, files[0]))
+  addLicenses(dir, ['onnxruntime-MIT.txt'])
+  writeManifest(id, dir, null)
+}
+addLicenses(base, ['onnxruntime-MIT.txt'])
+writeManifest('vocal-extractor', base, 'index.js')
 
 // モデル
 mkdirSync(CACHE, { recursive: true })

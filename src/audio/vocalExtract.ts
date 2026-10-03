@@ -1,7 +1,7 @@
 import type { Clip, Range } from './types'
 import { spliceProcessed } from './edit'
 import { normalizeRanges } from './multiRange'
-import { addonFileUrl, loadAddon } from '../addons/addons'
+import { addonFileUrl, installedManifest, loadAddon } from '../addons/addons'
 import type { VocalModel } from '../settings/settings'
 import type { MessageKey } from '../i18n/i18n'
 import { backendAllowed, effectiveModel } from '../../extractor/src/compat'
@@ -43,7 +43,12 @@ export interface ExtractOptions {
   keepHighBand: boolean
   /** 抽出の実行環境の wasm のメモリの上限（MB。設定の開発者向け。なければ既定の 1GB） */
   memoryMb?: number
+  /** 計算の種類（`planBackend` で決めたもの。なければ抽出のときに決める） */
+  backend?: ExtractorModule.Backend
 }
+
+/** ONNX Runtime の wasm の追加機能（WebGPU 対応版 / WASM 版。要る方だけを入れる。scripts/build-addons.mjs） */
+export const RUNTIME_ADDONS: Record<ExtractorModule.Runtime, string> = { gpu: 'vocal-extractor-gpu', cpu: 'vocal-extractor-cpu' }
 
 /** メモリ不足で失敗したか（iOS は RangeError: out of memory か、実行環境を作れず no available backend found になる） */
 export const isOutOfMemory = (e: unknown) => /out of memory|no available backend/i.test(String(e))
@@ -58,48 +63,67 @@ async function hasWebGpu() {
   }
 }
 
+const runtimeOf = (backend: ExtractorModule.Backend): ExtractorModule.Runtime => (backend === 'webgpu' ? 'gpu' : 'cpu')
+
+/** 計算の種類と、それに要る実行環境の追加機能（抽出の前に、導入済みか確かめるため） */
+export async function planBackend(o: ExtractOptions): Promise<{ backend: ExtractorModule.Backend; runtimeAddon: string }> {
+  const backend = o.gpu && backendAllowed(o.model, 'webgpu') && (await hasWebGpu()) ? 'webgpu' : 'wasm'
+  return { backend, runtimeAddon: RUNTIME_ADDONS[runtimeOf(backend)] }
+}
+
+/** 導入した ONNX Runtime の wasm の場所 */
+async function wasmUrl(runtime: ExtractorModule.Runtime) {
+  const id = RUNTIME_ADDONS[runtime]
+  const file = (await installedManifest(id))?.files.find((f) => f.path.endsWith('.wasm'))
+  if (!file) throw new Error(`${id} は導入されていません`)
+  return addonFileUrl(id, file.path)
+}
+
 async function fetchModel(addon: string, stem: ExtractStem) {
   const res = await fetch(addonFileUrl(addon, `${stem}.onnx`))
   if (!res.ok) throw new Error(`${stem}.onnx: HTTP ${res.status}`)
   return res.arrayBuffer()
 }
 
+/** 実行環境を作る。`runtime` は読み込む ONNX Runtime（その追加機能が導入済みであること） */
+async function open(o: ExtractOptions, backend: ExtractorModule.Backend, runtime: ExtractorModule.Runtime, keepAliveMs?: number) {
+  const info = VOCAL_MODELS[o.model]
+  const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
+  return mod.createExtractor({
+    vocals: await fetchModel(info.addon, 'vocals'),
+    accompaniment: await fetchModel(info.addon, 'accompaniment'),
+    backend,
+    runtime,
+    wasmUrl: await wasmUrl(runtime),
+    memoryMb: o.memoryMb,
+    keepAliveMs,
+  })
+}
+
 /**
  * 抽出の実行環境とモデルを読み込む。抽出は数百MB使うので、先に加工と解析の Worker（wasm のメモリ）と、
  * 再生用の音声の複製を手放す（iOS はタブのメモリの上限が低い）。
- * 推論の Worker はページで 1 つを使い続ける（extractor/src/index.ts。作り直すと iOS で Out of memory になる）
+ * 推論の Worker は続けて抽出する間は使い回す（extractor/src/index.ts）
  */
 async function createExtractor(o: ExtractOptions) {
   releaseIdleDsp()
   releasePlayers()
-  const info = VOCAL_MODELS[o.model]
-  const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
-  const create = async (backend: ExtractorModule.Backend) =>
-    mod.createExtractor({
-      vocals: await fetchModel(info.addon, 'vocals'),
-      accompaniment: await fetchModel(info.addon, 'accompaniment'),
-      backend,
-      memoryMb: o.memoryMb,
-      // スマホは抽出が終わったらすぐ Worker を止める。残すと、結果のトラックを作る間のメモリと重なって、iOS でタブが落ちた
-      keepAliveMs: isMobile() ? 0 : undefined,
-    })
-  // WebGPU で作れなければ WASM で作り直す
-  const gpu = o.gpu && backendAllowed(o.model, 'webgpu') && (await hasWebGpu())
-  return gpu ? create('webgpu').catch(() => create('wasm')) : create('wasm')
+  const backend = o.backend ?? (await planBackend(o)).backend
+  // スマホは抽出が終わったらすぐ Worker を止める。残すと、結果のトラックを作る間のメモリと重なって、iOS でタブが落ちた
+  const keep = isMobile() ? 0 : undefined
+  if (backend === 'wasm') return open(o, 'wasm', 'cpu', keep)
+  // WebGPU で作れなければ CPU で作り直す。WebGPU 対応版は CPU でも動くので、入っている版のまま作る
+  return open(o, 'webgpu', 'gpu', keep).catch(() => open(o, 'wasm', 'gpu', keep))
 }
 
-/** 診断用（debug/diagnoseExtract.ts）: 計算の種類を決めて実行環境を作る。メモリを手放さず、WASM への切り替えもしない */
-export async function openExtractor(o: ExtractOptions, backend: ExtractorModule.Backend) {
-  const info = VOCAL_MODELS[o.model]
-  const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
-  return mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend, memoryMb: o.memoryMb })
-}
+/** 診断用（debug/diagnoseExtract.ts）: 計算の種類を決めて実行環境を作る。メモリを手放さず、CPU への切り替えもしない */
+export const openExtractor = (o: ExtractOptions, backend: ExtractorModule.Backend) => open(o, backend, runtimeOf(backend))
 
-/** 実行環境で `f` を行い、終わったら手放す。中断したら Worker ごと止める（処理中の separate は失敗する） */
 /** 抽出中か（診断で実行環境を作ると、抽出のモデルを入れ替えてしまう） */
 let extracting = false
 export const isExtracting = () => extracting
 
+/** 実行環境で `f` を行い、終わったら手放す。中断したら Worker ごと止める（処理中の separate は失敗する） */
 async function withExtractor<T>(o: ExtractOptions, signal: AbortSignal | undefined, f: (ex: ExtractorModule.Extractor) => Promise<T>) {
   extracting = true
   let extractor: ExtractorModule.Extractor

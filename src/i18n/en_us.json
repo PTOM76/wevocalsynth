@@ -408,6 +408,8 @@
   "toast.extracted": "Extracted",
   "settings.groupVocal": "Model",
   "settings.vocalModel": "Model",
+  "addon.runtimeGpu": "Vocal extraction runtime (GPU)",
+  "addon.runtimeCpu": "Vocal extraction runtime (CPU)",
   "addon.vocalExtractor": "Vocal extraction runtime",
   "addon.spleeterFp16": "Vocal extraction light model (Spleeter fp16)",
   "addon.spleeterInt8": "Vocal extraction standard model (Spleeter int8)",
