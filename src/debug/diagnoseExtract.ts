@@ -1,4 +1,4 @@
-import { openExtractor, VOCAL_MODELS, type ExtractOptions } from '../audio/vocalExtract'
+import { isExtracting, openExtractor, VOCAL_MODELS, type ExtractOptions } from '../audio/vocalExtract'
 import { addonFileUrl, installedManifest } from '../addons/addons'
 import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from '../audio/usePlayer'
@@ -11,6 +11,8 @@ import type { VocalModel } from '../settings/settings'
  * 加工の Worker を残したままの抽出（いまの設定）を足したもの
  */
 export async function diagnoseExtract(o: ExtractOptions, log: Log) {
+  // 抽出中に作ると、抽出のモデルを入れ替えてしまう
+  if (isExtracting()) return log('抽出中のため診断できません。抽出が終わってから実行してください')
   diagnoseEnv(log)
   await diagnoseMemory(log)
   const runtime = await installedManifest('vocal-extractor')

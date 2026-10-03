@@ -76,9 +76,20 @@ export async function openExtractor(o: ExtractOptions, backend: ExtractorModule.
   return mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend, memoryMb: o.memoryMb })
 }
 
-/** 実行環境で `f` を行い、終わったら手放す。中断したら、処理中の separate は次のブロックで止まって失敗する */
+/** 実行環境で `f` を行い、終わったら手放す。中断したら Worker ごと止める（処理中の separate は失敗する） */
+/** 抽出中か（診断で実行環境を作ると、抽出のモデルを入れ替えてしまう） */
+let extracting = false
+export const isExtracting = () => extracting
+
 async function withExtractor<T>(o: ExtractOptions, signal: AbortSignal | undefined, f: (ex: ExtractorModule.Extractor) => Promise<T>) {
-  const extractor = await createExtractor(o)
+  extracting = true
+  let extractor: ExtractorModule.Extractor
+  try {
+    extractor = await createExtractor(o)
+  } catch (e) {
+    extracting = false
+    throw e
+  }
   const stop = () => extractor.dispose()
   signal?.addEventListener('abort', stop)
   try {
@@ -86,6 +97,7 @@ async function withExtractor<T>(o: ExtractOptions, signal: AbortSignal | undefin
   } finally {
     signal?.removeEventListener('abort', stop)
     extractor.dispose()
+    extracting = false
   }
 }
 /** `clip` の範囲（秒）を、取り出したボーカル（または伴奏）に置き換えた音声を返す。長さは変わらない */

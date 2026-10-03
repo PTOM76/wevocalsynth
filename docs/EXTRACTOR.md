@@ -102,9 +102,9 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 | モード | ボーカルを取り出した直後は、処理モードを「ボーカル」にする。変更は普段どおりできる |
 | 設定 | 設定の「ボーカル抽出」で、使うモデルと「GPU を使う」（既定 ON）を選ぶ。モデルの導入・削除もここ |
 | 実行方法 | 「GPU を使う」が ON で、WebGPU が使え、モデルが対応していれば WebGPU、それ以外は WASM |
-| メモリ | モデルは抽出のたびに読み込み、終わったら解放する（推論中は数百MB使うため、スマホでメモリを持ち続けない）。抽出の前に、処理していない加工と解析の Worker を止めて wasm のメモリを手放し（`releaseIdleDsp`）、再生していないプレーヤーの AudioBuffer（音声の複製）も手放す（`releasePlayers`。AudioContext は閉じない。プレーヤーは通常の再生と試聴などで 4 つある）。推論の Worker は止めずに使い続ける（下の「iOS Safari でのメモリ不足」）。待ち時間や作り直しは入れない。それでもメモリ不足（RangeError: out of memory、no available backend found）になったら、再読み込みしてから抽出するかを確かめる（下の「メモリが足りないとき」） |
+| メモリ | モデルは抽出のたびに読み込み、終わったら解放する（推論中は数百MB使うため、スマホでメモリを持ち続けない）。抽出の前に、処理していない加工と解析の Worker を止めて wasm のメモリを手放し（`releaseIdleDsp`）、再生していないプレーヤーの AudioBuffer（音声の複製）も手放す（`releasePlayers`。AudioContext は閉じない。プレーヤーは通常の再生と試聴などで 4 つある）。推論の Worker は続けて抽出する間は使い回し、30 秒使わなければ止める（下の「iOS Safari でのメモリ不足」）。それでもメモリ不足（RangeError: out of memory、no available backend found）になったら、再読み込みしてから抽出するかを確かめる（下の「メモリが足りないとき」） |
 | 高い帯域 | 約 11kHz より上は標準では消す。設定の「高音域を残す」で、1024 ビン目のマスクで延ばして残す（`highBand: 'edge'`） |
-| 中断 | ステータスバーの × で止める。抽出の Worker は止めずに次のブロックで止め（上の「iOS Safari でのメモリ不足」）、途中までの結果は使わない（ほかの処理も同じ。`useTask`） |
+| 中断 | ステータスバーの × で止める。抽出の Worker ごと止め、途中までの結果は使わない（ほかの処理も同じ。`useTask`） |
 
 ### iOS Safari でのメモリ不足
 iPad の PWA で、抽出が `no available backend found. ERR: [wasm] RangeError: Out of memory` になった（1 回だけ成功することもあった）。設定の「開発者向け」→「ボーカル抽出の診断」（`src/debug/diagnoseExtract.ts`、中身は `extractor/src/diagnose.ts`。単体の WeVocalExtractor にも同じものがある）で、iPad（Safari 26.6、PWA）を調べて分かったこと (2026-10-03):
@@ -125,7 +125,7 @@ iPad の PWA で、抽出が `no available backend found. ERR: [wasm] RangeError
 
 **対策 1**: ONNX Runtime が作るメモリの上限を 4GB から 1GB に下げる（ビルド時に、Worker が渡す値を使うよう書き換える。`extractor/ortMemory.ts`）。上限は設定の「開発者向け」→「抽出のメモリの上限」で変えられる（256MB〜4GB。変えると推論の Worker を作り直す）。iPad の PWA で、これで抽出できるようになった (2026-10-03)。wasm は上限 4GB のメモリを読み込む宣言なので、小さい上限のメモリを渡しても動く。推論で使うのは数百MB。
 
-**対策 2**: 推論の Worker はページで 1 つだけ作り、止めずに使い続ける（`extractor/src/index.ts` の `sharedWorker`）。手放すとき（`dispose`）はセッションだけを手放し、次に作るときは同じ Worker にモデルを入れ直す。中断は Worker を止めずに、次のブロックで止めるよう頼む（`cancel`）。Worker が落ちたときと、実行環境の準備に失敗したとき（同じ Worker では二度と準備できないため）だけ作り直す。
+**対策 2**: 推論の Worker はページで 1 つにし、続けて抽出する間は使い回す（`extractor/src/index.ts` の `sharedWorker`）。手放すとき（`dispose`）はセッションだけを手放し、次に作るときは同じ Worker にモデルを入れ直す。30 秒使われなければ Worker を止める（wasm のメモリは縮まないので、止めないと抽出で増えた分が残り続ける）。中断したとき、Worker が落ちたとき、実行環境の準備に失敗したとき（同じ Worker では二度と準備できないため）も止める。抽出中は診断で実行環境を作らない（モデルを入れ替えてしまうため）。
 
 そのほかに行っていること:
 
