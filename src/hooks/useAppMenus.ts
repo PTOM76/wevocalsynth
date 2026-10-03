@@ -1,6 +1,7 @@
 import type { MenuEntry, MenuGroup } from 'pevenmui'
 import { useT } from '../i18n/i18n'
 import { openExternal, USER_GUIDE_URL } from '../links'
+import type { WheelZoom } from '../settings/settings'
 
 interface Actions {
   hasClip: boolean
@@ -75,6 +76,8 @@ interface Actions {
   repeat: boolean
   // ---- 表示 ----
   canZoomIn: boolean
+  /** ホイールだけで拡大縮小する設定か（メニューのショートカット表記を変える） */
+  wheelZoom: WheelZoom
   zoomed: boolean
   zoomIn: () => void
   zoomOut: () => void
@@ -222,7 +225,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.pitchLine'), checked: a.showPitchLine || !a.showNotes, disabled: !a.hasClip || !a.showPitch || !a.showNotes, onClick: a.togglePitchLine },
         { label: t('menu.notes'), checked: a.showNotes, disabled: !a.hasClip || !a.showPitch || (a.showNotes && !a.showPitchLine), onClick: a.toggleNotes },
         { divider: true },
-        { label: t('wave.zoomIn'), shortcut: 'Ctrl+Wheel', disabled: !a.hasClip || !a.canZoomIn, onClick: a.zoomIn },
+        { label: t('wave.zoomIn'), shortcut: a.wheelZoom === 'wheel' ? 'Wheel' : 'Ctrl+Wheel', disabled: !a.hasClip || !a.canZoomIn, onClick: a.zoomIn },
         { label: t('wave.zoomOut'), disabled: !a.hasClip || !a.zoomed, onClick: a.zoomOut },
         { label: t('wave.showAll'), disabled: !a.hasClip || !a.zoomed, onClick: a.showAll },
         {

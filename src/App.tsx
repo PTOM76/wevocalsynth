@@ -102,7 +102,7 @@ export default function App() {
   // 左上のループは通常再生の繰り返しの切り替え（加工欄のループはリアルタイム試聴）
   const toggleRepeat = () => ed.setRepeat(!ed.repeat)
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
-  const viewCtl = useWaveformView(ed.duration, player.livePosition, player.playing, settings.followPlayhead, ed.tracks.activeId)
+  const viewCtl = useWaveformView(ed.duration, player.livePosition, player.playing, settings.followPlayhead, ed.tracks.activeId, settings.wheelZoom)
   const [pitchPercent, setPitchPercent] = usePersistentNumber('wevocalsynth.pitchPercent', 40)
   const { view } = viewCtl
   // 止まっているときに再生位置を動かしたら（矢印キーなど）、画面の外なら見える位置まで表示範囲を動かす
@@ -176,6 +176,7 @@ export default function App() {
     seekEdge: ed.seekEdge,
     repeat: ed.repeat,
     canZoomIn: viewCtl.canZoomIn,
+    wheelZoom: settings.wheelZoom,
     zoomed: viewCtl.zoomed,
     zoomIn: () => viewCtl.zoomAround(ZOOM_STEP, selection ? (selection.start + selection.end) / 2 : center),
     zoomOut: () => viewCtl.zoomAround(1 / ZOOM_STEP, center),
@@ -347,6 +348,7 @@ export default function App() {
       disabled={!shown}
       zoomed={viewCtl.zoomed}
       canZoomIn={viewCtl.canZoomIn}
+      wheelZoom={settings.wheelZoom}
       onZoomOut={() => viewCtl.zoomAround(1 / ZOOM_STEP, center)}
       onZoomIn={() => viewCtl.zoomAround(ZOOM_STEP, selection ? (selection.start + selection.end) / 2 : center)}
       onShowAll={viewCtl.showAll}
@@ -613,7 +615,7 @@ export default function App() {
         onJump={(n) => !busy && ed.history.jumpTo(n)}
       />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
-      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} wheelZoom={settings.wheelZoom} />
       <SettingsDialog
         open={settingsOpen}
         focusSignal={settingsFocus}

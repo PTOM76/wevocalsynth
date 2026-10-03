@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { View } from './draw'
+import type { WheelZoom } from '../../settings/settings'
 
 /** 表示できる最小の時間幅（秒） */
 export const MIN_VIEW_SEC = 0.02
@@ -12,7 +13,7 @@ const FOLLOW_CHECK_MS = 50
  * 波形の表示範囲（拡大縮小・スクロール）。クリップの長さ変更への追従と、再生中の自動スクロールを扱う。
  * ツールバーと波形の両方から操作するため、画面側（App）で持つ。
  */
-export function useWaveformView(duration: number, livePosition: () => number, playing: boolean, follow = true, trackId = '') {
+export function useWaveformView(duration: number, livePosition: () => number, playing: boolean, follow = true, trackId = '', wheelZoom: WheelZoom = 'ctrl') {
   const [view, setView] = useState<View>({ start: 0, dur: duration })
   // トラックごとの表示範囲。切り替えたら前のトラックの分を覚え、戻ったら復元する
   const saved = useRef(new Map<string, View>())
@@ -46,19 +47,25 @@ export function useWaveformView(duration: number, livePosition: () => number, pl
     [fit],
   )
 
-  /** ホイール操作: Ctrl/⌘ 併用でカーソル位置を中心に拡大縮小、それ以外は横スクロール。`rect` は波形の位置 */
+  /**
+   * ホイール操作: カーソル位置を中心に拡大縮小するか、横スクロールする。`rect` は波形の位置。
+   * `wheelZoom` が ctrl なら Ctrl/⌘ 併用で拡大縮小、wheel ならホイールだけで拡大縮小し Ctrl/⌘ 併用で横スクロール。
+   * 横向きのホイール（トラックパッドの横スワイプ）はどちらでも横スクロール
+   */
   const wheel = useCallback(
     (e: WheelEvent, rect: DOMRect) =>
       setView((v) => {
-        if (e.ctrlKey || e.metaKey) {
+        const modifier = e.ctrlKey || e.metaKey
+        const horizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY)
+        if (!horizontal && (wheelZoom === 'wheel' ? !modifier : modifier)) {
           const center = v.start + ((e.clientX - rect.left) / rect.width) * v.dur
           const dur = v.dur / (e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP)
           return fit(center - ((center - v.start) / v.dur) * dur, dur)
         }
-        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+        const delta = horizontal ? e.deltaX : e.deltaY
         return fit(v.start + (delta / rect.width) * v.dur, v.dur)
       }),
-    [fit],
+    [fit, wheelZoom],
   )
 
   // クリップが変わったら、可能なら拡大率を保ち、無理なら全体表示にする

@@ -12,6 +12,9 @@ export type ThemeSetting = 'system' | 'light' | 'dark'
 /** Ctrl+S で行うこと。もう一方は Ctrl+Shift+S になる */
 export type CtrlSAction = 'project' | 'export'
 
+/** ホイールでの拡大縮小。ctrl は Ctrl+ホイールで拡大縮小（ホイールで横スクロール）、wheel はその逆 */
+export type WheelZoom = 'ctrl' | 'wheel'
+
 /** ピッチ解析で声とみなす判定の厳しさ。ゆるいほど、かすれた声も拾うが、雑音も拾いやすい */
 export type F0Voicing = 'strict' | 'normal' | 'loose'
 
@@ -97,6 +100,8 @@ export interface Settings {
   playbackSession: boolean
   /** 従来の処理方式（改良版があるもの）も選べるように表示する */
   showLegacyAlgorithms: boolean
+  /** ホイールでの拡大縮小の割り当て */
+  wheelZoom: WheelZoom
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -129,6 +134,7 @@ export const DEFAULT_SETTINGS: Settings = {
   suspendWhenStopped: true,
   playbackSession: true,
   showLegacyAlgorithms: false,
+  wheelZoom: 'ctrl',
   vocalAlgorithm: 'sola2',
   instrumentAlgorithm: 'pv',
   defaultBpm: 120,

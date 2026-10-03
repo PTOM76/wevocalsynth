@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { CtrlSAction, F0Voicing, InitialMode, Settings, ThemeSetting, VocalModel } from './settings'
+import type { CtrlSAction, F0Voicing, InitialMode, Settings, ThemeSetting, VocalModel, WheelZoom } from './settings'
 import { NumberInput } from '../components/inspector/Inspector'
 import { UpdateSection } from 'pevenmui/pwa'
 import DataSection from './DataSection'
@@ -59,6 +59,16 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             help={t('settings.sliderResetHelp')}
           />
           <Check checked={draft.seekAfterInsert} onChange={(v) => set({ seekAfterInsert: v })} label={t('settings.seekAfterInsert')} />
+          <Row label={t('settings.wheelZoom')}>
+            <Choice<WheelZoom>
+              value={draft.wheelZoom}
+              onChange={(v) => set({ wheelZoom: v })}
+              options={[
+                ['ctrl', t('settings.wheelZoomCtrl')],
+                ['wheel', t('settings.wheelZoomWheel')],
+              ]}
+            />
+          </Row>
         </Group>
         <Group title={t('settings.groupProcess')}>
           <Row label={t('settings.initialMode')}>

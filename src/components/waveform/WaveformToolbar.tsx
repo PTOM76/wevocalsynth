@@ -26,6 +26,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { useT } from '../../i18n/i18n'
 import { countRender } from '../../debug/debugStats'
+import type { WheelZoom } from '../../settings/settings'
 
 /** ツールチップ付きの小さいアイコンボタン。`pressed` を渡すと ON/OFF の切替ボタンになる */
 export function SmallButton(props: {
@@ -57,6 +58,8 @@ export function SmallButton(props: {
 interface Props {
   zoomed: boolean
   canZoomIn: boolean
+  /** ホイールだけで拡大縮小する設定か（ツールチップの操作の説明を変える） */
+  wheelZoom?: WheelZoom
   onZoomOut: () => void
   onZoomIn: () => void
   onShowAll: () => void
@@ -140,8 +143,8 @@ export default function WaveformToolbar(p: Props) {
   const fm = p.formant
   return (
     <>
-      <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomOut') })} label={t('wave.zoomOut')} icon={faMagnifyingGlassMinus} disabled={off || !p.zoomed} onClick={p.onZoomOut} />
-      <SmallButton title={t('wave.wheelHint', { action: t('wave.zoomIn') })} label={t('wave.zoomIn')} icon={faMagnifyingGlassPlus} disabled={off || !p.canZoomIn} onClick={p.onZoomIn} />
+      <SmallButton title={t(p.wheelZoom === 'wheel' ? 'wave.wheelHintPlain' : 'wave.wheelHint', { action: t('wave.zoomOut') })} label={t('wave.zoomOut')} icon={faMagnifyingGlassMinus} disabled={off || !p.zoomed} onClick={p.onZoomOut} />
+      <SmallButton title={t(p.wheelZoom === 'wheel' ? 'wave.wheelHintPlain' : 'wave.wheelHint', { action: t('wave.zoomIn') })} label={t('wave.zoomIn')} icon={faMagnifyingGlassPlus} disabled={off || !p.canZoomIn} onClick={p.onZoomIn} />
       <SmallButton title={t('wave.showAll')} label={t('wave.showAll')} icon={faExpand} disabled={off || !p.zoomed} onClick={p.onShowAll} />
       <SmallButton
         title={t('wave.followTooltip')}
