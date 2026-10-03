@@ -161,6 +161,8 @@ export default function App() {
     extract: (stem) => void ed.extract(stem),
     splitStems: () => void ed.splitStems(),
     duplicateTrack: () => ed.tracks.duplicate(),
+    hasOriginal: !!ed.tracks.tracks.find((tr) => tr.id === ed.tracks.activeId && tr.original !== tr.clip),
+    trackFromOriginal: () => ed.tracks.fromOriginal(),
     addEmptyTrack: ed.tracks.addEmpty,
     insertSilence: () => setSilenceOpen(true),
     selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),

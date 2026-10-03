@@ -50,6 +50,8 @@ export interface Settings {
   /** 拍の目安線を波形に出す */
   showBeatGrid: boolean
   /** 元に戻せる段数 */
+  /** 原音（加工前の音声）を持つ。OFF なら加工を適用するたびに、その結果を新しい原音にする（メモリと保存の大きさが減る） */
+  keepOriginal: boolean
   historyLimit: number
   /** 元に戻す履歴が使うメモリの上限（MB）。超えたら古い段から捨てる */
   historyMemoryMb: number
@@ -150,6 +152,7 @@ export const DEFAULT_SETTINGS: Settings = {
   f0MaxHz: 1000,
   f0Voicing: 'normal',
   f0SilenceDb: -50,
+  keepOriginal: true,
   historyLimit: 50,
   historyMemoryMb: 512,
   dialogWindow: 'auto',

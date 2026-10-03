@@ -66,6 +66,7 @@ npm run dev
 | アーキテクチャ設計 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | ファイル構成 | [docs/STRUCTURE.md](docs/STRUCTURE.md) |
 | 機能の仕組み | [docs/INTERNALS.md](docs/INTERNALS.md) |
+| プロジェクトファイルの形式 | [docs/PROJECT_FORMAT.md](docs/PROJECT_FORMAT.md) |
 | アルゴリズム | [docs/ALGORITHM.md](docs/ALGORITHM.md) |
 | ボーカル抽出 | [docs/EXTRACTOR.md](docs/EXTRACTOR.md) |
 | ドキュメントの書き方 | [docs/WRITING.md](docs/WRITING.md) |

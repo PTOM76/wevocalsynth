@@ -82,7 +82,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
   const [fileName, setFileName] = useState('')
   // プロジェクト名を自分で変えたか（変えていなければ、書き出しの名前に _wevocal を付ける）
   const [named, setNamed] = useState(false)
-  const history = useHistory({ limit: settings.historyLimit, budgetBytes: settings.historyMemoryMb * 2 ** 20 })
+  const history = useHistory({ limit: settings.historyLimit, budgetBytes: settings.historyMemoryMb * 2 ** 20 }, settings.keepOriginal)
   // 編集できるのは選んでいるトラックだけ。original / edited はそのトラックの原音・加工後
   const tracks = useTracks(history)
   const original = history.original

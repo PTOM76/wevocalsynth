@@ -136,11 +136,23 @@ function trim(past: Step[], future: Step[], l: HistoryLimits): Step[] {
  * トラックと、その元に戻す / やり直すの履歴。各段は前後のクリップとの差分（またはトラックの一覧）だけを持つ。
  * 編集（commit）は選んでいるトラックに対して行う。トラックが1本なら今までの1クリップの履歴と同じ
  */
-export function useHistory(limits: HistoryLimits) {
+export function useHistory(limits: HistoryLimits, keepOriginal = true) {
   // 上限は設定で変わるので、最新の値を更新処理の中から読む
   const limitsRef = useRef(limits)
   limitsRef.current = limits
-  const [history, setHistory] = useState<History>(EMPTY)
+  const [history, setRawHistory] = useState<History>(EMPTY)
+  // 原音を持たない設定なら、どの操作のあとも原音を今のクリップにそろえる（原音の分のメモリと保存の大きさを減らす）
+  const keepRef = useRef(keepOriginal)
+  keepRef.current = keepOriginal
+  const setHistory = useCallback((u: History | ((h: History) => History)) => {
+    setRawHistory((h) => {
+      const next = typeof u === 'function' ? u(h) : u
+      if (keepRef.current || next.tracks.every((t) => t.original === t.clip)) return next
+      return { ...next, tracks: next.tracks.map((t) => (t.original === t.clip ? t : { ...t, original: t.clip })) }
+    })
+  }, [])
+  // 設定を切り替えたら、今のトラックにも当てる
+  useEffect(() => setHistory((h) => h), [keepOriginal, setHistory])
   // デバッグ表示: 履歴が持っている音声データの量
   useEffect(() => reportMemory('history', [...history.past, ...history.future].reduce((s, p) => s + stepBytes(p), 0)), [history])
 

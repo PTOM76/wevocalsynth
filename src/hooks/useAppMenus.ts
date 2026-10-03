@@ -52,6 +52,9 @@ interface Actions {
   splitStems: () => void
   /** トラックの複製と、ファイルをトラックとして追加 */
   duplicateTrack: () => void
+  /** 原音を新しいトラックに（原音が加工後と違うときだけ） */
+  hasOriginal: boolean
+  trackFromOriginal: () => void
   addEmptyTrack: () => void
   /** 無音の挿入（長さを決めるダイアログを開く） */
   insertSilence: () => void
@@ -282,6 +285,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       entries: [
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
         { label: t('track.duplicate'), disabled: noClip, onClick: a.duplicateTrack },
+        { label: t('track.fromOriginalMenu'), disabled: noClip || !a.hasOriginal, onClick: a.trackFromOriginal },
         { label: t('track.addEmpty'), disabled: noClip, onClick: a.addEmptyTrack },
         { label: t('track.copySelection'), disabled: noSel, onClick: () => a.selectionToTrack(false) },
         { label: t('track.moveSelection'), disabled: noSel, onClick: () => a.selectionToTrack(true) },

@@ -10,6 +10,7 @@
 - [アーキテクチャ](ARCHITECTURE.md)（構成の方針と理由）
 - [ファイル構成](STRUCTURE.md)（どのファイルが何を担当するか）
 - [機能の仕組み](INTERNALS.md)（データの流れ・トラック・再生・保存）
+- [プロジェクトファイルの形式](PROJECT_FORMAT.md)（.wvsp）
 - [アルゴリズム](ALGORITHM.md)（音声処理の仕組みと参考資料）
 - [ボーカル抽出](EXTRACTOR.md)（WeVocalSynth 側。本体は wevocalextractor の docs）
 - [ドキュメントの書き方](WRITING.md)

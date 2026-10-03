@@ -55,6 +55,13 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     insertAfter([makeTrack(t('track.copyName', { name: src.name }), src.clip, src.original)], t('track.duplicate'), id)
   }
 
+  /** トラック `id`（既定は選んでいるもの）の原音（加工前の音声）を、新しいトラックとして足す */
+  const fromOriginal = (id = activeId) => {
+    const src = tracks.find((tr) => tr.id === id)
+    if (!src || src.original === src.clip) return
+    insertAfter([makeTrack(t('track.originalName', { name: src.name }), src.original)], t('track.fromOriginal'), id)
+  }
+
   /** 選択範囲を同じ位置のまま新しいトラックへ。`move` なら元の範囲は無音にする（1回の操作として履歴に積む） */
   const fromSelection = (ranges: Range[], move: boolean) => {
     const src = tracks.find((tr) => tr.id === activeId)
@@ -169,6 +176,7 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     activeMuted,
     select: history.select,
     duplicate,
+    fromOriginal,
     fromSelection,
     addEmpty,
     addClip,

@@ -52,6 +52,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
           <Check checked={draft.confirmClose} onChange={(v) => set({ confirmClose: v })} label={t('settings.confirmClose')} help={t('settings.confirmCloseHelp')} />
         </Group>
         <Group title={t('settings.groupHistory')}>
+          <Check checked={draft.keepOriginal} onChange={(v) => set({ keepOriginal: v })} label={t('settings.keepOriginal')} help={t('settings.keepOriginalHelp')} />
           <Row label={t('settings.historyLimit')}>
             <NumberInput value={draft.historyLimit} onChange={(v) => set({ historyLimit: Math.round(v) })} min={1} max={500} step={1} width={110} />
           </Row>
