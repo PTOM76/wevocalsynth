@@ -250,7 +250,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
           <Choice<string>
             value={String(draft.vocalMemoryMb)}
             onChange={(v) => set({ vocalMemoryMb: Number(v) })}
-            options={MEMORY_MB.map((mb): [string, string] => [String(mb), mb < 1024 ? `MB` : `GB`])}
+            options={MEMORY_MB.map((mb): [string, string] => [String(mb), mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`])}
           />
         </Row>
         <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand, memoryMb: draft.vocalMemoryMb }} />
