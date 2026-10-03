@@ -66,7 +66,7 @@ const KEEP_MS = 20_000
  * 再生用の音声の複製を手放し、少し待ってから始める（iOS はタブのメモリの上限が低い）。
  * メモリ不足で作れなければ、少し待ってから新しい Worker でもう一度作る
  */
-async function createExtractor(o: ExtractOptions, retry = true) {
+async function createExtractor(o: ExtractOptions) {
   releaseIdleDsp()
   releasePlayers()
   await new Promise((r) => setTimeout(r, RELEASE_WAIT_MS))
@@ -79,17 +79,18 @@ async function createExtractor(o: ExtractOptions, retry = true) {
   try {
     return await attempt()
   } catch (e) {
-    if (!retry || !isOutOfMemory(e)) throw e
+    if (!isOutOfMemory(e)) throw e
     await new Promise((r) => setTimeout(r, RETRY_WAIT_MS))
     return attempt()
   }
 }
 
-/** 診断用（debug/diagnoseExtract.ts）: 実行環境を作って手放すだけ。残しておいたものは先に手放す。失敗を隠さないよう、作り直しはしない */
-export async function tryCreateExtractor(o: ExtractOptions) {
+/** 診断用（debug/diagnoseExtract.ts）: 計算の種類を決めて実行環境を作る。メモリを手放さず、作り直しもしない */
+export async function openExtractor(o: ExtractOptions, backend: ExtractorModule.Backend) {
   dropKept()
-  const extractor = await createExtractor(o, false)
-  extractor.dispose()
+  const info = VOCAL_MODELS[o.model]
+  const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
+  return mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend })
 }
 
 /** 残しておいた実行環境（設定が同じなら使い回す） */
