@@ -1,7 +1,6 @@
 import type { Clip } from '../audio/types'
 import { pickStoredSettings, type StoredTrackSettings } from '../audio/tracks'
 import type { EditParams } from '../components/EditPanel'
-import { readFile } from 'wevocal-lib'
 import { t } from '../i18n/i18n'
 
 /**
@@ -15,7 +14,7 @@ import { t } from '../i18n/i18n'
  */
 export const PROJECT_EXT = '.wvsp'
 const MAGIC = 'WVSP'
-const VERSION = 2
+const VERSION = 3
 
 /** プロジェクトの1トラック */
 /** プロジェクトの1トラック。フェーダー・鳴らし方・重ねる表示（`StoredTrackSettings`）は古いファイルには無い */
@@ -58,7 +57,8 @@ export interface Project {
   active: number
 }
 
-type ClipInfo = { sampleRate: number; channels: number; length: number }
+/** `same`: 中身を書かず、直前のクリップ（そのトラックの原音）と同じ。版 3 から */
+type ClipInfo = { sampleRate: number; channels: number; length: number; same?: boolean }
 
 interface Header {
   version: number
@@ -67,7 +67,7 @@ interface Header {
   params: EditParams
   tempo?: ProjectTempo
   markers?: Marker[]
-  /** 版 2: トラックごとの名前。クリップは2つずつ（原音・加工後）並ぶ */
+  /** 版 2・3: トラックごとの名前。クリップは2つずつ（原音・加工後）並ぶ */
   tracks?: ({ name: string } & StoredTrackSettings)[]
   active?: number
   clips: ClipInfo[]
@@ -86,12 +86,12 @@ function toLittleEndian(ch: Float32Array): ArrayBuffer {
   return v.buffer
 }
 
-function fromLittleEndian(buf: ArrayBuffer, offset: number, length: number): Float32Array {
-  // オフセットが4の倍数とは限らないため、一度切り出してから Float32Array として見る
-  if (LITTLE_ENDIAN) return new Float32Array(buf.slice(offset, offset + length * 4))
+/** 1 チャンネル分のバイト列（f32 LE）を Float32Array にする */
+function fromLittleEndian(buf: ArrayBuffer): Float32Array {
+  if (LITTLE_ENDIAN) return new Float32Array(buf)
   const v = new DataView(buf)
-  const ch = new Float32Array(length)
-  for (let i = 0; i < length; i++) ch[i] = v.getFloat32(offset + i * 4, true)
+  const ch = new Float32Array(buf.byteLength / 4)
+  for (let i = 0; i < ch.length; i++) ch[i] = v.getFloat32(i * 4, true)
   return ch
 }
 
@@ -106,7 +106,11 @@ async function transform(data: Blob, stream: CompressionStream | DecompressionSt
 
 /** プロジェクトを .wvsp の Blob にする */
 export function saveProject(p: Project): Blob {
-  const clips = p.tracks.flatMap((t) => [t.original, t.edited])
+  // 加工後が原音と同じなら中身を書かない
+  const clips = p.tracks.flatMap((t) => [
+    { clip: t.original, same: false },
+    { clip: t.edited, same: t.edited === t.original },
+  ])
   const header: Header = {
     version: VERSION,
     fileName: p.fileName,
@@ -116,45 +120,59 @@ export function saveProject(p: Project): Blob {
     markers: p.markers,
     tracks: p.tracks.map((t) => ({ name: t.name, ...pickStoredSettings(t) })),
     active: p.active,
-    clips: clips.map((c) => ({ sampleRate: c.sampleRate, channels: c.channels.length, length: c.channels[0].length })),
+    clips: clips.map(({ clip: c, same }) => ({ sampleRate: c.sampleRate, channels: c.channels.length, length: c.channels[0].length, ...(same ? { same } : {}) })),
   }
   const json = new TextEncoder().encode(JSON.stringify(header))
   const lead = new Uint8Array(8)
   lead.set(new TextEncoder().encode(MAGIC), 0)
   new DataView(lead.buffer).setUint32(4, json.length, true)
-  const pcm = clips.flatMap((c) => c.channels.map(toLittleEndian))
+  const pcm = clips.flatMap(({ clip, same }) => (same ? [] : clip.channels.map(toLittleEndian)))
   return new Blob([lead, json, ...pcm], { type: 'application/octet-stream' })
 }
 
-/** .wvsp ファイルを読み込む。形式が違えば例外 */
+/**
+ * .wvsp ファイルを読み込む。形式が違えば例外。
+ * チャンネルごとにファイルの必要な部分だけを読む（全体を読んでから切り出すと、一時的にファイルの 2 倍のメモリを使った）
+ */
 export async function loadProject(file: File, onProgress?: (p: number) => void): Promise<Project> {
-  // 先頭が gzip の印（1f 8b）なら、以前の圧縮形式として展開する
-  const head = new Uint8Array(await file.slice(0, 2).arrayBuffer())
+  // 先頭が gzip の印（1f 8b）なら、以前の圧縮形式として展開する（全体を読む）
+  const head = new Uint8Array(await file.slice(0, 8).arrayBuffer())
   const gzipped = head[0] === 0x1f && head[1] === 0x8b
-  const buf = gzipped
+  const whole = gzipped
     ? await transform(file, new DecompressionStream('gzip')).catch(() => {
         throw new Error(t('project.invalid'))
       })
-    : await readFile(file, onProgress)
-  const view = new DataView(buf)
-  if (buf.byteLength < 8 || new TextDecoder().decode(new Uint8Array(buf, 0, 4)) !== MAGIC) {
-    throw new Error(t('project.invalid'))
-  }
-  const jsonLen = view.getUint32(4, true)
-  const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, jsonLen))) as Header
-  const infos = header.version === 1 ? [{ name: header.fileName }] : header.version === 2 ? (header.tracks ?? []) : null
+    : null
+  const source: Blob = whole ? new Blob([whole]) : file
+  const lead = whole ? new Uint8Array(whole, 0, Math.min(8, whole.byteLength)) : head
+  if (lead.byteLength < 8 || new TextDecoder().decode(lead.subarray(0, 4)) !== MAGIC) throw new Error(t('project.invalid'))
+  const jsonLen = new DataView(lead.buffer, lead.byteOffset, 8).getUint32(4, true)
+  const header = JSON.parse(new TextDecoder().decode(await source.slice(8, 8 + jsonLen).arrayBuffer())) as Header
+  const infos = header.version === 1 ? [{ name: header.fileName }] : header.version === 2 || header.version === 3 ? (header.tracks ?? []) : null
   const names = infos?.map((tr) => tr.name) ?? null
   if (!names || header.clips.length !== names.length * 2 || names.length === 0) throw new Error(t('project.unsupported'))
 
+  const total = header.clips.reduce((s, c) => s + (c.same ? 0 : c.channels * c.length * 4), 0) || 1
   let offset = 8 + jsonLen
-  const clips = header.clips.map((info): Clip => ({
-    sampleRate: info.sampleRate,
-    channels: Array.from({ length: info.channels }, () => {
-      const ch = fromLittleEndian(buf, offset, info.length)
-      offset += info.length * 4
-      return ch
-    }),
-  }))
+  let read = 0
+  const clips: Clip[] = []
+  for (const info of header.clips) {
+    if (info.same && clips.length) {
+      clips.push(clips[clips.length - 1])
+      continue
+    }
+    const channels: Float32Array[] = []
+    for (let c = 0; c < info.channels; c++) {
+      const bytes = info.length * 4
+      const buf = await source.slice(offset, offset + bytes).arrayBuffer()
+      if (buf.byteLength !== bytes) throw new Error(t('project.invalid'))
+      channels.push(fromLittleEndian(buf))
+      offset += bytes
+      read += bytes
+      onProgress?.(read / total)
+    }
+    clips.push({ sampleRate: info.sampleRate, channels })
+  }
   const tracks = names.map((name, i) => ({ name, original: clips[i * 2], edited: clips[i * 2 + 1], ...pickTrackState(infos?.[i]) }))
   return { fileName: header.fileName, named: header.named, params: header.params, tempo: header.tempo, markers: header.markers, tracks, active: Math.min(header.active ?? 0, tracks.length - 1) }
 }
