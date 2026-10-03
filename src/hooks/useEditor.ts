@@ -28,7 +28,7 @@ import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
 import { useFilePicker } from './useFilePicker'
 import { useRecentFiles } from './useRecentFiles'
-import { configureFileAccess } from '../project/fileAccess'
+import { configureFileAccess, rememberLaunched } from '../project/fileAccess'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
@@ -465,17 +465,37 @@ export function useEditor(settings: Settings) {
   // ドロップした音声は、もう開いているならトラックとして足す（プロジェクトファイルは開き直す）
   useFileDrop((f) => (history.tracks.length && !isProjectFile(f) ? addTrackFile(f) : void loadFile(f)))
 
+  // ファイルから起動したか（下の launchQueue。真なら起動時の復元をしない）
+  const launchedRef = useRef(false)
   // 作業状態の自動保存と、起動時の復元
   useAutosave(
     settings.autoRestore,
     { fileName, named, tempo: projectTempo, markers: markers.markers, tracks: history.tracks, activeId: history.activeId, settings: tracks.settings },
     params,
     (project, ids) => {
+      // ファイルから起動した（OS でダブルクリックした）ときは、そのファイルを優先して復元しない
+      if (launchedRef.current) return
       openClip(project.tracks[project.active].edited, project.fileName, project, ids)
       setToast({ severity: 'info', message: t('toast.restored') })
     },
     (e) => console.warn('autosave failed', e),
   )
+
+  // OS でファイルをダブルクリックして起動したとき（インストールした PWA の File Handling。vite.config.ts の file_handlers）
+  const loadFileRef = useRef(loadFile)
+  loadFileRef.current = loadFile
+  useEffect(() => {
+    const queue = (window as Window & { launchQueue?: { setConsumer(f: (p: { files?: { getFile(): Promise<File> }[] }) => void): void } }).launchQueue
+    queue?.setConsumer((p) => {
+      const handle = p.files?.[0]
+      if (!handle) return
+      launchedRef.current = true
+      void handle.getFile().then((f) => {
+        void loadFileRef.current(f)
+        rememberLaunched(handle)
+      })
+    })
+  }, [])
 
   const openExport = () => edited && setExportOpen(true)
 

@@ -114,6 +114,9 @@ export async function listRecent(): Promise<RecentFile[]> {
   }
 }
 
+/** OS から渡されたファイル（ダブルクリックで起動したとき）を、最近使用したファイルに記録する */
+export const rememberLaunched = (handle: unknown) => void addRecent(handle as FileHandle)
+
 /** 先頭に足す。同じファイルが前にあれば、そちらは消す */
 async function addRecent(handle: FileHandle) {
   if (!options.recentFiles) return

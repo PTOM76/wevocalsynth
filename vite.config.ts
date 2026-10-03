@@ -70,6 +70,24 @@ export default defineConfig({
           { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         ],
+        // インストールした PWA を、これらのファイルを開くアプリとして OS に登録する（File Handling API。Chrome・Edge のデスクトップ版）。
+        // ダブルクリックで起動したファイルは launchQueue で受け取る（src/hooks/useEditor.ts）
+        file_handlers: [
+          {
+            action: './',
+            accept: {
+              'application/x-wevocalsynth-project': ['.wvsp'],
+              'audio/wav': ['.wav'],
+              'audio/aiff': ['.aif', '.aiff', '.aifc'],
+              'audio/mpeg': ['.mp3'],
+              'audio/mp4': ['.m4a', '.aac'],
+              'audio/flac': ['.flac'],
+              'audio/ogg': ['.ogg', '.oga', '.opus'],
+            },
+          },
+        ],
+        // 複数のファイルを開いたときも、窓は1つで受け取る
+        launch_handler: { client_mode: 'focus-existing' },
       },
       workbox: {
         // workbox ランタイムを sw.js に埋め込み、ハッシュ付きファイルを出さない
