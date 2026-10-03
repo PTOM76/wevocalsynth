@@ -31,9 +31,6 @@ export interface ExtractOptions {
   keepHighBand: boolean
 }
 
-/** メモリを手放してから抽出を始めるまでの待ち時間（ミリ秒）。止めた Worker のメモリは、iOS ではすぐには返らない */
-const RELEASE_WAIT_MS = 1000
-
 /** メモリ不足で失敗したか（iOS は RangeError: out of memory か、実行環境を作れず no available backend found になる） */
 export const isOutOfMemory = (e: unknown) => /out of memory|no available backend/i.test(String(e))
 
@@ -53,86 +50,42 @@ async function fetchModel(addon: string, stem: ExtractStem) {
   return res.arrayBuffer()
 }
 
-/** 作り直す前に待つ時間（ミリ秒）。iOS は止めた Worker の wasm のメモリをすぐには返さない */
-const RETRY_WAIT_MS = 1200
 /**
- * 使い終わった実行環境を残しておく時間（ミリ秒）。続けて抽出するときに作り直さない。
- * iOS では、手放した直後に作り直すと、前のメモリが返る前に確保しようとして RangeError: Out of memory になった
- */
-const KEEP_MS = 20_000
-
-/**
- * 抽出の実行環境とモデルを読み込む。抽出は数百MB使うので、先に加工・解析の Worker（wasm のメモリ）と、
- * 再生用の音声の複製を手放し、少し待ってから始める（iOS はタブのメモリの上限が低い）。
- * メモリ不足で作れなければ、少し待ってから新しい Worker でもう一度作る
+ * 抽出の実行環境とモデルを読み込む。抽出は数百MB使うので、先に加工と解析の Worker（wasm のメモリ）と、
+ * 再生用の音声の複製を手放す（iOS はタブのメモリの上限が低い）。
+ * 推論の Worker はページで 1 つを使い続ける（extractor/src/index.ts。作り直すと iOS で Out of memory になる）
  */
 async function createExtractor(o: ExtractOptions) {
   releaseIdleDsp()
   releasePlayers()
-  await new Promise((r) => setTimeout(r, RELEASE_WAIT_MS))
   const info = VOCAL_MODELS[o.model]
   const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
   const create = async (backend: ExtractorModule.Backend) =>
     mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend })
   // WebGPU で作れなければ WASM で作り直す
-  const attempt = () => (o.gpu && info.webgpu ? hasWebGpu() : Promise.resolve(false)).then((gpu) => (gpu ? create('webgpu').catch(() => create('wasm')) : create('wasm')))
-  try {
-    return await attempt()
-  } catch (e) {
-    if (!isOutOfMemory(e)) throw e
-    await new Promise((r) => setTimeout(r, RETRY_WAIT_MS))
-    return attempt()
-  }
+  const gpu = o.gpu && info.webgpu && (await hasWebGpu())
+  return gpu ? create('webgpu').catch(() => create('wasm')) : create('wasm')
 }
 
-/** 診断用（debug/diagnoseExtract.ts）: 計算の種類を決めて実行環境を作る。メモリを手放さず、作り直しもしない */
+/** 診断用（debug/diagnoseExtract.ts）: 計算の種類を決めて実行環境を作る。メモリを手放さず、WASM への切り替えもしない */
 export async function openExtractor(o: ExtractOptions, backend: ExtractorModule.Backend) {
-  dropKept()
   const info = VOCAL_MODELS[o.model]
   const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
   return mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend })
 }
 
-/** 残しておいた実行環境（設定が同じなら使い回す） */
-let kept: { key: string; extractor: ExtractorModule.Extractor; timer: number } | null = null
-const keyOf = (o: ExtractOptions) => `${o.model}:${o.gpu}`
-function dropKept() {
-  if (!kept) return
-  clearTimeout(kept.timer)
-  kept.extractor.dispose()
-  kept = null
-}
-
-/**
- * 実行環境で `f` を行う。設定が同じなら残しておいたものを使い、終わったら `KEEP_MS` だけ残す。
- * 中断・失敗したら Worker ごと止める（処理中の separate は失敗する）
- */
+/** 実行環境で `f` を行い、終わったら手放す。中断したら、処理中の separate は次のブロックで止まって失敗する */
 async function withExtractor<T>(o: ExtractOptions, signal: AbortSignal | undefined, f: (ex: ExtractorModule.Extractor) => Promise<T>) {
-  const key = keyOf(o)
-  let extractor: ExtractorModule.Extractor
-  if (kept?.key === key) {
-    clearTimeout(kept.timer)
-    extractor = kept.extractor
-    kept = null
-  } else {
-    dropKept()
-    extractor = await createExtractor(o)
-  }
+  const extractor = await createExtractor(o)
   const stop = () => extractor.dispose()
   signal?.addEventListener('abort', stop)
   try {
-    const result = await f(extractor)
-    if (!signal?.aborted) kept = { key, extractor, timer: window.setTimeout(dropKept, KEEP_MS) }
-    else extractor.dispose()
-    return result
-  } catch (e) {
-    extractor.dispose()
-    throw e
+    return await f(extractor)
   } finally {
     signal?.removeEventListener('abort', stop)
+    extractor.dispose()
   }
 }
-
 /** `clip` の範囲（秒）を、取り出したボーカル（または伴奏）に置き換えた音声を返す。長さは変わらない */
 export function extractRanges(clip: Clip, ranges: Range[], stem: ExtractStem, o: ExtractOptions, onProgress: (p: number) => void, signal?: AbortSignal) {
   return withExtractor(o, signal, async (extractor) => {
