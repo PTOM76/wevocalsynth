@@ -13,7 +13,7 @@ import ExtractDiagnose from '../debug/ExtractDiagnose'
 import type { Algorithm } from '../dsp/engine'
 import { t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
-import { canPickFiles, type PickerMode, type StartFolder } from 'pevenmui/web'
+import type { PickerMode, StartFolder } from 'pevenmui/web'
 import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
 
 /** 抽出の実行環境のメモリの上限の選択肢（MB） */
@@ -51,6 +51,51 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
           />
           <Check checked={draft.confirmClose} onChange={(v) => set({ confirmClose: v })} label={t('settings.confirmClose')} help={t('settings.confirmCloseHelp')} />
         </Group>
+        <Group title={t('settings.groupUpdate')}>
+          <UpdateSection />
+        </Group>
+      </>
+    ),
+    process: (
+      <>
+        {/* ボーカル・楽器のボタン（と自動判定）で選ばれる処理方式 */}
+        <Group title={t('settings.groupDefaultAlgorithm')}>
+          <Row label={t('settings.vocalAlgorithm')}>
+            <Choice<Algorithm> value={draft.vocalAlgorithm} onChange={(v) => set({ vocalAlgorithm: v })} options={algorithmOptions} />
+          </Row>
+          <Row label={t('settings.instrumentAlgorithm')}>
+            <Choice<Algorithm> value={draft.instrumentAlgorithm} onChange={(v) => set({ instrumentAlgorithm: v })} options={algorithmOptions} />
+          </Row>
+          <Check checked={draft.showLegacyAlgorithms} onChange={(v) => set({ showLegacyAlgorithms: v })} label={t('settings.showLegacyAlgorithms')} help={t('settings.showLegacyAlgorithmsHelp')} />
+        </Group>
+        <Group title={t('settings.groupProcess')}>
+          <Row label={t('settings.initialMode')}>
+            <Choice<InitialMode>
+              value={draft.initialMode}
+              onChange={(v) => set({ initialMode: v })}
+              options={[
+                ['auto', t('settings.auto')],
+                ['vocal', t('common.vocal')],
+                ['instrument', t('common.instrument')],
+              ]}
+            />
+          </Row>
+          <Row label={t('settings.saveMemory')} help={t('settings.saveMemoryHelp')}>
+            <Choice<Settings['saveMemory']>
+              value={draft.saveMemory}
+              onChange={(v) => set({ saveMemory: v })}
+              options={[
+                ['auto', t('settings.saveMemoryAuto')],
+                ['on', t('settings.saveMemoryOn')],
+                ['off', t('settings.saveMemoryOff')],
+              ]}
+            />
+          </Row>
+        </Group>
+      </>
+    ),
+    edit: (
+      <>
         <Group title={t('settings.groupHistory')}>
           <Check checked={draft.keepOriginal} onChange={(v) => set({ keepOriginal: v })} label={t('settings.keepOriginal')} help={t('settings.keepOriginalHelp')} />
           <Row label={t('settings.historyLimit')}>
@@ -78,72 +123,37 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             />
           </Row>
         </Group>
-        {/* 開く場所と保存先（File System Access API が使えるブラウザだけ出す） */}
-        {canPickFiles() && (
-          <Group title={t('settings.groupFile')}>
-            <Check checked={draft.rememberFolder} onChange={(v) => set({ rememberFolder: v })} label={t('settings.rememberFolder')} help={t('settings.rememberFolderHelp')} />
-            <Row label={t('settings.startFolder')}>
-              <Choice<StartFolder>
-                value={draft.startFolder}
-                onChange={(v) => set({ startFolder: v })}
-                options={[
-                  ['downloads', t('settings.folderDownloads')],
-                  ['documents', t('settings.folderDocuments')],
-                  ['desktop', t('settings.folderDesktop')],
-                  ['music', t('settings.folderMusic')],
-                ]}
-              />
-            </Row>
-            <Check checked={draft.recentFiles} onChange={(v) => set({ recentFiles: v })} label={t('settings.recentFiles')} help={t('settings.recentFilesHelp')} />
-          </Group>
-        )}
-        <Group title={t('settings.groupProcess')}>
-          <Row label={t('settings.initialMode')}>
-            <Choice<InitialMode>
-              value={draft.initialMode}
-              onChange={(v) => set({ initialMode: v })}
+        <Group title={t('settings.groupShortcuts')}>
+          <Row label={t('settings.ctrlS')}>
+            <Choice<CtrlSAction>
+              value={draft.ctrlS}
+              onChange={(v) => set({ ctrlS: v })}
               options={[
-                ['auto', t('settings.auto')],
-                ['vocal', t('common.vocal')],
-                ['instrument', t('common.instrument')],
+                ['project', t('settings.ctrlSProject')],
+                ['export', t('settings.ctrlSExport')],
               ]}
             />
           </Row>
-          <Row label={t('settings.saveMemory')} help={t('settings.saveMemoryHelp')}>
-            <Choice<Settings['saveMemory']>
-              value={draft.saveMemory}
-              onChange={(v) => set({ saveMemory: v })}
-              options={[
-                ['auto', t('settings.saveMemoryAuto')],
-                ['on', t('settings.saveMemoryOn')],
-                ['off', t('settings.saveMemoryOff')],
-              ]}
-            />
-          </Row>
-        </Group>
-        <Group title={t('settings.groupUpdate')}>
-          <UpdateSection />
         </Group>
       </>
     ),
-    defaults: (
-      <>
-        {/* ボーカル・楽器のボタン（と自動判定）で選ばれる処理方式 */}
-        <Group title={t('settings.groupDefaultAlgorithm')}>
-          <Row label={t('settings.vocalAlgorithm')}>
-            <Choice<Algorithm> value={draft.vocalAlgorithm} onChange={(v) => set({ vocalAlgorithm: v })} options={algorithmOptions} />
-          </Row>
-          <Row label={t('settings.instrumentAlgorithm')}>
-            <Choice<Algorithm> value={draft.instrumentAlgorithm} onChange={(v) => set({ instrumentAlgorithm: v })} options={algorithmOptions} />
-          </Row>
-          <Check checked={draft.showLegacyAlgorithms} onChange={(v) => set({ showLegacyAlgorithms: v })} label={t('settings.showLegacyAlgorithms')} help={t('settings.showLegacyAlgorithmsHelp')} />
-        </Group>
-        <Group title={t('settings.groupDefaultTempo')}>
-          <Row label={t('settings.defaultBpm')} help={t('settings.defaultBpmHelp')}>
-            <NumberInput value={draft.defaultBpm} onChange={(v) => set({ defaultBpm: Math.round(v * 100) / 100 })} min={20} max={300} step={1} unit="BPM" width={110} />
-          </Row>
-        </Group>
-      </>
+    file: (
+      <Group title={t('settings.groupFile')}>
+        <Check checked={draft.rememberFolder} onChange={(v) => set({ rememberFolder: v })} label={t('settings.rememberFolder')} help={t('settings.rememberFolderHelp')} />
+        <Row label={t('settings.startFolder')}>
+          <Choice<StartFolder>
+            value={draft.startFolder}
+            onChange={(v) => set({ startFolder: v })}
+            options={[
+              ['downloads', t('settings.folderDownloads')],
+              ['documents', t('settings.folderDocuments')],
+              ['desktop', t('settings.folderDesktop')],
+              ['music', t('settings.folderMusic')],
+            ]}
+          />
+        </Row>
+        <Check checked={draft.recentFiles} onChange={(v) => set({ recentFiles: v })} label={t('settings.recentFiles')} help={t('settings.recentFilesHelp')} />
+      </Group>
     ),
     display: (
       <Group title={t('settings.groupAppearance')}>
@@ -289,22 +299,11 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
     tempo: (
       <Group title={t('settings.groupTempo')}>
         <Check checked={draft.autoTempo} onChange={(v) => set({ autoTempo: v })} label={t('settings.autoTempo')} help={t('settings.autoTempoHelp')} />
+        <Row label={t('settings.defaultBpm')} help={t('settings.defaultBpmHelp')}>
+          <NumberInput value={draft.defaultBpm} onChange={(v) => set({ defaultBpm: Math.round(v * 100) / 100 })} min={20} max={300} step={1} unit="BPM" width={110} />
+        </Row>
         <Check checked={draft.showBeatGrid} onChange={(v) => set({ showBeatGrid: v })} label={t('settings.showBeatGrid')} />
         <Check checked={draft.tempoStretch} onChange={(v) => set({ tempoStretch: v })} label={t('settings.tempoStretch')} help={t('settings.tempoStretchHelp')} />
-      </Group>
-    ),
-    keys: (
-      <Group title={t('settings.groupShortcuts')}>
-        <Row label={t('settings.ctrlS')}>
-          <Choice<CtrlSAction>
-            value={draft.ctrlS}
-            onChange={(v) => set({ ctrlS: v })}
-            options={[
-              ['project', t('settings.ctrlSProject')],
-              ['export', t('settings.ctrlSExport')],
-            ]}
-          />
-        </Row>
       </Group>
     ),
   }
