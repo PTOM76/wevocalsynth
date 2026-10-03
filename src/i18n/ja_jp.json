@@ -388,6 +388,7 @@
   "extract.accompanimentMenu": "伴奏のみ残す",
   "extract.vocals": "ボーカル抽出",
   "extract.accompaniment": "伴奏を抽出",
+  "extract.outOfMemory": "メモリが不足して抽出できませんでした。ページを再読み込みしてから抽出するか、「設定」→「ボーカル抽出」でモデルを「軽量」にしてください。長い曲は範囲を分けて抽出するか、WeVocalExtractor を使ってください",
   "toast.extracted": "抽出しました",
   "settings.groupVocal": "モデル",
   "settings.vocalModel": "利用するモデル",

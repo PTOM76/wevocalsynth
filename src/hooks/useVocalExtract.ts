@@ -6,6 +6,10 @@ import type { VocalModel } from '../settings/settings'
 import type { Track } from '../audio/tracks'
 import { t } from '../i18n/i18n'
 import { releaseIdleDsp } from '../dsp/engine'
+import { releasePlayers } from '../audio/usePlayer'
+
+/** メモリを手放してから抽出を始めるまでの待ち時間（ミリ秒）。止めた Worker のメモリが返るのを待つ */
+const RELEASE_WAIT_MS = 300
 // 型だけ使う（中身は追加機能として後から読み込む）
 import type * as ExtractorModule from '../../extractor/src/index'
 
@@ -63,8 +67,12 @@ interface Deps {
  */
 export function useVocalExtract(d: Deps) {
   const createExtractor = async (model: VocalModel, gpu: boolean) => {
-    // 抽出は数百MB使うので、先に加工・解析の Worker のメモリを手放す（iOS でメモリ不足になるのを防ぐ）
+    // 抽出は数百MB使うので、先に加工・解析の Worker（wasm のメモリ）と、再生用の音声の複製・AudioContext を手放す。
+    // iOS はタブのメモリの上限が低く、手放さないと RangeError: out of memory や no available backend found（実行環境を作れない）になった。
+    // Worker を止めてもメモリはすぐには返らないので、少し待ってから始める
     releaseIdleDsp()
+    releasePlayers()
+    await new Promise((r) => setTimeout(r, RELEASE_WAIT_MS))
     const info = VOCAL_MODELS[model]
     const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
     const create = async (backend: ExtractorModule.Backend) =>
@@ -72,6 +80,12 @@ export function useVocalExtract(d: Deps) {
     // WebGPU で作れなければ WASM で作り直す
     if (gpu && info.webgpu && (await hasWebGpu())) return create('webgpu').catch(() => create('wasm'))
     return create('wasm')
+  }
+
+  /** メモリ不足で失敗したら、どうすればよいかを伝える文言に置き換える */
+  const explainMemoryError = (e: unknown): never => {
+    if (/out of memory|no available backend/i.test(String(e))) throw new Error(t('extract.outOfMemory'))
+    throw e
   }
 
   const extract = async (stem: ExtractStem) => {
@@ -84,7 +98,7 @@ export function useVocalExtract(d: Deps) {
       const sr = edited.sampleRate
       const len = edited.channels[0].length
       let cur = edited
-      const extractor = await createExtractor(d.model, d.gpu)
+      const extractor = await createExtractor(d.model, d.gpu).catch(explainMemoryError)
       // 中断されたら Worker ごと止める（処理中の separate は失敗する）
       const stop = () => extractor.dispose()
       signal.addEventListener('abort', stop)
@@ -93,11 +107,13 @@ export function useVocalExtract(d: Deps) {
           const s = Math.max(0, Math.min(len, Math.round(r.start * sr)))
           const e = Math.max(s, Math.min(len, Math.round(r.end * sr)))
           if (e - s < 1) continue
-          const channels = await extractor.separate(
+          const channels = await extractor
+            .separate(
             cur.channels.map((c) => c.subarray(s, e)),
             sr,
             { stem, highBand: d.keepHighBand ? 'edge' : 'zeros', onProgress: (p) => d.setProgress((i + p) / ranges.length) },
-          )
+            )
+            .catch(explainMemoryError)
           // 長さは変わらないので、前の範囲の位置はずれない
           cur = spliceProcessed(cur, { s, e, channels }).clip
         }
@@ -119,15 +135,17 @@ export function useVocalExtract(d: Deps) {
     const edited = track.clip
     if (!(await d.ensure(VOCAL_MODELS[d.model].addon))) return
     await d.run(t('task.splitStems'), async (signal) => {
-      const extractor = await createExtractor(d.model, d.gpu)
+      const extractor = await createExtractor(d.model, d.gpu).catch(explainMemoryError)
       const stop = () => extractor.dispose()
       signal.addEventListener('abort', stop)
       let r: { vocals: Float32Array[]; accompaniment: Float32Array[] }
       try {
-        r = await extractor.separateBoth(edited.channels, edited.sampleRate, {
-          highBand: d.keepHighBand ? 'edge' : 'zeros',
-          onProgress: d.setProgress,
-        })
+        r = await extractor
+          .separateBoth(edited.channels, edited.sampleRate, {
+            highBand: d.keepHighBand ? 'edge' : 'zeros',
+            onProgress: d.setProgress,
+          })
+          .catch(explainMemoryError)
       } finally {
         signal.removeEventListener('abort', stop)
         extractor.dispose()

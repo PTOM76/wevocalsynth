@@ -388,6 +388,7 @@
   "extract.accompanimentMenu": "僅保留伴奏",
   "extract.vocals": "擷取人聲",
   "extract.accompaniment": "擷取伴奏",
+  "extract.outOfMemory": "記憶體不足，無法擷取。請重新載入頁面後再擷取，或在「設定」→「人聲擷取」中將模型改為「輕量」。較長的曲子請分段擷取，或使用 WeVocalExtractor",
   "toast.extracted": "已擷取",
   "settings.groupVocal": "模型",
   "settings.vocalModel": "使用的模型",

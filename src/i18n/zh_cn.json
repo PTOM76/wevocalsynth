@@ -388,6 +388,7 @@
   "extract.accompanimentMenu": "仅保留伴奏",
   "extract.vocals": "提取人声",
   "extract.accompaniment": "提取伴奏",
+  "extract.outOfMemory": "内存不足，无法提取。请重新加载页面后再提取，或在「设置」→「人声提取」中将模型改为「轻量」。较长的曲子请分段提取，或使用 WeVocalExtractor",
   "toast.extracted": "已提取",
   "settings.groupVocal": "模型",
   "settings.vocalModel": "使用的模型",

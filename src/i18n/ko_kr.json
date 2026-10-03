@@ -388,6 +388,7 @@
   "extract.accompanimentMenu": "반주만 남기기",
   "extract.vocals": "보컬 추출",
   "extract.accompaniment": "반주 추출",
+  "extract.outOfMemory": "메모리가 부족하여 추출하지 못했습니다. 페이지를 새로 고친 후 추출하거나, 「설정」→「보컬 추출」에서 모델을 「경량」으로 하세요. 긴 곡은 범위를 나눠 추출하거나 WeVocalExtractor를 사용하세요",
   "toast.extracted": "추출했습니다",
   "settings.groupVocal": "모델",
   "settings.vocalModel": "사용할 모델",
