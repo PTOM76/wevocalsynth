@@ -1,5 +1,5 @@
 # ファイル構成
-どのディレクトリ・ファイルが何を担当するかの一覧。コードのどこを見ればよいかを探すときに使う。(2026-10-01 時点)
+どのディレクトリ・ファイルが何を担当するかの一覧。コードのどこを見ればよいかを探すときに使う。(2026-10-03 時点)
 
 関連: [アーキテクチャ](ARCHITECTURE.md) / [機能の仕組み](INTERNALS.md) / [アルゴリズム](ALGORITHM.md)
 
@@ -15,7 +15,7 @@ src/
 ├── audio/           音声データの処理と再生（React に依存しない関数が中心）。トラック・ミックス・MIDI・音声の作成もここ
 │   └── realtime/    ループ試聴の AudioWorklet
 ├── dsp/             Worker と wasm の橋渡し、wevocal_dsp.wasm
-├── project/         プロジェクトファイル（.wvsp）と自動保存
+├── project/         プロジェクトファイル（.wvsp）、自動保存、開く場所と保存先の選択（fileAccess.ts）
 ├── addons/          追加機能の導入・保存・読み込み（docs/EXTRACTOR.md）
 ├── settings/        設定と設定画面（分類ごとのページ、追加機能、データの削除、アップデートの確認）
 ├── debug/           デバッグ表示（FPS・描画回数・メモリの内訳・DSP の時間・画面が止まった記録）
@@ -32,7 +32,7 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `useEditor` | 状態と操作をまとめ、`App.tsx` に渡す |
 | `useHistory` | トラックと、元に戻す・やり直す・操作履歴。各段は「どのトラックの差分か」と操作名（トラックの追加・削除は一覧）だけを持つ（段数・メモリの上限は設定） |
 | `useTracks` | トラックの操作（複製・追加・分ける・統合・名前・削除・選択）と、フェーダー・ミュート・ソロ・重ねる表示 |
-| `usePlayer` | Web Audio での再生。ほかのトラックも一緒に鳴らし、フェーダー・適用前の音量とパン・ミュートをすぐ反映する。範囲のループ再生、再生中のトラックの切り替えにも対応する。レベルメーター用の AnalyserNode も持つ |
+| `usePlayer` | Web Audio での再生。ほかのトラックも一緒に鳴らし、フェーダー・適用前の音量とパン・ミュートをすぐ反映する。範囲のループ再生、再生中のトラックの切り替えにも対応する。音量メーター用の AnalyserNode も持つ。AudioContext の起動と一時停止は `audio/audioContext.ts`（iOS の再生用オーディオセッション、`interrupted` の状態からの復帰、停止と再生の競合の回避） |
 | `usePlayback` | 再生・試聴・ループ（加工の欄）の切り替え（どれかを始めたらほかを止める） |
 | `usePreview` | 加工済みプレビューを裏で作る |
 | `useClipAnalysis` | F0・スペクトログラム（表示が ON のときだけ。解析の設定が変わったら解析し直す） |
@@ -51,7 +51,10 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `useShortcuts` | キーボード操作 |
 | `useSeek` | 矢印キー・Home / End での再生位置の移動 |
 | `useOutput` | プロジェクトの保存と、音声の書き出し（ミックス・ファイル名） |
-| `useFileDrop` / `useFilePicker` | ファイルのドロップと、ファイル選択の画面 |
+| `useFileDrop` / `useFilePicker` | ファイルのドロップと、ファイル選択の画面（Chrome、Edge では File System Access API の選択画面。`project/fileAccess.ts`） |
+| `useRecentFiles` | 最近使用したファイル（メニューと最初の画面）。開いた、ドロップした、保存したプロジェクトのファイルの参照を IndexedDB に持つ |
+| `useLeaveGuard` | 閉じる前の保存確認（自動保存が OFF で、PWA として開いているとき） |
+| `useMarkers` | マーカー（追加、名前の変更、削除、ドラッグでの移動）。元に戻すの対象にはしない |
 | `useRangeNote` | 選択範囲の今の音程（「音程を合わせる」用） |
 
 ### 波形（`components/waveform`）
@@ -79,7 +82,7 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 
 ### 加工の流れ（`pipeline.rs`）
 ```
-入力 ─▶ 時間伸縮（PSOLA / SOLA / WSOLA / Phase Vocoder、倍率 = 伸縮率 × ピッチ比）
+入力 ─▶ 時間伸縮（SOLA / PSOLA / WSOLA / Phase Vocoder / HPSS と各改良版、倍率 = 伸縮率 × ピッチ比）
      ─▶ フォルマント補正（保持が ON のとき）
      ─▶ リサンプル（ピッチ比の速さで読み戻す）─▶ 出力
 ```
@@ -88,9 +91,10 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 
 | ファイル | 担当 |
 | --- | --- |
-| `pipeline.rs` | 上の流れ。`Algorithm`（WSOLA=0 / Phase Vocoder=1 / PSOLA=2 / SOLA=3 / PSOLAv2=4 / WSOLAv2=5 / Phase Vocoder v2=6 / HPSS=7）と `Formant`（追従 / 保持＋移動） |
+| `pipeline.rs` | 上の流れ。`Algorithm`（WSOLA=0 / Phase Vocoder=1 / PSOLA=2 / SOLA=3 / PSOLAv2=4 / WSOLAv2=5 / Phase Vocoder v2=6 / HPSS=7 / SOLAv2=8 / SOLAv3=9）と `Formant`（追従 / 保持＋移動） |
 | `psola.rs` | PSOLA。声の周期（ピッチマーク）に合わせて切り貼りする。目印の置き方（`Marking`）で PSOLAv2 にもなる |
-| `sola.rs` | SOLA。50ms のブロックを 10ms の sin クロスフェードでつなぎ、区切り位置を2乗誤差で探す。ボーカルの既定 |
+| `sola.rs` | SOLA。50ms のブロックを 10ms の sin クロスフェードでつなぎ、区切り位置を2乗誤差で探す |
+| `sola2.rs` | SOLAv2 / SOLAv3。声のある所は 1 周期ずつ切り貼りし、近くの周期と混ぜる（v3 は前後約 3 周期を平均する。ボーカルの既定）。声のない所の繰り返しは 1 回おきに逆向きにする |
 | `hpss.rs` | HPSS。メディアンフィルタで打楽器の成分と伸びる成分に分け、Phase Vocoder と短い窓の OLA で伸ばして足す |
 | `wsola.rs` | WSOLA。フレーム 46ms・50% オーバーラップ・探索幅 ±12ms。類似度を正規化した WSOLAv2（`wsola2_map`）も |
 | `pv.rs` | Phase Vocoder（identity phase locking）。フレーム 2048・75% オーバーラップ。楽器の既定。位相の回転を複素数の掛け算にし、隣り合う2フレームを1回の FFT で変換して速くしている |
