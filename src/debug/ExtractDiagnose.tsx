@@ -21,7 +21,8 @@ export default function ExtractDiagnose({ options }: { options: ExtractOptions }
     }
   }
   return (
-    <Box sx={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 1 }}>
+    // 幅を設定の表の列幅の計算に入れない（長い説明やログでラベル列が広がる）
+    <Box sx={{ gridColumn: '1 / -1', contain: 'inline-size', display: 'flex', flexDirection: 'column', gap: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontSize: 13 }}>{t('settings.extractDiagnose')}</Typography>
