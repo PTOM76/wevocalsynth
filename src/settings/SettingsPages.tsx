@@ -180,6 +180,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
               ]}
             />
           </Row>
+          <Check checked={draft.vocalFreshExtract} onChange={(v) => set({ vocalFreshExtract: v })} label={t('settings.vocalFresh')} help={t('settings.vocalFreshHelp')} />
           <Check checked={draft.vocalGpu} onChange={(v) => set({ vocalGpu: v })} label={t('settings.vocalGpu')} help={t('settings.vocalGpuHelp')} />
           <Check
             checked={draft.vocalKeepHighBand}

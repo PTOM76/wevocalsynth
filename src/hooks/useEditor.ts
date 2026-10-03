@@ -65,7 +65,7 @@ function applyLabel(p: EditParams): string {
   return parts.join('・') || t('common.apply')
 }
 
-export function useEditor(settings: Settings) {
+export function useEditor(settings: Settings, updateSettings: (patch: Partial<Settings>) => void) {
   // テンポの自動解析（ファイルを開いた直後）。openClip から最新の関数を呼べるよう ref にも持つ
   const tempo = useTempo()
   const tempoRef = useRef({ tempo })
@@ -222,6 +222,8 @@ export function useEditor(settings: Settings) {
     gpu: settings.vocalGpu,
     keepHighBand: settings.vocalKeepHighBand,
     memoryMb: settings.vocalMemoryMb,
+    fresh: settings.vocalFreshExtract,
+    enableFresh: () => updateSettings({ vocalFreshExtract: true }),
     ensure: addons.ensure,
     run: task.run,
     setProgress,

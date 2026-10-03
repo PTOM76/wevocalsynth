@@ -72,7 +72,7 @@ export default function App() {
   setSpliceFadeSec(settings.spliceFadeMs / 1000)
   setFastMath(settings.fastMath)
   // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
-  const ed = useEditor(settings)
+  const ed = useEditor(settings, updateSettings)
   // 設定のテーマ（既定 / ライト / ダーク）を反映する
   const { setMode } = useColorScheme()
   useEffect(() => setMode(settings.theme), [settings.theme, setMode])
