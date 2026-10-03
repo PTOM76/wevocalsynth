@@ -43,7 +43,8 @@ import { useOutput } from './useOutput'
 import { useSeek } from './useSeek'
 import { CURVE_HOP_SEC, useLaneCurve } from './useLaneCurve'
 import { useFormantCurve } from './useFormantCurve'
-import { fromStoredSettings, makeTrack, newTrackId } from '../audio/tracks'
+import { fromStoredSettings, makeTrack, newTrackId, toStoredSettings } from '../audio/tracks'
+import { cleanBootPending, takeCleanResult } from '../project/cleanExtract'
 import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
 
@@ -211,6 +212,19 @@ export function useEditor(settings: Settings) {
     tracks: history.tracks,
     activeId: history.activeId,
     split: tracks.split,
+    // 今の作業（メモリが足りないときの抽出で、保存して再読み込みするため。自動保存と同じ中身）
+    snapshot: () =>
+      history.tracks.length
+        ? {
+            fileName,
+            named,
+            params,
+            tempo: projectTempo,
+            markers: markers.markers,
+            tracks: history.tracks.map((tr) => ({ name: tr.name, original: tr.original, edited: tr.clip, ...toStoredSettings(tracks.settingsOf(tr.id)) })),
+            active: Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId)),
+          }
+        : null,
   })
 
   /** 読み込んだ音声（またはプロジェクト）を画面に反映する */
@@ -475,8 +489,8 @@ export function useEditor(settings: Settings) {
   // ドロップした音声は、もう開いているならトラックとして足す（プロジェクトファイルは開き直す）
   useFileDrop((f) => (history.tracks.length && !isProjectFile(f) ? addTrackFile(f) : void loadFile(f)))
 
-  // ファイルから起動したか（下の launchQueue。真なら起動時の復元をしない）
-  const launchedRef = useRef(false)
+  // ファイルから起動したか（下の launchQueue）、メモリが足りないときの抽出から戻ったか。真なら起動時の復元をしない
+  const launchedRef = useRef(cleanBootPending())
   // 作業状態の自動保存と、起動時の復元
   useAutosave(
     settings.autoRestore,
@@ -505,6 +519,19 @@ export function useEditor(settings: Settings) {
         rememberLaunched(handle)
       })
     })
+  }, [])
+
+  // メモリが足りないときの抽出（再読み込みして行う）から戻ったら、結果を反映した作業を開く（project/cleanExtract.ts）
+  useEffect(() => {
+    if (!cleanBootPending()) return
+    void takeCleanResult().then((r) => {
+      if (!r) return
+      openClip(r.project.tracks[r.project.active].edited, r.project.fileName, r.project)
+      if (r.vocals) setParams((p) => ({ ...p, ...modes.vocal }))
+      setToast(r.extracted ? { severity: 'success', message: t('toast.extracted') } : { severity: 'info', message: t('toast.restored') })
+    })
+    // 起動時に1回だけ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const openExport = () => edited && setExportOpen(true)
@@ -582,6 +609,6 @@ export function useEditor(settings: Settings) {
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker, recent,
+    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker, recent,
   }
 }

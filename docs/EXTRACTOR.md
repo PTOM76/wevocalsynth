@@ -106,4 +106,11 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 | 高い帯域 | 約 11kHz より上は標準では消す。設定の「高音域を残す」で、1024 ビン目のマスクで延ばして残す（`highBand: 'edge'`） |
 | 中断 | ステータスバーの × で止める。抽出の Worker ごと止め、途中までの結果は使わない（ほかの処理も同じ。`useTask`） |
 
+### メモリが足りないとき（再読み込みして抽出）
+抽出の本体は [vocalExtract.ts](../src/audio/vocalExtract.ts)（React に依存しない）。メモリ不足（RangeError: out of memory、no available backend found）で失敗したら、確認のうえ次のように行う（[cleanExtract.ts](../src/project/cleanExtract.ts)）。iPad の PWA で、単体の WeVocalExtractor では成功するのに WeVocalSynth では失敗した。デバッグ表示の mem total は 76MB で、画面（Canvas など）が使うメモリで足りなくなっていると見ている (2026-10-03)
+
+1. 作業（自動保存と同じ中身）、対象の音声、抽出の内容を IndexedDB に置いて再読み込みする（自動保存が OFF でも、このときだけ置く）
+2. 起動時（`main.tsx`）、作業を開く前に進み具合だけの画面（`CleanExtractScreen`）で抽出し、結果を IndexedDB に置いて再読み込みする
+3. 起動時（`useEditor`）、結果を反映した作業を開く。自動保存の復元はしない。元に戻す履歴は、通常の再読み込みと同じく残らない
+
 アプリ側の処理は [useVocalExtract.ts](../src/hooks/useVocalExtract.ts)（導入の確認 → 実行環境とモデルを読み込む → 範囲ごとに抽出して差し戻す）。

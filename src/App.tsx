@@ -630,6 +630,7 @@ export default function App() {
       {settings.showDebug && <DebugOverlay />}
       <UpdatePrompt />
       {ed.addonDialog}
+      {ed.extractDialog}
 
       <Snackbar open={!!ed.toast} autoHideDuration={4000} onClose={() => ed.setToast(null)}>
         {ed.toast ? (
