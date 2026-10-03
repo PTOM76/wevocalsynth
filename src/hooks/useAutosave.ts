@@ -5,6 +5,7 @@ import type { EditParams } from '../components/EditPanel'
 import type { Project } from '../project/projectFile'
 import type { Marker, ProjectTempo } from '../project/projectFile'
 import { clearAutosave, loadAutosave, removeTrackClips, saveMeta, saveTrackClip } from '../project/autosave'
+import { isOffloaded, offloadClip, restoreClip } from '../audio/originalStore'
 
 /** 編集が止まってから自動保存するまでの待ち時間（ミリ秒） */
 const SAVE_DELAY_MS = 1500
@@ -103,7 +104,12 @@ export function useAutosave(
         try {
           for (const t of tracks) {
             const s = saved.current.get(t.id) ?? { original: null, edited: null }
-            if (s.original !== t.original) saveTrackClip(t.id, 'original', t.original)
+            if (s.original !== t.original) {
+              // 退避した原音（メモリの節約）は、戻して保存してから退避し直す（送り待ちの音声は元の配列を持っているので、退避しても中身は残る）
+              const orig = t.original
+              if (isOffloaded(orig)) void restoreClip(orig).then(() => (saveTrackClip(t.id, 'original', orig), offloadClip(orig)))
+              else saveTrackClip(t.id, 'original', orig)
+            }
             if (s.edited !== t.clip) saveTrackClip(t.id, 'edited', t.clip, t.clip === t.original)
             saved.current.set(t.id, { original: t.original, edited: t.clip })
           }

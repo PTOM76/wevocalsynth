@@ -55,7 +55,7 @@ type PickerWindow = Window & {
 }
 
 /** スマホやタブレットか（iPadOS はパソコンの Safari と同じ名乗りをするので、タッチの点数でも見分ける） */
-const isMobile = () => {
+export const isMobile = () => {
   const data = (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData
   if (data?.mobile) return true
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)

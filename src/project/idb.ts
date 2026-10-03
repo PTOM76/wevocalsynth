@@ -28,5 +28,20 @@ async function withStore<T>(mode: IDBTransactionMode, op: (s: IDBObjectStore) =>
 export const idbGet = (key: string) => withStore<unknown>('readonly', (s) => s.get(key))
 export const idbPut = (key: string, value: unknown) => withStore('readwrite', (s) => s.put(value, key)).then(() => {})
 export const idbDelete = (key: string) => withStore('readwrite', (s) => s.delete(key)).then(() => {})
+/** `prefix` で始まるキーをすべて消す（前回の残りの掃除に使う） */
+export async function idbDeletePrefix(prefix: string) {
+  const db = await openDb()
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite')
+      tx.objectStore(STORE).delete(IDBKeyRange.bound(prefix, `${prefix}￿`))
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  } finally {
+    db.close()
+  }
+}
+
 /** 保存したものをすべて消す（設定の「作業データを削除」） */
 export const idbClear = () => withStore('readwrite', (s) => s.clear()).then(() => {})

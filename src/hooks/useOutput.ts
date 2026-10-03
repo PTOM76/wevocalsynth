@@ -5,6 +5,7 @@ import { mixClips } from '../audio/mix'
 import { isAudible, toStoredSettings } from '../audio/tracks'
 import { EXPORT_EXT, exportAudio, type ExportFormat } from 'wevocal-lib'
 import { pickSaveTarget } from '../project/fileAccess'
+import { restoreClip } from '../audio/originalStore'
 import { PROJECT_EXT, saveProject } from '../project/projectFile'
 import type { ExportSettings } from '../components/ExportDialog'
 import type { EditParams } from '../components/EditPanel'
@@ -48,6 +49,8 @@ export function useOutput(d: Deps) {
     const target = await pickSaveTarget(`${baseName}${PROJECT_EXT}`, 'project', { description: t('file.projectType'), mime: 'application/octet-stream', ext: PROJECT_EXT })
     if (!target) return
     await d.task.run(t('task.saving'), async () => {
+      // 退避した原音（メモリの節約）は戻してから保存する
+      for (const tr of history.tracks) await restoreClip(tr.original)
       const list = history.tracks.map((tr) => ({
         name: tr.name,
         original: tr.original,

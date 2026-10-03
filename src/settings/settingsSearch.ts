@@ -17,7 +17,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupHistory', 'settings.historyLimit', 'settings.historyMemory',
     'settings.groupInput', 'settings.sliderReset', 'settings.seekAfterInsert', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel',
     // 「ファイル」は File System Access API が使えるときだけ出す（FILE_KEYS）
-    'settings.groupProcess', 'settings.initialMode',
+    'settings.groupProcess', 'settings.initialMode', 'settings.saveMemory', 'settings.saveMemoryHelp',
     'settings.groupUpdate', 'update.check',
   ],
   defaults: [

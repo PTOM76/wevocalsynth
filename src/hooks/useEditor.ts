@@ -28,8 +28,9 @@ import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
 import { useFilePicker } from './useFilePicker'
 import { useRecentFiles } from './useRecentFiles'
+import { isOffloaded, offloadClip, restoreClip, useOffloadVersion } from '../audio/originalStore'
 import { isStandalone, useLeaveGuard } from './useLeaveGuard'
-import { configureFileAccess, rememberLaunched } from '../project/fileAccess'
+import { configureFileAccess, isMobile, rememberLaunched } from '../project/fileAccess'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
@@ -124,12 +125,29 @@ export function useEditor(settings: Settings) {
   )
   const { busy, progress, setProgress } = task
   const edited = history.present
-  // デバッグ表示: 原音と加工後の音声データの量（同じものなら1つ分）
+  // 原音の退避（メモリの節約。audio/originalStore.ts）。退避・復帰で描き直す
+  const offloadVersion = useOffloadVersion()
+  // デバッグ表示: 原音と加工後の音声データの量（同じものなら1つ分。退避中の原音は 0）
   useEffect(() => {
     reportMemory('original', clipBytes(original))
     reportMemory('edited', edited === original ? 0 : clipBytes(edited))
-  }, [original, edited])
-  const shown = source === 'original' ? original : edited
+  }, [original, edited, offloadVersion])
+  // 原音を聴いているのに退避中なら、戻るまでは加工後を出す（退避中の空の Clip を画面や再生に渡さない）
+  const originalReady = !!original && !isOffloaded(original)
+  const shown = source === 'original' && originalReady ? original : edited
+  useEffect(() => {
+    if (source !== 'original' || !original || !isOffloaded(original)) return
+    restoreClip(original).catch((e) => setToast({ severity: 'error', message: t('toast.processFailed', { error: String(e) }) }))
+  }, [source, original, offloadVersion])
+  // メモリを節約する設定なら、加工したトラックの原音を退避する（原音を聴いている選択中のトラックは除く）
+  const saveMemory = settings.saveMemory === 'on' || (settings.saveMemory === 'auto' && isMobile())
+  useEffect(() => {
+    if (!saveMemory) return
+    for (const tr of history.tracks) {
+      if (tr.original === tr.clip || (source === 'original' && tr.id === history.activeId)) continue
+      void offloadClip(tr.original)
+    }
+  }, [saveMemory, history.tracks, history.activeId, source])
   const duration = shown ? clipDuration(shown) : 0
   const editing = source === 'edited' && !!edited
   // ほかのトラックも、ミュート・ソロに従って一緒に鳴らす
@@ -212,6 +230,14 @@ export function useEditor(settings: Settings) {
     tracks: history.tracks,
     activeId: history.activeId,
     split: tracks.split,
+    // 抽出の前に、加工したトラックの原音を退避する（設定によらず。抽出は数百MB使うため）
+    prepare: async () => {
+      for (const tr of history.tracks) if (tr.original !== tr.clip && !(source === 'original' && tr.id === history.activeId)) await offloadClip(tr.original)
+    },
+    // 作業を保存する前に、退避した原音を戻す
+    restoreAll: async () => {
+      for (const tr of history.tracks) await restoreClip(tr.original)
+    },
     // 今の作業（メモリが足りないときの抽出で、保存して再読み込みするため。自動保存と同じ中身）
     snapshot: () =>
       history.tracks.length
@@ -338,7 +364,8 @@ export function useEditor(settings: Settings) {
         const run = async (c: Clip, part: number) =>
           ({ sampleRate: c.sampleRate, channels: await processAudio(c.channels, c.sampleRate, opts, (p) => setProgress((i + (part + p) / 2) / list.length)) })
         const clip = await run(tr.clip, 0)
-        // 加工していないトラックは、原音と加工後が同じものなので1回で済ませる
+        // 加工していないトラックは、原音と加工後が同じものなので1回で済ませる（退避した原音は戻してから）
+        if (tr.original !== tr.clip) await restoreClip(tr.original)
         const original = tr.original === tr.clip ? clip : await run(tr.original, 1)
         if (signal.aborted) return
         done.push({ ...tr, clip, original })

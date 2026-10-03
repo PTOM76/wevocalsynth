@@ -102,6 +102,17 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
               ]}
             />
           </Row>
+          <Row label={t('settings.saveMemory')} help={t('settings.saveMemoryHelp')}>
+            <Choice<Settings['saveMemory']>
+              value={draft.saveMemory}
+              onChange={(v) => set({ saveMemory: v })}
+              options={[
+                ['auto', t('settings.saveMemoryAuto')],
+                ['on', t('settings.saveMemoryOn')],
+                ['off', t('settings.saveMemoryOff')],
+              ]}
+            />
+          </Row>
         </Group>
         <Group title={t('settings.groupUpdate')}>
           <UpdateSection />

@@ -113,6 +113,8 @@ export interface Settings {
   recentFiles: boolean
   /** ファイル選択の方式（開発者向け）。auto はパソコンだけ File System Access API を使う */
   filePicker: PickerMode
+  /** メモリの節約（加工したトラックの原音を IndexedDB に退避する。auto はスマホとタブレットだけ。audio/originalStore.ts） */
+  saveMemory: 'auto' | 'on' | 'off'
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -151,6 +153,7 @@ export const DEFAULT_SETTINGS: Settings = {
   startFolder: 'downloads',
   recentFiles: true,
   filePicker: 'auto',
+  saveMemory: 'auto',
   vocalAlgorithm: 'sola3',
   instrumentAlgorithm: 'pv',
   defaultBpm: 120,

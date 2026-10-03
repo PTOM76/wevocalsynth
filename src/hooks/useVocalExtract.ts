@@ -30,6 +30,10 @@ interface Deps {
   tracks: Track[]
   activeId: string
   split: (parts: { name: string; clip: Clip }[], label: string, id: string) => void
+  /** 抽出の前に行うこと（加工したトラックの原音を退避する） */
+  prepare: () => Promise<void>
+  /** 作業を保存する前に、退避した原音を戻す */
+  restoreAll: () => Promise<void>
   /** 今の作業（メモリが足りないとき、保存して再読み込みしてから抽出するため） */
   snapshot: () => Project | null
 }
@@ -46,11 +50,12 @@ export function useVocalExtract(d: Deps) {
   /** メモリ不足なら、再読み込みしてから抽出するかを確かめる。ほかの失敗はそのまま投げる */
   const onFail = async (e: unknown, job: CleanJobBody, trackId: string) => {
     if (!isOutOfMemory(e)) throw e
-    const project = d.snapshot()
     const trackIndex = d.tracks.findIndex((tr) => tr.id === trackId)
-    if (!project || trackIndex < 0) throw new Error(t('extract.outOfMemory'))
+    if (!d.snapshot() || trackIndex < 0) throw new Error(t('extract.outOfMemory'))
     if (!(await confirm({ message: t('extract.cleanConfirm'), okLabel: t('extract.cleanOk') }))) return
-    await scheduleCleanExtract({ ...job, trackIndex, options: options() }, project)
+    await d.restoreAll()
+    // 原音を戻してから作業を取る（退避中の原音は中身が空）
+    await scheduleCleanExtract({ ...job, trackIndex, options: options() }, d.snapshot()!)
   }
 
   const extract = async (stem: ExtractStem) => {
@@ -58,6 +63,7 @@ export function useVocalExtract(d: Deps) {
     if (!edited || !editRanges.length) return
     // 導入の確認ダイアログは、処理中の表示より先に出す
     if (!(await d.ensure(VOCAL_MODELS[d.model].addon))) return
+    await d.prepare()
     let failure: unknown = null
     await d.run(t(stem === 'vocals' ? 'task.extractVocals' : 'task.extractAccompaniment'), async (signal) => {
       try {
@@ -81,6 +87,7 @@ export function useVocalExtract(d: Deps) {
     if (!track) return
     const edited = track.clip
     if (!(await d.ensure(VOCAL_MODELS[d.model].addon))) return
+    await d.prepare()
     const vocalsName = t('track.vocalsName', { name: track.name })
     const accompanimentName = t('track.accompanimentName', { name: track.name })
     let failure: unknown = null
