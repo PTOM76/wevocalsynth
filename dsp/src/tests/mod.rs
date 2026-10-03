@@ -1,6 +1,7 @@
 //! テスト共通の信号生成・計測ヘルパ。
 
 mod analysis;
+mod consonant;
 mod curve;
 mod formant;
 mod stretch;

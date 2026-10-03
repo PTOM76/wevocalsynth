@@ -17,6 +17,8 @@ const UNVOICED_SEC: f64 = 0.012;
 const FADE_SEC: f64 = 0.005;
 /// 声のない所の探索幅（秒）
 const UNVOICED_TOLERANCE_SEC: f64 = 0.006;
+/// 立ち上がり（破裂音など）を等速で読む長さ（秒）。この間は繰り返さない
+const TRANSIENT_SEC: f64 = 0.015;
 /// 混ぜる周期の広さ（周期数）。SOLAv2 は隣の周期との直線補間（1）、SOLAv3 は前後約 3 周期の三角の重み
 const SPREAD: f64 = 1.0;
 const SPREAD_CLEAN: f64 = 3.0;
@@ -66,6 +68,8 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progre
         let f = f0s.get(((i.max(0) as f64 / f0_hop).round() as usize).min(f0s.len().saturating_sub(1))).copied().unwrap_or(0.0);
         (f > 0.0).then(|| sr / f as f64)
     };
+    let onsets = onsets(&mono, sample_rate);
+    let transient = (sr * TRANSIENT_SEC) as i64;
     let max_fade = (sr * FADE_SEC) as usize;
     let max_block = (sr * 0.05) as usize + max_fade;
     let typical = (sr * UNVOICED_SEC) as usize + max_fade;
@@ -103,6 +107,8 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progre
     let (mut out_pos, mut prev_end): (usize, i64) = (0, 0);
     let mut prev_fade = 0usize;
     let (mut prev_nominal, mut reversed) = (0i64, false);
+    // 立ち上がりを読み終える入力位置。ここまでは前のブロックの続きを読み、ここより前には戻らない（破裂が二重にならないように）
+    let mut lock = -1i64;
     // 混ぜる周期（入力位置と重み）。ブロックごとに作り直す
     let mut taps: Vec<(i64, f32)> = Vec::new();
     while out_pos < out_len {
@@ -120,13 +126,37 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progre
         let fade = max_fade.min(hop / 2).max(4);
         // 声のない所で同じ断片を繰り返す（入力の進みがブロックより短い）ときは、1 回おきに逆向きに読む。
         // 同じ雑音を同じ向きで繰り返すと、ブロックの長さの周期で音程のある雑音になるため（Moulines & Charpentier 1990）
-        let repeating = !voiced && out_pos > 0 && ((nominal - prev_nominal) as f64) < hop as f64 * 0.9;
-        reversed = repeating && !reversed;
+        let mut repeating = !voiced && out_pos > 0 && ((nominal - prev_nominal) as f64) < hop as f64 * 0.9;
         prev_nominal = nominal;
+        // 声のない所の立ち上がり（破裂音など）は 1 回だけ等速で読む。繰り返すと二重に聞こえる
+        // - 読み終えるまでは前のブロックの続きを読む
+        // - 予定の時刻（nominal）が立ち上がりに届いたブロックで、立ち上がりの少し手前から読み始める
+        // - 届く前のブロックは、立ち上がりの手前で切れる位置から読む（早く鳴らない）
+        // - 読み終えたあとは、立ち上がりより前に戻らない
+        let continuing = !voiced && out_pos > 0 && prev_end < lock;
+        // まだ鳴らしていない立ち上がり。予定の時刻がすでに通り過ぎたもの（声のある所として読んだものなど）は数えない
+        let next_onset = onsets.iter().copied().find(|&o| o >= lock.max(0) && o + hop as i64 > nominal);
+        let mut starts = false;
+        if !voiced && out_pos > 0 && !continuing {
+            // このブロックで始めたときの、予定の時刻とのずれ（出力のサンプル）。次のブロックで始めるより近ければ始める
+            let rate = ((map.frame_pos(out_pos + hop, len, typical).round() as i64 - nominal).max(1)) as f64 / hop as f64;
+            if let Some(o) = next_onset.filter(|&o| o < nominal + hop as i64 && fade as f64 - (o - nominal) as f64 / rate >= -(hop as f64) / 2.0) {
+                lock = o + transient;
+                starts = true;
+            }
+        }
+        if continuing || starts {
+            repeating = false;
+        }
+        reversed = repeating && !reversed;
         // 前のブロックの続き（前のブロックの終わりのクロスフェード区間）と最も似ている位置。
         // 声のない所を繰り返すときは雑音なので位置合わせはしない
-        let pos = if out_pos == 0 {
+        let mut pos = if out_pos == 0 {
             0
+        } else if continuing {
+            prev_end.clamp(0, last_pos)
+        } else if starts {
+            (lock - transient - fade as i64).clamp(0, last_pos)
         } else if repeating {
             nominal.clamp(0, last_pos)
         } else {
@@ -142,7 +172,16 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progre
             }
             best.0
         };
-        // 声のある所は、予定位置（選んだ周期から frac 周期ずれた所）を中心に、近くの周期を三角の重みで混ぜる。
+        if !voiced && out_pos > 0 && !continuing && !starts {
+            // 読み終えた立ち上がりより前に戻らない
+            if lock > 0 && pos < lock {
+                pos = lock.min(last_pos);
+            }
+            // まだ鳴らしていない立ち上がりを、このブロックで先に鳴らさない
+            if let Some(o) = next_onset.filter(|&o| o > pos && o < pos + (hop + fade) as i64) {
+                pos = (o - (hop + fade) as i64).max(0).min(pos);
+            }
+        }        // 声のある所は、予定位置（選んだ周期から frac 周期ずれた所）を中心に、近くの周期を三角の重みで混ぜる。
         // 同じ周期を何度か繰り返してから次の周期へ飛ぶと、その飛び目が周期数個おきのブツブツになるため（波形補間の考え方）。
         // 隣の周期が入力に収まらない（先頭・末尾）方向は混ぜない。切り詰めた位置と混ぜると打ち消し合う
         taps.clear();
@@ -200,6 +239,26 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progre
         o.truncate(out_len);
         for (s, &w) in o.iter_mut().zip(&wsum) {
             *s = if w > 1e-3 { *s / w } else { 0.0 };
+        }
+    }
+    out
+}
+
+/// 立ち上がり（破裂音など）の入力位置。1ms ごとのエネルギーが、直前 10ms の平均の 10 倍を超え、全体の平均の 1/4 以上の所
+fn onsets(x: &[f32], sample_rate: f32) -> Vec<i64> {
+    let w = (sample_rate * 0.001).max(1.0) as usize;
+    let e: Vec<f32> = x.chunks(w).map(|c| c.iter().map(|v| v * v).sum::<f32>() / c.len() as f32).collect();
+    let mean = e.iter().sum::<f32>() / e.len().max(1) as f32;
+    let mut out = Vec::new();
+    let mut k = 10;
+    while k < e.len() {
+        let before = e[k - 10..k].iter().sum::<f32>() / 10.0;
+        if e[k] > before * 10.0 + 1e-12 && e[k] > mean * 0.25 {
+            out.push((k * w) as i64);
+            // 同じ立ち上がりを何度も数えない
+            k += 20;
+        } else {
+            k += 1;
         }
     }
     out
