@@ -34,7 +34,8 @@ export function resolveLang(setting: LangSetting): Lang {
 
 export function setLang(lang: Lang) {
   current = lang
-  if (typeof document !== 'undefined') document.documentElement.lang = HTML_LANG[lang]
+  // 変わったときだけ書く。同じ値でも書くとページ全体のスタイルの計算し直しになり、App の描き直しのたびに重かった
+  if (typeof document !== 'undefined' && document.documentElement.lang !== HTML_LANG[lang]) document.documentElement.lang = HTML_LANG[lang]
 }
 
 /** 訳文を返す。`{name}` は `vars.name` で置き換える */
