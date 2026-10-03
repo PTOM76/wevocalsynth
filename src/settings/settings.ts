@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import type { LangSetting } from '../i18n/i18n'
 import type { Algorithm, F0Params } from '../dsp/engine'
 import type { WindowMode } from 'pevenmui'
-import type { PickerMode, StartFolder } from '../project/fileAccess'
+import type { PickerMode, StartFolder } from 'pevenmui/web'
 
 /** ファイルを開いたときの処理モード。auto は素材から自動判定する */
 export type InitialMode = 'auto' | 'vocal' | 'instrument'

@@ -13,7 +13,7 @@ import ExtractDiagnose from '../debug/ExtractDiagnose'
 import type { Algorithm } from '../dsp/engine'
 import { t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
-import { canPickFiles, type PickerMode, type StartFolder } from '../project/fileAccess'
+import { canPickFiles, type PickerMode, type StartFolder } from 'pevenmui/web'
 import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
 
 /** 抽出の実行環境のメモリの上限の選択肢（MB） */

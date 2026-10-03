@@ -4,7 +4,7 @@ import { sliceRanges } from '../audio/multiRange'
 import { mixClips } from '../audio/mix'
 import { isAudible, toStoredSettings } from '../audio/tracks'
 import { EXPORT_EXT, exportAudio, type ExportFormat } from 'wevocal-lib'
-import { pickSaveTarget } from '../project/fileAccess'
+import { pickSaveTarget } from 'pevenmui/web'
 import { restoreClip } from '../audio/originalStore'
 import { PROJECT_EXT, saveProject } from '../project/projectFile'
 import type { ExportSettings } from '../components/ExportDialog'
@@ -46,7 +46,7 @@ export function useOutput(d: Deps) {
   /** 全トラック（音声・フェーダー・鳴らし方・重ねる表示）と、選んでいるトラックを .wvsp にして保存する（保存先を先に選ぶ） */
   const saveProjectFile = async () => {
     if (!history.present) return
-    const target = await pickSaveTarget(`${baseName}${PROJECT_EXT}`, 'project', { description: t('file.projectType'), mime: 'application/octet-stream', ext: PROJECT_EXT })
+    const target = await pickSaveTarget(`${baseName}${PROJECT_EXT}`, 'project', { description: t('file.projectType'), mime: 'application/octet-stream', ext: PROJECT_EXT }, window, true)
     if (!target) return
     await d.task.run(t('task.saving'), async () => {
       // 退避した原音（メモリの節約）は戻してから保存する

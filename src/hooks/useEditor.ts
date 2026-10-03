@@ -15,7 +15,7 @@ import { detectMode, modeSettings, type Mode } from '../audio/detectMode'
 import type { EditParams } from '../components/EditPanel'
 import type { Source } from '../components/StatusBar'
 import { useHistory } from './useHistory'
-import { useFileDrop, useLeaveGuard } from 'pevenmui'
+import { useFileDrop, useFilePicker, useLeaveGuard, useRecentFiles } from 'pevenmui'
 import { useClipAnalysis } from './useClipAnalysis'
 import { usePreview } from './usePreview'
 import { usePitchTarget } from './usePitchTarget'
@@ -26,11 +26,8 @@ import { clipBytes, reportMemory } from '../debug/debugStats'
 import { useShortcuts } from './useShortcuts'
 import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
-import { useFilePicker } from './useFilePicker'
-import { useRecentFiles } from './useRecentFiles'
 import { isOffloaded, offloadClip, restoreClip, useOffloadVersion } from '../audio/originalStore'
-import { configureFileAccess, rememberLaunched } from '../project/fileAccess'
-import { isMobile, isStandalone } from 'pevenmui/web'
+import { configureFileAccess, initFileAccess, isMobile, isStandalone, rememberLaunched } from 'pevenmui/web'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
@@ -48,10 +45,14 @@ import { fromStoredSettings, makeTrack, newTrackId, toStoredSettings } from '../
 import { cleanBootPending, takeCleanResult } from '../project/cleanExtract'
 import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
+import { idbGet, idbPut } from '../project/idb'
 
 export type Toast = { severity: 'success' | 'error' | 'info'; message: string }
 
 /** 加工パラメータのうち、適用後やファイルを開いたときに戻す値 */
+// 最近使用したファイルはこのアプリの IndexedDB に保存し、フォルダは「wevocal-用途」の名前で覚えさせる
+initFileAccess({ store: { get: idbGet, put: idbPut }, idPrefix: 'wevocal' })
+
 const NEUTRAL = { semitones: 0, stretch: 1, formantSemitones: 0 }
 
 /** エディタ全体の状態と操作。画面の組み立て（App）から切り離してある */

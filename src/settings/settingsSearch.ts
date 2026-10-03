@@ -1,6 +1,6 @@
 import type { SettingsCategory } from 'pevenmui'
 import type { MessageKey } from '../i18n/i18n'
-import { canPickFiles } from '../project/fileAccess'
+import { canPickFiles } from 'pevenmui/web'
 
 /** 設定画面の分類 */
 export type Category = 'project' | 'general' | 'defaults' | 'display' | 'pitch' | 'tempo' | 'keys' | 'vocal' | 'data' | 'debug'
