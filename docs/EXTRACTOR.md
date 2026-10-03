@@ -104,22 +104,35 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 | 実行方法 | 「GPU を使う」が ON で、WebGPU が使え、モデルが対応していれば WebGPU、それ以外は WASM |
 | メモリ | モデルは抽出のたびに読み込み、終わったら解放する（推論中は数百MB使うため、スマホでメモリを持ち続けない）。抽出の前に、処理していない加工と解析の Worker を止めて wasm のメモリを手放し（`releaseIdleDsp`）、再生していないプレーヤーの AudioBuffer（音声の複製）も手放す（`releasePlayers`。AudioContext は閉じない。プレーヤーは通常の再生と試聴などで 4 つある）。止めた Worker のメモリはすぐには返らないので、300ms 待ってから始める。それでもメモリ不足（RangeError: out of memory、no available backend found）になったら、再読み込みや軽量モデルを勧める文言にする。wasm のメモリは縮まないので、長い音声を解析した後の Worker が残っていると、iOS（タブのメモリの上限が低い）で RangeError: out of memory になった。単体の WeVocalExtractor にはこの Worker がないので起きなかった |
 | 高い帯域 | 約 11kHz より上は標準では消す。設定の「高音域を残す」で、1024 ビン目のマスクで延ばして残す（`highBand: 'edge'`） |
-| 中断 | ステータスバーの × で止める。抽出の Worker ごと止め、途中までの結果は使わない（ほかの処理も同じ。`useTask`） |
+| 中断 | ステータスバーの × で止める。抽出の Worker は止めずに次のブロックで止め（上の「iOS Safari でのメモリ不足」）、途中までの結果は使わない（ほかの処理も同じ。`useTask`） |
 
 ### iOS Safari でのメモリ不足
-iPad の PWA で、抽出が `no available backend found. ERR: [wasm] RangeError: Out of memory` になった（1 回だけ成功することもあった）。調べて分かったことと対策 (2026-10-03):
+iPad の PWA で、抽出が `no available backend found. ERR: [wasm] RangeError: Out of memory` になった（1 回だけ成功することもあった）。設定の「開発者向け」→「ボーカル抽出の診断」（`src/debug/diagnoseExtract.ts`、中身は `extractor/src/diagnose.ts`。単体の WeVocalExtractor にも同じものがある）で、iPad（Safari 26.6、PWA）を調べて分かったこと (2026-10-03):
+
+| 調べたこと | 結果 |
+| --- | --- |
+| crossOriginIsolated / SharedArrayBuffer | どちらのアプリも false / なし（GitHub Pages は COOP/COEP を付けられない） |
+| wasm のメモリを 1 つ作る（共有 / 共有でない、上限 256MB〜4GB） | どれも作れる。メモリの量そのものは足りている |
+| 上限 4GB の**共有**メモリを同時に持てる数 | **2 個まで**。共有でないものは 64 個以上持てる |
+| 共有メモリを増やす | 1GB 以上まで増やせる |
+| 256MB を持つ Worker を作って止める、を続ける | 8 回続けても作れる（普通の共有メモリは止めればすぐ返る） |
+| 28MB の ONNX Runtime の wasm のコンパイル | 0.1 秒で通る（機械語の置き場は原因ではない） |
+| 実行環境を作る → 手放す（Worker を止める）、を続ける | 1 回目だけ通り、2 回目からは 0.0〜0.2 秒で失敗する。3 秒待っても失敗することが多い。モデル（fp16 / int8 / fp32）や計算の種類（wasm / webgpu）によらない。単体の WeVocalExtractor でも同じ |
+
+**原因**: ONNX Runtime（`ort-wasm-simd-threaded`）は、スレッドを 1 にしても上限 4GB の共有メモリを作る。iOS はこれを同時に 2 個までしか持てず、Worker を止めてもその枠はすぐには返らない（いつ返るか決まっていない）。そのため実行環境を作り直すと枠が尽きる。単体の WeVocalExtractor が成功していたのは、再読み込み直後の 1 回目だったから。メモリの量や、画面の使うメモリが原因ではなかった。
+
+**対策**: 推論の Worker はページで 1 つだけ作り、止めずに使い続ける（`extractor/src/index.ts` の `sharedWorker`）。手放すとき（`dispose`）はセッションだけを手放し、次に作るときは同じ Worker にモデルを入れ直す。中断は Worker を止めずに、次のブロックで止めるよう頼む（`cancel`）。Worker が落ちたときだけ作り直す。
+
+そのほかに行っていること:
 
 | 分かったこと | 対策 |
 | --- | --- |
-| ONNX Runtime の wasm のメモリは、Worker を止めても iOS がすぐには返さない。手放した直後に作り直すと、前のメモリが返る前に確保しようとして失敗する | 使い終わった実行環境を 20 秒残し、続けて抽出するときは使い回す（`vocalExtract.ts` の `KEEP_MS`）。メモリ不足で作れなければ、1.2 秒待って新しい Worker でもう一度作る |
 | ONNX Runtime はメモリを先回りして確保する（メモリのアリーナ、メモリのパターン） | `enableCpuMemArena: false`、`enableMemPattern: false` にする（`extractor/src/worker.ts`） |
 | WebKit では、AudioContext を閉じると再生のスレッドが残る不具合がある | 抽出の前に手放すのは再生用の音声の複製（AudioBuffer）だけにし、AudioContext は閉じない |
-| それでも足りない | 再読み込みして、画面を組み立てる前に抽出する（下の節） |
-
 参考: [Crash-Proof Browser AI Inference on iPhone SE2](https://zenn.dev/kaz_sakai/articles/ios-safari-onnx-memory?locale=en)（ONNX Runtime Web と iOS Safari のメモリ）、[Automattic/kandelo#1410](https://github.com/Automattic/kandelo/pull/1410)（WebKit の wasm のメモリの予約と AudioContext の不具合）
 
 ### メモリが足りないとき（再読み込みして抽出）
-抽出の本体は [vocalExtract.ts](../src/audio/vocalExtract.ts)（React に依存しない）。メモリ不足（RangeError: out of memory、no available backend found）で失敗したら、確認のうえ次のように行う（[cleanExtract.ts](../src/project/cleanExtract.ts)）。iPad の PWA で、単体の WeVocalExtractor では成功するのに WeVocalSynth では失敗した。デバッグ表示の mem total は 76MB で、画面（Canvas など）が使うメモリで足りなくなっていると見ている (2026-10-03)
+抽出の本体は [vocalExtract.ts](../src/audio/vocalExtract.ts)（React に依存しない）。メモリ不足（RangeError: out of memory、no available backend found）で失敗したら、確認のうえ次のように行う（[cleanExtract.ts](../src/project/cleanExtract.ts)）。原因が分かる前に作ったもの。原因は共有メモリの枠だった（上の節）ので、Worker を使い続けるようにしてからは、これに頼ることは少ない見込み
 
 1. 作業（自動保存と同じ中身）、対象の音声、抽出の内容を IndexedDB に置いて再読み込みする（自動保存が OFF でも、このときだけ置く）
 2. 起動時（`main.tsx`）、作業を開く前に進み具合だけの画面（`CleanExtractScreen`）で抽出し、結果を IndexedDB に置いて再読み込みする
