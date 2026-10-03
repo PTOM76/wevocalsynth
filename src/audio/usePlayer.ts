@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from './types'
 import { DEFAULT_FADER, faderGain, type TrackFader } from './tracks'
 import { clipDuration } from './types'
-import { startContext, suspendContext } from './audioContext'
+import { startContext, suspendContext } from 'wevocal-lib'
 
 /** 一緒に鳴らすトラック（id はレベルメーターの対応づけに使う） */
 export interface PlayTrack {

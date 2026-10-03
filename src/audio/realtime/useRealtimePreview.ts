@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../types'
-import { startContext } from '../audioContext'
+import { startContext } from 'wevocal-lib'
 import type { GranularMessage, GranularPosition } from './granularProcessor'
 import processorUrl from './granularProcessor.ts?worker&url'
 

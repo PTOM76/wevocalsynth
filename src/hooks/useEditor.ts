@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
-import { AUDIO_ACCEPT, decodeFile } from 'wevocal-lib'
+import { AUDIO_ACCEPT, configurePlayback, decodeFile } from 'wevocal-lib'
 import { DEFAULT_TEMPO, PROJECT_EXT, isProjectFile, loadProject, type Project, type ProjectTempo } from '../project/projectFile'
 import { applyFormantCurve, applyGainCurve, applyPitchCurve, spliceProcessed } from '../audio/edit'
 import { applyEditToRanges, normalizeRanges, sliceRanges } from '../audio/multiRange'
 import { placeOnNotes } from '../audio/sampler'
 import type { SamplerOptions } from '../components/SamplerDialog'
 import { usePlayer } from '../audio/usePlayer'
-import { configurePlayback } from '../audio/audioContext'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
 import { analyzeF0, analyzeSpectrogram, processAudio } from '../dsp/engine'
 import { detectMode, modeSettings, type Mode } from '../audio/detectMode'
@@ -22,7 +21,7 @@ import { usePitchTarget } from './usePitchTarget'
 import { usePitchVoicing } from './usePitchVoicing'
 import { usePitchTools } from './usePitchTools'
 import { useTempo } from './useTempo'
-import { clipBytes, reportMemory } from '../debug/debugStats'
+import { clipBytes, reportAudioContext, reportMemory } from '../debug/debugStats'
 import { useShortcuts } from './useShortcuts'
 import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
@@ -196,7 +195,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
   const loop = useRealtimePreview(edited, multi ? null : (editRanges[0] ?? null), params.semitones, params.stretch, settings.realtimeAlign)
   // 再生方式の切り替え（開発者向け）を、再生の部品すべてに効かせる
   const { suspendWhenStopped, playbackSession } = settings
-  useEffect(() => configurePlayback({ suspendWhenStopped, playbackSession }), [suspendWhenStopped, playbackSession])
+  useEffect(() => configurePlayback({ suspendWhenStopped, playbackSession, report: reportAudioContext }), [suspendWhenStopped, playbackSession])
 
   // 原音を持たない設定にしたら、加工後の表示に戻す（原音の切り替えは出さない）
   useEffect(() => {

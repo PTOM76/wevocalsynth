@@ -14,7 +14,7 @@ import {
 } from '@mui/material'
 import { enterToSubmit, WindowDialog } from 'pevenmui'
 import type { Clip } from '../audio/types'
-import { startContext } from '../audio/audioContext'
+import { startContext } from 'wevocal-lib'
 import { parseMidi, type MidiFile } from '../audio/midi'
 import { PEAK_DB, synthesize, type SynthNote, type Timbre } from '../audio/synth'
 import { noteName } from '../audio/notes'
