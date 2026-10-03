@@ -5,6 +5,7 @@ import { addonFileUrl, loadAddon } from '../addons/addons'
 import type { VocalModel } from '../settings/settings'
 import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from './usePlayer'
+import { isMobile } from '../project/fileAccess'
 // 型だけ使う（中身は追加機能として後から読み込む）
 import type * as ExtractorModule from '../../extractor/src/index'
 
@@ -63,7 +64,14 @@ async function createExtractor(o: ExtractOptions) {
   const info = VOCAL_MODELS[o.model]
   const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
   const create = async (backend: ExtractorModule.Backend) =>
-    mod.createExtractor({ vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment'), backend, memoryMb: o.memoryMb })
+    mod.createExtractor({
+      vocals: await fetchModel(info.addon, 'vocals'),
+      accompaniment: await fetchModel(info.addon, 'accompaniment'),
+      backend,
+      memoryMb: o.memoryMb,
+      // スマホは抽出が終わったらすぐ Worker を止める。残すと、結果のトラックを作る間のメモリと重なって、iOS でタブが落ちた
+      keepAliveMs: isMobile() ? 0 : undefined,
+    })
   // WebGPU で作れなければ WASM で作り直す
   const gpu = o.gpu && info.webgpu && (await hasWebGpu())
   return gpu ? create('webgpu').catch(() => create('wasm')) : create('wasm')
