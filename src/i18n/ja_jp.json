@@ -284,6 +284,8 @@
   "settings.filePickerAuto": "自動（パソコンは選択画面、スマホは従来の方式）",
   "settings.filePickerApi": "選択画面（File System Access API）",
   "settings.filePickerInput": "従来の方式",
+  "settings.devUpdates": "開発版の更新を受け取る",
+  "settings.devUpdatesHelp": "バージョンが同じでも、新しいコミットがあれば知らせる",
   "settings.suspendWhenStopped": "停止中は音声処理を一時停止する",
   "settings.suspendWhenStoppedHelp": "停止中は AudioContext を一時停止する。iOS で音が出ない場合は OFF にする",
   "settings.playbackSession": "iOS の消音スイッチ ON でも再生する",

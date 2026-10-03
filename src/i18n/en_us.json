@@ -284,6 +284,8 @@
   "settings.filePickerAuto": "Auto (picker on PC, classic on phones)",
   "settings.filePickerApi": "Picker (File System Access API)",
   "settings.filePickerInput": "Classic",
+  "settings.devUpdates": "Receive development updates",
+  "settings.devUpdatesHelp": "Notify about new commits even when the version number is the same",
   "settings.suspendWhenStopped": "Suspend audio while stopped",
   "settings.suspendWhenStoppedHelp": "Suspends the AudioContext while stopped. Turn off if iOS plays no sound",
   "settings.playbackSession": "Play with iOS silent switch on",

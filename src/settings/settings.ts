@@ -100,6 +100,8 @@ export interface Settings {
   /** ダイアログの出し方（今は設定画面のみ）。auto は PWA かつ Chromium 系ならポップアップ、ほかはダイアログ。別窓を開けなければダイアログ */
   dialogWindow: WindowMode | 'auto'
   /** 止めている間は AudioContext を一時停止する（iOS で音が出ないときの切り分け用。`audio/audioContext.ts`） */
+  /** 開発版の更新（バージョンが同じでコミットだけ違う版）も知らせる */
+  devUpdates: boolean
   suspendWhenStopped: boolean
   /** iOS のオーディオセッションを playback にする（消音スイッチでも鳴る） */
   playbackSession: boolean
@@ -148,6 +150,7 @@ export const DEFAULT_SETTINGS: Settings = {
   historyLimit: 50,
   historyMemoryMb: 512,
   dialogWindow: 'auto',
+  devUpdates: false,
   suspendWhenStopped: true,
   playbackSession: true,
   showLegacyAlgorithms: false,

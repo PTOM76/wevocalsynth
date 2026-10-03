@@ -628,7 +628,7 @@ export default function App() {
         project={ed.fileName ? { name: ed.fileName, tempo: ed.projectTempo, onRename: ed.setProjectName, onTempoChange: ed.setProjectTempo, onBpmInput: ed.changeTempo } : null}
       />
       {settings.showDebug && <DebugOverlay />}
-      <UpdatePrompt />
+      <UpdatePrompt devUpdates={settings.devUpdates} />
       {ed.addonDialog}
       {ed.extractDialog}
 

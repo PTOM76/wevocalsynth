@@ -215,6 +215,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             ]}
           />
         </Row>
+        <Check checked={draft.devUpdates} onChange={(v) => set({ devUpdates: v })} label={t('settings.devUpdates')} help={t('settings.devUpdatesHelp')} />
         <Check checked={draft.suspendWhenStopped} onChange={(v) => set({ suspendWhenStopped: v })} label={t('settings.suspendWhenStopped')} help={t('settings.suspendWhenStoppedHelp')} />
         <Check checked={draft.playbackSession} onChange={(v) => set({ playbackSession: v })} label={t('settings.playbackSession')} help={t('settings.playbackSessionHelp')} />
         <Row label={t('settings.spliceFade')} help={t('settings.spliceFadeHelp')}>

@@ -38,7 +38,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupData', 'data.work', 'data.workHelp', 'data.cache', 'data.cacheHelp', 'data.addons',
     'data.settings', 'data.settingsHelp', 'data.all', 'data.persist', 'data.persistHelp',
   ],
-  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.spliceFade', 'settings.spliceFadeHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp', 'settings.fastMath', 'settings.fastMathHelp', 'settings.filePicker', 'settings.filePickerHelp', 'settings.suspendWhenStopped', 'settings.suspendWhenStoppedHelp', 'settings.playbackSession', 'settings.playbackSessionHelp', 'settings.vocalMemory', 'settings.vocalMemoryHelp', 'settings.extractDiagnose', 'settings.extractDiagnoseHelp', 'settings.dialogWindow'],
+  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.spliceFade', 'settings.spliceFadeHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp', 'settings.fastMath', 'settings.fastMathHelp', 'settings.filePicker', 'settings.filePickerHelp', 'settings.devUpdates', 'settings.devUpdatesHelp', 'settings.suspendWhenStopped', 'settings.suspendWhenStoppedHelp', 'settings.playbackSession', 'settings.playbackSessionHelp', 'settings.vocalMemory', 'settings.vocalMemoryHelp', 'settings.extractDiagnose', 'settings.extractDiagnoseHelp', 'settings.dialogWindow'],
 }
 
 /** 「全般」の「ファイル」の項目（開く場所と保存先の記憶、最近使用したファイル）。使えないブラウザでは画面にも検索にも出さない */

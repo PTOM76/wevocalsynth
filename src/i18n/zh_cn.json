@@ -284,6 +284,8 @@
   "settings.filePickerAuto": "自动（电脑用选择窗口，手机用传统方式）",
   "settings.filePickerApi": "选择窗口（File System Access API）",
   "settings.filePickerInput": "传统方式",
+  "settings.devUpdates": "接收开发版更新",
+  "settings.devUpdatesHelp": "即使版本号相同，有新的提交时也会通知",
   "settings.suspendWhenStopped": "停止时暂停音频处理",
   "settings.suspendWhenStoppedHelp": "停止时暂停 AudioContext。iOS 无声时请关闭后尝试",
   "settings.playbackSession": "iOS 静音开关下也播放",

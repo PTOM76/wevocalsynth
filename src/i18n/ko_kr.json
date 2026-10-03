@@ -284,6 +284,8 @@
   "settings.filePickerAuto": "자동 (PC는 선택 화면, 스마트폰은 기존 방식)",
   "settings.filePickerApi": "선택 화면 (File System Access API)",
   "settings.filePickerInput": "기존 방식",
+  "settings.devUpdates": "개발 버전 업데이트 받기",
+  "settings.devUpdatesHelp": "버전이 같아도 새 커밋이 있으면 알립니다",
   "settings.suspendWhenStopped": "정지 중 오디오 처리 중지",
   "settings.suspendWhenStoppedHelp": "정지 중 AudioContext를 일시 정지. iOS에서 소리가 안 나면 끄고 시험",
   "settings.playbackSession": "iOS 무음 스위치에서도 재생",
