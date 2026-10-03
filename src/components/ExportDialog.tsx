@@ -43,7 +43,8 @@ interface Props {
   trackCount: number
   busy: boolean
   progress: number
-  onExport: (s: ExportSettings) => void
+  /** win は操作したウィンドウ（ダイアログを別ウィンドウで開いているとき、保存先の画面をそこから出すため） */
+  onExport: (s: ExportSettings, win?: Window | null) => void
 }
 
 const BITRATES: Record<'mp3' | 'opus', number[]> = {
@@ -115,7 +116,10 @@ export default function ExportDialog(p: Props) {
       width={444}
       height={600}
       dialogProps={{ fullWidth: true, maxWidth: 'xs' }}
-      onKeyDown={enterToSubmit(() => p.onExport({ ...s, sampleRate: rate, kbps }), !p.busy && !!s.fileName.trim())}
+      onKeyDown={(e) => {
+        const win = e.currentTarget.ownerDocument.defaultView
+        enterToSubmit(() => p.onExport({ ...s, sampleRate: rate, kbps }, win), !p.busy && !!s.fileName.trim())(e)
+      }}
     >
       <DialogContent>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
@@ -210,7 +214,7 @@ export default function ExportDialog(p: Props) {
         </Button>
         <Button
           disabled={p.busy || !s.fileName.trim()}
-          onClick={() => p.onExport({ ...s, sampleRate: rate, kbps })}
+          onClick={(e) => p.onExport({ ...s, sampleRate: rate, kbps }, e.currentTarget.ownerDocument.defaultView)}
         >
           {t('export.run')}
         </Button>

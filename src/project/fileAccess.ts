@@ -58,11 +58,17 @@ export type SaveTarget = { write: (blob: Blob) => Promise<void> } | null
 
 /**
  * 保存先を選ぶ。`kind` ごとにフォルダを覚える（プロジェクトと音声で別）。
+ * `win` は操作したウィンドウ（ダイアログを別ウィンドウで開いているときはそのウィンドウ。ほかのウィンドウからは画面を出せない）。
  * 使えない環境や、ユーザー操作の外で呼ばれて画面を出せなかったときは、ダウンロードで保存する
  */
-export async function pickSaveTarget(fileName: string, kind: 'project' | 'audio', type: { description: string; mime: string; ext: string }): Promise<SaveTarget> {
+export async function pickSaveTarget(
+  fileName: string,
+  kind: 'project' | 'audio',
+  type: { description: string; mime: string; ext: string },
+  win: Window = window,
+): Promise<SaveTarget> {
   const download: SaveTarget = { write: async (blob) => downloadBlob(blob, fileName) }
-  const pick = (window as PickerWindow).showSaveFilePicker
+  const pick = (win as PickerWindow).showSaveFilePicker?.bind(win)
   if (!pick) return download
   try {
     const handle = await pick({ suggestedName: fileName, ...pickerBase(`wevocal-${kind}`), types: [{ description: type.description, accept: { [type.mime]: [type.ext] } }] })
@@ -71,6 +77,8 @@ export async function pickSaveTarget(fileName: string, kind: 'project' | 'audio'
         const w = await handle.createWritable()
         await w.write(blob)
         await w.close()
+        // 保存したプロジェクトは、最近使用したファイルから開き直せるようにする（書き出した音声は記録しない）
+        if (kind === 'project') void addRecent(handle)
       },
     }
   } catch (e) {
@@ -116,6 +124,21 @@ export async function listRecent(): Promise<RecentFile[]> {
 
 /** OS から渡されたファイル（ダブルクリックで起動したとき）を、最近使用したファイルに記録する */
 export const rememberLaunched = (handle: unknown) => void addRecent(handle as FileHandle)
+
+/**
+ * ドロップされたファイルを、最近使用したファイルに記録する。ドロップのイベントの中で呼ぶ
+ * （ファイルの参照はイベントの間しか取り出せない）。最初の1つだけ記録する
+ */
+export function rememberDropped(e: DragEvent) {
+  // DataTransferItemList は型の設定（DOM.Iterable）によっては反復できないので、Array.from で配列にする
+  const item = Array.from(e.dataTransfer?.items ?? []).find((i) => i.kind === 'file') as (DataTransferItem & { getAsFileSystemHandle?: () => Promise<{ kind: string } | null> }) | undefined
+  const p = item?.getAsFileSystemHandle?.()
+  void p
+    ?.then((h) => {
+      if (h?.kind === 'file') void addRecent(h as unknown as FileHandle)
+    })
+    .catch(() => {})
+}
 
 /** 先頭に足す。同じファイルが前にあれば、そちらは消す */
 async function addRecent(handle: FileHandle) {

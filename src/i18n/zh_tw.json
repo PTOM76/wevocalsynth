@@ -112,6 +112,8 @@
 
   "empty.formats": "WAV / AIFF / MP3 / MP4 等（可拖放）",
   "empty.choose": "選擇檔案",
+  "empty.showMore": "顯示更多（還有 {n} 個）",
+  "empty.showLess": "收合",
 
   "process.title": "處理",
   "process.mode": "處理模式",

@@ -65,12 +65,13 @@ export function useOutput(d: Deps) {
    * 書き出しダイアログの設定で音声ファイルを作る。選んでいるトラックか、全トラックのミックス。
    * 選択範囲のみなら、どのトラックも同じ時間を切り出す（複数の範囲はつなげる）
    */
-  const exportFile = async (s: ExportSettings) => {
+  /** `win` は書き出しボタンを押したウィンドウ（保存先の画面はそこから出す） */
+  const exportFile = async (s: ExportSettings, win?: Window | null) => {
     const edited = history.present
     if (!edited) return
     // 保存先は書き出しの前に選ぶ（エンコードに時間がかかると、選ぶ画面を出せなくなる）
     const ext = EXPORT_EXT[s.format]
-    const target = await pickSaveTarget(`${s.fileName.trim()}${ext}`, 'audio', { description: t('file.audioType'), mime: EXPORT_MIME[s.format], ext })
+    const target = await pickSaveTarget(`${s.fileName.trim()}${ext}`, 'audio', { description: t('file.audioType'), mime: EXPORT_MIME[s.format], ext }, win ?? window)
     if (!target) return
     await d.task.run(t('task.exporting'), async (signal) => {
       // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける

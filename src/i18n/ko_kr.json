@@ -112,6 +112,8 @@
 
   "empty.formats": "WAV / AIFF / MP3 / MP4 등 (드래그 앤 드롭 가능)",
   "empty.choose": "파일 선택",
+  "empty.showMore": "더 보기 ({n}개)",
+  "empty.showLess": "접기",
 
   "process.title": "가공",
   "process.mode": "처리 모드",

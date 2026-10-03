@@ -336,7 +336,7 @@ export default function App() {
       onFocusLane={onWaveFocus}
     />
   ) : (
-    <EmptyState onOpen={ed.picker.open} onSynth={() => setSynthOpen(true)} />
+    <EmptyState onOpen={ed.picker.open} onSynth={() => setSynthOpen(true)} recent={ed.recent} />
   )
   // トラックが2本以上あるときだけ、波形の上にトラックの欄を出す（広げると波形付きの一覧、折りたたむとタブ）
   const editor = (

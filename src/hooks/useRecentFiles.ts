@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { canPickFiles, clearRecent, listRecent, onRecentChange, openRecent, type RecentFile } from '../project/fileAccess'
+import { canPickFiles, clearRecent, listRecent, onRecentChange, openRecent, rememberDropped, type RecentFile } from '../project/fileAccess'
 
 /** 最近使用したファイル（メニューの「最近使用したファイル」）。開けなかったら `onMissing` */
 export function useRecentFiles(onFile: (f: File) => void, onMissing: (name: string) => void) {
@@ -8,6 +8,12 @@ export function useRecentFiles(onFile: (f: File) => void, onMissing: (name: stri
     const load = () => void listRecent().then(setList)
     load()
     return onRecentChange(load)
+  }, [])
+  // ドロップしたファイルも記録する（開く処理は useFileDrop が行う。ここは参照を取り出して記録するだけ）
+  useEffect(() => {
+    if (!canPickFiles()) return
+    window.addEventListener('drop', rememberDropped, true)
+    return () => window.removeEventListener('drop', rememberDropped, true)
   }, [])
   return {
     /** このブラウザで使えるか（使えなければメニューに出さない） */
