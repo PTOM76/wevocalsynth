@@ -129,7 +129,7 @@ fn combined_and_stereo() {
 }
 
 /// ビブラート付きの母音もどき（倍音 + 5Hz・±3% のビブラート）
-fn vibrato_vowel(sr: f32, secs: f32, f0: f32) -> Vec<f32> {
+pub(super) fn vibrato_vowel(sr: f32, secs: f32, f0: f32) -> Vec<f32> {
     let mut phase = 0.0f32;
     (0..(sr * secs) as usize)
         .map(|i| {
@@ -142,7 +142,7 @@ fn vibrato_vowel(sr: f32, secs: f32, f0: f32) -> Vec<f32> {
 }
 
 /// 周期性: 40ms ごとの区間で、1周期ずらした波形との正規化相関の最大値を平均する（1 に近いほど周期がきれい）
-fn periodicity(y: &[f32], sr: f32, f0: f32) -> f32 {
+pub(super) fn periodicity(y: &[f32], sr: f32, f0: f32) -> f32 {
     let win = (sr * 0.04) as usize;
     let (lo, hi) = ((sr / (f0 * 1.1)) as usize, (sr / (f0 * 0.9)) as usize);
     let mut total = 0.0;

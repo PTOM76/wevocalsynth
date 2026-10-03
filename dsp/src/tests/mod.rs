@@ -4,6 +4,7 @@ mod analysis;
 mod consonant;
 mod curve;
 mod formant;
+mod sola_params;
 mod stretch;
 
 use crate::{fft, process_with_progress, Algorithm, Formant};

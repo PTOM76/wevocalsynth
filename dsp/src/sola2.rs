@@ -2,7 +2,7 @@
 //!
 //! SOLA は約50msのブロックを繰り返すので、ブロックの中の立ち上がりや揺れがまとめて二重になり、
 //! 大きく伸ばすとガサガサする。ここでは声のある所のブロックを 1 周期にし、つなぎ方は SOLA と同じく
-//! 短いクロスフェードと2乗誤差での位置合わせにする。声のない所は `UNVOICED_SEC` の固定長。
+//! 短いクロスフェードと2乗誤差での位置合わせにする。声のない所は `Params::unvoiced` の固定長。
 //! 数周期をまとめて繰り返すと、その長さの周期で低いうなりが出る（2 周期で試して悪化した）ため 1 周期にしている。
 //!
 //! SOLAv3（`stretch_clean`）は混ぜる周期の広さ（`spread`）を広げ、前後数周期の平均で周期ごとの揺らぎや息のノイズが打ち消し合い、
@@ -11,49 +11,54 @@
 use crate::{f0, TimeMap};
 use std::f64::consts::PI;
 
-/// 声のない所のブロックの長さ（秒）
-const UNVOICED_SEC: f64 = 0.012;
-/// クロスフェードの最大の長さ（秒）。ブロックの半分も超えない
-const FADE_SEC: f64 = 0.005;
-/// 声のない所の探索幅（秒）
-const UNVOICED_TOLERANCE_SEC: f64 = 0.006;
-/// 立ち上がり（破裂音など）を等速で読む長さ（秒）。この間は繰り返さない
-const TRANSIENT_SEC: f64 = 0.015;
-/// 混ぜる周期の広さ（周期数）。SOLAv2 は隣の周期との直線補間（1）、SOLAv3 は前後約 3 周期の三角の重み
-const SPREAD: f64 = 1.0;
-const SPREAD_CLEAN: f64 = 3.0;
+/// 調整できる値（秒・周期数）。テスト（`tests/sola_params.rs`）で組み合わせを比べて決めた
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct Params {
+    /// 混ぜる周期の広さ（周期数）。SOLAv2 は隣の周期との直線補間（1）、SOLAv3 は前後約 3 周期の三角の重み
+    pub spread: f64,
+    /// 声のない所のブロックの長さ
+    pub unvoiced: f64,
+    /// クロスフェードの最大の長さ。ブロックの半分も超えない
+    pub fade: f64,
+    /// 声のない所の探索幅
+    pub tolerance: f64,
+    /// 立ち上がり（破裂音など）を等速で読む長さ。この間は繰り返さない
+    pub transient: f64,
+}
+
+pub(crate) const PARAMS: Params = Params { spread: 1.0, unvoiced: 0.012, fade: 0.005, tolerance: 0.006, transient: 0.015 };
+pub(crate) const PARAMS_CLEAN: Params = Params { spread: 3.0, ..PARAMS };
 
 /// 全チャンネルを `alpha` 倍に時間伸縮する（出力長 = 入力長 × alpha）。
 pub fn stretch(channels: &[&[f32]], alpha: f64, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
-    stretch_with(channels, alpha, sample_rate, SPREAD, progress)
+    stretch_with(channels, alpha, sample_rate, &PARAMS, progress)
 }
 
 /// 任意の時間対応 `map` で全チャンネルを伸縮する。全チャンネルで同じ区切り位置を使う。
 pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
-    run(channels, map, sample_rate, SPREAD, progress)
+    run(channels, map, sample_rate, &PARAMS, progress)
 }
 
 /// SOLAv3（前後数周期を平均する）。
 pub fn stretch_clean(channels: &[&[f32]], alpha: f64, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
-    stretch_with(channels, alpha, sample_rate, SPREAD_CLEAN, progress)
+    stretch_with(channels, alpha, sample_rate, &PARAMS_CLEAN, progress)
 }
 
 /// SOLAv3 の、任意の時間対応での伸縮。
 pub fn stretch_map_clean(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
-    run(channels, map, sample_rate, SPREAD_CLEAN, progress)
+    run(channels, map, sample_rate, &PARAMS_CLEAN, progress)
 }
 
-fn stretch_with(channels: &[&[f32]], alpha: f64, sample_rate: f32, spread: f64, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
+pub(crate) fn stretch_with(channels: &[&[f32]], alpha: f64, sample_rate: f32, p: &Params, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
     let len = channels.first().map_or(0, |c| c.len());
     // SOLAv3 は等倍でも平均をかける（等倍で何もしないと、伸縮しない部分だけ整わない）
-    if (alpha - 1.0).abs() < 1e-9 && spread <= SPREAD {
+    if (alpha - 1.0).abs() < 1e-9 && p.spread <= PARAMS.spread {
         return channels.iter().map(|c| c.to_vec()).collect();
     }
     let out_len = (len as f64 * alpha).round() as usize;
-    run(channels, &TimeMap::linear(len, out_len), sample_rate, spread, progress)
+    run(channels, &TimeMap::linear(len, out_len), sample_rate, p, progress)
 }
-
-fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
+fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, p: &Params, progress: &mut dyn FnMut(f64)) -> Vec<Vec<f32>> {
     let len = channels.first().map_or(0, |c| c.len());
     let out_len = map.out_len;
     if len == 0 || out_len == 0 {
@@ -69,10 +74,10 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progre
         (f > 0.0).then(|| sr / f as f64)
     };
     let onsets = onsets(&mono, sample_rate);
-    let transient = (sr * TRANSIENT_SEC) as i64;
-    let max_fade = (sr * FADE_SEC) as usize;
+    let transient = (sr * p.transient) as i64;
+    let max_fade = (sr * p.fade) as usize;
     let max_block = (sr * 0.05) as usize + max_fade;
-    let typical = (sr * UNVOICED_SEC) as usize + max_fade;
+    let typical = (sr * p.unvoiced) as usize + max_fade;
     let last_pos = len.saturating_sub(typical) as i64;
     let pad = max_block + 8;
     let mut padded = vec![0.0f32; pad + len + pad];
@@ -120,7 +125,7 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progre
         let voiced = period.is_some();
         let (hop, delta) = match period {
             Some(t) => (t.round() as usize, (t / 2.0).ceil() as i64),
-            None => ((sr * UNVOICED_SEC) as usize, (sr * UNVOICED_TOLERANCE_SEC) as i64),
+            None => ((sr * p.unvoiced) as usize, (sr * p.tolerance) as i64),
         };
         let hop = hop.clamp(16, max_block - max_fade);
         let fade = max_fade.min(hop / 2).max(4);
@@ -189,7 +194,7 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, spread: f64, progre
         if voiced && out_pos > 0 {
             let t = hop as i64;
             let frac = ((nominal - pos) as f64 / t as f64).clamp(-1.0, 1.0);
-            let weight = |k: i64| (1.0 - (k as f64 - frac).abs() / spread).max(0.0) as f32;
+            let weight = |k: i64| (1.0 - (k as f64 - frac).abs() / p.spread).max(0.0) as f32;
             taps[0].1 = weight(0);
             for dir in [-1i64, 1] {
                 let mut p = pos;

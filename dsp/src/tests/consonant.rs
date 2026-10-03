@@ -4,7 +4,7 @@
 use super::*;
 
 /// 決まった並びの雑音（-1〜1）
-fn noise(n: usize, seed: u32) -> Vec<f32> {
+pub(super) fn noise(n: usize, seed: u32) -> Vec<f32> {
     let mut s = seed;
     (0..n)
         .map(|_| {
@@ -19,7 +19,7 @@ const SYLLABLE: f32 = 0.25;
 const BURST_AT: f32 = 0.22;
 
 /// 「た」の繰り返しもどき。母音 180ms（倍音つき 180Hz）→ 閉鎖 40ms → 破裂 6ms → 息 4ms → 次の母音
-fn syllables(sr: f32, count: usize) -> Vec<f32> {
+pub(super) fn syllables(sr: f32, count: usize) -> Vec<f32> {
     let n = (sr * SYLLABLE) as usize;
     let mut y = vec![0.0f32; n * count];
     let nz = noise(y.len(), 7);
@@ -53,7 +53,7 @@ fn envelope(y: &[f32], sr: f32) -> Vec<f32> {
 /// 破裂ごとの（ピークの数、立ち上がり 10→90% の時間 ms、時刻のずれ ms）を平均する。
 /// ずれは入力の時刻 × 倍率との差。SOLA 系は最後のブロックが入力の最後に来るよう全体を少し縮めて対応させるので（`TimeMap::frame_pos`）、
 /// 後ろの音節ほど遅れる（×2 の 1.7 秒で約 +15ms。母音も同じだけずれる）
-fn measure(y: &[f32], sr: f32, alpha: f64, count: usize) -> (f32, f32, f32) {
+pub(super) fn measure(y: &[f32], sr: f32, alpha: f64, count: usize) -> (f32, f32, f32) {
     let env = envelope(y, sr);
     let (mut peaks, mut rise, mut err) = (0.0f32, 0.0f32, 0.0f32);
     let mut n = 0;
