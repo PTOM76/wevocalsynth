@@ -37,6 +37,7 @@ import { useSettings } from './settings/settings'
 import SettingsDialog from './settings/SettingsDialog'
 import DebugOverlay from './debug/DebugOverlay'
 import UpdatePrompt from './components/UpdatePrompt'
+import { cancelDownload, useDownload } from './addons/downloads'
 import { countRender } from './debug/debugStats'
 import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
@@ -112,6 +113,9 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player.position])
   const center = view.start + view.dur / 2
+  // 追加機能のダウンロード（裏で進める。ステータスバーに出す）
+  const download = useDownload()
+  const downloadView = download && { label: t('addon.downloadingTask', { name: download.label }), progress: download.progress }
   // トラックの欄（右クリックメニュー・名前の変更を含む）。メニューの「トラック → 名前の変更」からも使う
   const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null)
   const activeSettings = ed.tracks.settingsOf(ed.tracks.activeId)
@@ -493,7 +497,7 @@ export default function App() {
                 onStop={playback.stop}
                 onPlaySelection={playback.playSelection}
                 onLoop={toggleRepeat}
-                task={busy ? { label: ed.taskLabel, progress: ed.progress, onCancel: ed.cancelTask } : null}
+                task={busy ? { label: ed.taskLabel, progress: ed.progress, onCancel: ed.cancelTask } : downloadView && { ...downloadView, onCancel: cancelDownload }}
                 meter={settings.showMeters && <LevelMeter source={player.masterAnalysers} rows={2} width={96} height={7} label={t('meter.master')} />}
               />
             }
@@ -547,6 +551,8 @@ export default function App() {
                 progress={ed.progress}
                 taskLabel={ed.taskLabel}
                 onCancelTask={ed.cancelTask}
+                download={downloadView}
+                onCancelDownload={cancelDownload}
                 source={ed.source}
                 onSourceChange={ed.setSource}
                 tempo={tempoField()}
