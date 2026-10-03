@@ -121,7 +121,11 @@ iPad の PWA で、抽出が `no available backend found. ERR: [wasm] RangeError
 
 **原因**: ONNX Runtime（`ort-wasm-simd-threaded`）は、スレッドを 1 にしても上限 4GB の共有メモリを作る。iOS はこれを同時に 2 個までしか持てず、Worker を止めてもその枠はすぐには返らない（いつ返るか決まっていない）。そのため実行環境を作り直すと枠が尽きる。単体の WeVocalExtractor が成功していたのは、再読み込み直後の 1 回目だったから。メモリの量や、画面の使うメモリが原因ではなかった。
 
-**対策**: 推論の Worker はページで 1 つだけ作り、止めずに使い続ける（`extractor/src/index.ts` の `sharedWorker`）。手放すとき（`dispose`）はセッションだけを手放し、次に作るときは同じ Worker にモデルを入れ直す。中断は Worker を止めずに、次のブロックで止めるよう頼む（`cancel`）。Worker が落ちたときだけ作り直す。
+**調べて分かったこと**: WebKit は、共有メモリの上限（`maximum`）の分を、作った時点でプロセス全体の予約の枠から差し引く。枠は iOS で約 6GB で、実際に使うメモリではなく帳簿上の枠なので、使っている量が小さくても尽きる。Worker を止めれば返るとされるが、ONNX Runtime の Worker では返るまでに時間がかかった（[Automattic/kandelo#1410](https://github.com/Automattic/kandelo/pull/1410)）。ONNX Runtime は一度 wasm の準備に失敗すると、同じ Worker では二度と準備できない（`previous call to initWasm() failed`）。
+
+**対策 1**: ONNX Runtime が作るメモリの上限を 4GB から 1GB に下げる（ビルド時に書き換える。`extractor/ortMemory.ts`）。wasm は上限 4GB のメモリを読み込む宣言なので、小さい上限のメモリを渡しても動く。推論で使うのは数百MB。
+
+**対策 2**: 推論の Worker はページで 1 つだけ作り、止めずに使い続ける（`extractor/src/index.ts` の `sharedWorker`）。手放すとき（`dispose`）はセッションだけを手放し、次に作るときは同じ Worker にモデルを入れ直す。中断は Worker を止めずに、次のブロックで止めるよう頼む（`cancel`）。Worker が落ちたときと、実行環境の準備に失敗したとき（同じ Worker では二度と準備できないため）だけ作り直す。
 
 そのほかに行っていること:
 
