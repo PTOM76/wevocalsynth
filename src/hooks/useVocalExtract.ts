@@ -54,7 +54,7 @@ interface Deps {
 export function useVocalExtract(d: Deps) {
   const { confirm, dialog } = useConfirm()
   // この端末と非互換のモデルなら、代わりのモデルで抽出する（extractor/src/compat.ts。設定は変えない）
-  const model = resolveModel(d.model).model
+  const model = resolveModel(d.model, d.gpu).model
   const base = (): ExtractOptions => ({ model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb })
   /** 計算の種類を決め、モデルとそれに要る実行環境（ONNX Runtime の wasm）を導入済みにする。導入しなければ null */
   const prepareOptions = async (): Promise<ExtractOptions | null> => {

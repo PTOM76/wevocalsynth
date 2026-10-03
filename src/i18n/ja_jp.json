@@ -421,7 +421,7 @@
   "settings.vocalFreshHelp": "抽出の前に作業を保存して開き直し、メモリを空けた状態で抽出します。iPad などで抽出のあとにアプリが終了してしまう場合に使います。元に戻す履歴は消えます",
   "extract.crashedConfirm": "前回、ボーカル抽出の途中か直後にアプリが終了しました。メモリが足りなかった可能性があります。「メモリを空けてから抽出する」を有効にしますか？（設定の「ボーカル抽出」で変更できます）",
   "extract.crashedOk": "有効にする",
-  "settings.vocalModelReplaced": "この端末とは非互換のため、「{name}」で抽出します",
+  "settings.vocalModelReplaced": "「{from}」は GPU と非互換のため、「{name}」で抽出します",
   "settings.vocalGpu": "GPU処理を利用する",
   "settings.vocalGpuHelp": "処理が速くなります。利用できない環境や軽量モデルでは CPU で処理します。結果が不正確な場合は OFF にしてください",
   "task.processing": "音声加工中…",

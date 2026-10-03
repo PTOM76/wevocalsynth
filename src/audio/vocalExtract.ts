@@ -29,8 +29,8 @@ export const VOCAL_MODELS: Record<VocalModel, { addon: string; label: MessageKey
 }
 
 /** この端末で実際に使うモデル（非互換なら代わりのもの）と、替えたか */
-export function resolveModel(model: VocalModel): { model: VocalModel; replaced: boolean } {
-  const r = effectiveModel(model, Object.keys(VOCAL_MODELS))
+export function resolveModel(model: VocalModel, gpu: boolean): { model: VocalModel; replaced: boolean } {
+  const r = effectiveModel(model, { gpu }, Object.keys(VOCAL_MODELS))
   return { model: r.model as VocalModel, replaced: r.reason !== null }
 }
 

@@ -172,8 +172,8 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
         <Group title={t('settings.groupVocal')}>
           <Row
             label={t('settings.vocalModel')}
-            // この端末と非互換のモデルは、抽出のときに代わりのモデルを使う
-            help={resolveModel(draft.vocalModel).replaced ? translate('settings.vocalModelReplaced', { name: t(VOCAL_MODELS[resolveModel(draft.vocalModel).model].label) }) : undefined}
+            // この端末で使えないか向かないモデルは、抽出のときに代わりのモデルを使う
+            help={resolveModel(draft.vocalModel, draft.vocalGpu).replaced ? translate('settings.vocalModelReplaced', { from: t(VOCAL_MODELS[draft.vocalModel].label), name: t(VOCAL_MODELS[resolveModel(draft.vocalModel, draft.vocalGpu).model].label) }) : undefined}
           >
             <Choice<VocalModel>
               value={draft.vocalModel}
