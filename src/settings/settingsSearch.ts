@@ -1,5 +1,6 @@
 import type { SettingsCategory } from 'pevenmui'
 import type { MessageKey } from '../i18n/i18n'
+import { canPickFiles } from '../project/fileAccess'
 
 /** 設定画面の分類 */
 export type Category = 'project' | 'general' | 'defaults' | 'display' | 'pitch' | 'tempo' | 'keys' | 'vocal' | 'data' | 'debug'
@@ -14,7 +15,8 @@ const INDEX: Record<Category, MessageKey[]> = {
   general: [
     'settings.groupStartup', 'settings.autoRestore', 'settings.autoRestoreHelp',
     'settings.groupHistory', 'settings.historyLimit', 'settings.historyMemory',
-    'settings.groupInput', 'settings.sliderReset', 'settings.seekAfterInsert', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel', 'settings.groupFile', 'settings.rememberFolder', 'settings.rememberFolderHelp', 'settings.startFolder', 'settings.recentFiles', 'settings.recentFilesHelp',
+    'settings.groupInput', 'settings.sliderReset', 'settings.seekAfterInsert', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel',
+    // 「ファイル」は File System Access API が使えるときだけ出す（FILE_KEYS）
     'settings.groupProcess', 'settings.initialMode',
     'settings.groupUpdate', 'update.check',
   ],
@@ -39,7 +41,11 @@ const INDEX: Record<Category, MessageKey[]> = {
   debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.spliceFade', 'settings.spliceFadeHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp', 'settings.fastMath', 'settings.fastMathHelp', 'settings.suspendWhenStopped', 'settings.suspendWhenStoppedHelp', 'settings.playbackSession', 'settings.playbackSessionHelp', 'settings.dialogWindow'],
 }
 
+/** 「全般」の「ファイル」の項目（開く場所と保存先の記憶、最近使用したファイル）。使えないブラウザでは画面にも検索にも出さない */
+const FILE_KEYS: MessageKey[] = ['settings.groupFile', 'settings.rememberFolder', 'settings.rememberFolderHelp', 'settings.startFolder', 'settings.recentFiles', 'settings.recentFilesHelp']
+
 /** 設定画面に渡す分類の一覧（名前と、検索の対象の訳文） */
 export function settingsCategories(t: (key: MessageKey) => string): SettingsCategory<Category>[] {
-  return CATEGORIES.map((c) => ({ id: c, label: t(`settings.cat.${c}`), texts: INDEX[c].map((k) => t(k)) }))
+  const keys = (c: Category) => (c === 'general' && canPickFiles() ? [...INDEX[c], ...FILE_KEYS] : INDEX[c])
+  return CATEGORIES.map((c) => ({ id: c, label: t(`settings.cat.${c}`), texts: keys(c).map((k) => t(k)) }))
 }

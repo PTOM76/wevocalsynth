@@ -10,7 +10,7 @@ import { visibleAlgorithms } from '../components/AlgorithmMenu'
 import type { Algorithm } from '../dsp/engine'
 import type { LangSetting, MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
-import type { StartFolder } from '../project/fileAccess'
+import { canPickFiles, type StartFolder } from '../project/fileAccess'
 import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
 
 /** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
@@ -70,23 +70,25 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             />
           </Row>
         </Group>
-        {/* 開く・保存する場所（File System Access API が使えるブラウザのみ効く） */}
-        <Group title={t('settings.groupFile')}>
-          <Check checked={draft.rememberFolder} onChange={(v) => set({ rememberFolder: v })} label={t('settings.rememberFolder')} help={t('settings.rememberFolderHelp')} />
-          <Row label={t('settings.startFolder')}>
-            <Choice<StartFolder>
-              value={draft.startFolder}
-              onChange={(v) => set({ startFolder: v })}
-              options={[
-                ['downloads', t('settings.folderDownloads')],
-                ['documents', t('settings.folderDocuments')],
-                ['desktop', t('settings.folderDesktop')],
-                ['music', t('settings.folderMusic')],
-              ]}
-            />
-          </Row>
-          <Check checked={draft.recentFiles} onChange={(v) => set({ recentFiles: v })} label={t('settings.recentFiles')} help={t('settings.recentFilesHelp')} />
-        </Group>
+        {/* 開く場所と保存先（File System Access API が使えるブラウザだけ出す） */}
+        {canPickFiles() && (
+          <Group title={t('settings.groupFile')}>
+            <Check checked={draft.rememberFolder} onChange={(v) => set({ rememberFolder: v })} label={t('settings.rememberFolder')} help={t('settings.rememberFolderHelp')} />
+            <Row label={t('settings.startFolder')}>
+              <Choice<StartFolder>
+                value={draft.startFolder}
+                onChange={(v) => set({ startFolder: v })}
+                options={[
+                  ['downloads', t('settings.folderDownloads')],
+                  ['documents', t('settings.folderDocuments')],
+                  ['desktop', t('settings.folderDesktop')],
+                  ['music', t('settings.folderMusic')],
+                ]}
+              />
+            </Row>
+            <Check checked={draft.recentFiles} onChange={(v) => set({ recentFiles: v })} label={t('settings.recentFiles')} help={t('settings.recentFilesHelp')} />
+          </Group>
+        )}
         <Group title={t('settings.groupProcess')}>
           <Row label={t('settings.initialMode')}>
             <Choice<InitialMode>

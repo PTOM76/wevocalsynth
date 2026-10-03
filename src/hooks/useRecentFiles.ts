@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { clearRecent, listRecent, onRecentChange, openRecent, type RecentFile } from '../project/fileAccess'
+import { canPickFiles, clearRecent, listRecent, onRecentChange, openRecent, type RecentFile } from '../project/fileAccess'
 
 /** 最近使用したファイル（メニューの「最近使用したファイル」）。開けなかったら `onMissing` */
 export function useRecentFiles(onFile: (f: File) => void, onMissing: (name: string) => void) {
@@ -10,6 +10,8 @@ export function useRecentFiles(onFile: (f: File) => void, onMissing: (name: stri
     return onRecentChange(load)
   }, [])
   return {
+    /** このブラウザで使えるか（使えなければメニューに出さない） */
+    supported: canPickFiles(),
     names: list.map((r) => r.name),
     open: (i: number) => {
       const r = list[i]
