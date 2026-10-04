@@ -12,6 +12,7 @@
 - [機能の仕組み](INTERNALS.md)（データの流れ・トラック・再生・保存）
 - [プロジェクトファイルの形式](PROJECT_FORMAT.md)（.wvsp）
 - [アルゴリズム](ALGORITHM.md)（音声処理の仕組みと参考資料）
+- [速さの計測](PERFORMANCE.md)（測った値と、試した改善）
 - [ボーカル抽出](EXTRACTOR.md)（WeVocalSynth 側。本体は wevocalextractor の docs）
 - [ドキュメントの書き方](WRITING.md)
 - [小ネタ](TIPS.md)（作ったきっかけ・名前の由来）
