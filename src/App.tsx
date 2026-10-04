@@ -594,6 +594,7 @@ export default function App() {
               </>
             }
             process={editPanel}
+            collapsible={settings.mobileUi === 'new'}
             volume={volumePanel}
             view={viewTools}
             playBar={
