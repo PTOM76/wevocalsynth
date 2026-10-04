@@ -123,6 +123,7 @@
   "silence.length": "長さ",
   "ruler.playFrom": "ここから再生",
   "ruler.seek": "再生位置をここへ",
+  "ruler.beatOne": "ここを 1 拍目にする",
   "marker.add": "マーカーを追加",
   "marker.rename": "マーカーの名前を変更…",
   "marker.tempo": "ここからテンポを変える…",

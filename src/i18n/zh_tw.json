@@ -123,6 +123,7 @@
   "silence.length": "長度",
   "ruler.playFrom": "從此處播放",
   "ruler.seek": "將播放位置移到此處",
+  "ruler.beatOne": "將此處設為第 1 拍",
   "marker.add": "新增標記",
   "marker.rename": "重新命名標記…",
   "marker.tempo": "從這裡變更速度…",

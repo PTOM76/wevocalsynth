@@ -123,6 +123,7 @@
   "silence.length": "길이",
   "ruler.playFrom": "여기부터 재생",
   "ruler.seek": "재생 위치를 여기로",
+  "ruler.beatOne": "여기를 1박째로",
   "marker.add": "마커 추가",
   "marker.rename": "마커 이름 변경…",
   "marker.tempo": "여기부터 템포 변경…",

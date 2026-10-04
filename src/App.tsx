@@ -355,6 +355,16 @@ export default function App() {
         // メニューが閉じてフォーカスが戻ったあとに入力欄を出す
         { label: t('time.inputMenu'), onClick: () => setTimeout(() => setTimeEditRequest((n) => n + 1), 100) },
         { divider: true },
+        // ここを小節の 1 拍目にする。最初の区間はプロジェクトの 1 拍目の位置、テンポのマーカーの区間はそのマーカーを動かす
+        {
+          label: t('ruler.beatOne'),
+          onClick: () => {
+            const s = segmentAt(ed.tempoSegs, rulerAt.time)
+            const m = s && Number.isFinite(s.start) ? ed.markers.markers.find((x) => x.tempo && x.time === s.start) : undefined
+            if (m) ed.markers.move(m.id, rulerAt.time)
+            else ed.setProjectTempo({ beatOffset: rulerAt.time })
+          },
+        },
         { label: t('marker.add'), onClick: () => ed.markers.add(rulerAt.time) },
         { label: t('marker.rename'), disabled: !rulerAt.markerId, onClick: () => setRenamingMarker(rulerAt.markerId) },
         { label: t('marker.tempo'), disabled: !rulerAt.markerId, onClick: () => setTempoMarker(rulerAt.markerId) },

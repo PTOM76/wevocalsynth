@@ -123,6 +123,7 @@
   "silence.length": "Length",
   "ruler.playFrom": "Play from here",
   "ruler.seek": "Move playhead here",
+  "ruler.beatOne": "Make this beat 1",
   "marker.add": "Add marker",
   "marker.rename": "Rename marker…",
   "marker.tempo": "Change tempo from here…",
