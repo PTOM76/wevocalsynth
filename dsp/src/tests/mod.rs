@@ -4,6 +4,7 @@ mod analysis;
 mod consonant;
 mod curve;
 mod formant;
+mod roundtrip;
 mod sola_params;
 mod stretch;
 
