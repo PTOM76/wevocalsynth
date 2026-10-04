@@ -472,6 +472,8 @@
   "settings.noResults": "沒有符合的設定",
   "job.details": "進行中的處理",
   "job.tempo": "正在分析速度…",
+  "job.pitch": "音高分析",
+  "job.spec": "頻譜圖分析",
   "job.kind.download": "正在下載",
   "job.kind.load": "正在讀取",
   "job.kind.process": "正在處理",

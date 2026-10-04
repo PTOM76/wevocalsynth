@@ -472,6 +472,8 @@
   "settings.noResults": "一致する設定がありません",
   "job.details": "進んでいる処理",
   "job.tempo": "テンポを解析中…",
+  "job.pitch": "ピッチの解析",
+  "job.spec": "スペクトログラムの解析",
   "job.kind.download": "ダウンロード中",
   "job.kind.load": "読み込み中",
   "job.kind.process": "加工中",

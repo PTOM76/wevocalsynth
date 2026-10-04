@@ -472,6 +472,8 @@
   "settings.noResults": "일치하는 설정이 없습니다",
   "job.details": "진행 중인 작업",
   "job.tempo": "템포 분석 중…",
+  "job.pitch": "피치 분석",
+  "job.spec": "스펙트로그램 분석",
   "job.kind.download": "다운로드 중",
   "job.kind.load": "불러오는 중",
   "job.kind.process": "가공 중",

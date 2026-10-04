@@ -472,6 +472,8 @@
   "settings.noResults": "No matching settings",
   "job.details": "Running tasks",
   "job.tempo": "Analyzing tempo…",
+  "job.pitch": "Pitch analysis",
+  "job.spec": "Spectrogram analysis",
   "job.kind.download": "Downloading",
   "job.kind.load": "Loading",
   "job.kind.process": "Processing",

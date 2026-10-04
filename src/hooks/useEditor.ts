@@ -185,11 +185,12 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     (c) => analyzeF0(c.channels, c.sampleRate, f0Params),
     fail('toast.pitchFailed'),
     JSON.stringify(f0Params),
+    t('job.pitch'),
   )
   // 強制表示・非表示の指定を反映したピッチ。表示・ピッチの加工・適用のすべてでこれを使う
   const voicing = usePitchVoicing(shown, rawPitch)
   const pitch = voicing.pitch
-  const spec = useClipAnalysis(showSpec, shown, (c) => analyzeSpectrogram(c.channels, c.sampleRate), fail('toast.specFailed'))
+  const spec = useClipAnalysis(showSpec, shown, (c) => analyzeSpectrogram(c.channels, c.sampleRate), fail('toast.specFailed'), '', t('job.spec'))
 
   // 加工・音量編集の対象（選択範囲、なければ全体）
   const editRanges: Range[] = edited ? (selections.length ? selections : [{ start: 0, end: clipDuration(edited) }]) : []

@@ -472,6 +472,8 @@
   "settings.noResults": "没有匹配的设置",
   "job.details": "正在进行的处理",
   "job.tempo": "正在分析速度…",
+  "job.pitch": "音高分析",
+  "job.spec": "频谱图分析",
   "job.kind.download": "正在下载",
   "job.kind.load": "正在读取",
   "job.kind.process": "正在处理",
