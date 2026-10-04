@@ -1,3 +1,4 @@
+import RepeatDialog from './components/RepeatDialog'
 import MarkerTempoDialog from './components/MarkerTempoDialog'
 import { segmentAt } from './audio/tempoMap'
 import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
@@ -103,6 +104,7 @@ export default function App() {
   // テンポを変えるマーカー（テンポが途中で変わる曲）
   const [tempoMarker, setTempoMarker] = useState<string | null>(null)
   const [silenceOpen, setSilenceOpen] = useState(false)
+  const [repeatOpen, setRepeatOpen] = useState(false)
   const [soundSelectOpen, setSoundSelectOpen] = useState(false)
   // 再生位置の入力を始める合図（目盛りの右クリックメニューから。増やすたびに始まる）
   const [timeEditRequest, setTimeEditRequest] = useState(0)
@@ -176,6 +178,7 @@ export default function App() {
     trackFromOriginal: () => ed.tracks.fromOriginal(),
     addEmptyTrack: ed.tracks.addEmpty,
     insertSilence: () => setSilenceOpen(true),
+    repeatSelection: () => setRepeatOpen(true),
     selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),
     addTrack: () => ed.addPicker.open(),
     synth: () => setSynthOpen(true),
@@ -631,6 +634,7 @@ export default function App() {
         pitchTools={ed.pitchTools}
       />
       <SynthDialog open={synthOpen} bpm={bpm} onClose={() => setSynthOpen(false)} onCreate={ed.addSynth} />
+      <RepeatDialog open={repeatOpen} onClose={() => setRepeatOpen(false)} onRepeat={ed.cmd.repeat} />
       <SilenceDialog
         open={silenceOpen}
         bpm={bpm}

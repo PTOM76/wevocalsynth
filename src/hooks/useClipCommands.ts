@@ -105,6 +105,22 @@ export function useClipCommands(d: Deps) {
     if (d.seekAfterInsert) d.seek(at + sec)
   }
 
+  /** 最後に選んだ範囲を、全部で `count` 回になるよう後ろに続けて並べる（後ろはずれる）。連打やループ素材づくり用 */
+  const repeat = (count: number) => {
+    const r = selections[selections.length - 1]
+    if (!edited || !r || count < 2) return
+    const piece = sliceRanges(edited, [r])
+    const n = piece.channels[0].length
+    const copies = { sampleRate: edited.sampleRate, channels: piece.channels.map((c) => {
+      const out = new Float32Array(n * (count - 1))
+      for (let i = 0; i < count - 1; i++) out.set(c, i * n)
+      return out
+    }) }
+    d.commit(insertAt(edited, copies, r.end), t('repeat.history', { n: count }))
+    const len = n / edited.sampleRate
+    d.setSelections([{ start: r.start, end: r.start + len * count }])
+  }
+
   /** 選択範囲（なければ全体）を逆再生にする（範囲ごとに前後を逆に並べる） */
   const reverse = () => {
     if (!edited || !editRanges.length) return
@@ -114,6 +130,7 @@ export function useClipCommands(d: Deps) {
   return {
     hasClipboard: !!clipboard,
     reverse,
+    repeat,
     insertSilence,
     /** ファイルを開き直したときにクリップボードを空にする（サンプルレートが混ざらないように） */
     clearClipboard: () => setClipboard(null),

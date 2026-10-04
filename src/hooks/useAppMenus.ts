@@ -61,6 +61,8 @@ interface Actions {
   addEmptyTrack: () => void
   /** 無音の挿入（長さを決めるダイアログを開く） */
   insertSilence: () => void
+  /** 選択範囲を繰り返す（回数を決めるダイアログを開く） */
+  repeatSelection: () => void
   /** 選択範囲を同じ位置のまま新しいトラックへ（`move` なら元は無音に） */
   selectionToTrack: (move: boolean) => void
   addTrack: () => void
@@ -155,6 +157,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('edit.trim'), disabled: noSel || !a.canTrim, onClick: a.trim },
     { label: t('edit.reverse'), disabled: noClip, onClick: a.reverse },
     { label: t('silence.menu'), disabled: noClip, onClick: a.insertSilence },
+    { label: t('repeat.menu'), disabled: noSel, onClick: a.repeatSelection },
     {
       label: t('menu.toNewTrack'),
       disabled: noSel,
@@ -362,6 +365,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('edit.trim'), disabled: !a.hasSelection || !a.canTrim, onClick: a.trim },
         { label: t('edit.reverse'), onClick: a.reverse },
         { label: t('silence.menu'), onClick: a.insertSilence },
+        { label: t('repeat.menu'), disabled: !a.hasSelection, onClick: a.repeatSelection },
       ],
     },
     volumeMenu,
