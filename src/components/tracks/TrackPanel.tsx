@@ -29,6 +29,8 @@ interface Props {
   faders: Record<string, TrackFader>
   onToggleInvert: (id: string) => void
   onContextMenu: (id: string, x: number, y: number) => void
+  /** 「⋯」でトラックのメニューを開けるようにする（スマホ） */
+  menuButton?: boolean
   /** トラック `id` のレベルメーター（再生していなければ null） */
   meter: ((id: string) => AnalyserNode | null) | null
 }

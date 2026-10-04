@@ -133,7 +133,8 @@ export default function App() {
   }, [player.position])
   const center = view.start + view.dur / 2
   // トラックの欄（右クリックメニュー・名前の変更を含む）。メニューの「トラック → 名前の変更」からも使う
-  const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null)
+  // スマホは右クリックができないので、トラックに「⋯」を出してメニューを開けるようにする
+  const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null, mobile)
   const activeSettings = ed.tracks.settingsOf(ed.tracks.activeId)
   const activeIndex = ed.tracks.tracks.findIndex((tr) => tr.id === ed.tracks.activeId)
 

@@ -576,6 +576,7 @@
   "task.splitStems": "分離人聲和伴奏中…",
   "toast.pasteRateMismatch": "無法貼上到取樣率不同的音軌（{from} Hz → {to} Hz）",
   "track.rename": "重新命名",
+  "track.menu": "音軌操作",
   "track.mergeDown": "與下方音軌合併",
   "track.mergeAll": "合併所有音軌",
   "settings.trackView": "音軌顯示",

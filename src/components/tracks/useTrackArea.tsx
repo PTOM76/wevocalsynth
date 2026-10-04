@@ -11,7 +11,7 @@ import type { PickMods } from './useTrackDrag'
  * トラックの欄と、その右クリックメニュー・名前の変更のつなぎ込み（App から分けたもの）。
  * `panel(view)` を波形の上に、`overlays` を画面のどこかに置く
  */
-export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, meter: ((id: string) => AnalyserNode | null) | null) {
+export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, meter: ((id: string) => AnalyserNode | null) | null, menuButton = false) {
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const tr = ed.tracks
@@ -99,6 +99,7 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
       faders={tr.faders}
       onToggleInvert={onToggleInvert}
       onContextMenu={onContextMenu}
+      menuButton={menuButton}
       meter={meter}
     />
   )

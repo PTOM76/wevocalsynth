@@ -576,6 +576,7 @@
   "task.splitStems": "ボーカルと伴奏に分離中…",
   "toast.pasteRateMismatch": "サンプルレートが違うトラックには貼り付けられません（{from} Hz → {to} Hz）",
   "track.rename": "名前の変更",
+  "track.menu": "トラックの操作",
   "track.mergeDown": "下のトラックと統合",
   "track.mergeAll": "すべてのトラックを統合",
   "settings.trackView": "トラックの表示",

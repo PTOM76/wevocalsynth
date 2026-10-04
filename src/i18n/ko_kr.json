@@ -576,6 +576,7 @@
   "task.splitStems": "보컬과 반주로 분리 중…",
   "toast.pasteRateMismatch": "샘플레이트가 다른 트랙에는 붙여넣을 수 없습니다 ({from} Hz → {to} Hz)",
   "track.rename": "이름 변경",
+  "track.menu": "트랙 작업",
   "track.mergeDown": "아래 트랙과 합치기",
   "track.mergeAll": "모든 트랙 합치기",
   "settings.trackView": "트랙 표시",

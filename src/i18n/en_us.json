@@ -576,6 +576,7 @@
   "task.splitStems": "Separating vocals and accompaniment…",
   "toast.pasteRateMismatch": "Cannot paste into a track with a different sample rate ({from} Hz → {to} Hz)",
   "track.rename": "Rename",
+  "track.menu": "Track actions",
   "track.mergeDown": "Merge with track below",
   "track.mergeAll": "Merge all tracks",
   "settings.trackView": "Track display",
