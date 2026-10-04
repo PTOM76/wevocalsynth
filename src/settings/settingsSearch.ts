@@ -48,7 +48,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupTempo', 'settings.autoTempo', 'settings.autoTempoHelp', 'settings.defaultBpm', 'settings.defaultBpmHelp', 'settings.showBeatGrid', 'settings.tempoStretch', 'settings.tempoStretchHelp',
   ],
   vocal: [
-    'settings.groupVocal', 'settings.vocalModel', 'settings.vocalFresh', 'settings.vocalFreshHelp', 'settings.vocalGpu', 'settings.vocalGpuHelp', 'settings.vocalKeepHighBand', 'settings.vocalKeepHighBandHelp',
+    'settings.groupVocal', 'settings.vocalModel', 'settings.vocalFresh', 'settings.vocalFreshHelp', 'settings.vocalGpu', 'settings.vocalGpuHelp', 'settings.vocalKeepHighBand', 'settings.vocalKeepHighBandHelp', 'settings.vocalMemory', 'settings.vocalMemoryHelp',
     'settings.groupAddons', 'addon.modelStandard', 'addon.modelLight', 'addon.modelPrecise',
   ],
   data: [
@@ -60,7 +60,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupDebugAudio', 'settings.showExperimentalAlgorithms', 'settings.showExperimentalAlgorithmsHelp', 'settings.fastMath', 'settings.fastMathHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp',
     'settings.spliceFade', 'settings.spliceFadeHelp', 'settings.suspendWhenStopped', 'settings.suspendWhenStoppedHelp', 'settings.playbackSession', 'settings.playbackSessionHelp',
   ],
-  diagnose: ['settings.groupDiagnose', 'settings.vocalMemory', 'settings.vocalMemoryHelp', 'settings.extractDiagnose', 'settings.extractDiagnoseHelp'],
+  diagnose: ['settings.groupDiagnose', 'settings.extractDiagnose', 'settings.extractDiagnoseHelp'],
 }
 
 /** 設定画面に渡す分類の一覧（名前と、検索の対象の訳文）。「ファイル」は File System Access API が使えるブラウザだけ出す */

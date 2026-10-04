@@ -228,6 +228,14 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             label={t('settings.vocalKeepHighBand')}
             help={t('settings.vocalKeepHighBandHelp')}
           />
+          {/* 抽出の動きを変える設定なので、診断ではなくここに置く（iPad などで抽出できないときに下げる） */}
+          <Row label={t('settings.vocalMemory')} help={t('settings.vocalMemoryHelp')}>
+            <Choice<string>
+              value={String(draft.vocalMemoryMb)}
+              onChange={(v) => set({ vocalMemoryMb: Number(v) })}
+              options={MEMORY_MB.map((mb): [string, string] => [String(mb), mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`])}
+            />
+          </Row>
         </Group>
         <Group title={t('settings.groupAddons')}>
           <AddonSection ids={VOCAL_ADDONS} />
@@ -297,13 +305,6 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
     ),
     diagnose: (
       <Group title={t('settings.groupDiagnose')}>
-        <Row label={t('settings.vocalMemory')} help={t('settings.vocalMemoryHelp')}>
-          <Choice<string>
-            value={String(draft.vocalMemoryMb)}
-            onChange={(v) => set({ vocalMemoryMb: Number(v) })}
-            options={MEMORY_MB.map((mb): [string, string] => [String(mb), mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`])}
-          />
-        </Row>
         <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand, memoryMb: draft.vocalMemoryMb }} />
       </Group>
     ),    pitch: (
