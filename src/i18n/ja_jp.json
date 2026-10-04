@@ -422,6 +422,7 @@
   "extract.vocals": "ボーカル抽出",
   "extract.accompaniment": "伴奏を抽出",
   "extract.outOfMemory": "メモリが不足して抽出できませんでした。ページを再読み込みしてから抽出するか、「設定」→「ボーカル抽出」でモデルを「軽量」にしてください。長い曲は範囲を分けて抽出するか、WeVocalExtractor を使ってください",
+  "extract.noAdapter": "WebGPU を使用できません（ブラウザがこのサイトの WebGPU を止めている可能性があります。ブラウザを完全に終了して開き直すと直ることがあります）",
   "extract.gpuFallback": "GPU で処理できませんでした（{reason}）。CPU で続けますか？ CPU では時間がかかります（高品質モデルは曲の長さの約 10 倍）",
   "extract.gpuFallbackOk": "CPU で続ける",
   "extract.cleanConfirm": "メモリが不足して抽出できませんでした。作業を保存してページを再読み込みし、ほかの処理を止めた状態で抽出しますか？（元に戻す履歴は消えます）",

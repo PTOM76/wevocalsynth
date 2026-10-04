@@ -4,8 +4,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCirclePlay, faPause, faPlay, faRepeat, faStop } from '@fortawesome/free-solid-svg-icons'
 import { useT } from '../i18n/i18n'
 import LiveTime from './LiveTime'
-import JobGauge from './JobGauge'
-import { useJobs } from '../progress/jobs'
+import { JobGauge, useJobs } from 'pevenmui'
+import type { JobKind } from '../progress/jobs'
 
 interface Props {
   playing: boolean
@@ -39,7 +39,7 @@ export default function MobilePlayBar(p: Props) {
       {/* 進んでいる処理（スマホにはステータスバーが無いので、ここに出す） */}
       {busy && (
         <Box sx={{ px: 1.5, pt: 0.75 }}>
-          <JobGauge compact />
+          <JobGauge<JobKind> compact kindLabel={(k) => t(`job.kind.${k}`)} />
         </Box>
       )}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1, py: 0.5 }}>

@@ -5,7 +5,8 @@ import { useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import type { ReactNode } from 'react'
 import SelectionField from './SelectionField'
-import JobGauge from './JobGauge'
+import { JobGauge } from 'pevenmui'
+import type { JobKind } from '../progress/jobs'
 import { stableMemo } from './stableMemo'
 
 export type Source = 'edited' | 'original'
@@ -67,7 +68,7 @@ function StatusBar(p: Props) {
       />
       {p.tempo}
       <Box sx={{ flexGrow: 1 }} />
-      <JobGauge />
+      <JobGauge<JobKind> kindLabel={(k) => t(`job.kind.${k}`)} />
       {p.showSource && (
         <ToggleButtonGroup
           size="small"

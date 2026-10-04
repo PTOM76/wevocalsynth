@@ -3,9 +3,8 @@ import { Box, ButtonBase, Tooltip, Typography } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackFader, type TrackMix } from '../../audio/tracks'
 import { computePeaks } from '../waveform/peaks'
 import { prepareCanvas, type View } from '../waveform/draw'
-import { usePalette } from '../waveform/usePalette'
+import { LevelMeter, usePalette } from 'pevenmui'
 import { useT } from '../../i18n/i18n'
-import LevelMeter from '../LevelMeter'
 import { pickMods, useTrackDrag, type PickMods } from './useTrackDrag'
 
 /** 1トラックの行の高さ（px） */

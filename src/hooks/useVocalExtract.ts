@@ -7,6 +7,7 @@ import type { Project } from '../project/projectFile'
 import type { JobKind } from '../progress/jobs'
 import { t } from '../i18n/i18n'
 import { extractRanges, isOutOfMemory, planBackend, resolveModel, splitBoth, VOCAL_MODELS, type ExtractOptions, type ExtractStem } from '../audio/vocalExtract'
+import { backendAllowed } from '../../extractor/src/compat'
 import { scheduleCleanExtract, type CleanJobBody } from '../project/cleanExtract'
 import { clearExtracting, crashedDuringExtract, markExtracting } from '../project/extractGuard'
 
@@ -62,6 +63,8 @@ export function useVocalExtract(d: Deps) {
   /** 計算の種類を決め、モデルとそれに要る実行環境（ONNX Runtime の wasm）を導入済みにする。導入しなければ null */
   const prepareOptions = async (): Promise<ExtractOptions | null> => {
     const plan = await planBackend(base())
+    // GPU を使う設定で、ブラウザに WebGPU があるのに使えない（アダプターが取れない）ときも、黙って CPU にしない
+    if (d.gpu && plan.backend === 'wasm' && 'gpu' in navigator && backendAllowed(model, 'webgpu') && !(await confirmCpu(t('extract.noAdapter')))) return null
     if (!(await d.ensure(VOCAL_MODELS[model].addon, [plan.runtimeAddon]))) return null
     return { ...base(), backend: plan.backend }
   }

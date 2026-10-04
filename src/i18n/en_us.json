@@ -422,6 +422,7 @@
   "extract.vocals": "Vocal extraction",
   "extract.accompaniment": "Accompaniment extraction",
   "extract.outOfMemory": "Not enough memory to extract. Reload the page and try again, or choose the Light model in Settings > Vocal extraction. For long songs, extract in parts or use WeVocalExtractor",
+  "extract.noAdapter": "WebGPU is not available (the browser may have blocked WebGPU for this site; fully restarting the browser may fix it)",
   "extract.gpuFallback": "Could not process on the GPU ({reason}). Continue on the CPU? This takes longer (about 10 times the song length with high-quality models)",
   "extract.gpuFallbackOk": "Continue on CPU",
   "extract.cleanConfirm": "Not enough memory to extract. Save your work, reload the page and extract with nothing else running? (Undo history will be lost)",

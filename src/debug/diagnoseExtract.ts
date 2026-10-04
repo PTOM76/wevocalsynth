@@ -2,7 +2,7 @@ import { isExtracting, openExtractor, RUNTIME_ADDONS, VOCAL_MODELS, type Extract
 import { addonFileUrl, installedManifest } from '../addons/addons'
 import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from '../audio/usePlayer'
-import { diagnoseCompile, diagnoseEnv, diagnoseMemory, diagnoseRuntime, webGpuAvailable, type Log, type RuntimePattern } from '../../extractor/src/diagnose'
+import { diagnoseCompile, diagnoseEnv, diagnoseWebGpu, diagnoseMemory, diagnoseRuntime, webGpuAvailable, type Log, type RuntimePattern } from '../../extractor/src/diagnose'
 import type { Backend } from '../../extractor/src/types'
 import { backendAllowed } from '../../extractor/src/compat'
 import type { VocalModel } from '../settings/settings'
@@ -15,6 +15,7 @@ export async function diagnoseExtract(o: ExtractOptions, log: Log) {
   // 抽出中に作ると、抽出のモデルを入れ替えてしまう
   if (isExtracting()) return log('抽出中のため診断できません。抽出が終わってから実行してください')
   diagnoseEnv(log)
+  await diagnoseWebGpu(log)
   await diagnoseMemory(log)
   const runtime = await installedManifest('vocal-extractor')
   if (!runtime) {

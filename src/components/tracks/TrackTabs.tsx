@@ -2,8 +2,7 @@ import { Box, Tab, Tabs, Tooltip } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackFader, type TrackMix } from '../../audio/tracks'
 import { MixToggle } from './TrackLanes'
 import { useT } from '../../i18n/i18n'
-import LevelMeter from '../LevelMeter'
-import { usePalette } from '../waveform/usePalette'
+import { LevelMeter, usePalette } from 'pevenmui'
 import { pickMods, useTrackDrag, type PickMods } from './useTrackDrag'
 
 interface Props {
