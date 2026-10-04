@@ -460,7 +460,8 @@ export default function App() {
       onShowPitchChange={ed.setShowPitch}
       showWave={ed.showWave}
       onShowWaveChange={ed.setShowWave}
-      pitchFocused={ed.focusLane === 'pitch'}
+      // ピッチを波形に重ねているときは、波形の帯がピッチの帯も兼ねるので、波形にフォーカスしていてもピッチの道具を出す
+      pitchFocused={ed.focusLane === 'pitch' || (settings.overlayPitch && ed.showWave && ed.showPitch && ed.focusLane === 'wave')}
       showGain={ed.showGain}
       onShowGainChange={ed.setShowGain}
       gainFocused={ed.focusLane === 'gain'}
