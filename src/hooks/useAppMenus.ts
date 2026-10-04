@@ -20,12 +20,11 @@ interface Actions {
   save: () => void
   saveAs: () => void
   openExport: () => void
-  /** 選択範囲を決めたフォルダーへ保存する（使えなければ undefined） / 保存先のフォルダーを選び直す */
+  /** 選択範囲を書き出し先のフォルダーへ保存する（使えなければ undefined） */
   saveToFolder?: () => void
   /** 選択範囲が 2 つ以上のとき、別々のファイルにして保存する */
   saveManyToFolder?: () => void
   selectionCount: number
-  chooseFolder?: () => void
   undo: () => void
   redo: () => void
   cut: () => void
@@ -229,7 +228,6 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.saveProject'), shortcut: a.ctrlS === 'project' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.save },
         { label: t('menu.saveProjectAs'), disabled: noClip, onClick: a.saveAs },
         { divider: true },
-        ...(a.chooseFolder ? [{ label: t('folder.choose'), onClick: a.chooseFolder }] : []),
         { label: t('menu.export'), shortcut: a.ctrlS === 'export' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.openExport },
         { divider: true },
         { label: t('menu.settings'), onClick: a.showSettings },

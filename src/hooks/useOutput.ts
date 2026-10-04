@@ -34,7 +34,7 @@ interface Deps {
   onSaved?: () => void
   /** 上書き保存するプロジェクトのファイル（開いたとき、保存したときに入れる） */
   projectFile: { current: SavedFile | null }
-  /** 音声の書き出しは、書き出しダイアログで選んだフォルダーへ保存する（保存先を聞かない。PWA のとき） */
+  /** 音声の書き出しは、書き出しダイアログの保存先フォルダーとファイル名へ保存する（フォルダーを扱えるブラウザのとき） */
   exportToFolder: boolean
   /** 書き出しの仕上げ（ノーマライズ、両端のフェード） */
   finish: FinishOptions
@@ -89,12 +89,12 @@ export function useOutput(d: Deps) {
     // 保存先は書き出しの前に選ぶ（エンコードに時間がかかると、選ぶ画面を出せなくなる）
     const ext = EXPORT_EXT[s.format]
     const fileName = `${s.fileName.trim()}${ext}`
-    // PWA では、書き出しダイアログで選んだフォルダーへ保存先を聞かずに保存する（同じ名前があれば「名前 (2)」にずらす）
+    // フォルダーを扱えるブラウザ（Chrome・Edge）では、編集ソフトの書き出しのように、ダイアログの保存先フォルダーとファイル名へ書き込む。
+    // フォルダーが未選択ならここで選び、同じ名前のファイルがあれば上書きしてよいか確かめる。扱えないブラウザはダウンロード
     const folder = d.exportToFolder ? await folderFileTarget('export', fileName, win ?? window) : null
     if (d.exportToFolder && !folder) return
-    const target = folder
-      ? { write: async (blob: Blob) => d.notify(t('export.savedTo', { name: await folder.write(blob), folder: folder.folder })) }
-      : await pickSaveTarget(fileName, 'audio', { description: t('file.audioType'), mime: EXPORT_MIME[s.format], ext }, win ?? window)
+    if (folder?.exists && !(win ?? window).confirm(t('export.overwrite', { name: folder.name }))) return
+    const target = folder ?? (await pickSaveTarget(fileName, 'audio', { description: t('file.audioType'), mime: EXPORT_MIME[s.format], ext }, win ?? window))
     if (!target) return
     await d.task.run(t('task.exporting'), async (signal) => {
       // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
@@ -117,8 +117,7 @@ export function useOutput(d: Deps) {
       await target.write(blob)
       d.onSaved?.()
       d.closeExport()
-      // フォルダーへ保存したときは、保存した名前を `write` の中で知らせている
-      if (!folder) d.notify(t('toast.exported'))
+      d.notify(folder ? t('export.savedTo', { name: folder.name, folder: folder.folder }) : t('toast.exported'))
     }, 'export')
   }
 

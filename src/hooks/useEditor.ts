@@ -492,7 +492,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
       setSavedTick((n) => n + 1)
     },
     projectFile: projectFileRef,
-    exportToFolder: isStandalone() && canSaveToFolder(),
+    exportToFolder: canSaveToFolder(),
     finish: { normalize: settings.exportNormalize, fadeMs: settings.exportFadeMs },
   })
 

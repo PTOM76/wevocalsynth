@@ -1,5 +1,5 @@
 import { finishClip } from './audio/finish'
-import { canSaveToFolder, chooseSaveFolder, isStandalone, saveToFolder, savedFolderName } from 'pevenmui/web'
+import { canSaveToFolder, chooseSaveFolder, saveToFolder, savedFolderName } from 'pevenmui/web'
 import { sliceRanges } from './audio/multiRange'
 import { encodeWav } from 'wevocal-lib'
 import RepeatDialog from './components/RepeatDialog'
@@ -186,7 +186,6 @@ export default function App() {
     saveToFolder: canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
     saveManyToFolder: canSaveToFolder() && ed.selections.length > 1 ? () => void saveSelectionsToFolder() : undefined,
     selectionCount: ed.selections.length,
-    chooseFolder: canSaveToFolder() ? () => void chooseMaterialFolder() : undefined,
     selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),
     addTrack: () => ed.addPicker.open(),
     synth: () => setSynthOpen(true),
@@ -284,7 +283,7 @@ export default function App() {
   // 選択範囲を決めたフォルダーへ保存する（初回はフォルダーを選ぶ。名前は「書き出し名_連番.wav」）
   const saveSelectionToFolder = useStableFn(async () => {
     if (!edited || !selection) return
-    const r = await saveToFolder('material', ed.exportName, '.wav', encodeWav(finishClip(sliceRanges(edited, [selection]), finishOpts))).catch((e) => (folderFailed(e), null))
+    const r = await saveToFolder('export', ed.exportName, '.wav', encodeWav(finishClip(sliceRanges(edited, [selection]), finishOpts))).catch((e) => (folderFailed(e), null))
     if (r) ed.setToast({ severity: 'success', message: t('folder.saved', { name: r.name, folder: r.folder }) })
   })
   // すべての選択範囲を、時間の順に 1 つずつ別のファイルにして保存する（「無音で区切って選択」のあとなど）
@@ -293,7 +292,7 @@ export default function App() {
     let last: { folder: string; name: string } | null = null
     let count = 0
     for (const r of [...ed.selections].sort((a, b) => a.start - b.start)) {
-      const saved = await saveToFolder('material', ed.exportName, '.wav', encodeWav(finishClip(sliceRanges(edited, [r]), finishOpts))).catch((e) => (folderFailed(e), null))
+      const saved = await saveToFolder('export', ed.exportName, '.wav', encodeWav(finishClip(sliceRanges(edited, [r]), finishOpts))).catch((e) => (folderFailed(e), null))
       if (!saved) break
       last = saved
       count++
@@ -314,16 +313,12 @@ export default function App() {
       ],
     })
   }
-  // PWA では、書き出しの保存先をダイアログで選んだフォルダーにする（書き出すときに聞かない）。開くたびに覚えている名前を読む
-  const exportToFolder = isStandalone() && canSaveToFolder()
+  // 書き出しの保存先フォルダー（Chrome・Edge。編集ソフトのように、ダイアログでフォルダーとファイル名を決める）。開くたびに覚えている名前を読む
+  const exportToFolder = canSaveToFolder()
   const [exportFolder, setExportFolder] = useState<string | null>(null)
   useEffect(() => {
     if (exportToFolder && ed.exportOpen) void savedFolderName('export').then(setExportFolder)
   }, [exportToFolder, ed.exportOpen])
-  const chooseMaterialFolder = useStableFn(async () => {
-    const name = await chooseSaveFolder('material').catch((e) => (folderFailed(e), null))
-    if (name) ed.setToast({ severity: 'info', message: t('folder.chosen', { folder: name }) })
-  })
   const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
 
   const tempoField = (fontSize?: number) => (

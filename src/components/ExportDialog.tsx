@@ -209,6 +209,21 @@ export default function ExportDialog(p: Props) {
             ]}
             disabled={!p.hasSelection}
           />
+          {/* 編集ソフトの書き出しと同じく、保存先フォルダーとファイル名を決めてから書き出す（フォルダーは覚えておく） */}
+          {p.folder && (
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <TextField
+                size="small"
+                fullWidth
+                label={t('export.folderLabel')}
+                value={p.folder.name ?? t('export.folderUnset')}
+                slotProps={{ input: { readOnly: true } }}
+              />
+              <Button variant="outlined" disabled={p.busy} onClick={(e) => p.folder?.choose(e.currentTarget.ownerDocument.defaultView)} sx={{ flexShrink: 0 }}>
+                {t('export.folderBrowse')}
+              </Button>
+            </Stack>
+          )}
           <TextField
             size="small"
             label={t('export.fileName')}
@@ -231,16 +246,6 @@ export default function ExportDialog(p: Props) {
               />
             </Box>
           </Stack>
-          {p.folder && (
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-              <Typography sx={{ fontSize: 13, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {t('export.folder')}: {p.folder.name ?? t('export.folderUnset')}
-              </Typography>
-              <Button size="small" disabled={p.busy} onClick={(e) => p.folder?.choose(e.currentTarget.ownerDocument.defaultView)}>
-                {t('export.folderChange')}
-              </Button>
-            </Stack>
-          )}
           {p.busy && <LinearProgress variant="determinate" value={p.progress * 100} />}
         </Stack>
       </DialogContent>
