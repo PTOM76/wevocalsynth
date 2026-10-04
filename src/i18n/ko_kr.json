@@ -353,6 +353,8 @@
   "settings.filePickerInput": "기존 방식",
   "settings.devUpdates": "개발 버전 업데이트 받기",
   "settings.devUpdatesHelp": "버전이 같아도 새 커밋이 있으면 알립니다",
+  "settings.showMaterialButton": "소재 저장 버튼 표시",
+  "settings.showMaterialButtonHelp": "상태 표시줄의 선택 범위 오른쪽에 「WAV」 표시. 누르면 폴더에 저장, 드래그하면 폴더로 내보내기",
   "settings.suspendWhenStopped": "정지 중 오디오 처리 중지",
   "settings.suspendWhenStoppedHelp": "정지 중 AudioContext를 일시 정지. iOS에서 소리가 안 나면 끄고 시험",
   "settings.playbackSession": "iOS 무음 스위치에서도 재생",

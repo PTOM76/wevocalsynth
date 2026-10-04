@@ -353,6 +353,8 @@
   "settings.filePickerInput": "Classic",
   "settings.devUpdates": "Receive development updates",
   "settings.devUpdatesHelp": "Notify about new commits even when the version number is the same",
+  "settings.showMaterialButton": "Show material save button",
+  "settings.showMaterialButtonHelp": "Show \"WAV\" next to the selection in the status bar. Click to save to folder, drag to a folder to export",
   "settings.suspendWhenStopped": "Suspend audio while stopped",
   "settings.suspendWhenStoppedHelp": "Suspends the AudioContext while stopped. Turn off if iOS plays no sound",
   "settings.playbackSession": "Play with iOS silent switch on",

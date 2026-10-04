@@ -1,6 +1,5 @@
 import { Box, ButtonBase, Stack, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material'
 import type { Clip, Range } from '../audio/types'
-import { formatTime } from '../audio/types'
 import { useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import type { ReactNode } from 'react'
@@ -62,11 +61,6 @@ function StatusBar(p: Props) {
           {p.dirty && ' *'}
         </ButtonBase>
       </Tooltip>
-      {p.clip && (
-        <Box sx={{ ...ITEM_SX, color: 'text.secondary' }}>
-          {p.clip.sampleRate} Hz・{p.clip.channels.length === 1 ? 'Mono' : `${p.clip.channels.length} ch`}・{formatTime(p.duration)}
-        </Box>
-      )}
       <SelectionField
         duration={p.duration}
         selection={p.selection}

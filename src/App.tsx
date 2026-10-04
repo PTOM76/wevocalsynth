@@ -640,8 +640,8 @@ export default function App() {
                 selection={selection}
                 selectionCount={ed.selections.length}
                 bpm={bpm}
-                dragFile={dragSelectionFile}
-                onQuickSave={canSaveToFolder() ? () => void saveSelectionToFolder() : undefined}
+                dragFile={settings.showMaterialButton ? dragSelectionFile : undefined}
+                onQuickSave={settings.showMaterialButton && canSaveToFolder() ? () => void saveSelectionToFolder() : undefined}
                 onSelectionChange={setActiveSelection}
                 source={ed.source}
                 onSourceChange={ed.setSource}

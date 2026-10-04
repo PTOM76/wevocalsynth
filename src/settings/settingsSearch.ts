@@ -55,7 +55,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupData', 'data.work', 'data.workHelp', 'data.cache', 'data.cacheHelp', 'data.addons',
     'data.settings', 'data.settingsHelp', 'data.all', 'data.persist', 'data.persistHelp',
   ],
-  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.devUpdates', 'settings.devUpdatesHelp', 'settings.filePicker', 'settings.filePickerHelp', 'settings.dialogWindow'],
+  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.devUpdates', 'settings.devUpdatesHelp', 'settings.showMaterialButton', 'settings.showMaterialButtonHelp', 'settings.filePicker', 'settings.filePickerHelp', 'settings.dialogWindow'],
   debugAudio: [
     'settings.groupDebugAudio', 'settings.showExperimentalAlgorithms', 'settings.showExperimentalAlgorithmsHelp', 'settings.fastMath', 'settings.fastMathHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp',
     'settings.spliceFade', 'settings.spliceFadeHelp', 'settings.suspendWhenStopped', 'settings.suspendWhenStoppedHelp', 'settings.playbackSession', 'settings.playbackSessionHelp',

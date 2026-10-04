@@ -353,6 +353,8 @@
   "settings.filePickerInput": "传统方式",
   "settings.devUpdates": "接收开发版更新",
   "settings.devUpdatesHelp": "即使版本号相同，有新的提交时也会通知",
+  "settings.showMaterialButton": "显示素材保存按钮",
+  "settings.showMaterialButtonHelp": "在状态栏选区右侧显示「WAV」。点击保存到文件夹，拖动到文件夹导出",
   "settings.suspendWhenStopped": "停止时暂停音频处理",
   "settings.suspendWhenStoppedHelp": "停止时暂停 AudioContext。iOS 无声时请关闭后尝试",
   "settings.playbackSession": "iOS 静音开关下也播放",

@@ -120,6 +120,8 @@ export interface Settings {
   showLegacyAlgorithms: boolean
   /** 試験的な処理方式（SMS、愛称 Specraw）を選択肢に出す（開発者向け） */
   showExperimentalAlgorithms: boolean
+  /** ステータスバーに、選択範囲を素材として保存する「WAV」のボタンを出す（開発者向け） */
+  showMaterialButton: boolean
   /** ホイールでの拡大縮小の割り当て */
   wheelZoom: WheelZoom
   /** 開く・保存するフォルダを用途ごとに覚える（Chrome・Edge。project/fileAccess.ts） */
@@ -173,6 +175,7 @@ export const DEFAULT_SETTINGS: Settings = {
   playbackSession: true,
   showLegacyAlgorithms: false,
   showExperimentalAlgorithms: false,
+  showMaterialButton: false,
   wheelZoom: 'ctrl',
   rememberFolder: true,
   startFolder: 'downloads',
