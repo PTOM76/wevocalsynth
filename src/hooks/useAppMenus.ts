@@ -415,41 +415,9 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     ...(a.saveToFolder ? [{ label: t('folder.save'), disabled: noSel, onClick: a.saveToFolder }] : []),
     ...(a.saveManyToFolder ? [{ label: t('folder.saveMany', { n: a.selectionCount }), onClick: a.saveManyToFolder }] : []),
   ]
-  // スマホの ⋮ は短くする。切り取りなどは長押しメニュー、元に戻すは上部バー、
-  // 表示の切替は波形の下にあるので入れない。キーボードがないのでショートカット一覧も出さない
-  const mobileMenus: MenuGroup[] = [
-    {
-      label: t('menu.file'),
-      entries: [
-        { label: t('menu.open'), disabled: a.busy, onClick: a.open },
-        ...recentMenu,
-        { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
-        { label: t('menu.saveProject'), disabled: noClip, onClick: a.save },
-        { label: t('menu.saveProjectAs'), disabled: noClip, onClick: a.saveAs },
-        { label: t('menu.export'), disabled: noClip, onClick: a.openExport },
-      ],
-    },
-    {
-      label: t('menu.edit'),
-      entries: [
-        { label: t('edit.selectAll'), disabled: noClip, onClick: a.selectAll },
-        { label: t('soundSelect.menu'), disabled: noClip, onClick: a.selectSounds },
-        { label: t('edit.clearSelection'), disabled: noSel, onClick: a.clearSelection },
-        { label: t('history.menu'), disabled: noClip, onClick: a.showHistory },
-      ],
-    },
-    { label: t('menu.tools'), entries: tools },
-    {
-      label: t('menu.help'),
-      entries: [
-        { label: t('menu.settings'), onClick: a.showSettings },
-        { label: t('menu.userGuide'), onClick: () => openExternal(USER_GUIDE_URL) },
-        { label: t('menu.checkUpdate'), onClick: a.checkUpdate },
-        { label: t('menu.licenses'), onClick: a.showLicenses },
-        { label: t('menu.about'), onClick: a.showAbout },
-      ],
-    },
-  ]
+  // スマホの ⋮ は PC のメニューバーと同じまとまりにし、段階で開く（PevenMUI の DrillMenu。スマホから使えない操作をなくす）。
+  // キーボードがないので、ショートカット一覧だけは出さない
+  const mobileMenus: MenuGroup[] = menus.map((g) => ({ ...g, entries: g.entries.filter((e) => !('label' in e && e.label === t('menu.shortcuts'))) }))
 
   return { menus, mobileMenus, context }
 }
