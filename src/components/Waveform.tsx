@@ -197,6 +197,8 @@ function Waveform(props: Props) {
   const [drawVersion, setDrawVersion] = useState(0)
   const width = size.width
   const longPressRef = useRef<{ timer: number; x: number; y: number } | null>(null)
+  // 新しいスマホの画面で、波形を押してから離すまで: なぞったらスクロール（moved）、長押ししたら範囲選択（selecting）
+  const panRef = useRef<{ x0: number; start0: number; dur: number; moved: boolean; selecting: boolean } | null>(null)
   const duration = clipDuration(clip)
   const { view, scrollTo, zoomed, wheel } = props.viewCtl
   const waveScale = props.waveScale ?? 1
@@ -512,6 +514,7 @@ function Waveform(props: Props) {
               props.onSelectionsChange(selectionsAtTouch.current)
             }
             dragRef.current = null
+            panRef.current = null
             pen.end()
             scrubRef.current = false
             return
@@ -529,8 +532,19 @@ function Waveform(props: Props) {
             props.onSeek(snapTime(e.clientX))
             return
           }
-          // タッチの長押しは右クリックの代わり（離すか動かすと取り消す）
-          if (e.pointerType === 'touch') {
+          // 新しいスマホの画面: なぞるとスクロール、長押しで範囲選択（memo/mobile-ui.md の 4.4）。長押しのメニューは編集の列の「⋯」へ
+          if (e.pointerType === 'touch' && props.touchHandles) {
+            const { clientX: x, clientY: y } = e
+            const timer = window.setTimeout(() => {
+              longPressRef.current = null
+              const p = panRef.current
+              if (!p || p.moved) return
+              p.selecting = true
+              navigator.vibrate?.(10)
+            }, LONG_PRESS_MS)
+            longPressRef.current = { timer, x, y }
+          } else if (e.pointerType === 'touch') {
+            // 以前の画面: タッチの長押しは右クリックの代わり（離すか動かすと取り消す）
             const { clientX: x, clientY: y } = e
             const timer = window.setTimeout(() => {
               longPressRef.current = null
@@ -556,6 +570,7 @@ function Waveform(props: Props) {
           }
           const add = e.ctrlKey || e.metaKey
           dragRef.current = { x0: e.clientX, t0, dragging: false, base: add ? selections : [] }
+          if (e.pointerType === 'touch' && props.touchHandles) panRef.current = { x0: e.clientX, start0: view.start, dur: view.dur, moved: false, selecting: false }
         }}
         onPointerMove={(e) => {
           altRef.current = e.altKey
@@ -587,6 +602,16 @@ function Waveform(props: Props) {
             return
           }
           if (d.edge) return dragEdge(d.edge, e.clientX)
+          // 新しいスマホの画面: 長押しする前になぞったら、表示範囲を指に付けて動かす（範囲は選ばない）
+          const pan = panRef.current
+          if (pan && !pan.selecting) {
+            if (!pan.moved && Math.abs(e.clientX - pan.x0) < DRAG_THRESHOLD_PX) return
+            pan.moved = true
+            cancelLongPress()
+            const w = canvasRef.current!.getBoundingClientRect().width
+            props.viewCtl.setRange(pan.start0 - ((e.clientX - pan.x0) / w) * pan.dur, pan.dur)
+            return
+          }
           if (!d.dragging && Math.abs(e.clientX - d.x0) < DRAG_THRESHOLD_PX) return
           d.dragging = true
           const t = snapTime(e.clientX)
@@ -594,6 +619,7 @@ function Waveform(props: Props) {
         }}
         onPointerCancel={(e) => {
           cancelLongPress()
+          panRef.current = null
           markerDragRef.current = null
           edgeScroll.stop()
           commitSelections()
@@ -621,6 +647,16 @@ function Waveform(props: Props) {
           if (grab.end()) return updateCursor()
           const d = dragRef.current
           dragRef.current = null
+          const pan = panRef.current
+          panRef.current = null
+          // 新しいスマホの画面: なぞってスクロールしただけなら何もしない。動かさずに離したら（タップ）範囲を解除して再生位置へ
+          if (pan && !pan.selecting) {
+            if (!pan.moved) {
+              props.onSelectionsChange([])
+              props.onSeek(snapTime(e.clientX))
+            }
+            return
+          }
           const edge = d?.edge
           if (edge?.stretch && edge.last.end !== edge.orig.end) {
             props.onStretchRange(edge.orig, edge.last.end - edge.last.start)
