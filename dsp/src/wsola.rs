@@ -122,17 +122,47 @@ fn wsola_map_with(
     // 無音を重ね合わせてしまい、末尾がギザギザになる。
     let last_pos = len.saturating_sub(n) as i64;
     let clamp_pos = |p: i64| p.clamp(0, last_pos);
+    // WSOLA 2 は、立ち上がり（破裂音など）を 1 回だけ等速で読む（SOLAv2 と同じ。フレームが長く重なるので、伸ばすと何度も切り出されて二重になる）
+    let onsets = if normalized { crate::sola2::onsets(&mono[pad_l..pad_l + len], sample_rate) } else { Vec::new() };
+    let transient = (sample_rate as f64 * crate::sola2::PARAMS.transient) as i64;
+    // 次に鳴らす立ち上がりの番号、等速で読み終える入力の位置（ここまでは前のフレームの続きを読み、読み終えたらここより前に戻らない）
+    let (mut next, mut lock) = (0usize, -1i64);
 
     for k in 0..frames {
         if k % 256 == 0 {
             progress(k as f64 / frames as f64);
         }
         let out_start = k * hs;
+        let nominal = map.frame_pos(out_start, len, n).round() as i64;
+        // 立ち上がりの扱い。決めた位置があれば、似ている位置の探索はしない
+        let mut forced = None;
+        if k > 0 && !onsets.is_empty() {
+            let natural = prev_pos + hs as i64;
+            if natural < lock {
+                forced = Some(natural);
+            } else {
+                // 予定の時刻を通り過ぎたもの（前のフレームで読んだものなど）は数えない
+                while next < onsets.len() && onsets[next] < nominal.max(lock) - hs as i64 {
+                    next += 1;
+                }
+                if let Some(&o) = onsets.get(next) {
+                    // 立ち上がりが鳴るべき出力の位置（フレームの頭から）。フレームに収まるなら、そこに来るよう読み始める
+                    let rate = ((map.frame_pos(out_start + hs, len, n).round() as i64 - nominal).max(1)) as f64 / hs as f64;
+                    let at = ((o - nominal) as f64 / rate).round() as i64;
+                    if at < (n - hs / 2) as i64 {
+                        forced = Some(clamp_pos(o - at.max(0)));
+                        lock = o + transient;
+                        next += 1;
+                    }
+                }
+            }
+        }
         let pos = if k == 0 {
             0
+        } else if let Some(p) = forced {
+            p
         } else {
-            // 出力フレームに対応する入力位置（末尾の扱いは `TimeMap::frame_pos` 参照）。
-            let nominal = map.frame_pos(out_start, len, n).round() as i64;
+            // 出力フレームに対応する入力位置は `nominal`（末尾の扱いは `TimeMap::frame_pos` 参照）。
             // 前フレームの自然な続き（新しいフレームと重なる部分）。
             // prev_pos <= last_pos なので入力の内側に収まる。
             let natural = prev_pos + hs as i64;
@@ -157,6 +187,13 @@ fn wsola_map_with(
                     best_c = c;
                     best = cand;
                 }
+            }
+            // 読み終えた立ち上がりより前に戻らず、まだ鳴らしていない立ち上がりを先に鳴らさない
+            if lock > 0 && best < lock {
+                best = clamp_pos(lock);
+            }
+            if let Some(&o) = onsets.get(next).filter(|&&o| o >= best && o < best + n as i64) {
+                best = clamp_pos(o - n as i64).max(best.min(lock.max(0)));
             }
             best
         };

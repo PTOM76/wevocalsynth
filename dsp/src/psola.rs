@@ -80,13 +80,51 @@ pub fn stretch_map_with(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, ma
         (seed >> 8) as f64 / (1u32 << 24) as f64 - 0.5
     };
 
+    // PSOLA 2 は、声のない所の立ち上がり（破裂音など）を 1 回だけ等速で読む（SOLAv2 と同じ。5ms ごとに切り出すと、伸ばしたときに二重になる）
+    let onsets: Vec<f64> = if marking == Marking::Correlation { crate::sola2::onsets(&mono, sample_rate).into_iter().map(|o| o as f64).collect() } else { Vec::new() };
+    let transient = sample_rate as f64 * crate::sola2::PARAMS.transient;
+    // 次に鳴らす立ち上がりの番号、等速で読んでいる立ち上がり（入力の位置と、始めた出力の位置）、これより前には戻らない入力の位置
+    let (mut next, mut lock, mut floor) = (0usize, None::<(f64, f64)>, 0.0f64);
+
     let mut tau = 0.0f64;
     let mut step = 0usize;
     while tau < out_len as f64 {
         let t = map.input_at(tau).clamp(0.0, (len - 1) as f64);
         let m = &marks[nearest(&marks, t)];
         // 声のある部分は目印の位置から、ない部分は対応する位置の近くから切り出す
-        let center = if m.voiced { m.pos } else { t + rand() * m.period };
+        let mut center = if m.voiced { m.pos } else { t + rand() * m.period };
+        if !m.voiced && !onsets.is_empty() {
+            if let Some((o, tau0)) = lock {
+                let c = o + (tau - tau0);
+                if c < o + transient {
+                    center = c;
+                } else {
+                    lock = None;
+                    floor = o + transient;
+                }
+            }
+            if lock.is_none() {
+                // 読み終えたものと、予定の時刻を通り過ぎたもの（声のある所として読んだものなど）は数えない
+                while next < onsets.len() && (onsets[next] < floor || onsets[next] + m.period < t) {
+                    next += 1;
+                }
+                match onsets.get(next) {
+                    // 予定の時刻が届いたら、立ち上がりから等速で読み始める
+                    Some(&o) if t >= o - m.period / 2.0 => {
+                        lock = Some((o, tau));
+                        next += 1;
+                        center = o;
+                    }
+                    // 届く前は、立ち上がりにかからない所から切り出す（先に鳴らさない）
+                    Some(&o) if center + m.period > o => center = o - m.period,
+                    _ => {}
+                }
+                // 読み終えた立ち上がりより前に戻らない（同じ所を繰り返すとブザー音になるので、少しずらす）
+                if lock.is_none() && center < floor {
+                    center = floor + (rand() + 0.5) * m.period;
+                }
+            }
+        }
         overlap_add(channels, &mut out, &mut wsum, center, tau, m.period);
         tau += m.period;
         step += 1;

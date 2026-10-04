@@ -44,15 +44,16 @@ pub(super) fn syllables(sr: f32, count: usize) -> Vec<f32> {
     y
 }
 
-/// 1ms ごとの振幅（RMS）
+/// 1ms ごとの高い音の振幅（隣のサンプルとの差の RMS）。差をとると低い母音は小さくなり、破裂（雑音）が目立つ
 fn envelope(y: &[f32], sr: f32) -> Vec<f32> {
     let w = (sr * 0.001) as usize;
-    y.chunks(w).map(|c| (c.iter().map(|v| v * v).sum::<f32>() / c.len() as f32).sqrt()).collect()
+    let d: Vec<f32> = y.windows(2).map(|p| p[1] - p[0]).collect();
+    d.chunks(w).map(|c| (c.iter().map(|v| v * v).sum::<f32>() / c.len() as f32).sqrt()).collect()
 }
 
 /// 破裂ごとの（ピークの数、立ち上がり 10→90% の時間 ms、時刻のずれ ms）を平均する。
 /// ずれは入力の時刻 × 倍率との差。SOLA 系は最後のブロックが入力の最後に来るよう全体を少し縮めて対応させるので（`TimeMap::frame_pos`）、
-/// 後ろの音節ほど遅れる（×2 の 1.7 秒で約 +15ms。母音も同じだけずれる）
+/// 後ろの音節ほど遅れる（×2 の 1.7 秒で約 +15ms、WSOLA は ×3 の 4 秒で約 +80ms。母音も同じだけずれる）。遅れても拾えるよう、後ろを広く見る
 pub(super) fn measure(y: &[f32], sr: f32, alpha: f64, count: usize) -> (f32, f32, f32) {
     let env = envelope(y, sr);
     let (mut peaks, mut rise, mut err) = (0.0f32, 0.0f32, 0.0f32);
@@ -61,7 +62,7 @@ pub(super) fn measure(y: &[f32], sr: f32, alpha: f64, count: usize) -> (f32, f32
     for k in 1..count - 1 {
         let expect = ((k as f32 * SYLLABLE + BURST_AT) as f64 * alpha * 1000.0) as i64;
         // 破裂の前の閉鎖（伸ばすと長くなる）から、後ろの息まで
-        let (a, b) = ((expect - 20).max(0) as usize, ((expect + 30) as usize).min(env.len()));
+        let (a, b) = ((expect - 20).max(0) as usize, ((expect + 100) as usize).min(env.len()));
         let seg = &env[a..b];
         let max = seg.iter().cloned().fold(0.0f32, f32::max);
         let top = seg.iter().position(|&v| v == max).unwrap();
@@ -102,9 +103,9 @@ fn consonant_bursts() {
             let y = &run(&[&x], sr, 0.0, alpha, algo)[0];
             let (p, r, e) = measure(y, sr, alpha, count);
             println!("x{alpha} {algo:?}: peaks {p:.2}, rise {r:.1}ms, offset {e:.1}ms");
-            // SOLAv2・v3 は立ち上がりを 1 回だけ等速で読むので、二重にならず鈍らないこと
-            // （2026-10-03 時点: 前は ×2 で peaks 2.00、×3 で 2.83 だった）
-            if matches!(algo, Algorithm::Sola2 | Algorithm::Sola3) {
+            // v2 以降の方式は立ち上がりを 1 回だけ等速で読むので、二重にならず鈍らないこと
+            // （前は SOLAv2 が ×3 で peaks 2.83（2026-10-03 に対応）、WSOLAv2 が 1.83、PSOLAv2 が 2.17 だった（2026-10-04 に対応））
+            if matches!(algo, Algorithm::Sola2 | Algorithm::Sola3 | Algorithm::Wsola2 | Algorithm::Psola2) {
                 assert!(p <= 1.2 && r <= 1.5, "x{alpha} {algo:?}: peaks {p} rise {r}");
             }
         }

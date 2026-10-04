@@ -250,7 +250,7 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, p: &Params, progres
 }
 
 /// 立ち上がり（破裂音など）の入力位置。1ms ごとのエネルギーが、直前 10ms の平均の 10 倍を超え、全体の平均の 1/4 以上の所
-fn onsets(x: &[f32], sample_rate: f32) -> Vec<i64> {
+pub(crate) fn onsets(x: &[f32], sample_rate: f32) -> Vec<i64> {
     let w = (sample_rate * 0.001).max(1.0) as usize;
     let e: Vec<f32> = x.chunks(w).map(|c| c.iter().map(|v| v * v).sum::<f32>() / c.len() as f32).collect();
     let mean = e.iter().sum::<f32>() / e.len().max(1) as f32;
