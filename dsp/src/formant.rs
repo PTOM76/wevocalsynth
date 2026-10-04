@@ -99,17 +99,28 @@ pub fn correct_varying(
         let start = |k: usize| (k * hs) as i64 - n as i64;
         let sample = |s: i64| if s >= 0 && (s as usize) < len { x[s as usize] } else { 0.0 };
         let (sa, sb) = (start(k), start(k + 1));
-        let (mut ea, mut eb) = (0.0f32, 0.0f32);
-        for i in 0..n {
-            re[i] = sample(sa + i as i64) * window[i];
-            im[i] = if has_b { sample(sb + i as i64) * window[i] } else { 0.0 };
-            ea += re[i] * re[i];
-            eb += im[i] * im[i];
-        }
+        // 窓かけ。信号の内側に収まるフレームは、範囲の確認なしにまとめて掛ける（SIMD にしやすい）
+        let fill = |dst: &mut [f32], s: i64, used: bool| {
+            if !used {
+                dst.fill(0.0);
+            } else if s >= 0 && s as usize + n <= len {
+                for ((d, &v), &w) in dst.iter_mut().zip(&x[s as usize..s as usize + n]).zip(&window) {
+                    *d = v * w;
+                }
+            } else {
+                for (i, d) in dst.iter_mut().enumerate() {
+                    *d = sample(s + i as i64) * window[i];
+                }
+            }
+        };
+        fill(&mut re, sa, true);
+        fill(&mut im, sb, has_b);
+        let ea: f32 = re.iter().map(|v| v * v).sum();
+        let eb: f32 = im.iter().map(|v| v * v).sum();
         fft.run(&mut re, &mut im, false);
         // Z = A + iB から A・B それぞれのスペクトルを取り出す: A = (Z[k] + Z*[n-k]) / 2, B = (Z[k] - Z*[n-k]) / 2i
         for b in 0..n {
-            let nb = (n - b) % n;
+            let nb = if b == 0 { 0 } else { n - b };
             let (zr, zi, cr, ci) = (re[b], im[b], re[nb], -im[nb]);
             ar[b] = 0.5 * (zr + cr);
             ai[b] = 0.5 * (zi + ci);
@@ -138,10 +149,8 @@ pub fn correct_varying(
             }
             fft.run(&mut cre, &mut cim, true);
             let (cut_a, cut_b) = (lifter.cut(&cre, scale), lifter.cut(&cim, scale));
-            for q in 0..n {
-                cre[q] *= lifter.keep(q, cut_a) * scale;
-                cim[q] *= lifter.keep(q, cut_b) * scale;
-            }
+            lifter.apply(&mut cre, cut_a, scale);
+            lifter.apply(&mut cim, cut_b, scale);
             // リフタ後も実数・偶関数なので、順変換の実部・虚部がそれぞれの包絡になる
             fft.run(&mut cre, &mut cim, false);
             envelope_gain(&cre[..bins], if skip_a { 1.0 } else { ca }, &mut ga, fast);
@@ -162,9 +171,9 @@ pub fn correct_varying(
                 continue;
             }
             let o = (s + n as i64) as usize; // `out` 上の位置（n だけずらしてある）
-            for i in 0..n {
-                out[o + i] += buf[i] * scale * window[i];
-                norm[o + i] += window[i] * window[i];
+            for (((d, w2), &v), &w) in out[o..o + n].iter_mut().zip(&mut norm[o..o + n]).zip(buf.iter()).zip(&window) {
+                *d += v * scale * w;
+                *w2 += w * w;
             }
         }
         k += 2;
@@ -202,14 +211,16 @@ impl Lifter {
         }
     }
 
-    fn keep(&self, q: usize, cut: usize) -> f32 {
-        let d = q.min(self.n - q);
-        if d < cut {
-            1.0
-        } else if d == cut {
-            0.5
-        } else {
-            0.0
+    /// 両端から `cut` 未満は残し（`scale` 倍）、`cut` ちょうどは半分、それより内側は 0 にする
+    fn apply(&self, cep: &mut [f32], cut: usize, scale: f32) {
+        let n = self.n;
+        let cut = cut.min(n / 2 - 1);
+        cep[..cut].iter_mut().for_each(|v| *v *= scale);
+        cep[n - cut + 1..].iter_mut().for_each(|v| *v *= scale);
+        cep[cut + 1..n - cut].fill(0.0);
+        cep[cut] *= 0.5 * scale;
+        if cut > 0 {
+            cep[n - cut] *= 0.5 * scale;
         }
     }
 }
