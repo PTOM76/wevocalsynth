@@ -1,5 +1,5 @@
 # ファイル構成
-どのディレクトリ・ファイルが何を担当するかの一覧。コードのどこを見ればよいかを探すときに使う。(2026-10-04 時点)
+どのディレクトリ・ファイルが何を担当するかの一覧。コードのどこを見ればよいかを探すときに使う。(2026-10-04 時点、v1.4)
 
 関連: [アーキテクチャ](ARCHITECTURE.md) / [機能の仕組み](INTERNALS.md) / [アルゴリズム](ALGORITHM.md)
 
@@ -13,7 +13,7 @@ src/
 │   ├── inspector/   PC の右側のインスペクタ
 │   ├── tracks/      トラックの欄（波形付きの一覧 / タブ）・右クリックメニュー・名前の変更・並び替え
 │   └── layout/      PC とスマホのレイアウト
-├── audio/           音声データの処理と再生（React に依存しない関数が中心）。トラック・ミックス・MIDI・音声の作成もここ
+├── audio/           音声データの処理と再生（React に依存しない関数が中心）。トラック・ミックス・MIDI・音声の作成、区間ごとのテンポ（tempoMap.ts）、書き出しの仕上げ（finish.ts）もここ
 │   └── realtime/    ループ試聴の AudioWorklet
 ├── dsp/             Worker と wasm の橋渡し、wevocal_dsp.wasm
 ├── project/         プロジェクトファイル（.wvsp）、自動保存、メモリ不足のときの再読み込みでの抽出
@@ -52,8 +52,8 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `useAppMenus` | メニューバー・⋮ メニュー・右クリックメニューの中身 |
 | `useShortcuts` | キーボード操作 |
 | `useSeek` | 矢印キー・Home / End での再生位置の移動 |
-| `useOutput` | プロジェクトの保存と、音声の書き出し（ミックス・ファイル名） |
-| `useMarkers` | マーカー（追加、名前の変更、削除、ドラッグでの移動）。元に戻すの対象にはしない |
+| `useOutput` | プロジェクトの保存（開いたファイルへの上書き）と、音声の書き出し（ミックス、仕上げ、保存先フォルダーとファイル名） |
+| `useMarkers` | マーカー（追加、名前の変更、削除、ドラッグでの移動、ここからのテンポ）。元に戻すの対象にはしない |
 | `useRangeNote` | 選択範囲の今の音程（「音程を合わせる」用） |
 
 ファイルのドロップと選択の画面（`useFileDrop` / `useFilePicker`）、最近使用したファイル（`useRecentFiles`）、閉じる前の保存確認（`useLeaveGuard`）は PevenMUI のフックを `useEditor` から使う。
@@ -92,12 +92,13 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 
 | ファイル | 担当 |
 | --- | --- |
-| `pipeline.rs` | 上の流れ。`Algorithm`（WSOLA=0 / Phase Vocoder=1 / PSOLA=2 / SOLA=3 / PSOLAv2=4 / WSOLAv2=5 / Phase Vocoder v2=6 / HPSS=7 / SOLAv2=8 / SOLAv3=9）と `Formant`（追従 / 保持＋移動） |
+| `pipeline.rs` | 上の流れ。`Algorithm`（WSOLA=0 / Phase Vocoder=1 / PSOLA=2 / SOLA=3 / PSOLAv2=4 / WSOLAv2=5 / Phase Vocoder v2=6 / HPSS=7 / SOLAv2=8 / SOLAv3=9 / SMS=10）と `Formant`（追従 / 保持＋移動） |
 | `psola.rs` | PSOLA。声の周期（ピッチマーク）に合わせて切り貼りする。目印の置き方（`Marking`）で PSOLAv2 にもなる |
 | `sola.rs` | SOLA。50ms のブロックを 10ms の sin クロスフェードでつなぎ、区切り位置を2乗誤差で探す |
 | `sola2.rs` | SOLAv2 / SOLAv3。声のある所は 1 周期ずつ切り貼りし、近くの周期と混ぜる（v3 は前後約 3 周期を平均する。ボーカルの既定）。声のない所の繰り返しは 1 回おきに逆向きにする |
 | `hpss.rs` | HPSS。メディアンフィルタで打楽器の成分と伸びる成分に分け、Phase Vocoder と短い窓の OLA で伸ばして足す |
 | `wsola.rs` | WSOLA。フレーム 46ms・50% オーバーラップ・探索幅 ±12ms。類似度を正規化した WSOLAv2（`wsola2_map`）も |
+| `sms.rs` | SMS（愛称 Specraw。試験的）。正弦波の軌跡と帯域ごとの雑音に分けて鳴らし直す、できるだけ可逆な方式の試作 |
 | `pv.rs` | Phase Vocoder（identity phase locking）。フレーム 2048・75% オーバーラップ。楽器の既定。位相の回転を複素数の掛け算にし、隣り合う2フレームを1回の FFT で変換して速くしている |
 | `timemap.rs` | 出力位置→入力位置の対応。一定倍率とピッチカーブの両方を表す |
 | `curve.rs` | ピッチカーブ編集。時間ごとのピッチ比から時間マップを作る |
