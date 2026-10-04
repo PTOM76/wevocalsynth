@@ -1,3 +1,4 @@
+import { InspectorFlatContext } from '../inspector/Inspector'
 import { useState, type ReactNode } from 'react'
 import { Box, Stack, Tab, Tabs, useMediaQuery } from '@mui/material'
 import { useT } from '../../i18n/i18n'
@@ -51,7 +52,8 @@ export default function MobileLayout(p: Props) {
   )
   const panel = (
     <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 1 }}>
-      {tab === 'process' ? p.process : p.volume}
+      {/* タブで切り替えているので、中の区切りの見出し（たたむもの）は出さない */}
+      <InspectorFlatContext.Provider value>{tab === 'process' ? p.process : p.volume}</InspectorFlatContext.Provider>
     </Box>
   )
 

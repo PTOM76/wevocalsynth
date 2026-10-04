@@ -10,9 +10,20 @@ import { useNumberDraft } from '../../hooks/useNumberDraft'
  * 大きな見出し・カード・余白を使わず、画面の縦を節約する
  */
 
+/** 区切りの見出しを出さず、中身だけを並べるか（スマホのタブの中。タブで切り替えているので、たたむ見出しは要らない） */
+export const InspectorFlatContext = createContext(false)
+
 /** 折りたためる区切り。見出しの右に `extra`（補足の文字など）を置ける */
 export function InspectorSection(p: { title: string; extra?: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(true)
+  const flat = useContext(InspectorFlatContext)
+  if (flat)
+    return (
+      <Stack spacing={1} sx={{ px: 0.25, py: 0.5 }}>
+        {p.extra && <Typography sx={{ fontSize: 11, color: 'text.secondary', textAlign: 'right' }}>{p.extra}</Typography>}
+        {p.children}
+      </Stack>
+    )
   return (
     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
       <ButtonBase
