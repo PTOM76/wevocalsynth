@@ -11,6 +11,8 @@
   "folder.choose": "素材の保存先フォルダーを選ぶ…",
   "folder.save": "選択範囲をフォルダーへ保存",
   "folder.saved": "「{folder}」に {name} を保存しました",
+  "folder.saveMany": "選択範囲を別々にフォルダーへ保存（{n} 個）",
+  "folder.savedMany": "「{folder}」に {n} 個のファイルを保存しました",
   "folder.chosen": "保存先を「{folder}」にしました",
   "selection.saveOrDrag": "クリックでフォルダーへ保存、ドラッグでフォルダーへ書き出し（WAV）",
   "common.whole": "全体",

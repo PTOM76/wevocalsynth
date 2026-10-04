@@ -10,6 +10,8 @@
   "selection.dragOut": "Drag to a folder to export (WAV)",
   "folder.choose": "Choose material folder…",
   "folder.save": "Save selection to folder",
+  "folder.saveMany": "Save selections separately to folder ({n})",
+  "folder.savedMany": "Saved {n} files to \"{folder}\"",
   "folder.saved": "Saved {name} to \"{folder}\"",
   "folder.chosen": "Saving to \"{folder}\"",
   "selection.saveOrDrag": "Click to save to folder, drag to a folder to export (WAV)",

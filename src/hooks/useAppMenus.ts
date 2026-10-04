@@ -22,6 +22,9 @@ interface Actions {
   openExport: () => void
   /** 選択範囲を決めたフォルダーへ保存する（使えなければ undefined） / 保存先のフォルダーを選び直す */
   saveToFolder?: () => void
+  /** 選択範囲が 2 つ以上のとき、別々のファイルにして保存する */
+  saveManyToFolder?: () => void
+  selectionCount: number
   chooseFolder?: () => void
   undo: () => void
   redo: () => void
@@ -408,6 +411,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     // 選択範囲があれば、書き出しの範囲は選択範囲で開く（ExportDialog）
     { label: t(a.hasSelection ? 'context.exportSelection' : 'menu.export'), disabled: noClip, onClick: a.openExport },
     ...(a.saveToFolder ? [{ label: t('folder.save'), disabled: noSel, onClick: a.saveToFolder }] : []),
+    ...(a.saveManyToFolder ? [{ label: t('folder.saveMany', { n: a.selectionCount }), onClick: a.saveManyToFolder }] : []),
   ]
   // スマホの ⋮ は短くする。切り取りなどは長押しメニュー、元に戻すは上部バー、
   // 表示の切替は波形の下にあるので入れない。キーボードがないのでショートカット一覧も出さない

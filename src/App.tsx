@@ -183,6 +183,8 @@ export default function App() {
     insertSilence: () => setSilenceOpen(true),
     repeatSelection: () => setRepeatOpen(true),
     saveToFolder: canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
+    saveManyToFolder: canSaveToFolder() && ed.selections.length > 1 ? () => void saveSelectionsToFolder() : undefined,
+    selectionCount: ed.selections.length,
     chooseFolder: canSaveToFolder() ? () => void chooseMaterialFolder() : undefined,
     selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),
     addTrack: () => ed.addPicker.open(),
@@ -279,6 +281,19 @@ export default function App() {
     if (!edited || !selection) return
     const r = await saveToFolder('material', ed.exportName, '.wav', encodeWav(sliceRanges(edited, [selection])))
     if (r) ed.setToast({ severity: 'success', message: t('folder.saved', { name: r.name, folder: r.folder }) })
+  })
+  // すべての選択範囲を、時間の順に 1 つずつ別のファイルにして保存する（「無音で区切って選択」のあとなど）
+  const saveSelectionsToFolder = useStableFn(async () => {
+    if (!edited || ed.selections.length < 2) return
+    let last: { folder: string; name: string } | null = null
+    let count = 0
+    for (const r of [...ed.selections].sort((a, b) => a.start - b.start)) {
+      const saved = await saveToFolder('material', ed.exportName, '.wav', encodeWav(sliceRanges(edited, [r])))
+      if (!saved) break
+      last = saved
+      count++
+    }
+    if (last) ed.setToast({ severity: 'success', message: t('folder.savedMany', { n: count, folder: last.folder }) })
   })
   const chooseMaterialFolder = useStableFn(async () => {
     const name = await chooseSaveFolder('material')
