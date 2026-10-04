@@ -89,6 +89,8 @@ export interface Settings {
   showNotes: boolean
   /** ピッチ帯にピッチの線を出す（音符ブロックとどちらかは出す） */
   showPitchLine: boolean
+  /** ピッチを波形の帯に重ねる（オーバーパネル） */
+  overlayPitch: boolean
   /** 貼り付け・無音の挿入のあと、再生位置を入れた範囲の終わりへ移す */
   seekAfterInsert: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
@@ -143,6 +145,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showMeters: true,
   showNotes: false,
   showPitchLine: true,
+  overlayPitch: false,
   seekAfterInsert: true,
   liveSelection: false,
   followPlayhead: true,

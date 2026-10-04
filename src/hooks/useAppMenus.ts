@@ -96,6 +96,8 @@ interface Actions {
   showNotes: boolean
   toggleNotes: () => void
   showPitchLine: boolean
+  overlayPitch: boolean
+  toggleOverlayPitch: () => void
   /** 波形の縦の拡大率 */
   waveScale: number
   stepWaveScale: (dir: 1 | -1) => void
@@ -253,6 +255,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         // ピッチの線と音符は、どちらか一方は残す
         { label: t('menu.pitchLine'), checked: a.showPitchLine || !a.showNotes, disabled: !a.hasClip || !a.showPitch || !a.showNotes, onClick: a.togglePitchLine },
         { label: t('menu.notes'), checked: a.showNotes, disabled: !a.hasClip || !a.showPitch || (a.showNotes && !a.showPitchLine), onClick: a.toggleNotes },
+        { label: t('menu.overlayPitch'), checked: a.overlayPitch, disabled: !a.hasClip || !a.showPitch, onClick: a.toggleOverlayPitch },
         { divider: true },
         { label: t('wave.zoomIn'), shortcut: a.wheelZoom === 'wheel' ? 'Wheel' : 'Ctrl+Wheel', disabled: !a.hasClip || !a.canZoomIn, onClick: a.zoomIn },
         { label: t('wave.zoomOut'), disabled: !a.hasClip || !a.zoomed, onClick: a.zoomOut },

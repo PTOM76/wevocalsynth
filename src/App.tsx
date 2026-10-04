@@ -214,6 +214,8 @@ export default function App() {
     resetWaveScale: () => setWaveScale(1),
     showPitchLine: settings.showPitchLine,
     togglePitchLine: () => updateSettings({ showPitchLine: !settings.showPitchLine }),
+    overlayPitch: settings.overlayPitch,
+    toggleOverlayPitch: () => updateSettings({ overlayPitch: !settings.overlayPitch }),
     trackCount: ed.tracks.tracks.length,
     activeMute: activeSettings.mix.mute,
     activeSolo: activeSettings.mix.solo,
@@ -325,6 +327,7 @@ export default function App() {
       showPitch={ed.showPitch}
       showNotes={settings.showNotes}
       showPitchLine={settings.showPitchLine || !settings.showNotes}
+      overlayPitch={settings.overlayPitch}
       target={ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null}
       penMode={ed.penMode && editing}
       onDraw={onWaveDraw}

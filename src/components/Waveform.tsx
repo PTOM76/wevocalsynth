@@ -91,6 +91,8 @@ interface Props {
   showNotes?: boolean
   /** ピッチの線を出す */
   showPitchLine?: boolean
+  /** ピッチを波形の帯に重ねる（オーバーパネル。波形とピッチの両方を出しているとき） */
+  overlayPitch?: boolean
   /** 描いた目標ピッチ（`pitch` と同じ長さ、0 は未編集） */
   target: Float32Array | null
   penMode: boolean
@@ -233,14 +235,18 @@ function Waveform(props: Props) {
   const showWave = props.showWave
   const showGain = props.showGain
   const showFormant = props.showFormant
+  const overlay = !!props.overlayPitch && showWave && showPitch
   const { waveH, specH, pitchH, gainH, formantH, height } = laneHeights(
     size.height,
-    { wave: showWave, spec: showSpectrogram, pitch: showPitch, gain: showGain, formant: showFormant },
+    { wave: showWave, spec: showSpectrogram, pitch: showPitch && !overlay, gain: showGain, formant: showFormant },
     props.pitchPercent,
   )
   // 下の帯（ピッチ・音量・フォルマント）と上の帯（波形・スペクトログラム）の境目のドラッグは、両方あるときだけ
   const upperH = waveH + specH
   const lowerH = pitchH + gainH + formantH
+  // ピッチを描き、操作する場所。重ねるときは波形の帯
+  const pitchY = overlay ? RULER_HEIGHT : RULER_HEIGHT + upperH
+  const pitchLaneH = overlay ? waveH : pitchH
   const divider = useLaneDivider(canvasRef, { waveH: upperH, pitchH: lowerH }, lowerH > 0 && upperH > 0, props.onPitchPercentChange)
   const specLayer = useMemo(
     () => (showSpectrogram && spectrogram && width > 0 && specH > 0 ? spectrogramLayer(spectrogram, width, specH, view) : null),
@@ -256,14 +262,14 @@ function Waveform(props: Props) {
     g.clearRect(0, 0, width, height)
     g.font = `11px ${font}`
     g.textBaseline = 'middle'
-    const c: DrawContext = { g, width, view, pal, dark, waveH, specH, pitchH, gainH, formantH }
+    const c: DrawContext = { g, width, view, pal, dark, waveH, specH, pitchH, gainH, formantH, pitchY, pitchLaneH }
 
     drawRuler(c)
     // スペクトログラムは波形の代わりに表示する。選択範囲は波形などに隠れないよう、最後に重ねる
     if (showWave) {
       // ほかのトラックは後ろに薄く重ねる
       for (const gp of ghostPeaks) drawGhostWave(c, gp, waveScale)
-      drawWave(c, peaks, waveScale)
+      drawWave(c, peaks, waveScale, overlay)
     }
     // スペクトログラムは波形を置き換えず、自分の帯に描く
     if (showSpectrogram) drawSpectrogram(c, spectrogram, specLayer)
@@ -274,7 +280,7 @@ function Waveform(props: Props) {
     // 帯が2本以上あるときだけ、どれにフォーカスしているかを示す
     if ([showWave, showSpectrogram, showPitch, showGain, showFormant].filter(Boolean).length > 1) drawLaneFocus(c, props.focusLane)
     // 選択範囲は上に重ねた Canvas に描く（範囲をドラッグしている間、波形などを描き直さないため）
-  }, [waveScale, showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, props.showNotes, props.showPitchLine, pitch, range, target, drawVersion])
+  }, [waveScale, showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, props.showNotes, props.showPitchLine, pitch, range, target, drawVersion, pitchY, pitchLaneH, overlay])
 
   // 選択範囲と再生位置の線（上に重ねた Canvas。再生中は毎フレーム、範囲のドラッグ中は動かすたびに、こちらだけを描き直す）
   useEffect(() => {
@@ -312,9 +318,8 @@ function Waveform(props: Props) {
       }
       if (noteGhost && range) {
         // ドラッグ中の音符ブロックの行き先
-        const top = RULER_HEIGHT + upperH
-        const per = pitchH / (range.hi - range.lo)
-        const y = top + ((range.hi - noteGhost.note - 0.5) / (range.hi - range.lo)) * pitchH
+        const per = pitchLaneH / (range.hi - range.lo)
+        const y = pitchY + ((range.hi - noteGhost.note - 0.5) / (range.hi - range.lo)) * pitchLaneH
         const x0 = ((noteGhost.start - view.start) / view.dur) * width
         const x1 = ((noteGhost.end - view.start) / view.dur) * width
         g.strokeStyle = pal.text.primary
@@ -334,7 +339,7 @@ function Waveform(props: Props) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH, gainH, formantH, selections, noteGhost, range, upperH, props.markers, font])
+  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH, gainH, formantH, selections, noteGhost, range, pitchY, pitchLaneH, props.markers, font])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -385,12 +390,12 @@ function Waveform(props: Props) {
   const pen = useLanePen(canvasRef, penMode, timeAt, [
     {
       enabled: showPitch && !!range,
-      top: RULER_HEIGHT + upperH,
-      height: pitchH,
+      top: pitchY,
+      height: pitchLaneH,
       hopSec: F0_HOP_SEC,
       pointAt: (k: number, y: number, e: React.PointerEvent): DrawPoint => {
         if (e.altKey || !range) return { k, midi: null }
-        const m = range.hi - (y / pitchH) * (range.hi - range.lo)
+        const m = range.hi - (y / pitchLaneH) * (range.hi - range.lo)
         return { k, midi: e.shiftKey ? Math.round(m) : m }
       },
       draw: props.onDraw,
@@ -402,7 +407,7 @@ function Waveform(props: Props) {
   const grab = usePitchGrab(
     canvasRef,
     props.grabMode,
-    { enabled: showPitch, top: RULER_HEIGHT + upperH, height: pitchH, range, notes: !!props.showNotes, line: props.showPitchLine ?? true },
+    { enabled: showPitch, top: pitchY, height: pitchLaneH, range, notes: !!props.showNotes, line: props.showPitchLine ?? true },
     pitch,
     target,
     selections,
@@ -482,7 +487,7 @@ function Waveform(props: Props) {
         onPointerDown={(e) => {
           // 押した帯にフォーカスを移す（時間目盛りの上は変えない）
           const ly = localPoint(e.currentTarget, e.clientX, e.clientY).y - RULER_HEIGHT
-          if (ly >= 0) props.onFocusLane(ly < waveH ? 'wave' : ly < upperH ? 'spec' : ly < upperH + pitchH ? 'pitch' : ly < upperH + pitchH + gainH ? 'gain' : 'formant')
+          if (ly >= 0) props.onFocusLane(ly < waveH ? (overlay && (penMode || props.grabMode) ? 'pitch' : 'wave') : ly < upperH ? 'spec' : ly < upperH + pitchH ? 'pitch' : ly < upperH + pitchH + gainH ? 'gain' : 'formant')
           // 右クリックは範囲選択を始めない（コンテキストメニューに任せる）
           if (e.button === 2) return
           altRef.current = e.altKey

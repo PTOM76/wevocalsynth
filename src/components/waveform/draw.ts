@@ -90,11 +90,16 @@ export interface DrawContext {
   pitchH: number
   gainH?: number
   formantH?: number
+  /** ピッチを波形に重ねるとき（オーバーパネル）の、ピッチの上端と高さ。なければ自分の帯 */
+  pitchY?: number
+  pitchLaneH?: number
 }
 
 /** スペクトログラム・ピッチの帯の上端 */
 const specTop = (c: DrawContext) => RULER_HEIGHT + c.waveH
 const pitchTop = (c: DrawContext) => RULER_HEIGHT + c.waveH + c.specH
+/** ピッチを描く場所（上端と高さ）。重ねるときは波形の帯 */
+const pitchBox = (c: DrawContext): [number, number] => [c.pitchY ?? pitchTop(c), c.pitchLaneH ?? c.pitchH]
 export const gainTop = (c: Pick<DrawContext, 'waveH' | 'specH' | 'pitchH'>) => RULER_HEIGHT + c.waveH + c.specH + c.pitchH
 
 /** フォルマントの帯の上端 */
@@ -215,9 +220,9 @@ export type Lane = 'wave' | 'spec' | 'pitch' | 'gain' | 'formant'
 
 /** フォーカスしている帯の左端に色の帯を描く（ツールバーとショートカットがその帯に効くことを示す） */
 export function drawLaneFocus(c: DrawContext, lane: Lane) {
-  const { g, pal, waveH, specH, pitchH, gainH = 0, formantH = 0 } = c
+  const { g, pal, waveH, specH, gainH = 0, formantH = 0 } = c
   const [y, h] =
-    lane === 'wave' ? [RULER_HEIGHT, waveH] : lane === 'spec' ? [specTop(c), specH] : lane === 'pitch' ? [pitchTop(c), pitchH] : lane === 'gain' ? [gainTop(c), gainH] : [formantTop(c), formantH]
+    lane === 'wave' ? [RULER_HEIGHT, waveH] : lane === 'spec' ? [specTop(c), specH] : lane === 'pitch' ? pitchBox(c) : lane === 'gain' ? [gainTop(c), gainH] : [formantTop(c), formantH]
   if (h <= 0) return
   g.fillStyle = pal.primary.main
   g.fillRect(0, y, 3, h)
@@ -255,8 +260,8 @@ export function drawGhostWave(c: DrawContext, peaks: { min: Float32Array; max: F
   }
 }
 
-/** 波形（1ピクセル列ごとの最小値〜最大値の縦線）と中央線 */
-export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }, scale = 1) {
+/** 波形（1ピクセル列ごとの最小値〜最大値の縦線）と中央線。`dim` ならピッチを重ねるので薄く描く */
+export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }, scale = 1, dim = false) {
   const { g, width, pal, waveH } = c
   const mid = RULER_HEIGHT + waveH / 2
   // 縦の拡大（`scale` 倍）。帯からはみ出す分は端で切る
@@ -264,7 +269,7 @@ export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float3
   const lim = waveH / 2 - 4
   // ダークでは primary（明るい水色）のままだとまぶしく、選択範囲の白い線も埋もれるため、少し沈める。
   // ライトでは primary.dark（紺）だと選択範囲の黒い線と見分けにくいため、primary（青）にする
-  g.fillStyle = alpha(pal.primary.main, 0.85)
+  g.fillStyle = alpha(pal.primary.main, dim ? 0.3 : 0.85)
   for (let x = 0; x < width; x++) {
     const y0 = mid - Math.min(lim, peaks.max[x] * amp)
     const y1 = mid - Math.max(-lim, peaks.min[x] * amp)
@@ -280,8 +285,8 @@ export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float3
 
 /** ピッチ帯: 音名のグリッドと F0 曲線。描いた目標ピッチがあれば元の曲線を薄くして重ねる */
 export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range: PitchRange | null, target: Float32Array | null, showNotes = false, showLine = true) {
-  const { g, width, view, pal, pitchH } = c
-  const top = pitchTop(c)
+  const { g, width, view, pal } = c
+  const [top, pitchH] = pitchBox(c)
   g.fillStyle = pal.divider
   g.fillRect(0, top, width, 1)
   if (!pitch || !range) {
