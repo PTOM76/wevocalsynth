@@ -599,6 +599,15 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
 
   const openExport = () => edited && setExportOpen(true)
 
+  /** 複数の選択範囲を、再生位置から前後へ順に選ぶ（選んだものを最後にして加工の対象にし、その頭へ移る） */
+  const stepSelection = (dir: -1 | 1) => {
+    const sorted = [...selections].sort((a, b) => a.start - b.start)
+    const pos = player.livePosition()
+    const next = dir > 0 ? (sorted.find((r) => r.start > pos + 1e-3) ?? sorted[0]) : ([...sorted].reverse().find((r) => r.start < pos - 1e-3) ?? sorted[sorted.length - 1])
+    if (!next) return
+    setSelections([...selections.filter((r) => r !== next), next])
+    player.seek(next.start)
+  }
   const selectAll = () => edited && setSelections([{ start: 0, end: clipDuration(edited) }])
   const clearSelection = () => setSelections([])
   /** 再生位置にマーカーを足す / 前後のマーカーへ移る */
@@ -651,6 +660,8 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     saveAlt: settings.ctrlS === 'export' ? () => saveProjectFile() : openExport,
     exportAudio: openExport,
     pitchShift: showPitch && editing && pitchTools.ready && !busy ? pitchTools.shift : undefined,
+    nudgePitch: editing && !busy ? (d) => setParams((p) => ({ ...p, semitones: Math.max(-24, Math.min(24, Math.round((p.semitones + d) * 100) / 100)) })) : undefined,
+    stepSelection: selections.length > 1 ? stepSelection : undefined,
     addMarker,
     seekMarker,
   })
