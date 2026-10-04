@@ -7,6 +7,7 @@
   "common.reset": "重設",
   "common.selection": "選取範圍",
   "selection.beats": "{n} 拍",
+  "selection.dragOut": "拖曳到資料夾以匯出（WAV）",
   "common.whole": "全部",
   "common.analyzing": "分析中…",
   "common.vocal": "人聲",

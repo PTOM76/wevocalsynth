@@ -24,6 +24,8 @@ interface Props {
   selectionCount: number
   /** 選択範囲の長さを拍でも出すときの BPM */
   bpm?: number
+  /** 選択範囲を外へドラッグして書き出すときのファイル */
+  dragFile?: () => { name: string; blob: Blob } | null
   onSelectionChange: (r: Range | null) => void
   source: Source
   onSourceChange: (s: Source) => void
@@ -69,6 +71,7 @@ function StatusBar(p: Props) {
         selection={p.selection}
         selectionCount={p.selectionCount}
         bpm={p.bpm}
+        dragFile={p.dragFile}
         onSelectionChange={p.onSelectionChange}
         disabled={!p.clip}
       />

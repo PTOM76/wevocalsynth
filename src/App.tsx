@@ -1,3 +1,5 @@
+import { sliceRanges } from './audio/multiRange'
+import { encodeWav } from 'wevocal-lib'
 import RepeatDialog from './components/RepeatDialog'
 import MarkerTempoDialog from './components/MarkerTempoDialog'
 import { segmentAt } from './audio/tempoMap'
@@ -263,6 +265,12 @@ export default function App() {
   const bpm = seg?.bpm || baseBpm
   const hasCurve = !!ed.pitchTarget.target && ed.pitchTarget.target.hz.some((v) => v > 0)
   const totalDuration = ed.editRanges.reduce((s, r) => s + r.end - r.start, 0)
+  // 選択範囲を外へドラッグして書き出すときの WAV（選んでいるトラックの加工後。名前は「書き出し名_開始ms.wav」。: は DownloadURL の区切りなので除く）
+  const dragSelectionFile = useStableFn(() => {
+    if (!edited || !selection) return null
+    const name = `${ed.exportName.replace(/[:\\/]/g, '_')}_${Math.round(selection.start * 1000)}ms.wav`
+    return { name, blob: encodeWav(sliceRanges(edited, [selection])) }
+  })
   const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
 
   const tempoField = (fontSize?: number) => (
@@ -572,6 +580,7 @@ export default function App() {
                 selection={selection}
                 selectionCount={ed.selections.length}
                 bpm={bpm}
+                dragFile={dragSelectionFile}
                 onSelectionChange={setActiveSelection}
                 source={ed.source}
                 onSourceChange={ed.setSource}

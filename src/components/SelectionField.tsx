@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { ButtonBase, Popover, Stack, TextField } from '@mui/material'
+import { Box, ButtonBase, Popover, Stack, TextField, Tooltip } from '@mui/material'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faFileExport } from '@fortawesome/free-solid-svg-icons'
 import type { Range } from '../audio/types'
 import { formatTime } from '../audio/types'
 import { useT } from '../i18n/i18n'
@@ -12,6 +14,8 @@ interface Props {
   selectionCount: number
   /** 長さを拍でも出すときの BPM（選択範囲の頭の区間のテンポ。0 なら出さない） */
   bpm?: number
+  /** 選択範囲をファイルにする（外へドラッグして書き出す。Chromium 系のパソコンだけ。null なら出さない） */
+  dragFile?: () => { name: string; blob: Blob } | null
   onSelectionChange: (r: Range | null) => void
   disabled?: boolean
   fontSize?: number
@@ -21,6 +25,12 @@ interface Props {
 function TimeInput(p: { label: string; value: number; max: number; onChange: (v: number) => void }) {
   const field = useNumberDraft(p.value, p.onChange, 0, p.max, (v) => String(+v.toFixed(3)))
   return <TextField size="small" type="number" label={p.label} {...field} slotProps={{ htmlInput: { step: 0.01, min: 0 } }} sx={{ width: 120 }} />
+}
+
+/** 外へのドラッグで書き出せるか（DownloadURL は Chromium 系のパソコンのブラウザだけ） */
+const canDragOut = () => {
+  const data = (navigator as Navigator & { userAgentData?: { brands: { brand: string }[]; mobile: boolean } }).userAgentData
+  return !!data && !data.mobile && data.brands.some((b) => b.brand === 'Chromium')
 }
 
 /** 選択範囲の表示。クリックすると開始・終了を数値で入力できる（常に入力欄を出して場所を取らないため） */
@@ -50,6 +60,25 @@ export default function SelectionField(p: Props) {
           ? `${formatTime(sel.start)}–${formatTime(sel.end)} (${(sel.end - sel.start).toFixed(3)}s${beats})${p.selectionCount > 1 ? ` ×${p.selectionCount}` : ''}`
           : '—'}
       </ButtonBase>
+      {sel && p.dragFile && canDragOut() && (
+        <Tooltip title={t('selection.dragOut')}>
+          <Box
+            draggable
+            onDragStart={(e) => {
+              const f = p.dragFile?.()
+              if (!f) return e.preventDefault()
+              const url = URL.createObjectURL(f.blob)
+              // Chrome はこの形式で、ドロップ先のフォルダーにファイルを保存する
+              e.dataTransfer.setData('DownloadURL', `audio/wav:${f.name}:${url}`)
+              e.dataTransfer.effectAllowed = 'copy'
+              setTimeout(() => URL.revokeObjectURL(url), 60_000)
+            }}
+            sx={{ px: 0.75, height: '100%', display: 'flex', alignItems: 'center', cursor: 'grab', color: 'text.secondary', '&:hover': { bgcolor: 'action.hover', color: 'text.primary' } }}
+          >
+            <FontAwesomeIcon icon={faFileExport} fontSize={11} />
+          </Box>
+        </Tooltip>
+      )}
       <Popover
         open={!!anchor}
         anchorEl={anchor}

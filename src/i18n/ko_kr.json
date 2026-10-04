@@ -7,6 +7,7 @@
   "common.reset": "초기화",
   "common.selection": "선택 범위",
   "selection.beats": "{n}박",
+  "selection.dragOut": "폴더로 드래그해 내보내기 (WAV)",
   "common.whole": "전체",
   "common.analyzing": "분석 중…",
   "common.vocal": "보컬",

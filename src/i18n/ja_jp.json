@@ -7,6 +7,7 @@
   "common.reset": "リセット",
   "common.selection": "選択範囲",
   "selection.beats": "{n} 拍",
+  "selection.dragOut": "ドラッグしてフォルダーへ書き出す（WAV）",
   "common.whole": "全体",
   "common.analyzing": "解析中…",
   "common.vocal": "ボーカル",

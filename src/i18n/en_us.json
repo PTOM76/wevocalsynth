@@ -7,6 +7,7 @@
   "common.reset": "Reset",
   "common.selection": "Selection",
   "selection.beats": "{n} beats",
+  "selection.dragOut": "Drag to a folder to export (WAV)",
   "common.whole": "Whole",
   "common.analyzing": "Analyzing…",
   "common.vocal": "Vocal",
