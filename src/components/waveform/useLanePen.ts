@@ -1,3 +1,4 @@
+import { localPoint } from 'pevenmui'
 import { useRef, type RefObject } from 'react'
 
 /** ペンで描ける帯の1本（ピッチ・音量など） */
@@ -34,8 +35,7 @@ export function useLanePen(
 
   const pointFor = (i: number, e: React.PointerEvent) => {
     const lane = lanes[i]
-    const rect = canvasRef.current!.getBoundingClientRect()
-    const y = Math.min(Math.max(e.clientY - rect.top - lane.top, 0), lane.height)
+    const y = Math.min(Math.max(localPoint(canvasRef.current!, e.clientX, e.clientY).y - lane.top, 0), lane.height)
     const k = Math.round(timeAt(e.clientX) / lane.hopSec)
     return lane.pointAt(k, y, e)
   }
@@ -52,8 +52,7 @@ export function useLanePen(
     /** 押した位置が描ける帯の上なら、描き始めて true */
     down: (e: React.PointerEvent) => {
       if (!penMode) return false
-      const rect = canvasRef.current!.getBoundingClientRect()
-      const y = e.clientY - rect.top
+      const y = localPoint(canvasRef.current!, e.clientX, e.clientY).y
       const i = lanes.findIndex((l) => l.enabled && l.height > 0 && y >= l.top && y <= l.top + l.height)
       if (i < 0) return false
       active.current = null

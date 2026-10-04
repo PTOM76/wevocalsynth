@@ -131,3 +131,10 @@ App 自体の描き直し（加工のパラメータを App が持つため）�
 - 最近使用したファイルは、ファイルの参照（ハンドル）を IndexedDB の `recentFiles` に最大 8 件持つ。開いた、ドロップした、保存したプロジェクトのファイルを記録する（書き出した音声は記録しない）
 - インストールした PWA は .wvsp を開くアプリとして OS に登録する（`vite.config.ts` の `file_handlers`）。ダブルクリックで起動したファイルは `launchQueue` で受け取り、起動時の復元をしない
 - 自動保存が OFF で PWA として開いているときは、未保存の変更があれば閉じる前に確認する（`hooks/useLeaveGuard.ts`。操作履歴が保存時から変わったかで判断する）
+
+## 画面の大きさ
+設定の「画面の大きさ」は、ページ全体（`html`）に CSS の `zoom` をかける（PevenMUI の `setUiScale`）。部品ごとの文字の大きさを一つずつ変えずに、一律に拡大縮小できる。zoom をかけると次の点が変わるので、PevenMUI の関数を使う。
+
+- `100dvh` も拡大されて画面からはみ出す。全体の高さは `FULL_HEIGHT`（`100dvh` を倍率で割る）にする
+- `clientX` と `getBoundingClientRect()` は拡大後の大きさ、`offsetWidth` や ResizeObserver の大きさは拡大前の大きさになる。要素の中の位置は `localPoint`（両者の比で直す）で求める
+- Canvas の画素数は `canvasPixelRatio()`（devicePixelRatio × 倍率）で決める。そうしないと拡大したときにぼやける

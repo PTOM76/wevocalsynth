@@ -1,3 +1,4 @@
+import { localPoint } from 'pevenmui'
 import { useRef, type PointerEvent, type RefObject } from 'react'
 import { RULER_HEIGHT } from './draw'
 
@@ -18,7 +19,7 @@ export function useLaneDivider(
   onChange: (percent: number) => void,
 ) {
   const dragging = useRef(false)
-  const yOf = (e: PointerEvent) => e.clientY - canvasRef.current!.getBoundingClientRect().top
+  const yOf = (e: PointerEvent) => localPoint(canvasRef.current!, e.clientX, e.clientY).y
 
   /** `e` の位置が境目の上か */
   const hit = (e: PointerEvent) => enabled && Math.abs(yOf(e) - (RULER_HEIGHT + lanes.waveH)) <= GRAB_PX

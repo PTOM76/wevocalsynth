@@ -16,6 +16,9 @@ import type { Category } from './settingsSearch'
 import type { PickerMode, StartFolder } from 'pevenmui/web'
 import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
 
+/** 画面の大きさの選択肢（倍率） */
+const UI_SCALES = [0.9, 1, 1.1, 1.25, 1.5]
+
 /** 抽出の実行環境のメモリの上限の選択肢（MB） */
 const MEMORY_MB = [256, 512, 1024, 2048, 4096]
 
@@ -166,6 +169,13 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
               ['light', t('settings.themeLight')],
               ['dark', t('settings.themeDark')],
             ]}
+          />
+        </Row>
+        <Row label={t('settings.uiScale')} help={t('settings.uiScaleHelp')}>
+          <Choice<string>
+            value={String(draft.uiScale)}
+            onChange={(v) => set({ uiScale: Number(v) })}
+            options={UI_SCALES.map((s): [string, string] => [String(s), `${Math.round(s * 100)}%`])}
           />
         </Row>
         <Check checked={draft.showMeters} onChange={(v) => set({ showMeters: v })} label={t('settings.showMeters')} help={t('settings.showMetersHelp')} />

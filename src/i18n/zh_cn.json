@@ -619,6 +619,8 @@
   "settings.auto": "自动判断",
   "settings.language": "语言",
   "settings.languageAuto": "自动（浏览器语言）",
+  "settings.uiScale": "界面大小",
+  "settings.uiScaleHelp": "统一放大或缩小文字、输入框、按钮等",
   "settings.theme": "主题",
   "settings.themeSystem": "默认（跟随浏览器）",
   "settings.themeLight": "浅色",

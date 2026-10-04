@@ -1,3 +1,4 @@
+import { localPoint } from 'pevenmui'
 import { useRef, type RefObject } from 'react'
 import type { Range } from '../../audio/types'
 import { F0_HOP_SEC } from '../../dsp/engine'
@@ -51,7 +52,7 @@ export function usePitchGrab(
   const hitBlock = (e: React.PointerEvent) => {
     const { range } = lane
     if (!grabMode || !lane.enabled || !lane.notes || !pitch || !range || lane.height <= 0) return null
-    const y = e.clientY - canvasRef.current!.getBoundingClientRect().top - lane.top
+    const y = localPoint(canvasRef.current!, e.clientX, e.clientY).y - lane.top
     const b = noteBlockAt(shown, Math.round(timeAt(e.clientX) / F0_HOP_SEC), pitch.length)
     if (!b) return null
     const per = lane.height / (range.hi - range.lo)
@@ -63,8 +64,7 @@ export function usePitchGrab(
   const hitFrame = (e: React.PointerEvent): number | null => {
     const { range } = lane
     if (!grabMode || !lane.enabled || lane.line === false || !pitch || !range || lane.height <= 0) return null
-    const rect = canvasRef.current!.getBoundingClientRect()
-    const y = e.clientY - rect.top - lane.top
+    const y = localPoint(canvasRef.current!, e.clientX, e.clientY).y - lane.top
     if (y < 0 || y > lane.height) return null
     const k = Math.round(timeAt(e.clientX) / F0_HOP_SEC)
     // 線は細いので、前後の数フレームも見る

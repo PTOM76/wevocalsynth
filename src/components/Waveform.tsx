@@ -2,7 +2,7 @@ import { CURVE_HOP_SEC, type CurvePoint } from '../hooks/useLaneCurve'
 import { FORMANT_SCALE, GAIN_SCALE, curveValueAt, drawCurveLane, type CurveScale } from './waveform/curveLane'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Slider, Stack, Typography } from '@mui/material'
-import { usePalette } from 'pevenmui'
+import { canvasPixelRatio, localPoint, usePalette } from 'pevenmui'
 import { useLaneDivider } from './waveform/useLaneDivider'
 import { useLanePen } from './waveform/useLanePen'
 import { usePitchGrab } from './waveform/usePitchGrab'
@@ -177,7 +177,7 @@ function Waveform(props: Props) {
   const dragRef = useRef<{ x0: number; t0: number; dragging: boolean; base: Range[]; edge?: EdgeDrag } | null>(null)
   // 上の時間目盛りの上では、範囲選択ではなく再生位置を動かす（押したまま動かすと付いてくる）
   const scrubRef = useRef(false)
-  const onRuler = (e: React.PointerEvent) => e.clientY - canvasRef.current!.getBoundingClientRect().top < RULER_HEIGHT
+  const onRuler = (e: React.PointerEvent) => localPoint(canvasRef.current!, e.clientX, e.clientY).y < RULER_HEIGHT
   // マウスが何の上にあるか（カーソルの形にだけ使う）。状態にするとマウスを動かすたびに描き直しになるので、
   // ref に持って Canvas の style.cursor を直接書き換える（`updateCursor`）
   const hoverRef = useRef({ ruler: false, marker: false, divider: false, grab: false, noteEdge: false, edge: false })
@@ -250,7 +250,7 @@ function Waveform(props: Props) {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !peaks) return
-    const dpr = window.devicePixelRatio || 1
+    const dpr = canvasPixelRatio()
     const g = prepareCanvas(canvas, width * dpr, height * dpr)!
     g.setTransform(dpr, 0, 0, dpr, 0, 0)
     g.clearRect(0, 0, width, height)
@@ -280,7 +280,7 @@ function Waveform(props: Props) {
   useEffect(() => {
     const canvas = overlayRef.current
     if (!canvas || width <= 0) return
-    const dpr = window.devicePixelRatio || 1
+    const dpr = canvasPixelRatio()
     if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
       canvas.width = width * dpr
       canvas.height = height * dpr
@@ -470,18 +470,18 @@ function Waveform(props: Props) {
         onContextMenu={(e) => {
           e.preventDefault()
           // 目盛りの上なら、その位置（マーカーの追加など）も渡す
-          const ruler = e.clientY - e.currentTarget.getBoundingClientRect().top <= RULER_HEIGHT
+          const ruler = localPoint(e.currentTarget, e.clientX, e.clientY).y <= RULER_HEIGHT
           props.onContextMenu(e.clientX, e.clientY, ruler ? { time: snapTime(e.clientX), markerId: markerAt(e.clientX)?.id ?? null } : undefined)
         }}
         onDoubleClick={(e) => {
           // 目盛りの上のマーカーの名前をダブルクリックで変える
-          if (e.clientY - e.currentTarget.getBoundingClientRect().top > RULER_HEIGHT || !props.onRenameMarker) return
+          if (localPoint(e.currentTarget, e.clientX, e.clientY).y > RULER_HEIGHT || !props.onRenameMarker) return
           const m = markerAt(e.clientX)
           if (m) props.onRenameMarker(m.id)
         }}
         onPointerDown={(e) => {
           // 押した帯にフォーカスを移す（時間目盛りの上は変えない）
-          const ly = e.clientY - e.currentTarget.getBoundingClientRect().top - RULER_HEIGHT
+          const ly = localPoint(e.currentTarget, e.clientX, e.clientY).y - RULER_HEIGHT
           if (ly >= 0) props.onFocusLane(ly < waveH ? 'wave' : ly < upperH ? 'spec' : ly < upperH + pitchH ? 'pitch' : ly < upperH + pitchH + gainH ? 'gain' : 'formant')
           // 右クリックは範囲選択を始めない（コンテキストメニューに任せる）
           if (e.button === 2) return

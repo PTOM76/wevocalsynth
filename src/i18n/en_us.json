@@ -619,6 +619,8 @@
   "settings.auto": "Auto detect",
   "settings.language": "Language",
   "settings.languageAuto": "Auto (browser language)",
+  "settings.uiScale": "Display size",
+  "settings.uiScaleHelp": "Scales text, inputs, buttons, and everything else together",
   "settings.theme": "Theme",
   "settings.themeSystem": "Default (follow browser)",
   "settings.themeLight": "Light",

@@ -619,6 +619,8 @@
   "settings.auto": "自動判定",
   "settings.language": "言語",
   "settings.languageAuto": "自動（ブラウザの言語）",
+  "settings.uiScale": "画面の大きさ",
+  "settings.uiScaleHelp": "文字、入力欄、ボタンなどをまとめて拡大、縮小します",
   "settings.theme": "テーマ",
   "settings.themeSystem": "既定（ブラウザに合わせる）",
   "settings.themeLight": "ライト",

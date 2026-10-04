@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, LevelMeter } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, setUiScale, FULL_HEIGHT, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, LevelMeter } from 'pevenmui'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
 import { useAppMenus } from './hooks/useAppMenus'
@@ -70,6 +70,8 @@ export default function App() {
   // 継ぎ目のクロスフェード長（言語と同じく、描画中に設定へ合わせておく）
   setSpliceFadeSec(settings.spliceFadeMs / 1000)
   setFastMath(settings.fastMath)
+  // 画面の大きさ（文字・入力欄・ボタンなどをまとめて拡大縮小する）
+  useEffect(() => setUiScale(settings.uiScale), [settings.uiScale])
   // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
   const ed = useEditor(settings, updateSettings)
   // 設定のテーマ（既定 / ライト / ダーク）を反映する
@@ -455,7 +457,7 @@ export default function App() {
       <SliderResetContext.Provider value={settings.sliderDoubleClickReset}>
       {!mobile && <GlobalStyles styles={desktopStyles} />}
       {/* アプリとして画面の高さにぴったり収め、ページ全体はスクロールさせない */}
-      <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.default' }}>
+      <Box sx={{ height: FULL_HEIGHT, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.default' }}>
         <AppHeader
           menus={mobile ? mobileMenus : menus}
           canUndo={ed.history.canUndo}

@@ -1,3 +1,4 @@
+import { FULL_HEIGHT } from 'pevenmui'
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Box, Button, LinearProgress, Stack, Typography } from '@mui/material'
 import { resolveLang, setLang, t } from '../i18n/i18n'
@@ -26,7 +27,7 @@ export default function CleanExtractScreen({ job }: { job: CleanJob }) {
   // やめるときは、抽出しないまま作業を開き直す
   const giveUp = () => void cancelCleanJob().then(() => location.reload())
   return (
-    <Stack spacing={2} sx={{ height: '100dvh', alignItems: 'center', justifyContent: 'center', p: 3, bgcolor: 'background.default' }}>
+    <Stack spacing={2} sx={{ height: FULL_HEIGHT, alignItems: 'center', justifyContent: 'center', p: 3, bgcolor: 'background.default' }}>
       <Typography>{t(job.mode === 'split' ? 'task.splitStems' : job.stem === 'vocals' ? 'task.extractVocals' : 'task.extractAccompaniment')}</Typography>
       <Box sx={{ width: 'min(360px, 90vw)' }}>
         <LinearProgress variant="determinate" value={progress * 100} />

@@ -3,7 +3,7 @@ import { Box, ButtonBase, Tooltip, Typography } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackFader, type TrackMix } from '../../audio/tracks'
 import { computePeaks } from '../waveform/peaks'
 import { prepareCanvas, type View } from '../waveform/draw'
-import { LevelMeter, usePalette } from 'pevenmui'
+import { canvasPixelRatio, LevelMeter, usePalette } from 'pevenmui'
 import { useT } from '../../i18n/i18n'
 import { pickMods, useTrackDrag, type PickMods } from './useTrackDrag'
 
@@ -75,7 +75,7 @@ function MiniWave({ track, view, selected }: { track: Track; view: View; selecte
     const canvas = ref.current
     if (!canvas) return
     const draw = () => {
-      const dpr = window.devicePixelRatio || 1
+      const dpr = canvasPixelRatio()
       const w = Math.max(1, Math.round(canvas.clientWidth * dpr))
       const h = Math.max(1, Math.round(canvas.clientHeight * dpr))
       const g = prepareCanvas(canvas, w, h)

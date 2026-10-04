@@ -35,7 +35,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupShortcuts', 'settings.ctrlS',
   ],
   file: ['settings.groupFile', 'settings.rememberFolder', 'settings.rememberFolderHelp', 'settings.startFolder', 'settings.recentFiles', 'settings.recentFilesHelp'],
-  display: ['settings.groupAppearance', 'settings.theme', 'settings.language', 'settings.showMeters', 'settings.showMetersHelp', 'settings.liveSelection', 'settings.liveSelectionHelp'],
+  display: ['settings.groupAppearance', 'settings.theme', 'settings.uiScale', 'settings.uiScaleHelp', 'settings.language', 'settings.showMeters', 'settings.showMetersHelp', 'settings.liveSelection', 'settings.liveSelectionHelp'],
   process: [
     'settings.groupDefaultAlgorithm', 'settings.vocalAlgorithm', 'settings.instrumentAlgorithm', 'settings.showLegacyAlgorithms', 'settings.showLegacyAlgorithmsHelp',
     'settings.groupProcess', 'settings.initialMode', 'settings.saveMemory', 'settings.saveMemoryHelp',

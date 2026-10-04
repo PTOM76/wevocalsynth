@@ -619,6 +619,8 @@
   "settings.auto": "자동 판정",
   "settings.language": "언어",
   "settings.languageAuto": "자동 (브라우저 언어)",
+  "settings.uiScale": "화면 크기",
+  "settings.uiScaleHelp": "글자, 입력란, 버튼 등을 한꺼번에 확대, 축소합니다",
   "settings.theme": "테마",
   "settings.themeSystem": "기본 (브라우저에 맞춤)",
   "settings.themeLight": "라이트",
