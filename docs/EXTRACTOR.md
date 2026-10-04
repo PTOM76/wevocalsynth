@@ -1,5 +1,5 @@
 # ボーカル抽出（WeVocalExtractor）
-曲からボーカル（または伴奏）だけを取り出す機能。本体は別リポジトリの [WeVocalExtractor](https://github.com/PTOM76/wevocalextractor)（submodule の `extractor/`）で、WeVocalSynth には追加機能として組み込む。このドキュメントは WeVocalSynth 側のこと（リポジトリの分け方・追加機能の仕組み・配信・組み込み）をまとめる。(2026-10-01 時点)
+曲からボーカル（または伴奏）だけを取り出す機能。本体は別リポジトリの [WeVocalExtractor](https://github.com/PTOM76/wevocalextractor)（submodule の `extractor/`）で、WeVocalSynth には追加機能として組み込む。このドキュメントは WeVocalSynth 側のこと（リポジトリの分け方・追加機能の仕組み・配信・組み込み）をまとめる。(2026-10-04 時点)
 
 関連: [アーキテクチャ](ARCHITECTURE.md) / [決定事項](DECISIONS.md)
 
@@ -7,14 +7,14 @@
 抽出そのもの（方針・公開 API・処理の流れ・モデル・測った値）は、WeVocalExtractor のドキュメントにある（手元では `extractor/docs/`）。
 
 - [設計](https://github.com/PTOM76/wevocalextractor/blob/main/docs/DESIGN.md): 方針・構成・公開 API・処理の流れ・実行方法
-- [モデル](https://github.com/PTOM76/wevocalextractor/blob/main/docs/MODELS.md): Spleeter 2stems の種類（fp16 / int8 / fp32）・入出力・測った値・今後の候補
+- [モデル](https://github.com/PTOM76/wevocalextractor/blob/main/docs/MODELS.md): Spleeter 2stems の種類（fp16 / int8 / fp32）と UVR の MDX-Net・入出力・測った値・今後の候補
 
-大まかには、Spleeter 2stems（ボーカル / 伴奏の2分離のモデル）を ONNX Runtime Web でブラウザの中で動かす。音声は外部に送らない。曲を約12秒ずつに分けて処理するので、スマホでも動く。
+大まかには、Spleeter 2stems（ボーカル / 伴奏の2分離のモデル）や UVR の MDX-Net を ONNX Runtime Web でブラウザの中で動かす。音声は外部に送らない。曲を約12秒ずつに分けて処理するので、スマホでも動く。
 
 ## リポジトリの構成
 ```text
-wevocal-lib（Rust、submodule）    FFT・リサンプル（STFT も今後ここへ）
-    ↑                     ↑（今後）
+wevocal-lib（Rust、submodule）    FFT・リサンプル・STFT
+    ↑                     ↑
 dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、submodule）
 ```
 
@@ -65,10 +65,12 @@ ONNX Runtime の wasm は、計算の種類ごとに別の追加機能にする�
 
 | 追加機能 | 中身 | 大きさ |
 | --- | --- | --- |
-| `vocal-extractor` | 実行環境。WeVocalExtractor（STFT の wasm を含む）と ONNX Runtime Web（WASM・WebGPU 対応の版） | 27MB（gzip で約 7MB） |
+| `vocal-extractor` | 実行環境。WeVocalExtractor（STFT の wasm を含む）と ONNX Runtime Web の JS | — |
+| `vocal-extractor-gpu` / `-cpu` | ONNX Runtime の wasm（WebGPU 対応版 / WASM 版）。要る方だけ入れる | 28MB / 14MB |
 | `spleeter-fp16` | 軽量モデル。CPU のみ | 38MB |
 | `spleeter-int8` | 標準モデル（既定）。CPU でも fp16 より速く、GPU も使える | 50MB |
 | `spleeter-fp32` | 高精度モデル | 75MB |
+| `uvr-mdx-voc-ft` / `uvr-mdx-inst-hq4` | 高品質モデル（ボーカル向け / 伴奏向け）。GPU がないと遅い | 各約 60MB |
 
 - モデルは `vocal-extractor` に依存する。設定の一覧には出さず、モデルと一緒に導入・削除する
 - `onnxruntime-web` は実行環境の中に含め、アプリ本体には入れない

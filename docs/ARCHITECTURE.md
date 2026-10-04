@@ -21,7 +21,7 @@ WeVocalSynth は、React の画面、Web Worker 上の Rust（WebAssembly）の 
 | 保存 | IndexedDB（作業）、localStorage（設定） | 音声は localStorage の容量に収まらない |
 | 書き出し | WAV（自前）、MP3（lamejs を Worker で）、Opus（WebCodecs ＋自前の Ogg） | MP3 のエンコーダは使うときだけ読み込む |
 | オフライン | PWA（vite-plugin-pwa） | 新しい版は通知して、利用者が「更新」を押したときに切り替える |
-| 多言語化 | JSON（ja_jp / en_us）をビルド時に取り込む | 実行時の読み込み待ちがない |
+| 多言語化 | JSON（ja_jp / en_us / ko_kr / zh_cn / zh_tw）をビルド時に取り込む | 実行時の読み込み待ちがない |
 
 C++（Emscripten）は採用しない。
 
@@ -50,11 +50,12 @@ DSP の Worker は、加工用と解析用の 2 つにしている。1 つだと
 
 ## リポジトリの構成
 
-本体のリポジトリに、2 つのモジュールを submodule として入れている。
+本体のリポジトリに、3 つのモジュールを submodule として入れている。
 
 | モジュール | 中身 | 使う側 |
 | --- | --- | --- |
-| `wevocal-lib/` | 信号処理の部品（FFT・リサンプル・STFT） | 本体の DSP、ボーカル抽出 |
+| `wevocal-lib/` | 信号処理の部品（FFT・リサンプル・STFT）と、音声ファイルの読み書き、再生の開始と停止（`web/`） | 本体の DSP と画面、ボーカル抽出 |
+| `pevenmui/` | 画面の部品（PevenMUI。テーマ、メニューバー、ダイアログ、ファイルを開く画面、進み具合のゲージなど） | 本体、ボーカル抽出の単体の画面 |
 | `extractor/` | ボーカル抽出の本体（WeVocalExtractor） | 本体（追加機能として組み込む） |
 
 submodule にした理由:

@@ -1,6 +1,6 @@
 //! ピッチ変更・時間伸縮・フォルマント補正をまとめた処理の流れ。
 
-use crate::{formant, hpss, psola, pv, sola, sola2, resample, wsola2, wsola2_map, wsola_map, wsola_with_progress, TimeMap};
+use crate::{formant, hpss, psola, pv, sms, sola, sola2, resample, wsola2, wsola2_map, wsola_map, wsola_with_progress, TimeMap};
 
 /// `semitones` 半音のピッチ変更と `stretch` 倍の時間伸縮を1パスで行う。
 /// 出力長はピッチ変更に関係なく 入力長 × stretch。
@@ -42,6 +42,8 @@ pub enum Algorithm {
     Sola2,
     /// SOLAv2 の改良版（前後数周期を平均し、周期的で滑らかな声にする）
     Sola3,
+    /// 正弦波モデル（SMS）。できるだけ可逆（往復や重ねた加工で劣化しにくい）。和音や楽器にも使える
+    Sms,
 }
 
 impl Algorithm {
@@ -56,6 +58,7 @@ impl Algorithm {
             7 => Algorithm::Hpss,
             8 => Algorithm::Sola2,
             9 => Algorithm::Sola3,
+            10 => Algorithm::Sms,
             _ => Algorithm::Wsola,
         }
     }
@@ -78,6 +81,7 @@ impl Algorithm {
             Algorithm::Hpss => hpss::stretch(channels, alpha, sr, progress),
             Algorithm::Sola2 => sola2::stretch(channels, alpha, sr, progress),
             Algorithm::Sola3 => sola2::stretch_clean(channels, alpha, sr, progress),
+            Algorithm::Sms => sms::stretch(channels, alpha, sr, progress),
         }
     }
 
@@ -99,6 +103,7 @@ impl Algorithm {
             Algorithm::Hpss => hpss::stretch_map(channels, map, sr, progress),
             Algorithm::Sola2 => sola2::stretch_map(channels, map, sr, progress),
             Algorithm::Sola3 => sola2::stretch_map_clean(channels, map, sr, progress),
+            Algorithm::Sms => sms::stretch_map(channels, map, sr, progress),
         }
     }
 }

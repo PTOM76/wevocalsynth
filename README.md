@@ -68,8 +68,11 @@ npm run dev
 | 機能の仕組み | [docs/INTERNALS.md](docs/INTERNALS.md) |
 | プロジェクトファイルの形式 | [docs/PROJECT_FORMAT.md](docs/PROJECT_FORMAT.md) |
 | アルゴリズム | [docs/ALGORITHM.md](docs/ALGORITHM.md) |
+| 速さの計測 | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) |
 | ボーカル抽出 | [docs/EXTRACTOR.md](docs/EXTRACTOR.md) |
+| バージョン履歴 | [docs/VERSION.md](docs/VERSION.md) |
 | ドキュメントの書き方 | [docs/WRITING.md](docs/WRITING.md) |
+| 小ネタ | [docs/TIPS.md](docs/TIPS.md) |
 
 ## License
 This project is licensed under the MIT License.

@@ -72,7 +72,7 @@ edited.channels[0][i] *= gain
 | 決まり | 理由 |
 | --- | --- |
 | キーは `領域.名前`（例: `process.pitch`、`toast.applied`） | 同じ画面の文言が並び、探しやすい |
-| 新しい文言は `ja_jp.json` と `en_us.json` の両方に足す | en_us に欠けたキーがあると型エラーになり、ビルドが止まる |
+| 新しい文言は `src/i18n/` のすべての言語（ja_jp、en_us、ko_kr、zh_cn、zh_tw）に追加する | ja_jp にあるキーがほかの言語に欠けていると型エラーになり、ビルドが止まる |
 | 値の差し込みは `{name}` で書く（`t('toast.loadFailed', { file, error })`） | 言語によって語順が違うため、文字列を連結しない |
 | 言語で描き直す Canvas は `useLang()` を依存に入れる | Canvas は React の再描画では描き直されない |
 
