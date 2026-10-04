@@ -73,9 +73,11 @@ export default function SelectionField(p: Props) {
               e.dataTransfer.effectAllowed = 'copy'
               setTimeout(() => URL.revokeObjectURL(url), 60_000)
             }}
-            sx={{ px: 0.75, height: '100%', display: 'flex', alignItems: 'center', cursor: 'grab', color: 'text.secondary', '&:hover': { bgcolor: 'action.hover', color: 'text.primary' } }}
+            // つかみやすいよう、アイコンだけでなく「WAV」の文字も付けて幅を取る
+            sx={{ px: 1, mx: 0.25, height: '100%', display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'grab', color: 'text.secondary', border: 1, borderColor: 'divider', borderRadius: 1, fontSize: 11, '&:hover': { bgcolor: 'action.hover', color: 'text.primary' } }}
           >
-            <FontAwesomeIcon icon={faFileExport} fontSize={11} />
+            <FontAwesomeIcon icon={faFileExport} fontSize={12} />
+            WAV
           </Box>
         </Tooltip>
       )}
