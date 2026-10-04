@@ -3,7 +3,7 @@ import type { MessageKey } from '../i18n/i18n'
 import { canPickFiles } from 'pevenmui/web'
 
 /** 設定画面の分類 */
-export type Category = 'project' | 'general' | 'edit' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'data' | 'debug'
+export type Category = 'project' | 'general' | 'edit' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'data' | 'debug' | 'debugAudio' | 'diagnose'
 /** 並び順と親子（親のない分類と、その下のサブアイテム） */
 const TREE: [Category, Category?][] = [
   ['project'],
@@ -17,6 +17,8 @@ const TREE: [Category, Category?][] = [
   ['vocal', 'process'],
   ['data'],
   ['debug'],
+  ['debugAudio', 'debug'],
+  ['diagnose', 'debug'],
 ]
 
 /**
@@ -53,7 +55,12 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupData', 'data.work', 'data.workHelp', 'data.cache', 'data.cacheHelp', 'data.addons',
     'data.settings', 'data.settingsHelp', 'data.all', 'data.persist', 'data.persistHelp',
   ],
-  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.spliceFade', 'settings.spliceFadeHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp', 'settings.fastMath', 'settings.fastMathHelp', 'settings.filePicker', 'settings.filePickerHelp', 'settings.devUpdates', 'settings.devUpdatesHelp', 'settings.suspendWhenStopped', 'settings.suspendWhenStoppedHelp', 'settings.playbackSession', 'settings.playbackSessionHelp', 'settings.vocalMemory', 'settings.vocalMemoryHelp', 'settings.extractDiagnose', 'settings.extractDiagnoseHelp', 'settings.dialogWindow'],
+  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.devUpdates', 'settings.devUpdatesHelp', 'settings.filePicker', 'settings.filePickerHelp', 'settings.dialogWindow'],
+  debugAudio: [
+    'settings.groupDebugAudio', 'settings.showExperimentalAlgorithms', 'settings.showExperimentalAlgorithmsHelp', 'settings.fastMath', 'settings.fastMathHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp',
+    'settings.spliceFade', 'settings.spliceFadeHelp', 'settings.suspendWhenStopped', 'settings.suspendWhenStoppedHelp', 'settings.playbackSession', 'settings.playbackSessionHelp',
+  ],
+  diagnose: ['settings.groupDiagnose', 'settings.vocalMemory', 'settings.vocalMemoryHelp', 'settings.extractDiagnose', 'settings.extractDiagnoseHelp'],
 }
 
 /** 設定画面に渡す分類の一覧（名前と、検索の対象の訳文）。「ファイル」は File System Access API が使えるブラウザだけ出す */

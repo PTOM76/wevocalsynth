@@ -118,6 +118,8 @@ export interface Settings {
   playbackSession: boolean
   /** 従来の処理方式（改良版があるもの）も選べるように表示する */
   showLegacyAlgorithms: boolean
+  /** 試験的な処理方式（SMS、愛称 Specraw）を選択肢に出す（開発者向け） */
+  showExperimentalAlgorithms: boolean
   /** ホイールでの拡大縮小の割り当て */
   wheelZoom: WheelZoom
   /** 開く・保存するフォルダを用途ごとに覚える（Chrome・Edge。project/fileAccess.ts） */
@@ -170,6 +172,7 @@ export const DEFAULT_SETTINGS: Settings = {
   suspendWhenStopped: true,
   playbackSession: true,
   showLegacyAlgorithms: false,
+  showExperimentalAlgorithms: false,
   wheelZoom: 'ctrl',
   rememberFolder: true,
   startFolder: 'downloads',

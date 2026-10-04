@@ -1,3 +1,4 @@
+import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
@@ -73,6 +74,8 @@ export default function App() {
   setFastMath(settings.fastMath)
   // 画面の大きさ（文字・入力欄・ボタンなどをまとめて拡大縮小する）
   useEffect(() => setUiScale(settings.uiScale), [settings.uiScale])
+  // 描画中に合わせる（処理方式のメニューと設定画面が、最初から設定どおりの選択肢になるように。値を入れるだけ）
+  setExperimentalAlgorithms(settings.showExperimentalAlgorithms)
   useEffect(() => setOutputDevice(settings.outputDevice), [settings.outputDevice])
   // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
   const ed = useEditor(settings, updateSettings)

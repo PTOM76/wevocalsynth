@@ -243,8 +243,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
     debug: (
       <Group title={t('settings.groupDebug')}>
         <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
-        <Check checked={draft.fastMath} onChange={(v) => set({ fastMath: v })} label={t('settings.fastMath')} help={t('settings.fastMathHelp')} />
-        <Check checked={draft.realtimeAlign} onChange={(v) => set({ realtimeAlign: v })} label={t('settings.realtimeAlign')} help={t('settings.realtimeAlignHelp')} />
+        <Check checked={draft.devUpdates} onChange={(v) => set({ devUpdates: v })} label={t('settings.devUpdates')} help={t('settings.devUpdatesHelp')} />
         <Row label={t('settings.filePicker')} help={t('settings.filePickerHelp')}>
           <Choice<PickerMode>
             value={draft.filePicker}
@@ -256,24 +255,6 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             ]}
           />
         </Row>
-        <Check checked={draft.devUpdates} onChange={(v) => set({ devUpdates: v })} label={t('settings.devUpdates')} help={t('settings.devUpdatesHelp')} />
-        <Check checked={draft.suspendWhenStopped} onChange={(v) => set({ suspendWhenStopped: v })} label={t('settings.suspendWhenStopped')} help={t('settings.suspendWhenStoppedHelp')} />
-        <Check checked={draft.playbackSession} onChange={(v) => set({ playbackSession: v })} label={t('settings.playbackSession')} help={t('settings.playbackSessionHelp')} />
-        <Row label={t('settings.spliceFade')} help={t('settings.spliceFadeHelp')}>
-          <Choice<string>
-            value={String(draft.spliceFadeMs)}
-            onChange={(v) => set({ spliceFadeMs: Number(v) })}
-            options={['5', '10', '20'].map((ms): [string, string] => [ms, `${ms} ms`])}
-          />
-        </Row>
-        <Row label={t('settings.vocalMemory')} help={t('settings.vocalMemoryHelp')}>
-          <Choice<string>
-            value={String(draft.vocalMemoryMb)}
-            onChange={(v) => set({ vocalMemoryMb: Number(v) })}
-            options={MEMORY_MB.map((mb): [string, string] => [String(mb), mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`])}
-          />
-        </Row>
-        <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand, memoryMb: draft.vocalMemoryMb }} />
         <Row label={t('settings.dialogWindow')}>
           <Choice<WindowMode | 'auto'>
             value={draft.dialogWindow}
@@ -292,7 +273,39 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
         </Row>
       </Group>
     ),
-    pitch: (
+    debugAudio: (
+      <Group title={t('settings.groupDebugAudio')}>
+        <Check
+          checked={draft.showExperimentalAlgorithms}
+          onChange={(v) => set({ showExperimentalAlgorithms: v })}
+          label={t('settings.showExperimentalAlgorithms')}
+          help={t('settings.showExperimentalAlgorithmsHelp')}
+        />
+        <Check checked={draft.fastMath} onChange={(v) => set({ fastMath: v })} label={t('settings.fastMath')} help={t('settings.fastMathHelp')} />
+        <Check checked={draft.realtimeAlign} onChange={(v) => set({ realtimeAlign: v })} label={t('settings.realtimeAlign')} help={t('settings.realtimeAlignHelp')} />
+        <Row label={t('settings.spliceFade')} help={t('settings.spliceFadeHelp')}>
+          <Choice<string>
+            value={String(draft.spliceFadeMs)}
+            onChange={(v) => set({ spliceFadeMs: Number(v) })}
+            options={['5', '10', '20'].map((ms): [string, string] => [ms, `${ms} ms`])}
+          />
+        </Row>
+        <Check checked={draft.suspendWhenStopped} onChange={(v) => set({ suspendWhenStopped: v })} label={t('settings.suspendWhenStopped')} help={t('settings.suspendWhenStoppedHelp')} />
+        <Check checked={draft.playbackSession} onChange={(v) => set({ playbackSession: v })} label={t('settings.playbackSession')} help={t('settings.playbackSessionHelp')} />
+      </Group>
+    ),
+    diagnose: (
+      <Group title={t('settings.groupDiagnose')}>
+        <Row label={t('settings.vocalMemory')} help={t('settings.vocalMemoryHelp')}>
+          <Choice<string>
+            value={String(draft.vocalMemoryMb)}
+            onChange={(v) => set({ vocalMemoryMb: Number(v) })}
+            options={MEMORY_MB.map((mb): [string, string] => [String(mb), mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`])}
+          />
+        </Row>
+        <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand, memoryMb: draft.vocalMemoryMb }} />
+      </Group>
+    ),    pitch: (
       <Group title={t('settings.groupPitch')}>
         <Row label={t('settings.f0MinHz')}>
           <NumberInput value={draft.f0MinHz} onChange={(v) => set({ f0MinHz: Math.round(v) })} min={40} max={400} step={1} unit="Hz" width={110} />
