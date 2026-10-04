@@ -501,7 +501,9 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
   useLeaveGuard(settings.confirmClose && !settings.autoRestore && isStandalone(), () => dirty)
   // タイトルバーにもプロジェクト名と、未保存なら * を出す
   useEffect(() => {
-    document.title = fileName ? `${dirty ? '* ' : ''}${fileName} - ${APP_TITLE}` : APP_TITLE
+    // PWA の窓はアプリ名を自分で付けるので、名前だけにする（付けると「WeVocalSynth - 名前 - WeVocalSynth」になる）
+    const name = `${dirty ? '* ' : ''}${fileName}`
+    document.title = !fileName ? APP_TITLE : isStandalone() ? name : `${name} - ${APP_TITLE}`
   }, [fileName, dirty])
 
   // 通常の再生と試聴は、片方を始めたらもう片方を止める
