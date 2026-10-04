@@ -6,6 +6,7 @@
   "common.stop": "停止",
   "common.reset": "重置",
   "common.selection": "选区",
+  "selection.beats": "{n} 拍",
   "common.whole": "全部",
   "common.analyzing": "分析中…",
   "common.vocal": "人声",

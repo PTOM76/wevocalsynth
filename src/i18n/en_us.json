@@ -6,6 +6,7 @@
   "common.stop": "Stop",
   "common.reset": "Reset",
   "common.selection": "Selection",
+  "selection.beats": "{n} beats",
   "common.whole": "Whole",
   "common.analyzing": "Analyzing…",
   "common.vocal": "Vocal",

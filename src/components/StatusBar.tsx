@@ -22,6 +22,8 @@ interface Props {
   /** 一番後ろの選択範囲（入力欄で編集するもの）と、選択範囲の数 */
   selection: Range | null
   selectionCount: number
+  /** 選択範囲の長さを拍でも出すときの BPM */
+  bpm?: number
   onSelectionChange: (r: Range | null) => void
   source: Source
   onSourceChange: (s: Source) => void
@@ -66,6 +68,7 @@ function StatusBar(p: Props) {
         duration={p.duration}
         selection={p.selection}
         selectionCount={p.selectionCount}
+        bpm={p.bpm}
         onSelectionChange={p.onSelectionChange}
         disabled={!p.clip}
       />

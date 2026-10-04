@@ -10,6 +10,8 @@ interface Props {
   /** 一番後ろの選択範囲（入力欄で編集するもの）と、選択範囲の数 */
   selection: Range | null
   selectionCount: number
+  /** 長さを拍でも出すときの BPM（選択範囲の頭の区間のテンポ。0 なら出さない） */
+  bpm?: number
   onSelectionChange: (r: Range | null) => void
   disabled?: boolean
   fontSize?: number
@@ -26,6 +28,8 @@ export default function SelectionField(p: Props) {
   const t = useT()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const sel = p.selection
+  // 拍は 0.1 拍まで（拍に合わせて切り出すときの目安）
+  const beats = sel && p.bpm ? ' / ' + t('selection.beats', { n: Math.round(((sel.end - sel.start) * p.bpm) / 6) / 10 }) : ''
 
   const setField = (key: keyof Range, v: number) => {
     const cur = sel ?? { start: 0, end: p.duration }
@@ -43,7 +47,7 @@ export default function SelectionField(p: Props) {
       >
         {t('common.selection')}:{' '}
         {sel
-          ? `${formatTime(sel.start)}–${formatTime(sel.end)} (${(sel.end - sel.start).toFixed(3)}s)${p.selectionCount > 1 ? ` ×${p.selectionCount}` : ''}`
+          ? `${formatTime(sel.start)}–${formatTime(sel.end)} (${(sel.end - sel.start).toFixed(3)}s${beats})${p.selectionCount > 1 ? ` ×${p.selectionCount}` : ''}`
           : '—'}
       </ButtonBase>
       <Popover

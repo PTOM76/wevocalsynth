@@ -494,6 +494,7 @@ export default function App() {
                   duration={ed.duration}
                   selection={selection}
                   selectionCount={ed.selections.length}
+                  bpm={bpm}
                   onSelectionChange={setActiveSelection}
                   disabled={!editing}
                   fontSize={13}
@@ -567,6 +568,7 @@ export default function App() {
                 duration={ed.duration}
                 selection={selection}
                 selectionCount={ed.selections.length}
+                bpm={bpm}
                 onSelectionChange={setActiveSelection}
                 source={ed.source}
                 onSourceChange={ed.setSource}
