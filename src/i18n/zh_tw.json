@@ -10,6 +10,7 @@
   "selection.dragOut": "拖曳到資料夾以匯出（WAV）",
   "folder.choose": "選擇素材儲存資料夾…",
   "folder.save": "將選取範圍儲存到資料夾",
+  "folder.failed": "無法儲存到資料夾：{error}",
   "folder.saveManyShort": "分別儲存",
   "folder.saveMany": "將選取範圍分別儲存到資料夾（{n} 個）",
   "folder.savedMany": "已將 {n} 個檔案儲存到「{folder}」",

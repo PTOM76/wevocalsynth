@@ -10,6 +10,7 @@
   "selection.dragOut": "ドラッグしてフォルダーへ書き出す（WAV）",
   "folder.choose": "素材の保存先フォルダーを選ぶ…",
   "folder.save": "選択範囲をフォルダーへ保存",
+  "folder.failed": "フォルダーへ保存できませんでした: {error}",
   "folder.saveManyShort": "別々に保存",
   "folder.saved": "「{folder}」に {name} を保存しました",
   "folder.saveMany": "選択範囲を別々にフォルダーへ保存（{n} 個）",
