@@ -1,13 +1,13 @@
 import type { Clip } from '../audio/types'
+import { stepBeat, type TempoSegment } from '../audio/tempoMap'
 
 interface Deps {
   /** 今表示しているクリップ（無ければ何もしない） */
   shown: Clip | null
   duration: number
-  /** 拍の線を出しているか（設定）と、プロジェクトのテンポ */
+  /** 拍の線を出しているか（設定）と、区間ごとのテンポ */
   showBeatGrid: boolean
-  bpm: number
-  beatOffset: number
+  segments: TempoSegment[]
   getPosition: () => number
   /** 再生中なら、動かした位置から続けて鳴らす（player.seek） */
   seek: (t: number) => void
@@ -21,16 +21,11 @@ export function useSeek(d: Deps) {
   const seekBy = (dir: -1 | 1, fine: boolean) => {
     if (!d.shown) return
     const pos = d.getPosition()
-    const { showBeatGrid, bpm, beatOffset } = d
     let t: number
     if (fine) t = pos + dir * 0.1
-    else if (showBeatGrid && bpm > 0) {
-      const beat = 60 / bpm
-      const k = (pos - beatOffset) / beat
-      // 今の位置がちょうど拍の線の上なら、隣の線へ
-      const next = dir > 0 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1
-      t = beatOffset + next * beat
-    } else t = pos + dir
+    // 今の位置がちょうど拍の線の上なら、隣の線へ
+    else if (d.showBeatGrid && d.segments.length) t = stepBeat(d.segments, pos, dir)
+    else t = pos + dir
     d.seek(Math.max(0, Math.min(d.duration, t)))
   }
   /** 先頭・末尾へ */

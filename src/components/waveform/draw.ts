@@ -1,3 +1,4 @@
+import { beatsIn, type TempoSegment } from '../../audio/tempoMap'
 import { alpha, type Theme } from '@mui/material'
 import type { Range } from '../../audio/types'
 import { F0_HOP_SEC, type Spectrogram } from '../../dsp/engine'
@@ -131,31 +132,24 @@ export function drawRuler(c: DrawContext) {
 }
 
 /** 拍の目安線の設定 */
+/** 拍の目安線の元（区間ごとのテンポ。`audio/tempoMap.ts`） */
 export interface BeatGrid {
-  bpm: number
-  /** 1小節の拍数 */
-  beatsPerBar: number
-  /** 1拍目の位置（秒） */
-  offset: number
+  segments: TempoSegment[]
 }
 
 /** 拍の目安線。小節の頭は濃く、拍は薄く描く（拍が詰まりすぎる倍率では小節だけ） */
 export function drawBeatGrid(c: DrawContext, grid: BeatGrid, h: number) {
   const { g, width, view, pal } = c
-  const beat = 60 / grid.bpm
-  const pxPerBeat = (beat / view.dur) * width
-  const barOnly = pxPerBeat < 8
-  if (barOnly && pxPerBeat * grid.beatsPerBar < 8) return
-  const first = Math.ceil((view.start - grid.offset) / beat)
-  for (let i = first; grid.offset + i * beat <= view.start + view.dur; i++) {
-    const isBar = ((i % grid.beatsPerBar) + grid.beatsPerBar) % grid.beatsPerBar === 0
-    if (barOnly && !isBar) continue
-    const x = Math.round(toX(c, grid.offset + i * beat))
-    g.fillStyle = alpha(pal.warning.main, isBar ? 0.5 : 0.2)
+  const px = (sec: number) => (sec / view.dur) * width
+  for (const b of beatsIn(grid.segments, view.start, view.start + view.dur)) {
+    // 拍が詰まりすぎる区間は小節だけ、小節も詰まりすぎるなら描かない
+    if (px(b.barSec) < 8 || (!b.bar && px(b.beatSec) < 8)) continue
+    const x = Math.round(toX(c, b.time))
+    g.fillStyle = alpha(pal.warning.main, b.bar ? 0.5 : 0.2)
     g.fillRect(x, RULER_HEIGHT, 1, h - RULER_HEIGHT)
-    if (isBar && pxPerBeat * grid.beatsPerBar >= 24) {
+    if (b.bar && px(b.barSec) >= 24) {
       g.fillStyle = pal.warning.main
-      g.fillText(String(Math.floor(i / grid.beatsPerBar) + 1), x + 3, RULER_HEIGHT - 5)
+      g.fillText(String(b.barNo), x + 3, RULER_HEIGHT - 5)
     }
   }
 }

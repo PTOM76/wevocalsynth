@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { tempoSegments } from '../audio/tempoMap'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { AUDIO_ACCEPT, configurePlayback, decodeFile } from 'wevocal-lib'
@@ -608,7 +609,9 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
   }
 
   // 矢印キー・Home / End での再生位置の移動
-  const { seekBy, seekEdge } = useSeek({ shown, duration, showBeatGrid: settings.showBeatGrid, ...projectTempo, getPosition: player.livePosition, seek: player.seek })
+  // 区間ごとのテンポ（プロジェクトのテンポと、テンポを持つマーカー）
+  const tempoSegs = useMemo(() => tempoSegments(projectTempo, markers.markers), [projectTempo, markers.markers])
+  const { seekBy, seekEdge } = useSeek({ shown, duration, showBeatGrid: settings.showBeatGrid, segments: tempoSegs, getPosition: player.livePosition, seek: player.seek })
 
   // ピッチの曲線の切り取り・コピー・貼り付け（ピッチの帯にフォーカスしているとき）
   const pitchClip = usePitchClipboard({
@@ -654,7 +657,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
 
   return {
     // 素材と履歴
-    fileName, projectTempo, setProjectTempo, changeTempo, setProjectName: (name: string) => {
+    fileName, projectTempo, tempoSegs, setProjectTempo, changeTempo, setProjectName: (name: string) => {
       if (!name.trim()) return
       setFileName(name.trim())
       setNamed(true)

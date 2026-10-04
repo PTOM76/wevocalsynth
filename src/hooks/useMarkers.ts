@@ -28,6 +28,8 @@ export function useMarkers() {
     remove: (id: string) => setMarkers((list) => list.filter((m) => m.id !== id)),
     /** `id` のマーカーを `time` へ動かす（ドラッグ）。ほかのマーカーと同じ位置でも重ねてよい */
     move: (id: string, time: number) => setMarkers((list) => sorted(list.map((m) => (m.id === id ? { ...m, time } : m)))),
+    /** `id` のマーカーに、ここからのテンポを持たせる（undefined で外す） */
+    setTempo: (id: string, tempo: Marker['tempo']) => setMarkers((list) => list.map((m) => (m.id === id ? { ...m, tempo } : m))),
     rename: (id: string, name: string) => setMarkers((list) => list.map((m) => (m.id === id ? { ...m, name: name.trim() || m.name } : m))),
     clear: () => setMarkers([]),
     neighbor,

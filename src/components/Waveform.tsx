@@ -1,3 +1,4 @@
+import { nearestBeat } from '../audio/tempoMap'
 import { CURVE_HOP_SEC, type CurvePoint } from '../hooks/useLaneCurve'
 import { FORMANT_SCALE, GAIN_SCALE, curveValueAt, drawCurveLane, type CurveScale } from './waveform/curveLane'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
@@ -309,12 +310,14 @@ function Waveform(props: Props) {
         g.lineTo(x, height)
         g.stroke()
         g.setLineDash([])
-        const w = g.measureText(m.name).width + 8
+        // テンポを持つマーカーは、名前の後ろにテンポを出す
+        const label = m.tempo ? `${m.name} ♩${Math.round(m.tempo.bpm * 100) / 100} ${m.tempo.beatsPerBar}/4` : m.name
+        const w = g.measureText(label).width + 8
         g.fillStyle = pal.warning.main
         g.fillRect(x, 0, w, RULER_HEIGHT - 2)
         g.fillStyle = pal.warning.contrastText
         g.textBaseline = 'middle'
-        g.fillText(m.name, x + 4, (RULER_HEIGHT - 2) / 2)
+        g.fillText(label, x + 4, (RULER_HEIGHT - 2) / 2)
       }
       if (noteGhost && range) {
         // ドラッグ中の音符ブロックの行き先
@@ -367,8 +370,10 @@ function Waveform(props: Props) {
     )
     if (near !== null && (Math.abs(near - t) / view.dur) * width <= SNAP_PX) return near
     if (!beatGrid) return t
-    const beat = 60 / beatGrid.bpm
-    const b = beatGrid.offset + Math.round((t - beatGrid.offset) / beat) * beat
+    // ドラッグ中のマーカーがテンポを持つなら、その区間は除く（自分の拍の線に吸い付いて動かせなくなる）
+    const self = exclude ? props.markers?.find((m) => m.id === exclude) : undefined
+    const segs = self?.tempo ? beatGrid.segments.filter((s) => s.start !== self.time) : beatGrid.segments
+    const b = nearestBeat(segs, t)
     const px = (Math.abs(b - t) / view.dur) * width
     return px <= SNAP_PX ? Math.max(0, Math.min(duration, b)) : t
   }

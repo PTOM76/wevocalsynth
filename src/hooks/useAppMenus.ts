@@ -127,6 +127,7 @@ interface Actions {
   hasCurrentMarker: boolean
   addMarker: () => void
   renameMarker: () => void
+  markerTempo: () => void
   removeMarker: () => void
   clearMarkers: () => void
   seekMarker: (dir: -1 | 1) => void
@@ -225,6 +226,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
           submenu: [
             { label: t('marker.add'), shortcut: 'M', onClick: a.addMarker },
             { label: t('marker.rename'), disabled: !a.hasCurrentMarker, onClick: a.renameMarker },
+            { label: t('marker.tempo'), disabled: !a.hasCurrentMarker, onClick: a.markerTempo },
             { label: t('marker.remove'), disabled: !a.hasCurrentMarker, onClick: a.removeMarker },
             { label: t('marker.clear'), disabled: !a.hasMarkers, onClick: a.clearMarkers },
           ],

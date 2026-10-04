@@ -1,3 +1,5 @@
+import MarkerTempoDialog from './components/MarkerTempoDialog'
+import { segmentAt } from './audio/tempoMap'
 import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -98,6 +100,8 @@ export default function App() {
   const [synthOpen, setSynthOpen] = useState(false)
   const [samplerOpen, setSamplerOpen] = useState(false)
   const [renamingMarker, setRenamingMarker] = useState<string | null>(null)
+  // テンポを変えるマーカー（テンポが途中で変わる曲）
+  const [tempoMarker, setTempoMarker] = useState<string | null>(null)
   const [silenceOpen, setSilenceOpen] = useState(false)
   const [soundSelectOpen, setSoundSelectOpen] = useState(false)
   // 再生位置の入力を始める合図（目盛りの右クリックメニューから。増やすたびに始まる）
@@ -206,6 +210,7 @@ export default function App() {
     hasCurrentMarker: !!ed.markers.current(player.position),
     addMarker: ed.addMarker,
     renameMarker: () => setRenamingMarker(ed.markers.current(player.livePosition())?.id ?? null),
+    markerTempo: () => setTempoMarker(ed.markers.current(player.livePosition())?.id ?? null),
     removeMarker: () => {
       const m = ed.markers.current(player.livePosition())
       if (m) ed.markers.remove(m.id)
@@ -246,11 +251,11 @@ export default function App() {
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
   const panelsDisabled = !editing || !edited
   const { showBeatGrid } = settings
-  const { bpm, beatsPerBar, beatOffset } = ed.projectTempo
-  const beatGrid = useMemo(
-    () => (showBeatGrid && bpm > 0 ? { bpm, beatsPerBar: Math.max(1, beatsPerBar), offset: beatOffset } : null),
-    [showBeatGrid, bpm, beatsPerBar, beatOffset],
-  )
+  const { bpm: baseBpm } = ed.projectTempo
+  const beatGrid = useMemo(() => (showBeatGrid && ed.tempoSegs.length ? { segments: ed.tempoSegs } : null), [showBeatGrid, ed.tempoSegs])
+  // 加工やダイアログで使う BPM は、選択範囲（なければ再生位置）の区間のテンポ（テンポが途中で変わる曲）
+  const seg = segmentAt(ed.tempoSegs, selection?.start ?? player.position)
+  const bpm = seg?.bpm || baseBpm
   const hasCurve = !!ed.pitchTarget.target && ed.pitchTarget.target.hz.some((v) => v > 0)
   const totalDuration = ed.editRanges.reduce((s, r) => s + r.end - r.start, 0)
   const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
@@ -297,6 +302,7 @@ export default function App() {
         { divider: true },
         { label: t('marker.add'), onClick: () => ed.markers.add(rulerAt.time) },
         { label: t('marker.rename'), disabled: !rulerAt.markerId, onClick: () => setRenamingMarker(rulerAt.markerId) },
+        { label: t('marker.tempo'), disabled: !rulerAt.markerId, onClick: () => setTempoMarker(rulerAt.markerId) },
         { label: t('marker.remove'), disabled: !rulerAt.markerId, onClick: () => rulerAt.markerId && ed.markers.remove(rulerAt.markerId) },
       ]
     : []
@@ -437,7 +443,7 @@ export default function App() {
         autoMode={ed.autoMode}
         modes={ed.modes}
         showLegacyAlgorithms={settings.showLegacyAlgorithms}
-        bpm={ed.projectTempo.bpm}
+        bpm={bpm}
         rangeSec={selection ? selection.end - selection.start : ed.duration}
       />
     </Box>
@@ -584,6 +590,19 @@ export default function App() {
         onClose={() => setRenamingMarker(null)}
         onRename={(name) => renamingMarker && ed.markers.rename(renamingMarker, name)}
       />
+      {(() => {
+        const m = ed.markers.markers.find((x) => x.id === tempoMarker) ?? null
+        // 初期値は、マーカーの直前のテンポ
+        const before = m ? segmentAt(ed.tempoSegs, m.time - 1e-6) : undefined
+        return (
+          <MarkerTempoDialog
+            marker={m}
+            current={{ bpm: before?.bpm ?? baseBpm, beatsPerBar: before?.beatsPerBar ?? ed.projectTempo.beatsPerBar }}
+            onClose={() => setTempoMarker(null)}
+            onChange={(tempo) => m && ed.markers.setTempo(m.id, tempo)}
+          />
+        )
+      })()}
       {edited && (
         <ExportDialog
           open={ed.exportOpen}
@@ -604,14 +623,14 @@ export default function App() {
         hasSelection={!!selection}
         selectionStart={selection ? selection.start : null}
         bpm={bpm}
-        beatOffset={beatOffset}
+        beatOffset={seg?.offset ?? ed.projectTempo.beatOffset}
         pitchTools={ed.pitchTools}
       />
       <SynthDialog open={synthOpen} bpm={bpm} onClose={() => setSynthOpen(false)} onCreate={ed.addSynth} />
       <SilenceDialog
         open={silenceOpen}
         bpm={bpm}
-        beatsPerBar={ed.projectTempo.beatsPerBar}
+        beatsPerBar={seg?.beatsPerBar ?? ed.projectTempo.beatsPerBar}
         defaultSec={selection ? selection.end - selection.start : null}
         onClose={() => setSilenceOpen(false)}
         // 選択範囲があればその頭に、なければ再生位置に入れる

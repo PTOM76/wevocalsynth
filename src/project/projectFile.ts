@@ -40,6 +40,8 @@ export interface Marker {
   /** 位置（秒） */
   time: number
   name: string
+  /** ここからのテンポ（テンポが途中で変わる曲。なければ前のテンポのまま。`audio/tempoMap.ts`） */
+  tempo?: { bpm: number; beatsPerBar: number }
 }
 
 export interface Project {
