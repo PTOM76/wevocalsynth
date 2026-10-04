@@ -28,6 +28,8 @@ interface Actions {
   undo: () => void
   redo: () => void
   cut: () => void
+  /** 選択範囲を取り除く（クリップボードに入れない） */
+  remove: () => void
   copy: () => void
   paste: () => void
   trim: () => void
@@ -159,6 +161,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('edit.cut'), shortcut: 'Ctrl+X', disabled: noSel, onClick: a.cut },
     { label: t('edit.copy'), shortcut: 'Ctrl+C', disabled: noSel, onClick: a.copy },
     { label: t('edit.paste'), shortcut: 'Ctrl+V', disabled: noClip || !a.hasClipboard, onClick: a.paste },
+    { label: t('edit.delete'), shortcut: 'Delete', disabled: noSel, onClick: a.remove },
     { label: t('edit.trim'), disabled: noSel || !a.canTrim, onClick: a.trim },
     { label: t('edit.reverse'), disabled: noClip, onClick: a.reverse },
     { label: t('silence.menu'), disabled: noClip, onClick: a.insertSilence },
@@ -352,6 +355,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('edit.cut'), shortcut: 'Ctrl+X', disabled: noSel, onClick: a.cut },
     { label: t('edit.copy'), shortcut: 'Ctrl+C', disabled: noSel, onClick: a.copy },
     { label: t('edit.paste'), shortcut: 'Ctrl+V', disabled: noClip || !a.hasClipboard, onClick: a.paste },
+    { label: t('edit.delete'), shortcut: 'Delete', disabled: noSel, onClick: a.remove },
     { divider: true },
     {
       label: t('context.select'),

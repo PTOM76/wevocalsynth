@@ -1,3 +1,4 @@
+import MobileEditBar from './components/layout/MobileEditBar'
 import { finishClip } from './audio/finish'
 import { canSaveToFolder, chooseSaveFolder, saveToFolder, savedFolderName } from 'pevenmui/web'
 import { sliceRanges } from './audio/multiRange'
@@ -157,6 +158,7 @@ export default function App() {
     cut: ed.clip.cut,
     copy: ed.clip.copy,
     paste: ed.clip.paste,
+    remove: ed.clip.remove,
     trim: ed.clip.trim,
     reverse: ed.cmd.reverse,
     clearSelection: ed.clearSelection,
@@ -562,6 +564,20 @@ export default function App() {
           <MobileLayout
             editor={editor}
             editorFooter={
+              <>
+              {/* 新しいスマホの画面: 範囲を選んだら、波形の下に編集のボタンを出す（memo/mobile-ui.md の 4.1） */}
+              {settings.mobileUi === 'new' && editing && ed.selections.length > 0 && (
+                <MobileEditBar
+                  playSelection={playback.playSelection}
+                  cut={ed.clip.cut}
+                  copy={ed.clip.copy}
+                  paste={ed.clip.paste}
+                  canPaste={ed.clip.hasClipboard}
+                  remove={ed.clip.remove}
+                  toNewTrack={() => ed.tracks.fromSelection(ed.selections, false)}
+                  more={(x, y) => onWaveContext(x, y)}
+                />
+              )}
               <Stack direction="row" sx={{ alignItems: 'center' }}>
                 <SelectionField
                   duration={ed.duration}
@@ -574,6 +590,7 @@ export default function App() {
                 />
                 {tempoField(13)}
               </Stack>
+              </>
             }
             process={editPanel}
             volume={volumePanel}

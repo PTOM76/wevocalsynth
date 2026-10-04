@@ -7,6 +7,8 @@ interface Handlers {
   cut: () => void
   copy: () => void
   paste: () => void
+  /** Delete: 選択範囲を取り除く（クリップボードに入れない） */
+  remove: () => void
   selectAll: () => void
   clearSelection: () => void
   open: () => void
@@ -68,6 +70,7 @@ export function useShortcuts(handlers: Handlers) {
         Home: () => h.seekEdge('start'),
         End: () => h.seekEdge('end'),
         KeyM: h.addMarker,
+        Delete: h.remove,
       }
       if (h.pitchShift) {
         const step = e.shiftKey ? 0.1 : 1

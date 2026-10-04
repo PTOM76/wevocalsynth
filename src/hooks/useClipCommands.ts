@@ -45,6 +45,13 @@ export function useClipCommands(d: Deps) {
     d.seek(normalizeRanges(selections)[0].start)
     d.setSelections([])
   }
+  /** 選択範囲を取り除く（切り取りと違い、クリップボードには入れない。Delete キー） */
+  const remove = () => {
+    if (!edited || !hasSel) return
+    d.commit(removeRanges(edited, selections), t('edit.delete'))
+    d.seek(normalizeRanges(selections)[0].start)
+    d.setSelections([])
+  }
   const paste = () => {
     if (!edited || !clipboard) return
     // サンプルレートの違うトラックに貼ると、高さと長さがずれる（トラックごとに元のファイルのレートのまま持つため）
@@ -136,6 +143,7 @@ export function useClipCommands(d: Deps) {
     clearClipboard: () => setClipboard(null),
     copy,
     cut,
+    remove,
     paste,
     trim,
     gain,

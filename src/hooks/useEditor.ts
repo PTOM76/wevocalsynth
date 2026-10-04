@@ -646,6 +646,8 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     cut: onPitch ? pitchClip.cut : cmd.cut,
     copy: onPitch ? pitchClip.copy : cmd.copy,
     paste: onPitch ? pitchClip.paste : cmd.paste,
+    // 取り除くのは音声だけ（ピッチの帯では何もしない）
+    remove: onPitch ? () => {} : cmd.remove,
     // 選択範囲のみ残すは、音声だけの操作
     trim: onPitch ? () => {} : cmd.trim,
     canTrim: !onPitch,
@@ -661,6 +663,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     cut: clip.cut,
     copy: clip.copy,
     paste: clip.paste,
+    remove: clip.remove,
     selectAll,
     clearSelection,
     open: () => picker.open(),
