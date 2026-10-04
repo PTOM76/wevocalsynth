@@ -65,7 +65,7 @@ ONNX Runtime の wasm は、計算の種類ごとに別の追加機能にする�
 
 | 追加機能 | 中身 | 大きさ |
 | --- | --- | --- |
-| `vocal-extractor` | 実行環境。WeVocalExtractor（STFT の wasm を含む）と ONNX Runtime Web の JS | — |
+| `vocal-extractor` | 実行環境。WeVocalExtractor（STFT の wasm を含む）と ONNX Runtime Web の JS | 0.5MB（gzip で約 0.2MB） |
 | `vocal-extractor-gpu` / `-cpu` | ONNX Runtime の wasm（WebGPU 対応版 / WASM 版）。要る方だけ入れる | 28MB / 14MB |
 | `spleeter-fp16` | 軽量モデル。CPU のみ | 38MB |
 | `spleeter-int8` | 標準モデル（既定）。CPU でも fp16 より速く、GPU も使える | 50MB |
