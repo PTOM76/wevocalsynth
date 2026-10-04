@@ -48,7 +48,8 @@ import { f0ParamsFrom, type Settings } from '../settings/settings'
 import { t, type MessageKey } from '../i18n/i18n'
 import { idbGet, idbPut } from '../project/idb'
 
-export type Toast = { severity: 'success' | 'error' | 'info'; message: string }
+/** 通知。`actions` は通知の中に出すボタン（次の操作の案内） */
+export type Toast = { severity: 'success' | 'error' | 'info'; message: string; actions?: { label: string; onClick: () => void }[] }
 
 /** 加工パラメータのうち、適用後やファイルを開いたときに戻す値 */
 // 最近使用したファイルはこのアプリの IndexedDB に保存し、フォルダは「wevocal-用途」の名前で覚えさせる

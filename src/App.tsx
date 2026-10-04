@@ -7,7 +7,7 @@ import { segmentAt } from './audio/tempoMap'
 import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, Box, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
+import { Alert, Box, Button, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
 import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, setUiScale, FULL_HEIGHT, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, LevelMeter } from 'pevenmui'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -295,6 +295,20 @@ export default function App() {
     }
     if (last) ed.setToast({ severity: 'success', message: t('folder.savedMany', { n: count, folder: last.folder }) })
   })
+  // 無音で区切って選んだら、件数と次の操作（新しいトラックへ、別々にフォルダーへ保存）を通知に出す
+  const onSoundsSelected = (rs: Range[]) => {
+    if (!editing) return
+    ed.setSelections(rs)
+    if (!rs.length) return
+    ed.setToast({
+      severity: 'info',
+      message: t('soundSelect.selected', { n: rs.length }),
+      actions: [
+        { label: t('track.copySelection'), onClick: () => ed.tracks.fromSelection(rs, false) },
+        ...(canSaveToFolder() && rs.length > 1 ? [{ label: t('folder.saveManyShort'), onClick: () => void saveSelectionsToFolder() }] : []),
+      ],
+    })
+  }
   const chooseMaterialFolder = useStableFn(async () => {
     const name = await chooseSaveFolder('material')
     if (name) ed.setToast({ severity: 'info', message: t('folder.chosen', { folder: name }) })
@@ -682,7 +696,7 @@ export default function App() {
         // 選択範囲があればその頭に、なければ再生位置に入れる
         onInsert={(sec) => ed.cmd.insertSilence(selection ? selection.start : player.livePosition(), sec)}
       />
-      <SoundSelectDialog open={soundSelectOpen} clip={edited} onClose={() => setSoundSelectOpen(false)} onSelect={(rs) => editing && ed.setSelections(rs)} />
+      <SoundSelectDialog open={soundSelectOpen} clip={edited} onClose={() => setSoundSelectOpen(false)} onSelect={onSoundsSelected} />
       <SamplerDialog
         open={samplerOpen}
         bpm={bpm}
@@ -713,9 +727,25 @@ export default function App() {
       {ed.addonDialog}
       {ed.extractDialog}
 
-      <Snackbar open={!!ed.toast} autoHideDuration={4000} onClose={() => ed.setToast(null)}>
+      {/* ボタンのある通知は、押す間があるよう長めに出す */}
+      <Snackbar open={!!ed.toast} autoHideDuration={ed.toast?.actions ? 10000 : 4000} onClose={() => ed.setToast(null)}>
         {ed.toast ? (
-          <Alert severity={ed.toast.severity} variant="filled" onClose={() => ed.setToast(null)}>
+          <Alert
+            severity={ed.toast.severity}
+            variant="filled"
+            onClose={() => ed.setToast(null)}
+            action={
+              ed.toast.actions && (
+                <>
+                  {ed.toast.actions.map((a) => (
+                    <Button key={a.label} color="inherit" size="small" onClick={() => (ed.setToast(null), a.onClick())}>
+                      {a.label}
+                    </Button>
+                  ))}
+                </>
+              )
+            }
+          >
             {ed.toast.message}
           </Alert>
         ) : undefined}
