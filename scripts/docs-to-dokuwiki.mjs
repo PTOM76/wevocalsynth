@@ -58,6 +58,17 @@ function convert(md) {
 			out.push(`<code${fence[1] ? ` ${fence[1]}` : ''}>`, ...body, '</code>');
 			continue;
 		}
+		// 折りたたみは folded プラグインの記法にする
+		if (/^\s*<details[^>]*>\s*$/.test(line)) continue;
+		const summary = line.match(/^\s*<summary>(.*)<\/summary>\s*$/);
+		if (summary) {
+			out.push(`++++ ${summary[1].replace(/<\/?b>/g, '')} |`);
+			continue;
+		}
+		if (/^\s*<\/details>\s*$/.test(line)) {
+			out.push('++++');
+			continue;
+		}
 		const h = line.match(/^(#{1,5})\s+(.*)$/);
 		if (h) {
 			const eq = '='.repeat(7 - h[1].length);
