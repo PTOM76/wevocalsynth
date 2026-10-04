@@ -18,6 +18,7 @@ const SHORTCUTS: [string | MessageKey, MessageKey][] = [
   ['shortcuts.wheel', 'shortcuts.scrollZoom'],
   ['shortcuts.penKeys', 'shortcuts.penModifiers'],
   ['↑ / ↓ (Shift)', 'shortcuts.pitchShift'],
+  ['Tab / Shift+Tab', 'shortcuts.stepSelection'],
   ['Alt', 'shortcuts.noSnap'],
 ]
 

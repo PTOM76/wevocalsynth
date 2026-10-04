@@ -251,7 +251,8 @@
   "wave.followTooltip": "再生位置に追従",
   "wave.scroll": "表示位置",
 
-  "shortcuts.pitchShift": "ピッチ表示中: 選択範囲のピッチを半音（Shift で 0.1 半音）上下",
+  "shortcuts.pitchShift": "ピッチ（曲線の編集中は曲線を半音、Shift で 0.1 半音。それ以外は加工のピッチを半音、Shift で 12 半音）",
+  "shortcuts.stepSelection": "次 / 前の選択範囲へ（2 つ以上のとき）",
   "shortcuts.noSnap": "押しながらドラッグすると拍の線に吸着しません",
   "shortcuts.drag": "ドラッグ",
   "shortcuts.ctrlDrag": "Ctrl+ドラッグ",

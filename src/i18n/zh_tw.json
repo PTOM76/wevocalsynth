@@ -251,7 +251,8 @@
   "wave.followTooltip": "跟隨播放位置",
   "wave.scroll": "顯示位置",
 
-  "shortcuts.pitchShift": "顯示音高時：將選取範圍音高升降半音（Shift 為 0.1 半音）",
+  "shortcuts.pitchShift": "音高（編輯曲線時移動曲線一個半音，Shift 為 0.1 半音。否則調整加工音高一個半音，Shift 為 12 半音）",
+  "shortcuts.stepSelection": "下一個 / 上一個選取範圍（2 個以上時）",
   "shortcuts.noSnap": "按住拖曳時不對齊節拍線",
   "shortcuts.drag": "拖曳",
   "shortcuts.ctrlDrag": "Ctrl+拖曳",

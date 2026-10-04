@@ -251,7 +251,8 @@
   "wave.followTooltip": "Follow playhead",
   "wave.scroll": "View position",
 
-  "shortcuts.pitchShift": "With pitch shown: shift selection pitch by a semitone (Shift: 0.1)",
+  "shortcuts.pitchShift": "Pitch (while editing the curve: curve by a semitone, Shift 0.1. Otherwise: processing pitch by a semitone, Shift 12)",
+  "shortcuts.stepSelection": "Next / previous selection (with 2 or more)",
   "shortcuts.noSnap": "Hold while dragging to disable snapping to beat lines",
   "shortcuts.drag": "Drag",
   "shortcuts.ctrlDrag": "Ctrl+drag",
