@@ -538,6 +538,7 @@
   "track.fromOriginalMenu": "원음으로 트랙 만들기",
   "track.originalName": "{name} (원음)",
   "track.duplicate": "트랙 복제",
+  "track.export": "이 트랙 내보내기…",
   "track.copyName": "{name}의 사본",
   "track.copySelection": "선택 범위를 새 트랙으로 복사",
   "track.moveSelection": "선택 범위를 새 트랙으로 이동",

@@ -538,6 +538,7 @@
   "track.fromOriginalMenu": "Create track from original",
   "track.originalName": "{name} (original)",
   "track.duplicate": "Duplicate track",
+  "track.export": "Export this track…",
   "track.copyName": "Copy of {name}",
   "track.copySelection": "Copy selection to new track",
   "track.moveSelection": "Move selection to new track",

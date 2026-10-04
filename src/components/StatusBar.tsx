@@ -61,6 +61,12 @@ function StatusBar(p: Props) {
           {p.dirty && ' *'}
         </ButtonBase>
       </Tooltip>
+      {/* 長さは上の再生時間に出ているので、ここはサンプルレートとチャンネルだけ */}
+      {p.clip && (
+        <Box sx={{ ...ITEM_SX, color: 'text.secondary' }}>
+          {p.clip.sampleRate} Hz・{p.clip.channels.length === 1 ? 'Mono' : `${p.clip.channels.length} ch`}
+        </Box>
+      )}
       <SelectionField
         duration={p.duration}
         selection={p.selection}

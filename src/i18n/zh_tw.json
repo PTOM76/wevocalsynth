@@ -538,6 +538,7 @@
   "track.fromOriginalMenu": "從原音建立軌道",
   "track.originalName": "{name}（原音）",
   "track.duplicate": "複製音軌",
+  "track.export": "匯出此音軌…",
   "track.copyName": "{name} 的副本",
   "track.copySelection": "將選取範圍複製到新音軌",
   "track.moveSelection": "將選取範圍移到新音軌",

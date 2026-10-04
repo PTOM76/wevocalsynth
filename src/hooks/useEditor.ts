@@ -599,7 +599,13 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const openExport = () => edited && setExportOpen(true)
+  // 書き出しのダイアログ。`activeOnly` ならそのトラックだけを対象にして開く（トラックの右クリックから）
+  const [exportActiveOnly, setExportActiveOnly] = useState(false)
+  const openExport = (activeOnly = false) => {
+    if (!edited) return
+    setExportActiveOnly(activeOnly)
+    setExportOpen(true)
+  }
 
   /** 複数の選択範囲を、再生位置から前後へ順に選ぶ（選んだものを最後にして加工の対象にし、その頭へ移る） */
   const stepSelection = (dir: -1 | 1) => {
@@ -658,9 +664,9 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     clearSelection,
     open: () => picker.open(),
     // Ctrl+S はプロジェクト保存か書き出しか（設定）。もう一方は Ctrl+Shift+S
-    save: settings.ctrlS === 'export' ? openExport : () => saveProjectFile(),
-    saveAlt: settings.ctrlS === 'export' ? () => saveProjectFile() : openExport,
-    exportAudio: openExport,
+    save: settings.ctrlS === 'export' ? () => openExport() : () => saveProjectFile(),
+    saveAlt: settings.ctrlS === 'export' ? () => saveProjectFile() : () => openExport(),
+    exportAudio: () => openExport(),
     pitchShift: showPitch && editing && pitchTools.ready && !busy ? pitchTools.shift : undefined,
     nudgePitch: editing && !busy ? (d) => setParams((p) => ({ ...p, semitones: Math.max(-24, Math.min(24, Math.round((p.semitones + d) * 100) / 100)) })) : undefined,
     stepSelection: selections.length > 1 ? stepSelection : undefined,
@@ -687,6 +693,6 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty, exportFile, exportOpen, setExportOpen, baseName, exportName, picker, recent,
+    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty, exportFile, exportOpen, openExport, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,
   }
 }

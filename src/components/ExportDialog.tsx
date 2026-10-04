@@ -47,6 +47,8 @@ interface Props {
   onExport: (s: ExportSettings, win?: Window | null) => void
   /** 保存先のフォルダー（PWA。書き出すときに保存先を聞かず、ここへ保存する）。選び直しは `win` の窓から出す */
   folder?: { name: string | null; choose: (win: Window | null) => void }
+  /** 選んでいるトラックだけを対象にして開く（トラックの右クリックから） */
+  activeOnly?: boolean
 }
 
 const BITRATES: Record<'mp3' | 'opus', number[]> = {
@@ -90,9 +92,9 @@ export default function ExportDialog(p: Props) {
   // 開くたびにファイル名と範囲を今の状態に合わせ、Opus が使えるかを確かめる
   useEffect(() => {
     if (!p.open) return
-    setS((v) => ({ ...v, fileName: p.baseName, selectionOnly: p.hasSelection }))
+    setS((v) => ({ ...v, fileName: p.baseName, selectionOnly: p.hasSelection, ...(p.activeOnly ? { mix: false } : {}) }))
     void canEncodeOpus(Math.min(2, p.sourceChannels)).then(setOpusOk)
-  }, [p.open, p.baseName, p.hasSelection, p.sourceChannels])
+  }, [p.open, p.baseName, p.hasSelection, p.sourceChannels, p.activeOnly])
 
   // 形式ごとに選べるサンプルレートが違う（MP3 は 32/44.1/48kHz、Opus は 48kHz 固定）
   const rateOptions: [number, string][] =

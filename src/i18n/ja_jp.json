@@ -538,6 +538,7 @@
   "track.fromOriginalMenu": "原音からトラックを作成",
   "track.originalName": "{name}（原音）",
   "track.duplicate": "トラックを複製",
+  "track.export": "このトラックを書き出す…",
   "track.copyName": "{name} のコピー",
   "track.copySelection": "選択範囲を新しいトラックへコピー",
   "track.moveSelection": "選択範囲を新しいトラックへ移動",

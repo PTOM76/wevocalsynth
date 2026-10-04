@@ -149,7 +149,7 @@ export default function App() {
     recent: ed.recent,
     save: () => void ed.saveProjectFile(),
     saveAs: () => void ed.saveProjectFile(true),
-    openExport: () => ed.setExportOpen(true),
+    openExport: () => ed.openExport(),
     undo: ed.history.undo,
     redo: ed.history.redo,
     // 切り取り・コピー・貼り付けは、フォーカスしている帯（波形なら音声、ピッチなら曲線）に効く
@@ -692,6 +692,7 @@ export default function App() {
           busy={busy}
           progress={ed.progress}
           onExport={ed.exportFile}
+          activeOnly={ed.exportActiveOnly}
           folder={exportToFolder ? { name: exportFolder, choose: (win) => void chooseSaveFolder('export', win ?? window).then((n) => n && setExportFolder(n), folderFailed) } : undefined}
         />
       )}
