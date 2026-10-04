@@ -469,7 +469,8 @@ function Waveform(props: Props) {
   return (
     <Stack sx={{ width: '100%', height: '100%', minHeight: 0, userSelect: 'none' }}>
       {/* Canvas はこの箱の大きさいっぱいに描く */}
-      <Box ref={boxRef} sx={{ flex: 1, minHeight: 0, touchAction: 'none', overflow: 'hidden', position: 'relative' }}>
+      {/* 長押しで、iPhone の文字の選択や吹き出しが出ないようにする（長押しは範囲選択やメニューに使う） */}
+      <Box ref={boxRef} sx={{ flex: 1, minHeight: 0, touchAction: 'none', overflow: 'hidden', position: 'relative', WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}>
       <canvas
         ref={overlayRef}
         aria-hidden
@@ -486,6 +487,9 @@ function Waveform(props: Props) {
         }}
         onContextMenu={(e) => {
           e.preventDefault()
+          // 新しいスマホの画面: 指の長押しはブラウザも右クリックとして送ってくるが、範囲選択に使うのでメニューは出さない
+          // （出すとメニューが指の操作を奪い、選択が続かない。メニューは編集の列の「その他」）
+          if (props.touchHandles && (panRef.current || longPressRef.current || dragRef.current)) return
           // 目盛りの上なら、その位置（マーカーの追加など）も渡す
           const ruler = localPoint(e.currentTarget, e.clientX, e.clientY).y <= RULER_HEIGHT
           props.onContextMenu(e.clientX, e.clientY, ruler ? { time: snapTime(e.clientX), markerId: markerAt(e.clientX)?.id ?? null } : undefined)
