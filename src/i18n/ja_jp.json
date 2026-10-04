@@ -410,6 +410,8 @@
   "history.curve": "ピッチカーブ",
   "settings.cat.pitch": "ピッチ解析",
   "settings.groupPitch": "ピッチ（声の高さ）の解析",
+  "settings.flattenStrength": "「平らにする」の強さ",
+  "settings.flattenStrengthHelp": "100% で揺れを取り除く。下げるほど元の揺れが残る",
   "settings.f0MinHz": "解析する最低音",
   "settings.f0MaxHz": "解析する最高音",
   "settings.f0Voicing": "声とみなす判定",

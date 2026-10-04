@@ -43,7 +43,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupDefaultAlgorithm', 'settings.vocalAlgorithm', 'settings.instrumentAlgorithm', 'settings.showLegacyAlgorithms', 'settings.showLegacyAlgorithmsHelp',
     'settings.groupProcess', 'settings.initialMode', 'settings.saveMemory', 'settings.saveMemoryHelp',
   ],
-  pitch: ['settings.groupPitch', 'settings.f0MinHz', 'settings.f0MaxHz', 'settings.f0Voicing', 'settings.f0SilenceDb'],
+  pitch: ['settings.groupPitch', 'settings.flattenStrength', 'settings.flattenStrengthHelp', 'settings.f0MinHz', 'settings.f0MaxHz', 'settings.f0Voicing', 'settings.f0SilenceDb'],
   tempo: [
     'settings.groupTempo', 'settings.autoTempo', 'settings.autoTempoHelp', 'settings.defaultBpm', 'settings.defaultBpmHelp', 'settings.showBeatGrid', 'settings.tempoStretch', 'settings.tempoStretchHelp',
   ],

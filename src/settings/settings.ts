@@ -128,6 +128,8 @@ export interface Settings {
   exportFadeMs: number
   /** 加工のプリセット（components/PresetMenu.tsx） */
   presets: Preset[]
+  /** 「平らにする」の強さ（0〜1。1 未満なら元の揺れを少し残す） */
+  flattenStrength: number
   /** ホイールでの拡大縮小の割り当て */
   wheelZoom: WheelZoom
   /** 開く・保存するフォルダを用途ごとに覚える（Chrome・Edge。project/fileAccess.ts） */
@@ -185,6 +187,7 @@ export const DEFAULT_SETTINGS: Settings = {
   exportNormalize: false,
   exportFadeMs: 0,
   presets: [],
+  flattenStrength: 1,
   wheelZoom: 'ctrl',
   rememberFolder: true,
   startFolder: 'downloads',

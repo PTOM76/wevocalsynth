@@ -410,6 +410,8 @@
   "history.curve": "音高曲线",
   "settings.cat.pitch": "音高分析",
   "settings.groupPitch": "音高分析",
+  "settings.flattenStrength": "「拉平」的强度",
+  "settings.flattenStrengthHelp": "100% 去除抖动。越低保留越多原有抖动",
   "settings.f0MinHz": "分析的最低音",
   "settings.f0MaxHz": "分析的最高音",
   "settings.f0Voicing": "人声判断",

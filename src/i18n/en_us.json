@@ -410,6 +410,8 @@
   "history.curve": "Pitch curve",
   "settings.cat.pitch": "Pitch analysis",
   "settings.groupPitch": "Pitch (voice) analysis",
+  "settings.flattenStrength": "Flatten strength",
+  "settings.flattenStrengthHelp": "100% removes the wobble. Lower keeps more of the original",
   "settings.f0MinHz": "Lowest pitch",
   "settings.f0MaxHz": "Highest pitch",
   "settings.f0Voicing": "Voice detection",

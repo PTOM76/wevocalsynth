@@ -212,7 +212,7 @@ export default function App() {
     zoomOut: () => viewCtl.zoomAround(1 / ZOOM_STEP, center),
     showAll: viewCtl.showAll,
     zoomSelection: () => selection && viewCtl.setRange(selection.start - (selection.end - selection.start) * 0.05, (selection.end - selection.start) * 1.1),
-    pitchTool: { shift: ed.pitchTools.shift, flatten: () => ed.pitchTools.edit(flattenPitch), snap: () => setPitchDialog('snap'), vibrato: () => setPitchDialog('vibrato'), midi: () => setPitchDialog('midi') },
+    pitchTool: { shift: ed.pitchTools.shift, flatten: () => ed.pitchTools.edit((tg, f0, k0, k1) => flattenPitch(tg, f0, k0, k1, settings.flattenStrength)), snap: () => setPitchDialog('snap'), vibrato: () => setPitchDialog('vibrato'), midi: () => setPitchDialog('midi') },
     follow: settings.followPlayhead,
     toggleFollow: () => updateSettings({ followPlayhead: !settings.followPlayhead }),
     showMeters: settings.showMeters,
@@ -493,7 +493,7 @@ export default function App() {
       curvePreviewPlaying={ed.pitchTools.preview.playing}
       curvePreviewBusy={ed.pitchTools.preview.busy}
       onCurvePreview={() => void ed.pitchTools.preview.toggle()}
-      onFlatten={() => ed.pitchTools.edit(flattenPitch)}
+      onFlatten={() => ed.pitchTools.edit((tg, f0, k0, k1) => flattenPitch(tg, f0, k0, k1, settings.flattenStrength))}
       onSnap={() => setPitchDialog('snap')}
       onVibrato={() => setPitchDialog('vibrato')}
       onMidi={() => setPitchDialog('midi')}

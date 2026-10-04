@@ -410,6 +410,8 @@
   "history.curve": "피치 곡선",
   "settings.cat.pitch": "피치 분석",
   "settings.groupPitch": "피치(목소리 높이) 분석",
+  "settings.flattenStrength": "「평탄화」 강도",
+  "settings.flattenStrengthHelp": "100%면 흔들림을 제거. 낮출수록 원래 흔들림이 남음",
   "settings.f0MinHz": "분석할 최저음",
   "settings.f0MaxHz": "분석할 최고음",
   "settings.f0Voicing": "목소리 판정",

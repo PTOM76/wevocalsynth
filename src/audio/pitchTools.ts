@@ -120,9 +120,10 @@ export function snapPitch(target: Float32Array | null, f0: Float32Array, k0: num
 
 /**
  * フレーム k0〜k1 のピッチをならして、元の揺れ（ビブラート）を取り除いた目標ピッチを返す。
- * 有声のフレームだけで移動平均を取る（無声の 0 を平均に混ぜると音程が下がるため）
+ * 有声のフレームだけで移動平均を取る（無声の 0 を平均に混ぜると音程が下がるため）。
+ * `strength`（0〜1）はならす強さ。1 未満なら元の揺れをその割合だけ残す（機械的すぎない程度に整える）
  */
-export function flattenPitch(target: Float32Array | null, f0: Float32Array, k0: number, k1: number): Float32Array {
+export function flattenPitch(target: Float32Array | null, f0: Float32Array, k0: number, k1: number, strength = 1): Float32Array {
   const out = target ? target.slice() : new Float32Array(f0.length)
   const src = (k: number) => (out[k] > 0 ? out[k] : f0[k])
   const half = Math.round(FLATTEN_SEC / F0_HOP_SEC / 2)
@@ -140,7 +141,9 @@ export function flattenPitch(target: Float32Array | null, f0: Float32Array, k0: 
         n++
       }
     }
-    smoothed.push(midiToHz(sum / n))
+    // ならした高さへ、強さの割合だけ寄せる（半音の単位で混ぜる）
+    const m = hzToMidi(src(k))
+    smoothed.push(midiToHz(m + (sum / n - m) * strength))
   }
   smoothed.forEach((hz, i) => {
     if (hz > 0) out[Math.max(0, k0) + i] = hz

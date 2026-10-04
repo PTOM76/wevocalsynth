@@ -326,6 +326,13 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             ]}
           />
         </Row>
+        <Row label={t('settings.flattenStrength')} help={t('settings.flattenStrengthHelp')}>
+          <Choice<string>
+            value={String(draft.flattenStrength)}
+            onChange={(v) => set({ flattenStrength: Number(v) })}
+            options={[1, 0.75, 0.5, 0.25].map((s): [string, string] => [String(s), Math.round(s * 100) + '%'])}
+          />
+        </Row>
         <Row label={t('settings.f0SilenceDb')}>
           <NumberInput value={draft.f0SilenceDb} onChange={(v) => set({ f0SilenceDb: Math.round(v) })} min={-80} max={-20} step={1} unit="dB" width={110} />
         </Row>
