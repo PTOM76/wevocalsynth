@@ -88,7 +88,7 @@ export default function ExportDialog(p: Props) {
   // 開くたびにファイル名と範囲を今の状態に合わせ、Opus が使えるかを確かめる
   useEffect(() => {
     if (!p.open) return
-    setS((v) => ({ ...v, fileName: p.baseName, selectionOnly: p.hasSelection && v.selectionOnly }))
+    setS((v) => ({ ...v, fileName: p.baseName, selectionOnly: p.hasSelection }))
     void canEncodeOpus(Math.min(2, p.sourceChannels)).then(setOpusOk)
   }, [p.open, p.baseName, p.hasSelection, p.sourceChannels])
 

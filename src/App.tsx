@@ -200,6 +200,8 @@ export default function App() {
     zoomIn: () => viewCtl.zoomAround(ZOOM_STEP, selection ? (selection.start + selection.end) / 2 : center),
     zoomOut: () => viewCtl.zoomAround(1 / ZOOM_STEP, center),
     showAll: viewCtl.showAll,
+    zoomSelection: () => selection && viewCtl.setRange(selection.start - (selection.end - selection.start) * 0.05, (selection.end - selection.start) * 1.1),
+    pitchTool: { shift: ed.pitchTools.shift, flatten: () => ed.pitchTools.edit(flattenPitch), snap: () => setPitchDialog('snap'), vibrato: () => setPitchDialog('vibrato'), midi: () => setPitchDialog('midi') },
     follow: settings.followPlayhead,
     toggleFollow: () => updateSettings({ followPlayhead: !settings.followPlayhead }),
     showMeters: settings.showMeters,

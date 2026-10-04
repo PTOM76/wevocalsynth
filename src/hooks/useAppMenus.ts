@@ -90,6 +90,8 @@ interface Actions {
   zoomIn: () => void
   zoomOut: () => void
   showAll: () => void
+  /** 選択範囲に合わせて拡大する */
+  zoomSelection: () => void
   follow: boolean
   toggleFollow: () => void
   showMeters: boolean
@@ -121,6 +123,8 @@ interface Actions {
   mergeAll: () => void
   // ---- 音量の編集（選択範囲、なければ全体） ----
   volumeAction: (action: 'fadeIn' | 'fadeOut' | 'normalize' | 'silence') => void
+  // ---- ピッチの道具（選択範囲、なければ全体。右クリックではピッチの帯のときだけ） ----
+  pitchTool: { shift: (dir: 1 | -1) => void; flatten: () => void; snap: () => void; vibrato: () => void; midi: () => void }
   // ---- マーカー ----
   hasMarkers: boolean
   /** 再生位置か、その前にマーカーがあるか（名前の変更・削除の対象） */
@@ -177,6 +181,17 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('sampler.menu'), disabled: noClip, onClick: a.sampler },
     { label: t('synth.menu'), disabled: a.busy, onClick: a.synth },
   ]
+  // 音量の編集（選択範囲、なければ全体）。メニューバーの「編集」と右クリックで同じもの
+  const volumeMenu: MenuEntry = {
+    label: t('volume.title'),
+    disabled: noClip,
+    submenu: [
+      { label: t('volume.fadeIn'), onClick: () => a.volumeAction('fadeIn') },
+      { label: t('volume.fadeOut'), onClick: () => a.volumeAction('fadeOut') },
+      { label: t('volume.normalize'), onClick: () => a.volumeAction('normalize') },
+      { label: t('volume.silence'), onClick: () => a.volumeAction('silence') },
+    ],
+  }
   // 最近使用したファイル（File System Access API が使えるブラウザでだけ出す）
   const recentMenu: MenuEntry[] = !a.recent.supported
     ? []
@@ -232,16 +247,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
           ],
         },
         // 音量の編集（今は音量の欄にもある）
-        {
-          label: t('volume.title'),
-          disabled: noClip,
-          submenu: [
-            { label: t('volume.fadeIn'), onClick: () => a.volumeAction('fadeIn') },
-            { label: t('volume.fadeOut'), onClick: () => a.volumeAction('fadeOut') },
-            { label: t('volume.normalize'), onClick: () => a.volumeAction('normalize') },
-            { label: t('volume.silence'), onClick: () => a.volumeAction('silence') },
-          ],
-        },
+        volumeMenu,
       ],
     },
     {
@@ -262,6 +268,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('wave.zoomIn'), shortcut: a.wheelZoom === 'wheel' ? 'Wheel' : 'Ctrl+Wheel', disabled: !a.hasClip || !a.canZoomIn, onClick: a.zoomIn },
         { label: t('wave.zoomOut'), disabled: !a.hasClip || !a.zoomed, onClick: a.zoomOut },
         { label: t('wave.showAll'), disabled: !a.hasClip || !a.zoomed, onClick: a.showAll },
+        { label: t('wave.zoomSelection'), disabled: noSel, onClick: a.zoomSelection },
         {
           label: t('wave.vZoom'),
           disabled: !a.hasClip,
@@ -328,25 +335,71 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     },
   ]
 
+  // 波形の右クリック。上の段は 10 個前後にし、まとまりはサブメニューにする（docs/DECISIONS.md の「メニューの構成」）
+  const noPitch = noClip || !a.pitchReady
   const context: MenuEntry[] = [
     { label: t('play.playSelection'), disabled: noSel, onClick: a.playSelection },
     { label: t('play.repeat'), disabled: noClip, onClick: a.toggleLoop },
     { divider: true },
-    ...edit,
+    { label: t('edit.cut'), shortcut: 'Ctrl+X', disabled: noSel, onClick: a.cut },
+    { label: t('edit.copy'), shortcut: 'Ctrl+C', disabled: noSel, onClick: a.copy },
+    { label: t('edit.paste'), shortcut: 'Ctrl+V', disabled: noClip || !a.hasClipboard, onClick: a.paste },
     { divider: true },
-    ...extract,
-    { divider: true },
-    { label: t('track.duplicate'), disabled: noClip, onClick: a.duplicateTrack },
+    {
+      label: t('context.select'),
+      disabled: noClip,
+      submenu: [
+        { label: t('edit.selectAll'), shortcut: 'Ctrl+A', onClick: a.selectAll },
+        { label: t('soundSelect.menu'), onClick: a.selectSounds },
+        { label: t('wave.zoomSelection'), disabled: !a.hasSelection, onClick: a.zoomSelection },
+        { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: !a.hasSelection, onClick: a.clearSelection },
+      ],
+    },
+    {
+      label: t('context.edit'),
+      disabled: noClip,
+      submenu: [
+        { label: t('edit.trim'), disabled: !a.hasSelection || !a.canTrim, onClick: a.trim },
+        { label: t('edit.reverse'), onClick: a.reverse },
+        { label: t('silence.menu'), onClick: a.insertSilence },
+      ],
+    },
+    volumeMenu,
+    // ピッチの道具は、ピッチの帯を右クリックしたときだけ
     ...(a.pitchLane
       ? [
-          { divider: true as const },
-          { label: t('voicing.force'), disabled: noVoicing, onClick: () => a.setVoicing(1) },
-          { label: t('voicing.mute'), disabled: noVoicing, onClick: () => a.setVoicing(-1) },
-          { label: t('voicing.reset'), disabled: noVoicing, onClick: () => a.setVoicing(0) },
+          {
+            label: t('context.pitch'),
+            disabled: noPitch,
+            submenu: [
+              { label: t('context.pitchUp'), shortcut: '↑', onClick: () => a.pitchTool.shift(1) },
+              { label: t('context.pitchDown'), shortcut: '↓', onClick: () => a.pitchTool.shift(-1) },
+              { label: t('context.flatten'), onClick: a.pitchTool.flatten },
+              // ダイアログを開くものは「…」を付ける
+              { label: `${t('snap.title')}…`, onClick: a.pitchTool.snap },
+              { label: `${t('vibrato.title')}…`, onClick: a.pitchTool.vibrato },
+              { label: `${t('midi.title')}…`, onClick: a.pitchTool.midi },
+              { divider: true as const },
+              { label: t('voicing.force'), disabled: noVoicing, onClick: () => a.setVoicing(1) },
+              { label: t('voicing.mute'), disabled: noVoicing, onClick: () => a.setVoicing(-1) },
+              { label: t('voicing.reset'), disabled: noVoicing, onClick: () => a.setVoicing(0) },
+            ],
+          },
         ]
       : []),
+    {
+      label: t('menu.toNewTrack'),
+      disabled: noSel,
+      submenu: [
+        { label: t('track.copySelection'), onClick: () => a.selectionToTrack(false) },
+        { label: t('track.moveSelection'), onClick: () => a.selectionToTrack(true) },
+      ],
+    },
+    { label: t('context.extract'), disabled: noClip, submenu: extract },
+    { divider: true },
+    // 選択範囲があれば、書き出しの範囲は選択範囲で開く（ExportDialog）
+    { label: t(a.hasSelection ? 'context.exportSelection' : 'menu.export'), disabled: noClip, onClick: a.openExport },
   ]
-
   // スマホの ⋮ は短くする。切り取りなどは長押しメニュー、元に戻すは上部バー、
   // 表示の切替は波形の下にあるので入れない。キーボードがないのでショートカット一覧も出さない
   const mobileMenus: MenuGroup[] = [
