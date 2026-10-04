@@ -1,3 +1,4 @@
+import { vw } from 'pevenmui'
 import { useState } from 'react'
 import { Box, Button, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -37,7 +38,7 @@ export function EmptyState({
         {t('synth.open')}
       </Button>
       {names.length > 0 && (
-        <Stack spacing={0.25} sx={{ pt: 1, alignItems: 'center', maxWidth: 'min(360px, 90vw)', width: '100%' }}>
+        <Stack spacing={0.25} sx={{ pt: 1, alignItems: 'center', maxWidth: `min(360px, ${vw(90)})`, width: '100%' }}>
           <Typography variant="caption" color="text.secondary">
             {t('menu.recent')}
           </Typography>
