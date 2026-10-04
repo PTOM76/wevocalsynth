@@ -27,8 +27,7 @@
 
 処理方式は、長さの変更だけでなくピッチの変更の音質にも影響する。改良版がある従来の方式（Legacy Solis、Legacy Pisol、Legacy Wevia）は、「設定」→「処理」→「従来の処理方式も表示する」を ON にしたときだけ表示される。
 
-<details open>
-<summary>処理方式の一覧</summary>
+### 処理方式の一覧
 
 | 方式 | 適した素材 |
 | --- | --- |
@@ -43,7 +42,6 @@
 | Phasera v2（PhaseV v2） | Phasera の改良版。打楽器などのアタックがにじみにくい |
 | Phasera（PhaseV） | 和音/楽器。滑らかに伸縮する。楽器の既定 |
 
-</details>
 
 ### 素材ごとの選択の目安
 
