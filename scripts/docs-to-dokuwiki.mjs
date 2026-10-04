@@ -1,41 +1,46 @@
-// docs/*.md を DokuWiki 記法へ変換して dist/dokuwiki/ に書き出す
+// docs/wiki/*.md と docs/VERSION.md を DokuWiki 記法へ変換して dist/dokuwiki/ に書き出す
 // 使い方: node scripts/docs-to-dokuwiki.mjs [名前空間=wevocalsynth]
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, copyFileSync, rmSync } from 'node:fs';
 import { join, basename } from 'node:path';
 
 const NS = process.argv[2] ?? 'wevocalsynth';
-const SRC = 'docs';
+const SRC = 'docs/wiki';
+// wiki 以外から載せるページ
+const EXTRA = ['docs/VERSION.md'];
+const IMAGES = 'docs/images';
 const OUT = 'dist/dokuwiki';
 const MEDIA_NS = `${NS}:images`;
 
-// ファイル名 → ページ ID（README は名前空間の start）
-const pageId = (file) => {
-	const name = basename(file, '.md').toLowerCase();
-	return `${NS}:${name === 'readme' ? 'start' : name}`;
-};
+const sources = [...readdirSync(SRC).filter((f) => f.endsWith('.md')).map((f) => `${SRC}/${f}`), ...EXTRA];
+const pageName = (file) => basename(file, '.md').toLowerCase();
+const known = new Set(sources.map(pageName));
 
 // 見出しの文字列 → DokuWiki のアンカー（近似）
-const anchor = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_|_$/g, '');
+const anchor = (s) => decodeURIComponent(s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_|_$/g, '');
 
 function inline(text) {
 	// インラインコードを退避してから他を変換する
 	const codes = [];
 	text = text.replace(/`([^`]+)`/g, (_, c) => `\u0000${codes.push(c) - 1}\u0000`);
-	text = text.replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, (_, alt, src) => {
-		const file = src.replace(/^\.?\/?images\//, '');
-		return `{{${MEDIA_NS}:${file}${alt ? `|${alt}` : ''}}}`;
+	text = text.replace(/<br\s*\/?>/g, '\\\\ ');
+	text = text.replace(/<img\s[^>]*>/g, (tag) => {
+		const src = tag.match(/src="([^"]+)"/)?.[1] ?? '';
+		const alt = tag.match(/alt="([^"]*)"/)?.[1];
+		const w = tag.match(/width="(\d+)"/)?.[1];
+		return `{{${MEDIA_NS}:${basename(src)}${w ? `?${w}` : ''}${alt ? `|${alt}` : ''}}}`;
 	});
+	text = text.replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, (_, alt, src) =>
+		`{{${MEDIA_NS}:${basename(src)}${alt ? `|${alt}` : ''}}}`);
 	text = text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => {
 		if (/^https?:/.test(href)) return `[[${href}|${label}]]`;
 		const [path, hash] = href.split('#');
-		if (path.endsWith('.md') && !path.includes('/')) {
-			return `[[${pageId(path)}${hash ? `#${anchor(hash)}` : ''}|${label}]]`;
-		}
 		if (!path && hash) return `[[#${anchor(hash)}|${label}]]`;
-		// リポジトリ内の他のファイルは GitHub への外部リンクに直さず文字だけ残す
-		return `${label}（''${href}''）`;
+		if (path.endsWith('.md') && known.has(pageName(path))) {
+			return `[[${NS}:${pageName(path)}${hash ? `#${anchor(hash)}` : ''}|${label}]]`;
+		}
+		// wiki に載せないファイルへのリンクは文字だけ残す
+		return label;
 	});
-	text = text.replace(/\*\*(.+?)\*\*/g, '**$1**');
 	text = text.replace(/(^|[^*])\*([^*\s][^*]*?)\*(?!\*)/g, '$1//$2//');
 	text = text.replace(/~~(.+?)~~/g, '<del>$1</del>');
 	return text.replace(/\u0000(\d+)\u0000/g, (_, i) => `''%%${codes[i]}%%''`);
@@ -94,15 +99,19 @@ mkdirSync(pagesDir, { recursive: true });
 mkdirSync(mediaDir, { recursive: true });
 
 const manifest = [];
-for (const f of readdirSync(SRC).filter((f) => f.endsWith('.md'))) {
-	const id = pageId(f);
-	const text = convert(readFileSync(join(SRC, f), 'utf8'));
-	writeFileSync(join(pagesDir, `${id.split(':').pop()}.txt`), text);
-	manifest.push({ id, source: `${SRC}/${f}`, file: `pages/${id.replace(/:/g, '/')}.txt` });
+for (const src of sources) {
+	const name = pageName(src);
+	writeFileSync(join(pagesDir, `${name}.txt`), convert(readFileSync(src, 'utf8')));
+	manifest.push({ id: `${NS}:${name}`, source: src, file: `pages/${NS.replace(/:/g, '/')}/${name}.txt` });
 }
-for (const f of readdirSync(join(SRC, 'images'))) {
-	copyFileSync(join(SRC, 'images', f), join(mediaDir, f));
-	manifest.push({ id: `${MEDIA_NS}:${f}`, source: `${SRC}/images/${f}`, file: `media/${MEDIA_NS.replace(/:/g, '/')}/${f}` });
+// ページから参照する画像だけを載せる
+const used = new Set();
+for (const src of sources) {
+	for (const m of readFileSync(src, 'utf8').matchAll(/images\/([\w.-]+\.(?:png|jpe?g|gif|webp|svg))/g)) used.add(m[1]);
+}
+for (const f of readdirSync(IMAGES).filter((f) => used.has(f))) {
+	copyFileSync(join(IMAGES, f), join(mediaDir, f));
+	manifest.push({ id: `${MEDIA_NS}:${f}`, source: `${IMAGES}/${f}`, file: `media/${MEDIA_NS.replace(/:/g, '/')}/${f}` });
 }
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(manifest, null, '\t'));
 console.log(`${manifest.length} 件を ${OUT} に書き出した`);
