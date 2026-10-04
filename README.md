@@ -56,6 +56,8 @@ npm run dev
   - テスト: `dsp/src/tests/`
 
 ## ドキュメント
+- Wiki: https://doku.wikichree.com/wevocalsynth/start
+
 | ドキュメント名 | リンク先 |
 | --- | --- |
 | 使い方（利用者向け） | [docs/MANUAL.md](docs/MANUAL.md) |
