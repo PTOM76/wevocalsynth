@@ -16,6 +16,8 @@ interface Props {
   bpm?: number
   /** 選択範囲をファイルにする（外へドラッグして書き出す。Chromium 系のパソコンだけ。null なら出さない） */
   dragFile?: () => { name: string; blob: Blob } | null
+  /** つまみを押したとき（決めたフォルダーへ保存する） */
+  onQuickSave?: () => void
   onSelectionChange: (r: Range | null) => void
   disabled?: boolean
   fontSize?: number
@@ -60,10 +62,11 @@ export default function SelectionField(p: Props) {
           ? `${formatTime(sel.start)}–${formatTime(sel.end)} (${(sel.end - sel.start).toFixed(3)}s${beats})${p.selectionCount > 1 ? ` ×${p.selectionCount}` : ''}`
           : '—'}
       </ButtonBase>
-      {sel && p.dragFile && canDragOut() && (
-        <Tooltip title={t('selection.dragOut')}>
+      {sel && p.dragFile && (canDragOut() || p.onQuickSave) && (
+        <Tooltip title={t(p.onQuickSave ? (canDragOut() ? 'selection.saveOrDrag' : 'folder.save') : 'selection.dragOut')}>
           <Box
-            draggable
+            onClick={p.onQuickSave}
+            draggable={canDragOut()}
             onDragStart={(e) => {
               const f = p.dragFile?.()
               if (!f) return e.preventDefault()

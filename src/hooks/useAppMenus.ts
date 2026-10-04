@@ -20,6 +20,9 @@ interface Actions {
   save: () => void
   saveAs: () => void
   openExport: () => void
+  /** 選択範囲を決めたフォルダーへ保存する（使えなければ undefined） / 保存先のフォルダーを選び直す */
+  saveToFolder?: () => void
+  chooseFolder?: () => void
   undo: () => void
   redo: () => void
   cut: () => void
@@ -223,6 +226,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.saveProject'), shortcut: a.ctrlS === 'project' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.save },
         { label: t('menu.saveProjectAs'), disabled: noClip, onClick: a.saveAs },
         { divider: true },
+        ...(a.chooseFolder ? [{ label: t('folder.choose'), onClick: a.chooseFolder }] : []),
         { label: t('menu.export'), shortcut: a.ctrlS === 'export' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.openExport },
         { divider: true },
         { label: t('menu.settings'), onClick: a.showSettings },
@@ -403,6 +407,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { divider: true },
     // 選択範囲があれば、書き出しの範囲は選択範囲で開く（ExportDialog）
     { label: t(a.hasSelection ? 'context.exportSelection' : 'menu.export'), disabled: noClip, onClick: a.openExport },
+    ...(a.saveToFolder ? [{ label: t('folder.save'), disabled: noSel, onClick: a.saveToFolder }] : []),
   ]
   // スマホの ⋮ は短くする。切り取りなどは長押しメニュー、元に戻すは上部バー、
   // 表示の切替は波形の下にあるので入れない。キーボードがないのでショートカット一覧も出さない

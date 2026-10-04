@@ -1,3 +1,4 @@
+import { canSaveToFolder, chooseSaveFolder, saveToFolder } from 'pevenmui/web'
 import { sliceRanges } from './audio/multiRange'
 import { encodeWav } from 'wevocal-lib'
 import RepeatDialog from './components/RepeatDialog'
@@ -181,6 +182,8 @@ export default function App() {
     addEmptyTrack: ed.tracks.addEmpty,
     insertSilence: () => setSilenceOpen(true),
     repeatSelection: () => setRepeatOpen(true),
+    saveToFolder: canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
+    chooseFolder: canSaveToFolder() ? () => void chooseMaterialFolder() : undefined,
     selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),
     addTrack: () => ed.addPicker.open(),
     synth: () => setSynthOpen(true),
@@ -270,6 +273,16 @@ export default function App() {
     if (!edited || !selection) return null
     const name = `${ed.exportName.replace(/[:\\/]/g, '_')}_${Math.round(selection.start * 1000)}ms.wav`
     return { name, blob: encodeWav(sliceRanges(edited, [selection])) }
+  })
+  // 選択範囲を決めたフォルダーへ保存する（初回はフォルダーを選ぶ。名前は「書き出し名_連番.wav」）
+  const saveSelectionToFolder = useStableFn(async () => {
+    if (!edited || !selection) return
+    const r = await saveToFolder('material', ed.exportName, '.wav', encodeWav(sliceRanges(edited, [selection])))
+    if (r) ed.setToast({ severity: 'success', message: t('folder.saved', { name: r.name, folder: r.folder }) })
+  })
+  const chooseMaterialFolder = useStableFn(async () => {
+    const name = await chooseSaveFolder('material')
+    if (name) ed.setToast({ severity: 'info', message: t('folder.chosen', { folder: name }) })
   })
   const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
 
@@ -581,6 +594,7 @@ export default function App() {
                 selectionCount={ed.selections.length}
                 bpm={bpm}
                 dragFile={dragSelectionFile}
+                onQuickSave={canSaveToFolder() ? () => void saveSelectionToFolder() : undefined}
                 onSelectionChange={setActiveSelection}
                 source={ed.source}
                 onSourceChange={ed.setSource}

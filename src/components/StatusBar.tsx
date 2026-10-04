@@ -26,6 +26,7 @@ interface Props {
   bpm?: number
   /** 選択範囲を外へドラッグして書き出すときのファイル */
   dragFile?: () => { name: string; blob: Blob } | null
+  onQuickSave?: () => void
   onSelectionChange: (r: Range | null) => void
   source: Source
   onSourceChange: (s: Source) => void
@@ -72,6 +73,7 @@ function StatusBar(p: Props) {
         selectionCount={p.selectionCount}
         bpm={p.bpm}
         dragFile={p.dragFile}
+        onQuickSave={p.onQuickSave}
         onSelectionChange={p.onSelectionChange}
         disabled={!p.clip}
       />
