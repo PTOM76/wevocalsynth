@@ -45,6 +45,8 @@ interface Props {
   progress: number
   /** win は操作したウィンドウ（ダイアログを別ウィンドウで開いているとき、保存先の画面をそこから出すため） */
   onExport: (s: ExportSettings, win?: Window | null) => void
+  /** 保存先のフォルダー（PWA。書き出すときに保存先を聞かず、ここへ保存する）。選び直しは `win` の窓から出す */
+  folder?: { name: string | null; choose: (win: Window | null) => void }
 }
 
 const BITRATES: Record<'mp3' | 'opus', number[]> = {
@@ -205,6 +207,16 @@ export default function ExportDialog(p: Props) {
             onChange={(e) => set({ fileName: e.target.value })}
             slotProps={{ input: { endAdornment: <Typography color="text.secondary">{EXPORT_EXT[s.format]}</Typography> } }}
           />
+          {p.folder && (
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 13, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {t('export.folder')}: {p.folder.name ?? t('export.folderUnset')}
+              </Typography>
+              <Button size="small" disabled={p.busy} onClick={(e) => p.folder?.choose(e.currentTarget.ownerDocument.defaultView)}>
+                {t('export.folderChange')}
+              </Button>
+            </Stack>
+          )}
           {p.busy && <LinearProgress variant="determinate" value={p.progress * 100} />}
         </Stack>
       </DialogContent>

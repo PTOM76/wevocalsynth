@@ -4,7 +4,7 @@ import { sliceRanges } from '../audio/multiRange'
 import { mixClips } from '../audio/mix'
 import { isAudible, toStoredSettings } from '../audio/tracks'
 import { EXPORT_EXT, exportAudio, type ExportFormat } from 'wevocal-lib'
-import { overwriteTarget, pickSaveTarget, type SavedFile } from 'pevenmui/web'
+import { folderFileTarget, overwriteTarget, pickSaveTarget, type SavedFile } from 'pevenmui/web'
 import { restoreClip } from '../audio/originalStore'
 import { PROJECT_EXT, saveProject } from '../project/projectFile'
 import type { ExportSettings } from '../components/ExportDialog'
@@ -33,6 +33,8 @@ interface Deps {
   onSaved?: () => void
   /** 上書き保存するプロジェクトのファイル（開いたとき、保存したときに入れる） */
   projectFile: { current: SavedFile | null }
+  /** 音声の書き出しは、書き出しダイアログで選んだフォルダーへ保存する（保存先を聞かない。PWA のとき） */
+  exportToFolder: boolean
 }
 
 /** 書き出す形式ごとの MIME（保存先を選ぶ画面の、ファイルの種類） */
@@ -83,7 +85,13 @@ export function useOutput(d: Deps) {
     if (!edited) return
     // 保存先は書き出しの前に選ぶ（エンコードに時間がかかると、選ぶ画面を出せなくなる）
     const ext = EXPORT_EXT[s.format]
-    const target = await pickSaveTarget(`${s.fileName.trim()}${ext}`, 'audio', { description: t('file.audioType'), mime: EXPORT_MIME[s.format], ext }, win ?? window)
+    const fileName = `${s.fileName.trim()}${ext}`
+    // PWA では、書き出しダイアログで選んだフォルダーへ保存先を聞かずに保存する（同じ名前があれば「名前 (2)」にずらす）
+    const folder = d.exportToFolder ? await folderFileTarget('export', fileName, win ?? window) : null
+    if (d.exportToFolder && !folder) return
+    const target = folder
+      ? { write: async (blob: Blob) => d.notify(t('export.savedTo', { name: await folder.write(blob), folder: folder.folder })) }
+      : await pickSaveTarget(fileName, 'audio', { description: t('file.audioType'), mime: EXPORT_MIME[s.format], ext }, win ?? window)
     if (!target) return
     await d.task.run(t('task.exporting'), async (signal) => {
       // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
@@ -105,7 +113,8 @@ export function useOutput(d: Deps) {
       await target.write(blob)
       d.onSaved?.()
       d.closeExport()
-      d.notify(t('toast.exported'))
+      // フォルダーへ保存したときは、保存した名前を `write` の中で知らせている
+      if (!folder) d.notify(t('toast.exported'))
     }, 'export')
   }
 

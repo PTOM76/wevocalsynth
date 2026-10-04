@@ -57,6 +57,10 @@
   "export.keepChannels": "維持原樣 ({n} ch)",
   "export.range": "範圍",
   "export.fileName": "檔名",
+  "export.savedTo": "已將 {name} 匯出到「{folder}」",
+  "export.folder": "儲存位置",
+  "export.folderUnset": "未選擇（匯出時選擇）",
+  "export.folderChange": "變更…",
   "export.opusUnsupported": "此瀏覽器不支援匯出 Opus",
 
   "toast.exported": "已匯出",

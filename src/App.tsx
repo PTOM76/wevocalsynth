@@ -1,4 +1,4 @@
-import { canSaveToFolder, chooseSaveFolder, saveToFolder } from 'pevenmui/web'
+import { canSaveToFolder, chooseSaveFolder, isStandalone, saveToFolder, savedFolderName } from 'pevenmui/web'
 import { sliceRanges } from './audio/multiRange'
 import { encodeWav } from 'wevocal-lib'
 import RepeatDialog from './components/RepeatDialog'
@@ -311,6 +311,12 @@ export default function App() {
       ],
     })
   }
+  // PWA では、書き出しの保存先をダイアログで選んだフォルダーにする（書き出すときに聞かない）。開くたびに覚えている名前を読む
+  const exportToFolder = isStandalone() && canSaveToFolder()
+  const [exportFolder, setExportFolder] = useState<string | null>(null)
+  useEffect(() => {
+    if (exportToFolder && ed.exportOpen) void savedFolderName('export').then(setExportFolder)
+  }, [exportToFolder, ed.exportOpen])
   const chooseMaterialFolder = useStableFn(async () => {
     const name = await chooseSaveFolder('material').catch((e) => (folderFailed(e), null))
     if (name) ed.setToast({ severity: 'info', message: t('folder.chosen', { folder: name }) })
@@ -686,6 +692,7 @@ export default function App() {
           busy={busy}
           progress={ed.progress}
           onExport={ed.exportFile}
+          folder={exportToFolder ? { name: exportFolder, choose: (win) => void chooseSaveFolder('export', win ?? window).then((n) => n && setExportFolder(n), folderFailed) } : undefined}
         />
       )}
       <PitchToolHost

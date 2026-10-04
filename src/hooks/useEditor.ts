@@ -27,7 +27,7 @@ import { useShortcuts } from './useShortcuts'
 import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
 import { isOffloaded, offloadClip, restoreClip, useOffloadVersion } from '../audio/originalStore'
-import { configureFileAccess, fileRefOf, initFileAccess, isMobile, isStandalone, rememberLaunched, type SavedFile } from 'pevenmui/web'
+import { canSaveToFolder, configureFileAccess, fileRefOf, initFileAccess, isMobile, isStandalone, rememberLaunched, type SavedFile } from 'pevenmui/web'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
@@ -492,6 +492,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
       setSavedTick((n) => n + 1)
     },
     projectFile: projectFileRef,
+    exportToFolder: isStandalone() && canSaveToFolder(),
   })
 
   // 閉じるときの保存確認（自動保存を切っていて、PWA として開いているとき。設定の「全般」）。

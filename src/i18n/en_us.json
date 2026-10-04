@@ -57,6 +57,10 @@
   "export.keepChannels": "Original ({n} ch)",
   "export.range": "Range",
   "export.fileName": "File name",
+  "export.savedTo": "Exported {name} to {folder}",
+  "export.folder": "Folder",
+  "export.folderUnset": "Not set (choose when exporting)",
+  "export.folderChange": "Change…",
   "export.opusUnsupported": "This browser cannot export Opus",
 
   "toast.exported": "Exported",
