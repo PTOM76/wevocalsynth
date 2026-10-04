@@ -59,6 +59,8 @@
   "export.fileName": "檔名",
   "export.savedTo": "已將 {name} 匯出到「{folder}」",
   "export.folder": "儲存位置",
+  "export.fade": "兩端淡入淡出",
+  "export.fadeNone": "無",
   "export.folderUnset": "未選擇（匯出時選擇）",
   "export.folderChange": "變更…",
   "export.opusUnsupported": "此瀏覽器不支援匯出 Opus",

@@ -1,3 +1,4 @@
+import { finishClip } from './audio/finish'
 import { canSaveToFolder, chooseSaveFolder, isStandalone, saveToFolder, savedFolderName } from 'pevenmui/web'
 import { sliceRanges } from './audio/multiRange'
 import { encodeWav } from 'wevocal-lib'
@@ -274,14 +275,16 @@ export default function App() {
   const dragSelectionFile = useStableFn(() => {
     if (!edited || !selection) return null
     const name = `${ed.exportName.replace(/[:\\/]/g, '_')}_${Math.round(selection.start * 1000)}ms.wav`
-    return { name, blob: encodeWav(sliceRanges(edited, [selection])) }
+    return { name, blob: encodeWav(finishClip(sliceRanges(edited, [selection]), finishOpts)) }
   })
+  // 書き出しの仕上げ（ノーマライズ、両端のフェード）。フォルダーへの保存と外へのドラッグにもかける
+  const finishOpts = { normalize: settings.exportNormalize, fadeMs: settings.exportFadeMs }
   // フォルダーへの保存に失敗したら、理由を出す（黙って何も起きないと原因が分からない）
   const folderFailed = (e: unknown) => ed.setToast({ severity: 'error', message: t('folder.failed', { error: String(e) }) })
   // 選択範囲を決めたフォルダーへ保存する（初回はフォルダーを選ぶ。名前は「書き出し名_連番.wav」）
   const saveSelectionToFolder = useStableFn(async () => {
     if (!edited || !selection) return
-    const r = await saveToFolder('material', ed.exportName, '.wav', encodeWav(sliceRanges(edited, [selection]))).catch((e) => (folderFailed(e), null))
+    const r = await saveToFolder('material', ed.exportName, '.wav', encodeWav(finishClip(sliceRanges(edited, [selection]), finishOpts))).catch((e) => (folderFailed(e), null))
     if (r) ed.setToast({ severity: 'success', message: t('folder.saved', { name: r.name, folder: r.folder }) })
   })
   // すべての選択範囲を、時間の順に 1 つずつ別のファイルにして保存する（「無音で区切って選択」のあとなど）
@@ -290,7 +293,7 @@ export default function App() {
     let last: { folder: string; name: string } | null = null
     let count = 0
     for (const r of [...ed.selections].sort((a, b) => a.start - b.start)) {
-      const saved = await saveToFolder('material', ed.exportName, '.wav', encodeWav(sliceRanges(edited, [r]))).catch((e) => (folderFailed(e), null))
+      const saved = await saveToFolder('material', ed.exportName, '.wav', encodeWav(finishClip(sliceRanges(edited, [r]), finishOpts))).catch((e) => (folderFailed(e), null))
       if (!saved) break
       last = saved
       count++
@@ -695,6 +698,8 @@ export default function App() {
           progress={ed.progress}
           onExport={ed.exportFile}
           activeOnly={ed.exportActiveOnly}
+          finish={finishOpts}
+          onFinishChange={(f) => updateSettings({ exportNormalize: f.normalize, exportFadeMs: f.fadeMs })}
           folder={exportToFolder ? { name: exportFolder, choose: (win) => void chooseSaveFolder('export', win ?? window).then((n) => n && setExportFolder(n), folderFailed) } : undefined}
         />
       )}

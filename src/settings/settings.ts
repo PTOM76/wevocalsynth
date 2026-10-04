@@ -122,6 +122,9 @@ export interface Settings {
   showExperimentalAlgorithms: boolean
   /** ステータスバーに、選択範囲を素材として保存する「WAV」のボタンを出す（開発者向け） */
   showMaterialButton: boolean
+  /** 書き出し（フォルダーへの保存、外へのドラッグも）の仕上げ: ノーマライズと、両端のフェードの長さ（ms、0 でなし） */
+  exportNormalize: boolean
+  exportFadeMs: number
   /** ホイールでの拡大縮小の割り当て */
   wheelZoom: WheelZoom
   /** 開く・保存するフォルダを用途ごとに覚える（Chrome・Edge。project/fileAccess.ts） */
@@ -176,6 +179,8 @@ export const DEFAULT_SETTINGS: Settings = {
   showLegacyAlgorithms: false,
   showExperimentalAlgorithms: false,
   showMaterialButton: false,
+  exportNormalize: false,
+  exportFadeMs: 0,
   wheelZoom: 'ctrl',
   rememberFolder: true,
   startFolder: 'downloads',

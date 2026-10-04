@@ -59,6 +59,8 @@
   "export.fileName": "파일 이름",
   "export.savedTo": "「{folder}」에 {name}을(를) 내보냄",
   "export.folder": "저장 위치",
+  "export.fade": "양끝 페이드",
+  "export.fadeNone": "없음",
   "export.folderUnset": "미선택 (내보낼 때 선택)",
   "export.folderChange": "변경…",
   "export.opusUnsupported": "이 브라우저는 Opus 내보내기를 지원하지 않습니다",

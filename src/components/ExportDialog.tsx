@@ -1,5 +1,6 @@
+import type { FinishOptions } from '../audio/finish'
 import { useEffect, useState, type ReactNode } from 'react'
-import {
+import { Box, Checkbox, FormControlLabel,
   Button,
   DialogActions,
   DialogContent,
@@ -49,7 +50,13 @@ interface Props {
   folder?: { name: string | null; choose: (win: Window | null) => void }
   /** 選んでいるトラックだけを対象にして開く（トラックの右クリックから） */
   activeOnly?: boolean
+  /** 仕上げ（ノーマライズ、両端のフェード）。設定に覚える */
+  finish: FinishOptions
+  onFinishChange: (f: FinishOptions) => void
 }
+
+/** 両端のフェードの長さの選択肢（ms。0 はなし） */
+const FADES = [0, 5, 10, 20, 50]
 
 const BITRATES: Record<'mp3' | 'opus', number[]> = {
   mp3: [96, 128, 160, 192, 256, 320],
@@ -209,6 +216,21 @@ export default function ExportDialog(p: Props) {
             onChange={(e) => set({ fileName: e.target.value })}
             slotProps={{ input: { endAdornment: <Typography color="text.secondary">{EXPORT_EXT[s.format]}</Typography> } }}
           />
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <FormControlLabel
+              sx={{ flex: 1, m: 0 }}
+              control={<Checkbox size="small" checked={p.finish.normalize} onChange={(e) => p.onFinishChange({ ...p.finish, normalize: e.target.checked })} />}
+              label={<Typography sx={{ fontSize: 13 }}>{t('volume.normalize')}</Typography>}
+            />
+            <Box sx={{ width: 150 }}>
+              <Choice
+                label={t('export.fade')}
+                value={p.finish.fadeMs}
+                onChange={(v) => p.onFinishChange({ ...p.finish, fadeMs: v })}
+                options={FADES.map((ms): [number, string] => [ms, ms ? `${ms} ms` : t('export.fadeNone')])}
+              />
+            </Box>
+          </Stack>
           {p.folder && (
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Typography sx={{ fontSize: 13, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

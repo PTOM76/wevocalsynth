@@ -59,6 +59,8 @@
   "export.fileName": "ファイル名",
   "export.savedTo": "「{folder}」に {name} を書き出しました",
   "export.folder": "保存先",
+  "export.fade": "両端のフェード",
+  "export.fadeNone": "なし",
   "export.folderUnset": "未選択（書き出すときに選ぶ）",
   "export.folderChange": "変更…",
   "export.opusUnsupported": "このブラウザは Opus の書き出しに対応していません",

@@ -1,3 +1,4 @@
+import { finishClip, type FinishOptions } from '../audio/finish'
 import type { Clip, Range } from '../audio/types'
 import { applyFader } from '../audio/edit'
 import { sliceRanges } from '../audio/multiRange'
@@ -35,6 +36,8 @@ interface Deps {
   projectFile: { current: SavedFile | null }
   /** 音声の書き出しは、書き出しダイアログで選んだフォルダーへ保存する（保存先を聞かない。PWA のとき） */
   exportToFolder: boolean
+  /** 書き出しの仕上げ（ノーマライズ、両端のフェード） */
+  finish: FinishOptions
 }
 
 /** 書き出す形式ごとの MIME（保存先を選ぶ画面の、ファイルの種類） */
@@ -107,6 +110,7 @@ export function useOutput(d: Deps) {
         const parts = audible.map((tr) => render(tr.clip, tr.id))
         clip = await mixClips(parts, edited.sampleRate, Math.max(...parts.map((c) => c.channels.length)))
       }
+      clip = finishClip(clip, d.finish)
       const blob = await exportAudio(clip, { ...s, range: null, sampleRate: s.sampleRate || clip.sampleRate }, d.task.setProgress)
       // MP3 などの Worker は止められないので、中断されていたら結果を捨てる
       if (signal.aborted) return

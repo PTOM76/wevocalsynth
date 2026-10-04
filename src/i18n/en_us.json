@@ -59,6 +59,8 @@
   "export.fileName": "File name",
   "export.savedTo": "Exported {name} to {folder}",
   "export.folder": "Folder",
+  "export.fade": "Edge fade",
+  "export.fadeNone": "None",
   "export.folderUnset": "Not set (choose when exporting)",
   "export.folderChange": "Change…",
   "export.opusUnsupported": "This browser cannot export Opus",

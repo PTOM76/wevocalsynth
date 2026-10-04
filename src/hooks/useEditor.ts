@@ -493,6 +493,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     },
     projectFile: projectFileRef,
     exportToFolder: isStandalone() && canSaveToFolder(),
+    finish: { normalize: settings.exportNormalize, fadeMs: settings.exportFadeMs },
   })
 
   // 閉じるときの保存確認（自動保存を切っていて、PWA として開いているとき。設定の「全般」）。
