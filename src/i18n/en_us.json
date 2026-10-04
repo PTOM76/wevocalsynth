@@ -422,6 +422,8 @@
   "extract.vocals": "Vocal extraction",
   "extract.accompaniment": "Accompaniment extraction",
   "extract.outOfMemory": "Not enough memory to extract. Reload the page and try again, or choose the Light model in Settings > Vocal extraction. For long songs, extract in parts or use WeVocalExtractor",
+  "extract.gpuFallback": "Could not process on the GPU ({reason}). Continue on the CPU? This takes longer (about 10 times the song length with high-quality models)",
+  "extract.gpuFallbackOk": "Continue on CPU",
   "extract.cleanConfirm": "Not enough memory to extract. Save your work, reload the page and extract with nothing else running? (Undo history will be lost)",
   "extract.cleanOk": "Reload and extract",
   "extract.cleanHint": "Extracting before loading the rest of the app to free up memory",

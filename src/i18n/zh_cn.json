@@ -422,6 +422,8 @@
   "extract.vocals": "提取人声",
   "extract.accompaniment": "提取伴奏",
   "extract.outOfMemory": "内存不足，无法提取。请重新加载页面后再提取，或在「设置」→「人声提取」中将模型改为「轻量」。较长的曲子请分段提取，或使用 WeVocalExtractor",
+  "extract.gpuFallback": "无法使用 GPU 处理（{reason}）。要用 CPU 继续吗？CPU 处理需要更长时间（高质量模型约为歌曲长度的 10 倍）",
+  "extract.gpuFallbackOk": "用 CPU 继续",
   "extract.cleanConfirm": "内存不足，无法提取。要保存工作并重新加载页面，在停止其他处理的状态下提取吗？（撤销记录将被清除）",
   "extract.cleanOk": "重新加载并提取",
   "extract.cleanHint": "为腾出内存，正在不加载其他界面的状态下提取",

@@ -54,6 +54,8 @@ interface Deps {
  */
 export function useVocalExtract(d: Deps) {
   const { confirm, dialog } = useConfirm()
+  // GPU で処理できなかったら、CPU で続けるかを尋ねる（CPU では MDX-Net が曲の長さの約 10 倍かかる）
+  const confirmCpu = (reason: string) => confirm({ message: t('extract.gpuFallback', { reason }), okLabel: t('extract.gpuFallbackOk') })
   // この端末と非互換のモデルなら、代わりのモデルで抽出する（extractor/src/compat.ts。設定は変えない）
   const model = resolveModel(d.model, d.gpu).model
   const base = (): ExtractOptions => ({ model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb })
@@ -103,7 +105,7 @@ export function useVocalExtract(d: Deps) {
     markExtracting()
     await d.run(t(stem === 'vocals' ? 'task.extractVocals' : 'task.extractAccompaniment'), async (signal) => {
       try {
-        const clip = await extractRanges(edited, editRanges, stem, options, d.setProgress, signal)
+        const clip = await extractRanges(edited, editRanges, stem, options, d.setProgress, signal, confirmCpu)
         if (signal.aborted) return
         d.commit(clip, t(stem === 'vocals' ? 'extract.vocals' : 'extract.accompaniment'))
         done = true
@@ -137,7 +139,7 @@ export function useVocalExtract(d: Deps) {
     markExtracting()
     await d.run(t('task.splitStems'), async (signal) => {
       try {
-        const r = await splitBoth(edited, options, d.setProgress, signal)
+        const r = await splitBoth(edited, options, d.setProgress, signal, confirmCpu)
         if (signal.aborted) return
         const sr = edited.sampleRate
         d.split(

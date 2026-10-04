@@ -92,7 +92,10 @@ async function fetchModel(addon: string, file: ExtractStem | 'model') {
 }
 
 /** 実行環境を作る。`runtime` は読み込む ONNX Runtime（その追加機能が導入済みであること） */
-async function open(o: ExtractOptions, backend: ExtractorModule.Backend, runtime: ExtractorModule.Runtime, keepAliveMs?: number) {
+/** GPU で処理できなかったときに、CPU で続けるかを尋ねる（`reason` は理由。偽なら中断）。渡さなければ尋ねずに CPU に切り替える */
+export type ConfirmCpu = (reason: string) => Promise<boolean>
+
+async function open(o: ExtractOptions, backend: ExtractorModule.Backend, runtime: ExtractorModule.Runtime, keepAliveMs?: number, confirmCpu?: ConfirmCpu) {
   const info = VOCAL_MODELS[o.model]
   const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
   // Spleeter はボーカル用・伴奏用の 2 つ、MDX-Net は model.onnx の 1 つ
@@ -106,6 +109,7 @@ async function open(o: ExtractOptions, backend: ExtractorModule.Backend, runtime
     wasmUrl: await wasmUrl(runtime),
     memoryMb: o.memoryMb,
     keepAliveMs,
+    onGpuFallback: backend === 'webgpu' ? confirmCpu : undefined,
   })
 }
 
@@ -114,15 +118,18 @@ async function open(o: ExtractOptions, backend: ExtractorModule.Backend, runtime
  * 再生用の音声の複製を手放す（iOS はタブのメモリの上限が低い）。
  * 推論の Worker は続けて抽出する間は使い回す（extractor/src/index.ts）
  */
-async function createExtractor(o: ExtractOptions) {
+async function createExtractor(o: ExtractOptions, confirmCpu?: ConfirmCpu) {
   releaseIdleDsp()
   releasePlayers()
   const backend = o.backend ?? (await planBackend(o)).backend
   // スマホは抽出が終わったらすぐ Worker を止める。残すと、結果のトラックを作る間のメモリと重なって、iOS でタブが落ちた
   const keep = isMobile() ? 0 : undefined
   if (backend === 'wasm') return open(o, 'wasm', 'cpu', keep)
-  // WebGPU で作れなければ CPU で作り直す。WebGPU 対応版は CPU でも動くので、入っている版のまま作る
-  return open(o, 'webgpu', 'gpu', keep).catch(() => open(o, 'wasm', 'gpu', keep))
+  // WebGPU で作れなければ、確かめてから CPU で作り直す。WebGPU 対応版は CPU でも動くので、入っている版のまま作る
+  return open(o, 'webgpu', 'gpu', keep, confirmCpu).catch(async (e: unknown) => {
+    if (confirmCpu && !(await confirmCpu(String(e)))) throw new DOMException('cancelled', 'AbortError')
+    return open(o, 'wasm', 'gpu', keep)
+  })
 }
 
 /** 診断用（debug/diagnoseExtract.ts）: 計算の種類を決めて実行環境を作る。メモリを手放さず、CPU への切り替えもしない */
@@ -133,11 +140,11 @@ let extracting = false
 export const isExtracting = () => extracting
 
 /** 実行環境で `f` を行い、終わったら手放す。中断したら Worker ごと止める（処理中の separate は失敗する） */
-async function withExtractor<T>(o: ExtractOptions, signal: AbortSignal | undefined, f: (ex: ExtractorModule.Extractor) => Promise<T>) {
+async function withExtractor<T>(o: ExtractOptions, signal: AbortSignal | undefined, f: (ex: ExtractorModule.Extractor) => Promise<T>, confirmCpu?: ConfirmCpu) {
   extracting = true
   let extractor: ExtractorModule.Extractor
   try {
-    extractor = await createExtractor(o)
+    extractor = await createExtractor(o, confirmCpu)
   } catch (e) {
     extracting = false
     throw e
@@ -153,7 +160,15 @@ async function withExtractor<T>(o: ExtractOptions, signal: AbortSignal | undefin
   }
 }
 /** `clip` の範囲（秒）を、取り出したボーカル（または伴奏）に置き換えた音声を返す。長さは変わらない */
-export function extractRanges(clip: Clip, ranges: Range[], stem: ExtractStem, o: ExtractOptions, onProgress: (p: number) => void, signal?: AbortSignal) {
+export function extractRanges(
+  clip: Clip,
+  ranges: Range[],
+  stem: ExtractStem,
+  o: ExtractOptions,
+  onProgress: (p: number) => void,
+  signal?: AbortSignal,
+  confirmCpu?: ConfirmCpu,
+) {
   return withExtractor(o, signal, async (extractor) => {
     const list = normalizeRanges(ranges)
     const sr = clip.sampleRate
@@ -172,12 +187,15 @@ export function extractRanges(clip: Clip, ranges: Range[], stem: ExtractStem, o:
       cur = spliceProcessed(cur, { s, e, channels }).clip
     }
     return cur
-  })
+  }, confirmCpu)
 }
 
 /** `clip` 全体を、ボーカルと伴奏に分ける（推論は1回） */
-export function splitBoth(clip: Clip, o: ExtractOptions, onProgress: (p: number) => void, signal?: AbortSignal) {
-  return withExtractor(o, signal, (extractor) =>
-    extractor.separateBoth(clip.channels, clip.sampleRate, { highBand: o.keepHighBand ? 'edge' : 'zeros', onProgress }),
+export function splitBoth(clip: Clip, o: ExtractOptions, onProgress: (p: number) => void, signal?: AbortSignal, confirmCpu?: ConfirmCpu) {
+  return withExtractor(
+    o,
+    signal,
+    (extractor) => extractor.separateBoth(clip.channels, clip.sampleRate, { highBand: o.keepHighBand ? 'edge' : 'zeros', onProgress }),
+    confirmCpu,
   )
 }
