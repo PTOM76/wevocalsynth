@@ -31,6 +31,7 @@ import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
 import { useVocalExtract } from './useVocalExtract'
+import { setGpuLostHandler } from '../audio/vocalExtract'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { useTracks } from './useTracks'
 import { useMarkers } from './useMarkers'
@@ -217,6 +218,12 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     notify: (message) => setToast({ severity: 'info', message }),
     seekAfterInsert: settings.seekAfterInsert,
   })
+
+  // WebGPU のデバイスが失われたら、ブラウザの再起動を勧める（失われたサイトの WebGPU は、再起動まで止められることがある）
+  useEffect(() => {
+    setGpuLostHandler((message) => setToast({ severity: 'error', message: t('extract.gpuLost', { reason: message }) }))
+    return () => setGpuLostHandler(undefined)
+  }, [])
 
   // ボーカル抽出（追加機能）。未導入なら確認ダイアログ（addonDialog）を出す
   const addons = useAddonInstall()

@@ -92,6 +92,12 @@ async function fetchModel(addon: string, file: ExtractStem | 'model') {
 }
 
 /** 実行環境を作る。`runtime` は読み込む ONNX Runtime（その追加機能が導入済みであること） */
+/** WebGPU のデバイスが失われたときに呼ぶ（画面がブラウザの再起動を勧める。`setGpuLostHandler`） */
+let gpuLostHandler: ((message: string) => void) | undefined
+export const setGpuLostHandler = (f: ((message: string) => void) | undefined) => {
+  gpuLostHandler = f
+}
+
 /** GPU で処理できなかったときに、CPU で続けるかを尋ねる（`reason` は理由。偽なら中断）。渡さなければ尋ねずに CPU に切り替える */
 export type ConfirmCpu = (reason: string) => Promise<boolean>
 
@@ -110,6 +116,7 @@ async function open(o: ExtractOptions, backend: ExtractorModule.Backend, runtime
     memoryMb: o.memoryMb,
     keepAliveMs,
     onGpuFallback: backend === 'webgpu' ? confirmCpu : undefined,
+    onGpuDeviceLost: (message) => gpuLostHandler?.(message),
   })
 }
 
