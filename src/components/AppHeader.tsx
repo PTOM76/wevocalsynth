@@ -10,14 +10,17 @@ interface Props {
   busy: boolean
   onUndo: () => void
   onRedo: () => void
+  /** スマホの上部バーに出すプロジェクト名（なければアプリ名）と、未保存の変更があるか */
+  projectName?: string
+  dirty?: boolean
 }
 
 /** 上部のバー。PC は Windows 風の低いメニューバー、スマホは Android 風の上部バー。右端に元に戻す・やり直す */
-export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRedo }: Props) {
+export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRedo, projectName, dirty }: Props) {
   const t = useT()
   return (
     <PevenAppHeader
-      title="WeVocalSynth"
+      title={projectName ? (dirty ? '* ' : '') + projectName : 'WeVocalSynth'}
       icon={<AppIcon size={16} />}
       menus={menus}
       actions={(mobile) => (

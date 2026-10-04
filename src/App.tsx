@@ -553,6 +553,8 @@ export default function App() {
           busy={busy}
           onUndo={ed.history.undo}
           onRedo={ed.history.redo}
+          projectName={ed.fileName}
+          dirty={ed.dirty}
         />
         {ed.picker.input}
         {ed.addPicker.input}
@@ -748,7 +750,8 @@ export default function App() {
       {ed.extractDialog}
 
       {/* ボタンのある通知は、押す間があるよう長めに出す */}
-      <Snackbar open={!!ed.toast} autoHideDuration={ed.toast?.actions ? 10000 : 4000} onClose={() => ed.setToast(null)}>
+      {/* スマホは下の再生バーを隠さないよう、通知を上に出す */}
+      <Snackbar anchorOrigin={mobile ? { vertical: 'top', horizontal: 'center' } : undefined} open={!!ed.toast} autoHideDuration={ed.toast?.actions ? 10000 : 4000} onClose={() => ed.setToast(null)}>
         {ed.toast ? (
           <Alert
             severity={ed.toast.severity}
