@@ -175,6 +175,16 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             ]}
           />
         </Row>
+        <Row label={t('settings.mobileUi')} help={t('settings.mobileUiHelp')}>
+          <Choice<Settings['mobileUi']>
+            value={draft.mobileUi}
+            onChange={(v) => set({ mobileUi: v })}
+            options={[
+              ['new', t('settings.mobileUiNew')],
+              ['classic', t('settings.mobileUiClassic')],
+            ]}
+          />
+        </Row>
         <Row label={t('settings.uiScale')} help={t('settings.uiScaleHelp')}>
           <Choice<string>
             value={String(draft.uiScale)}
