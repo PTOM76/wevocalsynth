@@ -21,7 +21,7 @@ import {
   drawPitchLane,
   drawPlayhead,
   drawRuler,
-  drawSelection,
+  drawSelection, drawSelectionHandles,
   drawSpectrogram,
   spectrogramLayer,
   drawWave,
@@ -49,6 +49,8 @@ const SNAP_PX = 6
 /** 長押しでメニューを出すまでの時間（ミリ秒）と、その間に動いてよい距離（px） */
 const LONG_PRESS_MS = 500
 const LONG_PRESS_SLOP_PX = 8
+/** スマホの新しい画面で、範囲の端のつまみを指でつかめる距離（px） */
+const HANDLE_GRAB_PX = 22
 
 /** ピッチ帯に描く点。`midi` が null なら消しゴム */
 export interface DrawPoint {
@@ -92,6 +94,8 @@ interface Props {
   showNotes?: boolean
   /** ピッチの線を出す */
   showPitchLine?: boolean
+  /** 選択範囲の両端に指でつかむつまみを出す（スマホの新しい画面） */
+  touchHandles?: boolean
   /** ピッチを波形の帯に重ねる（オーバーパネル。波形とピッチの両方を出しているとき） */
   overlayPitch?: boolean
   /** 描いた目標ピッチ（`pitch` と同じ長さ、0 は未編集） */
@@ -298,6 +302,7 @@ function Waveform(props: Props) {
       g.setTransform(dpr, 0, 0, dpr, 0, 0)
       g.clearRect(0, 0, width, height)
       for (const r of selections) drawSelection(c, r, height)
+      if (props.touchHandles) for (const r of selections) drawSelectionHandles(c, r, height)
       // マーカー: 縦の点線と、目盛りの上に名前
       g.font = `11px ${font}`
       for (const m of props.markers ?? []) {
@@ -342,7 +347,7 @@ function Waveform(props: Props) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH, gainH, formantH, selections, noteGhost, range, pitchY, pitchLaneH, props.markers, font])
+  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH, gainH, formantH, selections, noteGhost, range, pitchY, pitchLaneH, props.markers, font, props.touchHandles])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -541,7 +546,8 @@ function Waveform(props: Props) {
             return
           }
           const t0 = snapTime(e.clientX)
-          const hit = edgeAt(e.clientX)
+          // スマホの新しい画面では、指でつかめるよう端のつまみを広く取る
+          const hit = edgeAt(e.clientX, e.pointerType === 'touch' && props.touchHandles ? HANDLE_GRAB_PX : undefined)
           if (hit) {
             const orig = selections[hit.index]
             const stretch = e.shiftKey && hit.side === 'end'

@@ -23,15 +23,15 @@ export function useRangeEdges(
   timeAt: (clientX: number) => number,
   onSelectionsChange: (rs: Range[]) => void,
 ) {
-  /** `clientX` の近くにある範囲の端（なければ null） */
-  const edgeAt = (clientX: number): { index: number; side: 'start' | 'end' } | null => {
+  /** `clientX` の近くにある範囲の端（なければ null）。`grabPx` はつかめる距離（スマホのつまみは広く取る） */
+  const edgeAt = (clientX: number, grabPx = EDGE_GRAB_PX): { index: number; side: 'start' | 'end' } | null => {
     const rect = canvasRef.current!.getBoundingClientRect()
     const xOf = (t: number) => rect.left + ((t - view.start) / view.dur) * rect.width
     let best: { index: number; side: 'start' | 'end'; d: number } | null = null
     selections.forEach((r, index) => {
       for (const side of ['start', 'end'] as const) {
         const d = Math.abs(xOf(r[side]) - clientX)
-        if (d <= EDGE_GRAB_PX && (!best || d < best.d)) best = { index, side, d }
+        if (d <= grabPx && (!best || d < best.d)) best = { index, side, d }
       }
     })
     return best

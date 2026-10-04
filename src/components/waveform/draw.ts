@@ -240,6 +240,17 @@ export function drawSelection(c: DrawContext, selection: Range, h: number) {
   g.fillRect(x1 - 1, RULER_HEIGHT, 2, h - RULER_HEIGHT)
 }
 
+/** 選択範囲の両端のつまみ（スマホの新しい画面。指でつかむ所。両端の線の下端に丸を描く） */
+export function drawSelectionHandles(c: DrawContext, selection: Range, h: number) {
+  const { g, dark } = c
+  g.fillStyle = dark ? SELECTION_DARK : SELECTION_LIGHT
+  for (const t of [selection.start, selection.end]) {
+    g.beginPath()
+    g.arc(toX(c, t), h - 14, 8, 0, Math.PI * 2)
+    g.fill()
+  }
+}
+
 /** ほかのトラックの波形を、大きな波形の後ろに薄く描く（タイミングを見比べるため。中央線は描かない） */
 export function drawGhostWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }, scale = 1) {
   const { g, width, pal, waveH } = c

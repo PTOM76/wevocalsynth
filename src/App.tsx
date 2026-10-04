@@ -410,6 +410,7 @@ export default function App() {
       showNotes={settings.showNotes}
       showPitchLine={settings.showPitchLine || !settings.showNotes}
       overlayPitch={settings.overlayPitch}
+      touchHandles={mobile && settings.mobileUi === 'new'}
       target={ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null}
       penMode={ed.penMode && editing}
       onDraw={onWaveDraw}
