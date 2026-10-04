@@ -10,6 +10,7 @@ import { isMdxModel, resolveModel } from '../audio/vocalExtract'
 import { backendAllowed } from '../../extractor/src/compat'
 import { visibleAlgorithms } from '../components/AlgorithmMenu'
 import ExtractDiagnose from '../debug/ExtractDiagnose'
+import OutputDeviceRow from './OutputDeviceRow'
 import type { Algorithm } from '../dsp/engine'
 import { t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
@@ -53,6 +54,9 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             help={t('settings.autoRestoreHelp')}
           />
           <Check checked={draft.confirmClose} onChange={(v) => set({ confirmClose: v })} label={t('settings.confirmClose')} help={t('settings.confirmCloseHelp')} />
+        </Group>
+        <Group title={t('settings.groupOutput')}>
+          <OutputDeviceRow value={draft.outputDevice} onChange={(v) => set({ outputDevice: v })} />
         </Group>
         <Group title={t('settings.groupUpdate')}>
           <UpdateSection />

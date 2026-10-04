@@ -138,3 +138,6 @@ App 自体の描き直し（加工のパラメータを App が持つため）�
 - `100dvh` も拡大されて画面からはみ出す。全体の高さは `FULL_HEIGHT`（`100dvh` を倍率で割る）にする
 - `clientX` と `getBoundingClientRect()` は拡大後の大きさ、`offsetWidth` や ResizeObserver の大きさは拡大前の大きさになる。要素の中の位置は `localPoint`（両者の比で直す）で求める
 - Canvas の画素数は `canvasPixelRatio()`（devicePixelRatio × 倍率）で決める。そうしないと拡大したときにぼやける
+
+## 音声の出力先
+設定の「出力先」は、`AudioContext.setSinkId` で変える（wevocal-lib の `outputDevice.ts`）。AudioContext はすべて `startContext` で動かすので、そこで設定の出力先に合わせる。合わせた AudioContext は覚えておき、設定を変えたときに再生中のものにもすぐ反映する。デバイスが見つからなければ既定の出力に戻す。Chrome はマイクの使用を許可するまでデバイス名を返さないので、名前がないときは「出力 1」のように表示し、「名前を表示」で許可を求める（許可を得たらすぐマイクを止める）。

@@ -1,3 +1,4 @@
+import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
 import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, setUiScale, FULL_HEIGHT, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, LevelMeter } from 'pevenmui'
@@ -72,6 +73,7 @@ export default function App() {
   setFastMath(settings.fastMath)
   // 画面の大きさ（文字・入力欄・ボタンなどをまとめて拡大縮小する）
   useEffect(() => setUiScale(settings.uiScale), [settings.uiScale])
+  useEffect(() => setOutputDevice(settings.outputDevice), [settings.outputDevice])
   // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
   const ed = useEditor(settings, updateSettings)
   // 設定のテーマ（既定 / ライト / ダーク）を反映する

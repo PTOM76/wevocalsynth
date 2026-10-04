@@ -27,6 +27,7 @@ const INDEX: Record<Category, MessageKey[]> = {
   project: ['settings.groupProject', 'project.name', 'settings.bpm', 'settings.beatsPerBar', 'settings.beatOffset'],
   general: [
     'settings.groupStartup', 'settings.autoRestore', 'settings.autoRestoreHelp', 'settings.confirmClose', 'settings.confirmCloseHelp',
+    'settings.groupOutput', 'settings.outputDevice', 'settings.outputDeviceHelp',
     'settings.groupUpdate', 'update.check',
   ],
   edit: [

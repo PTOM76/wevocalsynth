@@ -54,6 +54,8 @@ export interface Settings {
   /** 原音（加工前の音声）を持つ。OFF なら加工を適用するたびに、その結果を新しい原音にする（メモリと保存の大きさが減る） */
   /** 画面の大きさ（倍率）。文字・入力欄・ボタンなどをまとめて拡大縮小する（PevenMUI の setUiScale） */
   uiScale: number
+  /** 音声の出力先のデバイス ID（'' は既定の出力） */
+  outputDevice: string
   keepOriginal: boolean
   historyLimit: number
   /** 元に戻す履歴が使うメモリの上限（MB）。超えたら古い段から捨てる */
@@ -156,6 +158,7 @@ export const DEFAULT_SETTINGS: Settings = {
   f0Voicing: 'normal',
   f0SilenceDb: -50,
   uiScale: 1,
+  outputDevice: '',
   keepOriginal: true,
   historyLimit: 50,
   historyMemoryMb: 512,
