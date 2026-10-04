@@ -14,6 +14,8 @@ export type Source = 'edited' | 'original'
 interface Props {
   /** プロジェクト名（押すと変える） */
   fileName: string
+  /** 保存していない変更があるか（名前の後ろに * を付ける） */
+  dirty: boolean
   onRename: () => void
   clip: Clip | null
   duration: number
@@ -52,6 +54,7 @@ function StatusBar(p: Props) {
           sx={{ ...ITEM_SX, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', fontFamily: 'inherit', fontSize: 12, '&:hover': { bgcolor: 'action.hover' } }}
         >
           {p.fileName || '—'}
+          {p.dirty && ' *'}
         </ButtonBase>
       </Tooltip>
       {p.clip && (

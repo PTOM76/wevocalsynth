@@ -18,6 +18,7 @@ interface Actions {
   /** 最近使用したファイル（名前の一覧・開く・一覧を消す） */
   recent: { supported: boolean; names: string[]; open: (i: number) => void; clear: () => void }
   save: () => void
+  saveAs: () => void
   openExport: () => void
   undo: () => void
   redo: () => void
@@ -199,6 +200,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         ...recentMenu,
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
         { label: t('menu.saveProject'), shortcut: a.ctrlS === 'project' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.save },
+        { label: t('menu.saveProjectAs'), disabled: noClip, onClick: a.saveAs },
         { divider: true },
         { label: t('menu.export'), shortcut: a.ctrlS === 'export' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.openExport },
         { divider: true },
@@ -350,6 +352,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         ...recentMenu,
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
         { label: t('menu.saveProject'), disabled: noClip, onClick: a.save },
+        { label: t('menu.saveProjectAs'), disabled: noClip, onClick: a.saveAs },
         { label: t('menu.export'), disabled: noClip, onClick: a.openExport },
       ],
     },

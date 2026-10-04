@@ -16,6 +16,7 @@
   "menu.file": "파일",
   "menu.open": "열기…",
   "menu.saveProject": "프로젝트 저장",
+  "menu.saveProjectAs": "다른 이름으로 저장",
   "menu.export": "오디오 파일 내보내기…",
   "file.openType": "오디오·프로젝트 파일",
   "file.audioType": "오디오 파일",

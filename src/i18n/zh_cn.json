@@ -16,6 +16,7 @@
   "menu.file": "文件",
   "menu.open": "打开…",
   "menu.saveProject": "保存工程",
+  "menu.saveProjectAs": "另存工程",
   "menu.export": "导出音频文件…",
   "file.openType": "音频与项目文件",
   "file.audioType": "音频文件",

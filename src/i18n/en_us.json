@@ -16,6 +16,7 @@
   "menu.file": "File",
   "menu.open": "Open…",
   "menu.saveProject": "Save project",
+  "menu.saveProjectAs": "Save project as",
   "menu.export": "Export audio…",
   "file.openType": "Audio and project files",
   "file.audioType": "Audio file",

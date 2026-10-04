@@ -16,6 +16,7 @@
   "menu.file": "ファイル",
   "menu.open": "開く…",
   "menu.saveProject": "プロジェクトを保存",
+  "menu.saveProjectAs": "名前を付けて保存",
   "menu.export": "音声ファイルを書き出す…",
   "file.openType": "音声とプロジェクトのファイル",
   "file.audioType": "音声ファイル",

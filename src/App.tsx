@@ -135,7 +135,8 @@ export default function App() {
     showPitch: ed.showPitch,
     open: ed.picker.open,
     recent: ed.recent,
-    save: ed.saveProjectFile,
+    save: () => void ed.saveProjectFile(),
+    saveAs: () => void ed.saveProjectFile(true),
     openExport: () => ed.setExportOpen(true),
     undo: ed.history.undo,
     redo: ed.history.redo,
@@ -546,6 +547,7 @@ export default function App() {
             statusBar={
               <StatusBar
                 fileName={ed.fileName}
+                dirty={ed.dirty}
                 onRename={() => setRenamingProject(true)}
                 clip={shown}
                 duration={ed.duration}

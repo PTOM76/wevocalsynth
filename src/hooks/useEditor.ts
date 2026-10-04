@@ -26,7 +26,7 @@ import { useShortcuts } from './useShortcuts'
 import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
 import { isOffloaded, offloadClip, restoreClip, useOffloadVersion } from '../audio/originalStore'
-import { configureFileAccess, initFileAccess, isMobile, isStandalone, rememberLaunched } from 'pevenmui/web'
+import { configureFileAccess, fileRefOf, initFileAccess, isMobile, isStandalone, rememberLaunched, type SavedFile } from 'pevenmui/web'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
@@ -65,6 +65,9 @@ function applyLabel(p: EditParams): string {
   if (p.preserveFormant && p.formantSemitones !== 0) parts.push(`${t('process.formantShift')} ${signed(p.formantSemitones)}`)
   return parts.join('・') || t('common.apply')
 }
+
+/** タイトルバーの名前（index.html の title） */
+const APP_TITLE = typeof document === 'undefined' ? '' : document.title
 
 export function useEditor(settings: Settings, updateSettings: (patch: Partial<Settings>) => void) {
   // テンポの自動解析（ファイルを開いた直後）。openClip から最新の関数を呼べるよう ref にも持つ
@@ -335,6 +338,8 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
           const project = isProjectFile(file) ? await loadProject(file, setProgress) : null
           const clip = project ? null : await decodeFile(file, setProgress)
           if (signal.aborted) return
+          // 選ぶ画面などから開いたプロジェクトは、保存で上書きする
+          projectFileRef.current = project ? (fileRefOf(file) ?? null) : null
           if (project) openClip(project.tracks[project.active].edited, project.fileName, project)
           else if (clip) openClip(clip, file.name, null)
         } catch (e) {
@@ -464,6 +469,8 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     })
 
   // プロジェクトの保存と書き出し
+  const projectFileRef = useRef<SavedFile | null>(null)
+  const [, setSavedTick] = useState(0)
   const { baseName, exportName, saveProjectFile, exportFile } = useOutput({
     fileName,
     named,
@@ -476,7 +483,12 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     task,
     notify: (message) => setToast({ severity: 'success', message }),
     closeExport: () => setExportOpen(false),
-    onSaved: () => (savedTracksRef.current = history.tracks),
+    onSaved: () => {
+      savedTracksRef.current = history.tracks
+      // 名前の * を消すため描き直す
+      setSavedTick((n) => n + 1)
+    },
+    projectFile: projectFileRef,
   })
 
   // 閉じるときの保存確認（自動保存を切っていて、PWA として開いているとき。設定の「全般」）。
@@ -484,7 +496,12 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
   const savedTracksRef = useRef(history.tracks)
   // 開いた直後（元に戻す・やり直す操作がない）は保存済みとみなす
   if (!history.canUndo && !history.canRedo) savedTracksRef.current = history.tracks
-  useLeaveGuard(settings.confirmClose && !settings.autoRestore && isStandalone(), () => history.tracks.length > 0 && history.tracks !== savedTracksRef.current)
+  const dirty = history.tracks.length > 0 && history.tracks !== savedTracksRef.current
+  useLeaveGuard(settings.confirmClose && !settings.autoRestore && isStandalone(), () => dirty)
+  // タイトルバーにもプロジェクト名と、未保存なら * を出す
+  useEffect(() => {
+    document.title = fileName ? `${dirty ? '* ' : ''}${fileName} - ${APP_TITLE}` : APP_TITLE
+  }, [fileName, dirty])
 
   // 通常の再生と試聴は、片方を始めたらもう片方を止める
   // ピッチ曲線の加工と試聴（試聴を始めるときはほかの再生を止める）
@@ -557,8 +574,8 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
       if (!handle) return
       launchedRef.current = true
       void handle.getFile().then((f) => {
+        rememberLaunched(handle, f)
         void loadFileRef.current(f)
-        rememberLaunched(handle)
       })
     })
   }, [])
@@ -624,8 +641,8 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     clearSelection,
     open: () => picker.open(),
     // Ctrl+S はプロジェクト保存か書き出しか（設定）。もう一方は Ctrl+Shift+S
-    save: settings.ctrlS === 'export' ? openExport : saveProjectFile,
-    saveAlt: settings.ctrlS === 'export' ? saveProjectFile : openExport,
+    save: settings.ctrlS === 'export' ? openExport : () => saveProjectFile(),
+    saveAlt: settings.ctrlS === 'export' ? () => saveProjectFile() : openExport,
     exportAudio: openExport,
     pitchShift: showPitch && editing && pitchTools.ready && !busy ? pitchTools.shift : undefined,
     addMarker,
@@ -651,6 +668,6 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, exportFile, exportOpen, setExportOpen, baseName, exportName, picker, recent,
+    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty, exportFile, exportOpen, setExportOpen, baseName, exportName, picker, recent,
   }
 }

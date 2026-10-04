@@ -4,7 +4,7 @@ import { sliceRanges } from '../audio/multiRange'
 import { mixClips } from '../audio/mix'
 import { isAudible, toStoredSettings } from '../audio/tracks'
 import { EXPORT_EXT, exportAudio, type ExportFormat } from 'wevocal-lib'
-import { pickSaveTarget } from 'pevenmui/web'
+import { overwriteTarget, pickSaveTarget, type SavedFile } from 'pevenmui/web'
 import { restoreClip } from '../audio/originalStore'
 import { PROJECT_EXT, saveProject } from '../project/projectFile'
 import type { ExportSettings } from '../components/ExportDialog'
@@ -31,6 +31,8 @@ interface Deps {
   closeExport: () => void
   /** 保存・書き出しが終わったとき（閉じるときの保存確認の基準を更新する） */
   onSaved?: () => void
+  /** 上書き保存するプロジェクトのファイル（開いたとき、保存したときに入れる） */
+  projectFile: { current: SavedFile | null }
 }
 
 /** 書き出す形式ごとの MIME（保存先を選ぶ画面の、ファイルの種類） */
@@ -43,11 +45,18 @@ export function useOutput(d: Deps) {
   // 書き出しの名前の初期値: ファイル名のままなら、元のファイルと区別できるよう _wevocal を付ける
   const exportName = d.named ? baseName : `${baseName}_wevocal`
 
-  /** 全トラック（音声・フェーダー・鳴らし方・重ねる表示）と、選んでいるトラックを .wvsp にして保存する（保存先を先に選ぶ） */
-  const saveProjectFile = async () => {
+  /**
+   * 全トラック（音声・フェーダー・鳴らし方・重ねる表示）と、選んでいるトラックを .wvsp にして保存する。
+   * 開いた、または前に保存したファイルがあれば上書きし、なければ（`asNew` も）保存先を先に選ぶ
+   */
+  const saveProjectFile = async (asNew = false) => {
     if (!history.present) return
-    const target = await pickSaveTarget(`${baseName}${PROJECT_EXT}`, 'project', { description: t('file.projectType'), mime: 'application/octet-stream', ext: PROJECT_EXT }, window, true)
+    const prev = !asNew && d.projectFile.current
+    const target =
+      (prev && (await overwriteTarget(prev, true))) ||
+      (await pickSaveTarget(`${baseName}${PROJECT_EXT}`, 'project', { description: t('file.projectType'), mime: 'application/octet-stream', ext: PROJECT_EXT }, window, true))
     if (!target) return
+    d.projectFile.current = target.file ?? null
     await d.task.run(t('task.saving'), async () => {
       // 退避した原音（メモリの節約）は戻してから保存する
       for (const tr of history.tracks) await restoreClip(tr.original)
