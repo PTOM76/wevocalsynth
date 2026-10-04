@@ -521,6 +521,8 @@ export default function App() {
         showLegacyAlgorithms={settings.showLegacyAlgorithms}
         bpm={bpm}
         rangeSec={selection ? selection.end - selection.start : ed.duration}
+        presets={settings.presets}
+        onPresetsChange={(presets) => updateSettings({ presets })}
       />
     </Box>
   )

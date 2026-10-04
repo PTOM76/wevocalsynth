@@ -168,6 +168,12 @@
 
   "process.title": "가공",
   "process.mode": "처리 모드",
+  "preset.label": "프리셋",
+  "preset.button": "선택…",
+  "preset.save": "현재 설정 저장…",
+  "preset.remove": "삭제",
+  "preset.empty": "저장된 프리셋이 없습니다",
+  "preset.defaultName": "프리셋 {n}",
   "process.autoDetected": "자동 판정: {mode}",
   "process.vocalHint": "목소리 등 단음용",
   "process.instrumentHint": "화음, 타악기용",

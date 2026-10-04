@@ -1,3 +1,4 @@
+import PresetMenu, { type Preset } from './PresetMenu'
 import { useState } from 'react'
 import {
   Box,
@@ -61,6 +62,9 @@ interface Props {
   /** 拍数に合わせるときの基準: プロジェクトの BPM と、範囲（最後に選んだもの、なければ全体）の長さ（秒） */
   bpm: number
   rangeSec: number
+  /** 加工のプリセット */
+  presets: Preset[]
+  onPresetsChange: (presets: Preset[]) => void
 }
 
 const MODE_HINT: Record<Mode, MessageKey> = {
@@ -118,6 +122,10 @@ function EditPanel(p: Props) {
           ))}
         </ToggleButtonGroup>
         <AlgorithmMenu value={params.algorithm} defaults={[p.modes.vocal.algorithm, p.modes.instrument.algorithm]} showLegacy={p.showLegacyAlgorithms} onChange={(algorithm) => set({ algorithm, preserveFormant: !isInstrumentAlgorithm(algorithm) })} />
+      </PropRow>
+
+      <PropRow label={t('preset.label')}>
+        <PresetMenu params={params} presets={p.presets} onApply={onChange} onChange={p.onPresetsChange} disabled={busy} />
       </PropRow>
 
       <PitchControl semitones={semitones} onChange={(v) => set({ semitones: v })} currentMidi={p.currentMidi} />

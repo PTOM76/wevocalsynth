@@ -168,6 +168,12 @@
 
   "process.title": "Process",
   "process.mode": "Processing mode",
+  "preset.label": "Presets",
+  "preset.button": "Choose…",
+  "preset.save": "Save current settings…",
+  "preset.remove": "Delete",
+  "preset.empty": "No saved presets",
+  "preset.defaultName": "Preset {n}",
   "process.autoDetected": "Detected: {mode}",
   "process.vocalHint": "For voice and other single notes",
   "process.instrumentHint": "For chords and percussion",

@@ -168,6 +168,12 @@
 
   "process.title": "加工",
   "process.mode": "処理モード",
+  "preset.label": "プリセット",
+  "preset.button": "選ぶ…",
+  "preset.save": "今の設定を保存…",
+  "preset.remove": "削除",
+  "preset.empty": "保存したプリセットはありません",
+  "preset.defaultName": "プリセット {n}",
   "process.autoDetected": "自動判定: {mode}",
   "process.vocalHint": "声など単音向け",
   "process.instrumentHint": "和音、打楽器向け",

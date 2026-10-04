@@ -1,3 +1,4 @@
+import type { Preset } from '../components/PresetMenu'
 import { useCallback, useState } from 'react'
 import type { LangSetting } from '../i18n/i18n'
 import type { Algorithm, F0Params } from '../dsp/engine'
@@ -125,6 +126,8 @@ export interface Settings {
   /** 書き出し（フォルダーへの保存、外へのドラッグも）の仕上げ: ノーマライズと、両端のフェードの長さ（ms、0 でなし） */
   exportNormalize: boolean
   exportFadeMs: number
+  /** 加工のプリセット（components/PresetMenu.tsx） */
+  presets: Preset[]
   /** ホイールでの拡大縮小の割り当て */
   wheelZoom: WheelZoom
   /** 開く・保存するフォルダを用途ごとに覚える（Chrome・Edge。project/fileAccess.ts） */
@@ -181,6 +184,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showMaterialButton: false,
   exportNormalize: false,
   exportFadeMs: 0,
+  presets: [],
   wheelZoom: 'ctrl',
   rememberFolder: true,
   startFolder: 'downloads',

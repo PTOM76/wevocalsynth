@@ -168,6 +168,12 @@
 
   "process.title": "处理",
   "process.mode": "处理模式",
+  "preset.label": "预设",
+  "preset.button": "选择…",
+  "preset.save": "保存当前设置…",
+  "preset.remove": "删除",
+  "preset.empty": "没有已保存的预设",
+  "preset.defaultName": "预设 {n}",
   "process.autoDetected": "自动判断：{mode}",
   "process.vocalHint": "适合人声等单音",
   "process.instrumentHint": "适合和弦、打击乐",

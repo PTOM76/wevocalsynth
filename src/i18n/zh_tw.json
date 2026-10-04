@@ -168,6 +168,12 @@
 
   "process.title": "處理",
   "process.mode": "處理模式",
+  "preset.label": "預設集",
+  "preset.button": "選擇…",
+  "preset.save": "儲存目前設定…",
+  "preset.remove": "刪除",
+  "preset.empty": "沒有已儲存的預設集",
+  "preset.defaultName": "預設集 {n}",
   "process.autoDetected": "自動判斷：{mode}",
   "process.vocalHint": "適合人聲等單音",
   "process.instrumentHint": "適合和弦、打擊樂",
