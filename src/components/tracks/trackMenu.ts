@@ -13,6 +13,7 @@ export interface TrackActions {
   addEmpty: () => void
   rename: (id: string) => void
   splitStems: (id: string) => void
+  splitLeadStems: (id: string) => void
   /** そのトラックだけを書き出す（書き出しのダイアログを、対象を「選んでいるトラック」にして開く） */
   exportTrack: (id: string) => void
   mergeDown: (id: string) => void
@@ -41,6 +42,7 @@ export function trackMenuEntries(id: string, a: TrackActions): MenuEntry[] {
     { label: t('track.duplicate'), disabled: a.busy, onClick: () => a.duplicate(id) },
     { label: t('track.addEmpty'), disabled: a.busy, onClick: a.addEmpty },
     { label: t('extract.splitMenu'), disabled: a.busy, onClick: () => a.splitStems(id) },
+    { label: t('extract.splitLeadMenu'), disabled: a.busy, onClick: () => a.splitLeadStems(id) },
     { label: t('track.export'), disabled: a.busy, onClick: () => a.exportTrack(id) },
     { divider: true },
     { label: t('track.mergeDown'), disabled: a.busy || i + 1 >= a.tracks.length, onClick: () => a.mergeDown(id) },

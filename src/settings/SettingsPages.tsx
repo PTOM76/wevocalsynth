@@ -6,6 +6,7 @@ import DataSection from './DataSection'
 import AddonSection from './AddonSection'
 import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
+import { EXTRACT_MODELS } from '../audio/vocalExtract'
 import { isMdxModel, resolveModel } from '../audio/vocalExtract'
 import { backendAllowed } from '../../extractor/src/compat'
 import { visibleAlgorithms } from '../components/AlgorithmMenu'
@@ -232,7 +233,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             <Choice<VocalModel>
               value={draft.vocalModel}
               onChange={(v) => set({ vocalModel: v })}
-              options={(Object.keys(VOCAL_MODELS) as VocalModel[]).map((m): [VocalModel, string] => [m, t(VOCAL_MODELS[m].label)])}
+              options={EXTRACT_MODELS.map((m): [VocalModel, string] => [m, t(VOCAL_MODELS[m].label)])}
             />
           </Row>
           <Check checked={draft.vocalFreshExtract} onChange={(v) => set({ vocalFreshExtract: v })} label={t('settings.vocalFresh')} help={t('settings.vocalFreshHelp')} />

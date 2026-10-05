@@ -6,7 +6,7 @@ import type { Track } from '../audio/tracks'
 import type { Project } from '../project/projectFile'
 import type { JobKind } from '../progress/jobs'
 import { t } from '../i18n/i18n'
-import { extractRanges, isOutOfMemory, planBackend, resolveModel, splitBoth, VOCAL_MODELS, type ExtractOptions, type ExtractStem } from '../audio/vocalExtract'
+import { extractRanges, isOutOfMemory, LEAD_MODEL, planBackend, resolveModel, splitBoth, splitLead, VOCAL_MODELS, type ExtractOptions, type ExtractStem } from '../audio/vocalExtract'
 import { backendAllowed } from '../../extractor/src/compat'
 import { scheduleCleanExtract, type CleanJobBody } from '../project/cleanExtract'
 import { clearExtracting, crashedDuringExtract, markExtracting } from '../project/extractGuard'
@@ -58,7 +58,8 @@ export function useVocalExtract(d: Deps) {
   // GPU で処理できなかったら、CPU で続けるかを尋ねる（CPU では MDX-Net が曲の長さの約 10 倍かかる）
   const confirmCpu = (reason: string) => confirm({ message: t('extract.gpuFallback', { reason }), okLabel: t('extract.gpuFallbackOk') })
   // この端末と非互換のモデルなら、代わりのモデルで抽出する（extractor/src/compat.ts。設定は変えない）
-  const model = resolveModel(d.model, d.gpu).model
+  // 主旋律モデルが設定に残っていたら（前の版で選べた）、高品質モデル（ボーカル向け）にする
+  const model = resolveModel(VOCAL_MODELS[d.model].lead ? 'voc-ft' : d.model, d.gpu).model
   const base = (): ExtractOptions => ({ model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb })
   /** 計算の種類を決め、モデルとそれに要る実行環境（ONNX Runtime の wasm）を導入済みにする。導入しなければ null */
   const prepareOptions = async (): Promise<ExtractOptions | null> => {
@@ -166,5 +167,39 @@ export function useVocalExtract(d: Deps) {
     if (failure) await onFail(failure, { mode: 'split', vocalsName, accompanimentName }, id, options)
   }
 
-  return { extract, splitStems, dialog }
+  /** トラック `id`（既定は選んでいるもの）全体を、主旋律、ハモリ、伴奏の 3 つのトラックに分ける */
+  const splitLeadStems = async (id = d.activeId) => {
+    const track = d.tracks.find((tr) => tr.id === id)
+    if (!track) return
+    const edited = track.clip
+    const options = await prepareOptions()
+    if (!options) return
+    // 主旋律モデルも導入済みにする
+    const plan = await planBackend({ ...base(), model: LEAD_MODEL })
+    if (!(await d.ensure(VOCAL_MODELS[LEAD_MODEL].addon, [plan.runtimeAddon]))) return
+    await d.prepare()
+    let done = false
+    markExtracting()
+    await d.run(t('task.splitLead'), async (signal) => {
+      const r = await splitLead(edited, options, d.setProgress, signal, confirmCpu)
+      if (signal.aborted) return
+      const sr = edited.sampleRate
+      d.split(
+        [
+          { name: t('track.leadName', { name: track.name }), clip: { sampleRate: sr, channels: r.lead } },
+          { name: t('track.harmonyName', { name: track.name }), clip: { sampleRate: sr, channels: r.harmony } },
+          { name: t('track.accompanimentName', { name: track.name }), clip: { sampleRate: sr, channels: r.accompaniment } },
+        ],
+        t('extract.splitLead'),
+        id,
+      )
+      done = true
+      clearExtracting(true)
+      d.onVocals()
+      d.notify(t('toast.extracted'))
+    }, 'extract')
+    if (!done) clearExtracting()
+  }
+
+  return { extract, splitStems, splitLeadStems, dialog }
 }

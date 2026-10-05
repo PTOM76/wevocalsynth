@@ -60,6 +60,7 @@ interface Actions {
   extract: (stem: 'vocals' | 'accompaniment') => void
   /** 選んでいるトラックを、ボーカルと伴奏の2トラックに分ける */
   splitStems: () => void
+  splitLeadStems: () => void
   /** 和音を 2 つの声に分ける（試作。設定の開発者向けでオンのときだけ渡す） */
   splitVoices?: (by: 'pitch' | 'volume') => void
   /** トラックの複製と、ファイルをトラックとして追加 */
@@ -190,6 +191,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('extract.vocalsMenu'), disabled: noClip, onClick: () => a.extract('vocals') },
     { label: t('extract.accompanimentMenu'), disabled: noClip, onClick: () => a.extract('accompaniment') },
     { label: t('extract.splitMenu'), disabled: noClip, onClick: a.splitStems },
+    { label: t('extract.splitLeadMenu'), disabled: noClip, onClick: a.splitLeadStems },
     ...(a.splitVoices
       ? [
           { divider: true } as const,

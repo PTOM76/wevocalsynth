@@ -23,14 +23,21 @@ export type ExtractStem = ExtractorModule.Stem
  * モデルの追加機能 ID と、表示する名前。端末との互換性（WebGPU を使えない、別のモデルに替える）は
  * extractor/src/compat.ts にまとめる（モデルを足したら、ここと互換性の表に足す）
  */
-export const VOCAL_MODELS: Record<VocalModel, { addon: string; label: MessageKey; mdx?: MdxModelId }> = {
+export const VOCAL_MODELS: Record<VocalModel, { addon: string; label: MessageKey; mdx?: MdxModelId; lead?: true }> = {
   fp16: { addon: 'spleeter-fp16', label: 'addon.modelLight' },
   int8: { addon: 'spleeter-int8', label: 'addon.modelStandard' },
   fp32: { addon: 'spleeter-fp32', label: 'addon.modelPrecise' },
   'voc-ft': { addon: 'uvr-mdx-voc-ft', label: 'addon.modelVocalHq', mdx: 'voc-ft' },
   'inst-hq4': { addon: 'uvr-mdx-inst-hq4', label: 'addon.modelInstHq', mdx: 'inst-hq4' },
-  kara2: { addon: 'uvr-mdx-kara2', label: 'addon.modelLead', mdx: 'kara2' },
+  // 主旋律とハモリを分ける（`splitLead` で、取り出したボーカルに掛ける）。抽出のモデルとしては選べない
+  kara2: { addon: 'uvr-mdx-kara2', label: 'addon.modelLead', mdx: 'kara2', lead: true },
 }
+
+/** 主旋律とハモリを分けるモデル */
+export const LEAD_MODEL: VocalModel = 'kara2'
+
+/** 抽出のモデルとして選べるもの（主旋律モデルは除く） */
+export const EXTRACT_MODELS = (Object.keys(VOCAL_MODELS) as VocalModel[]).filter((m) => !VOCAL_MODELS[m].lead)
 
 /** UVR の MDX-Net か（CPU では曲の長さの約 10 倍かかる。extractor/docs/MODELS.md） */
 export const isMdxModel = (model: VocalModel) => !!VOCAL_MODELS[model].mdx
@@ -206,4 +213,16 @@ export function splitBoth(clip: Clip, o: ExtractOptions, onProgress: (p: number)
     (extractor) => extractor.separateBoth(clip.channels, clip.sampleRate, { highBand: o.keepHighBand ? 'edge' : 'zeros', onProgress }),
     confirmCpu,
   )
+}
+
+/**
+ * `clip` 全体を、主旋律、ハモリ、伴奏に分ける。`o` のモデルでボーカルと伴奏に分け、
+ * そのボーカルを主旋律モデル（UVR Karaoke 2。主旋律以外を取り出す）で主旋律とハモリに分ける（推論は 2 回）
+ */
+export async function splitLead(clip: Clip, o: ExtractOptions, onProgress: (p: number) => void, signal?: AbortSignal, confirmCpu?: ConfirmCpu) {
+  const first = await splitBoth(clip, o, (p) => onProgress(p / 2), signal, confirmCpu)
+  if (signal?.aborted) throw new DOMException('cancelled', 'AbortError')
+  const lead: ExtractOptions = { ...o, model: LEAD_MODEL, backend: undefined }
+  const second = await splitBoth({ sampleRate: clip.sampleRate, channels: first.vocals }, lead, (p) => onProgress(0.5 + p / 2), signal, confirmCpu)
+  return { lead: second.vocals, harmony: second.accompaniment, accompaniment: first.accompaniment }
 }
