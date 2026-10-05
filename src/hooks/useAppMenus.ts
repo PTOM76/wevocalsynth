@@ -208,6 +208,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { divider: true },
     { label: t('sampler.menu'), disabled: noClip, onClick: a.sampler },
     { label: t('synth.menu'), disabled: a.busy, onClick: a.synth },
+    { label: t('record.menu'), disabled: a.busy || !a.record, onClick: () => a.record?.() },
   ]
   // 音量の編集（選択範囲、なければ全体）。メニューバーの「編集」と右クリックで同じもの
   const volumeMenu: MenuEntry = {
@@ -245,7 +246,6 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.open'), shortcut: key('open'), disabled: a.busy, onClick: a.open },
         ...recentMenu,
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
-        { label: t('record.menu'), disabled: a.busy || !a.record, onClick: () => a.record?.() },
         { label: t('menu.saveProject'), shortcut: key('saveProject'), disabled: noClip, onClick: a.save },
         { label: t('menu.saveProjectAs'), disabled: noClip, onClick: a.saveAs },
         { divider: true },

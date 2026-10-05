@@ -728,7 +728,7 @@
   "record.start": "녹음",
   "record.stop": "정지",
   "record.retake": "다시 녹음",
-  "record.use": "사용",
+  "record.use": "추가",
   "record.discard": "버리기",
   "record.failed": "녹음을 시작할 수 없습니다 ({error})",
   "record.trackName": "녹음 {n}",

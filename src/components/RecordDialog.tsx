@@ -101,16 +101,16 @@ export default function RecordDialog(p: Props) {
           {t(clip ? 'record.discard' : 'common.cancel')}
         </Button>
         {rec ? (
-          <Button size="small" variant="contained" color="error" onClick={() => void stop()}>
+          <Button size="small" onClick={() => void stop()}>
             {t('record.stop')}
           </Button>
         ) : (
-          <Button size="small" variant={clip ? 'text' : 'contained'} color="error" onClick={() => void start()}>
+          <Button size="small" onClick={() => void start()}>
             {t(clip ? 'record.retake' : 'record.start')}
           </Button>
         )}
         {clip && (
-          <Button size="small" variant="contained" onClick={() => (p.onUse(clip), p.onClose())}>
+          <Button size="small" onClick={() => (p.onUse(clip), p.onClose())}>
             {t('record.use')}
           </Button>
         )}
