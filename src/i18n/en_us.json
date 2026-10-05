@@ -760,12 +760,6 @@
   "key.pitchDownAlt": "Lower pitch (Shift step)",
   "key.apply": "Apply processing",
   "key.toNewTrack": "Selection to new track",
-  "settings.keyPress": "Press a key",
-  "settings.keyNone": "None",
-  "settings.keyClear": "Remove key",
-  "settings.keyDefault": "Reset",
-  "settings.keyResetAll": "Reset all to defaults",
-  "settings.keyTaken": "Removed {key} from \"{names}\"",
   "settings.ctrlSProject": "Save project (Ctrl+Shift+S exports)",
   "settings.ctrlSExport": "Export audio (Ctrl+Shift+S saves project)",
 

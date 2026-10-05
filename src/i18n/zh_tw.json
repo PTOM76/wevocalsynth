@@ -760,12 +760,6 @@
   "key.pitchDownAlt": "降低音高（Shift 的步長）",
   "key.apply": "套用處理",
   "key.toNewTrack": "將選取範圍移到新音軌",
-  "settings.keyPress": "請按下按鍵",
-  "settings.keyNone": "無",
-  "settings.keyClear": "移除按鍵",
-  "settings.keyDefault": "恢復預設",
-  "settings.keyResetAll": "全部恢復預設",
-  "settings.keyTaken": "已從「{names}」移除 {key}",
   "settings.ctrlSProject": "儲存專案（Ctrl+Shift+S 匯出）",
   "settings.ctrlSExport": "匯出音訊檔（Ctrl+Shift+S 儲存）",
 

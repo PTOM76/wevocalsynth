@@ -760,12 +760,6 @@
   "key.pitchDownAlt": "ピッチを下げる（Shift の動き）",
   "key.apply": "加工を適用",
   "key.toNewTrack": "選択範囲を新しいトラックへ",
-  "settings.keyPress": "キーを押してください",
-  "settings.keyNone": "なし",
-  "settings.keyClear": "キーを外す",
-  "settings.keyDefault": "既定に戻す",
-  "settings.keyResetAll": "すべて既定に戻す",
-  "settings.keyTaken": "{key} を「{names}」から外しました",
   "settings.ctrlSProject": "プロジェクトを保存（Ctrl+Shift+S で書き出し）",
   "settings.ctrlSExport": "音声ファイルを書き出す（Ctrl+Shift+S で保存）",
 

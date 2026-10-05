@@ -42,7 +42,7 @@ const INDEX: Record<Category, MessageKey[]> = {
   ],
   keys: [
     'settings.groupMouse', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel',
-    'settings.groupShortcuts', 'settings.ctrlS', 'settings.keyResetAll', ...ACTIONS.map((a) => a.label),
+    'settings.groupShortcuts', 'settings.ctrlS', ...ACTIONS.map((a) => a.label),
   ],
   file: ['settings.groupFile', 'settings.rememberFolder', 'settings.rememberFolderHelp', 'settings.startFolder', 'settings.recentFiles', 'settings.recentFilesHelp'],
   display: ['settings.groupAppearance', 'settings.theme', 'settings.uiScale', 'settings.uiScaleHelp', 'settings.mobileUi', 'settings.mobileUiHelp', 'settings.touchSelect', 'settings.language', 'settings.showMeters', 'settings.showMetersHelp', 'menu.minimapPlayhead', 'settings.minimapPlayheadHelp', 'settings.liveSelection', 'settings.liveSelectionHelp'],

@@ -1,7 +1,7 @@
-import { ShortcutsDialog as PevenShortcutsDialog } from 'pevenmui'
+import { ShortcutsDialog as PevenShortcutsDialog, keymapRows } from 'pevenmui'
 import { useT, type MessageKey } from '../i18n/i18n'
 import type { WheelZoom } from '../settings/settings'
-import { ACTIONS, comboLabel, type Keymap } from '../settings/keymap'
+import { ACTIONS, type Keymap } from '../settings/keymap'
 
 /** マウスなど、割り当てを変えられない操作: [キー（訳文キーまたはキー名）, 説明の訳文キー] */
 const POINTER: [string | MessageKey, MessageKey][] = [
@@ -19,7 +19,7 @@ export default function ShortcutsDialog({ open, onClose, keymap, wheelZoom = 'ct
   const t = useT()
   // 'shortcuts.' で始まるものは訳文キー、それ以外はキー名そのもの
   const keyLabel = (k: string) => (k.startsWith('shortcuts.') ? t(k as MessageKey) : k)
-  const keys: [string, string][] = ACTIONS.filter((a) => keymap[a.id].length).map((a) => [keymap[a.id].map(comboLabel).join(' / '), t(a.label)])
+  const keys = keymapRows(ACTIONS.map((a) => ({ id: a.id, label: t(a.label) })), keymap)
   return (
     <PevenShortcutsDialog
       open={open}

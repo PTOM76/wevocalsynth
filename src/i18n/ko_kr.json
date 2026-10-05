@@ -760,12 +760,6 @@
   "key.pitchDownAlt": "피치 내리기 (Shift 동작)",
   "key.apply": "가공 적용",
   "key.toNewTrack": "선택 범위를 새 트랙으로",
-  "settings.keyPress": "키를 누르세요",
-  "settings.keyNone": "없음",
-  "settings.keyClear": "키 해제",
-  "settings.keyDefault": "기본값으로",
-  "settings.keyResetAll": "모두 기본값으로",
-  "settings.keyTaken": "{key}를 \"{names}\"에서 해제했습니다",
   "settings.ctrlSProject": "프로젝트 저장 (Ctrl+Shift+S로 내보내기)",
   "settings.ctrlSExport": "오디오 파일 내보내기 (Ctrl+Shift+S로 저장)",
 

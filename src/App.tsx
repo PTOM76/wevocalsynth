@@ -10,7 +10,7 @@ import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, Button, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, setUiScale, FULL_HEIGHT, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, LevelMeter } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, setUiScale, FULL_HEIGHT, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, LevelMeter, useShortcuts } from 'pevenmui'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
 import { useAppMenus } from './hooks/useAppMenus'
@@ -54,7 +54,6 @@ import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
 import { setFastMath } from './dsp/engine'
 import { checkForUpdate, promptUpdate } from 'pevenmui/pwa'
-import { useShortcuts } from './hooks/useShortcuts'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 /** 選択範囲なし（描画のたびに新しい空配列を作らない） */

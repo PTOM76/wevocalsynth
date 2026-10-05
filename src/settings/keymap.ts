@@ -1,10 +1,12 @@
+import { resolveKeymap as resolve, type Keymap as PevenKeymap, type KeymapOverrides as PevenOverrides } from 'pevenmui'
 import type { MessageKey } from '../i18n/i18n'
 import type { CtrlSAction } from './settings'
 
 /**
- * キーボードショートカットの割り当て。操作ごとに既定のキーを持ち、設定で変えたものだけを `keymap` に保存する。
- * キーは `e.code`（配列によらない位置）に、修飾キーを Ctrl（Mac の Cmd も）、Alt、Shift の順に `+` でつないだもの（`Ctrl+Shift+KeyS`）
+ * Synth の操作の一覧と既定のキー。割り当ての仕組み（キーの読み取り、表示の名前、設定の画面、keydown）は PevenMUI の keymap。
+ * 設定で変えたものだけを `keymap` に保存する
  */
+export { comboOf, comboLabel, actionOf, keyLabelOf } from 'pevenmui'
 
 export type ActionId =
   | 'playPause' | 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'remove' | 'selectAll' | 'clearSelection'
@@ -59,8 +61,8 @@ export const ACTIONS: ActionInfo[] = [
 ]
 
 /** 設定に保存する、既定から変えた割り当て（空の配列はキーなし） */
-export type KeymapOverrides = Partial<Record<ActionId, string[]>>
-export type Keymap = Record<ActionId, string[]>
+export type KeymapOverrides = PevenOverrides<ActionId>
+export type Keymap = PevenKeymap<ActionId>
 
 /** 既定のキー。`ctrlS` が書き出しなら、Ctrl+S と Ctrl+Shift+S を入れ替える */
 export function defaultKeys(id: ActionId, ctrlS: CtrlSAction): string[] {
@@ -71,35 +73,4 @@ export function defaultKeys(id: ActionId, ctrlS: CtrlSAction): string[] {
   return keys
 }
 
-export function resolveKeymap(overrides: KeymapOverrides, ctrlS: CtrlSAction): Keymap {
-  return Object.fromEntries(ACTIONS.map((a) => [a.id, overrides[a.id] ?? defaultKeys(a.id, ctrlS)])) as Keymap
-}
-
-const MODIFIER_CODES = new Set(['ControlLeft', 'ControlRight', 'MetaLeft', 'MetaRight', 'AltLeft', 'AltRight', 'ShiftLeft', 'ShiftRight'])
-
-/** 押したキーの組み合わせ。修飾キーだけを押したときは null */
-export function comboOf(e: KeyboardEvent | React.KeyboardEvent): string | null {
-  if (MODIFIER_CODES.has(e.code) || !e.code) return null
-  return [e.ctrlKey || e.metaKey ? 'Ctrl' : '', e.altKey ? 'Alt' : '', e.shiftKey ? 'Shift' : '', e.code].filter(Boolean).join('+')
-}
-
-/** 組み合わせに割り当てた操作 */
-export function actionOf(keymap: Keymap, combo: string): ActionId | undefined {
-  return ACTIONS.find((a) => keymap[a.id].includes(combo))?.id
-}
-
-const KEY_NAMES: Record<string, string> = {
-  ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Escape: 'Esc', Space: 'Space', Backquote: '`', Minus: '-', Equal: '=',
-  BracketLeft: '[', BracketRight: ']', Backslash: '\\', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', IntlRo: '\\', IntlYen: '¥',
-}
-
-/** 表示する名前（`Ctrl+Shift+KeyS` → `Ctrl+Shift+S`） */
-export function comboLabel(combo: string): string {
-  return combo
-    .split('+')
-    .map((p) => KEY_NAMES[p] ?? p.replace(/^Key|^Digit|^Numpad(?=\d)/, ''))
-    .join('+')
-}
-
-/** 操作のキーの表示（最初のもの。なければ undefined。メニューの右に出す） */
-export const keyLabelOf = (keymap: Keymap, id: ActionId) => (keymap[id][0] ? comboLabel(keymap[id][0]) : undefined)
+export const resolveKeymap = (overrides: KeymapOverrides, ctrlS: CtrlSAction): Keymap => resolve(ACTIONS, overrides, (id) => defaultKeys(id, ctrlS))
