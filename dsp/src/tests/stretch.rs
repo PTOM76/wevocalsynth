@@ -293,3 +293,40 @@ fn vocal_stretch_periodicity() {
     assert!(score(Algorithm::Psola2) >= score(Algorithm::Psola) - 0.005, "{scores:?}");
     assert!(score(Algorithm::Wsola2) >= score(Algorithm::Wsola) - 0.005, "{scores:?}");
 }
+
+/// 曲全体のピッチ変換（2 分、48kHz、ステレオ、+5 半音、長さはそのまま）の方式ごとの時間。GPU で速くする所を決めるため（memo の WebGPU の設計）
+/// `cargo test --release -- --ignored --nocapture bench_pitch_two_minutes`
+#[test]
+#[ignore]
+fn bench_pitch_two_minutes() {
+    let sr = 48000.0;
+    let x = vibrato_vowel(sr, 120.0, 220.0);
+    for algo in ALGOS {
+        for formant in [Formant::Follow, Formant::Shift(0.0)] {
+            let t = std::time::Instant::now();
+            crate::process_with_progress(&[&x, &x], sr, 5.0, 1.0, algo, formant, &mut |_| {});
+            println!("{algo:?} {}: {:?}", if matches!(formant, Formant::Follow) { "formant follow" } else { "formant keep" }, t.elapsed());
+        }
+    }
+}
+
+/// HPSS のマスクの計算（時間方向と周波数方向の 17 点メディアン）だけの時間。GPU と比べるため（2 分のステレオと同じ 11,254 フレーム × 1025 ビン）
+/// `cargo test --release -- --ignored --nocapture bench_hpss_median`
+#[test]
+#[ignore]
+fn bench_hpss_median() {
+    let (frames, bins) = (11254usize, 1025usize);
+    let mag: Vec<f32> = (0..frames * bins).map(|i| ((i * 2654435761) % 1000) as f32).collect();
+    let mut buf = Vec::with_capacity(17);
+    let t = std::time::Instant::now();
+    let mut count = 0usize;
+    for f in 0..frames {
+        for b in 0..bins {
+            let at = |ff: i64, bb: i64| if ff >= 0 && (ff as usize) < frames && bb >= 0 && (bb as usize) < bins { mag[ff as usize * bins + bb as usize] } else { 0.0 };
+            let h = wevocal_lib::math::median((-8..=8).map(|k| at(f as i64 + k, b as i64)), &mut buf);
+            let p = wevocal_lib::math::median((-8..=8).map(|k| at(f as i64, b as i64 + k)), &mut buf);
+            count += (h >= p) as usize;
+        }
+    }
+    println!("hpss median {frames}x{bins}: {:?} ({count})", t.elapsed());
+}
