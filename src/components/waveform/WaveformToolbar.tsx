@@ -69,6 +69,8 @@ interface Props {
   onFollowChange: (v: boolean) => void
   showSpectrogram: boolean
   onShowSpectrogramChange: (show: boolean) => void
+  /** スペクトログラムの追加機能を導入済みか。未導入ならボタンを出さない（メニューからは導入の案内が出る） */
+  spectrogramAvailable: boolean
   showPitch: boolean
   /** 波形の帯を出すか。ほかに出ている帯（スペクトログラム・ピッチ）が無ければ隠せない */
   showWave: boolean
@@ -165,14 +167,16 @@ function WaveformToolbar(p: Props) {
         disabled={off || (p.showWave && !p.showPitch && !p.showSpectrogram && !p.showGain && !p.formant.show)}
         onClick={() => p.onShowWaveChange(!p.showWave)}
       />
-      <SmallButton
-        title={t('wave.spectrogram')}
-        label={t('wave.spectrogram')}
-        icon={faChartArea}
-        pressed={p.showSpectrogram}
-        disabled={off}
-        onClick={() => p.onShowSpectrogramChange(!p.showSpectrogram)}
-      />
+      {p.spectrogramAvailable && (
+        <SmallButton
+          title={t('wave.spectrogram')}
+          label={t('wave.spectrogram')}
+          icon={faChartArea}
+          pressed={p.showSpectrogram}
+          disabled={off}
+          onClick={() => p.onShowSpectrogramChange(!p.showSpectrogram)}
+        />
+      )}
       <SmallButton
         title={t('wave.pitch')}
         label={t('wave.pitch')}

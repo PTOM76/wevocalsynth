@@ -504,6 +504,7 @@
   "addon.runtimeGpu": "ボーカル抽出の実行環境（GPU）",
   "addon.runtimeCpu": "ボーカル抽出の実行環境（CPU）",
   "addon.vocalExtractor": "ボーカル抽出の実行環境",
+  "addon.analyzer": "解析（スペクトログラム）",
   "addon.spleeterFp16": "ボーカル抽出の軽量モデル（Spleeter fp16）",
   "addon.spleeterInt8": "ボーカル抽出の標準モデル（Spleeter int8）",
   "addon.spleeterFp32": "ボーカル抽出の高精度モデル（Spleeter fp32）",

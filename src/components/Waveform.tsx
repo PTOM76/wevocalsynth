@@ -12,7 +12,8 @@ import type { Marker } from '../project/projectFile'
 import { useEdgeScroll, useRangeEdges, useTouchGestures, type EdgeDrag, type useWaveformView, Minimap } from 'wevocal-lib/react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
-import { F0_HOP_SEC, type Spectrogram } from '../dsp/engine'
+import { F0_HOP_SEC } from '../dsp/engine'
+import type { Spectrogram } from '../audio/spectrogram'
 import {
   RULER_HEIGHT,
   laneHeights,

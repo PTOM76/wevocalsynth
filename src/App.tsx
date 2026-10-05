@@ -478,6 +478,7 @@ export default function App() {
       onFollowChange={(v) => updateSettings({ followPlayhead: v })}
       showSpectrogram={ed.showSpec}
       onShowSpectrogramChange={ed.setShowSpec}
+      spectrogramAvailable={ed.analyzerInstalled}
       showPitch={ed.showPitch}
       onShowPitchChange={ed.setShowPitch}
       showWave={ed.showWave}

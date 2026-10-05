@@ -504,6 +504,7 @@
   "addon.runtimeGpu": "보컬 추출 실행 환경 (GPU)",
   "addon.runtimeCpu": "보컬 추출 실행 환경 (CPU)",
   "addon.vocalExtractor": "보컬 추출 실행 환경",
+  "addon.analyzer": "분석 (스펙트로그램)",
   "addon.spleeterFp16": "보컬 추출 경량 모델 (Spleeter fp16)",
   "addon.spleeterInt8": "보컬 추출 표준 모델 (Spleeter int8)",
   "addon.spleeterFp32": "보컬 추출 고정밀 모델 (Spleeter fp32)",

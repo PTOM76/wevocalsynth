@@ -10,7 +10,8 @@ import { placeOnNotes } from '../audio/sampler'
 import type { SamplerOptions } from '../components/SamplerDialog'
 import { usePlayer } from '../audio/usePlayer'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
-import { analyzeF0, analyzeSpectrogram, processAudio } from '../dsp/engine'
+import { analyzeF0, processAudio } from '../dsp/engine'
+import { analyzeSpectrogram } from '../audio/spectrogram'
 import { detectMode, modeSettings, type Mode } from '../audio/detectMode'
 import type { EditParams } from '../components/EditPanel'
 import type { Source } from '../components/StatusBar'
@@ -35,6 +36,7 @@ import { useVocalExtract } from './useVocalExtract'
 import { useVoiceSplit } from './useVoiceSplit'
 import { setGpuLostHandler } from '../audio/vocalExtract'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
+import { installedManifest } from '../addons/addons'
 import { useTracks } from './useTracks'
 import { useMarkers } from './useMarkers'
 import { usePitchClipboard } from './usePitchClipboard'
@@ -193,7 +195,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
   // 強制表示・非表示の指定を反映したピッチ。表示・ピッチの加工・適用のすべてでこれを使う
   const voicing = usePitchVoicing(shown, rawPitch)
   const pitch = voicing.pitch
-  const spec = useClipAnalysis(showSpec, shown, (c) => analyzeSpectrogram(c.channels, c.sampleRate), fail('toast.specFailed'), '', t('job.spec'))
+  const spec = useClipAnalysis(showSpec, shown, analyzeSpectrogram, fail('toast.specFailed'), '', t('job.spec'))
 
   // 加工・音量編集の対象（選択範囲、なければ全体）
   const editRanges: Range[] = edited ? (selections.length ? selections : [{ start: 0, end: clipDuration(edited) }]) : []
@@ -232,8 +234,17 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     return () => setGpuLostHandler(undefined)
   }, [])
 
-  // ボーカル抽出（追加機能）。未導入なら確認ダイアログ（addonDialog）を出す
+  // ボーカル抽出、スペクトログラム（追加機能）。未導入なら確認ダイアログ（addonDialog）を出す
   const addons = useAddonInstall()
+  // スペクトログラムの追加機能を導入済みか（ツールバーのボタンは導入済みのときだけ出す）
+  const [analyzerInstalled, setAnalyzerInstalled] = useState(false)
+  useEffect(() => void installedManifest('analyzer').then((m) => setAnalyzerInstalled(!!m)), [])
+  /** スペクトログラムの帯を出す前に、追加機能を確かめる（未導入なら導入の案内。やめたら出さない） */
+  const requestShowSpec = async (v: boolean) => {
+    if (v && !(await addons.ensure('analyzer'))) return
+    if (v) setAnalyzerInstalled(true)
+    setShowSpec(v)
+  }
   const splitVoices = useVoiceSplit({
     tracks: history.tracks,
     activeId: history.activeId,
@@ -718,7 +729,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     // 再生
     player, preview, loop, playback, repeat, setRepeat, seekEdge,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
-    showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
+    showPitch, setShowPitch, showSpec, setShowSpec: requestShowSpec, analyzerInstalled, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
     cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, splitLeadStems: vocal.splitLeadStems, splitVoices, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty, exportFile, exportOpen, openExport, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,
