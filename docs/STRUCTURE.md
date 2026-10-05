@@ -24,7 +24,7 @@ src/
 ├── pwa/             新しい版の確認
 └── i18n/            訳文と t()
 dsp/src/             Rust の DSP
-wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT）と、音声ファイルの読み込み（AIFF は自前）・書き出し。submodule
+wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT・窓関数・速い近似の数値計算）と、音声ファイルの読み込み（AIFF は自前）・書き出し。submodule
 extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追加機能としてビルドする（docs/EXTRACTOR.md）。単体の Web ツールでもある
 pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確認ダイアログ・分割バー・設定画面の部品・ダイアログを別の窓に出す WindowDialog / WindowPortal・進み具合のゲージ・ファイルを開く画面と最近使用したファイル・IndexedDB）。submodule
 ```
@@ -108,7 +108,7 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `tempo.rs` | テンポ解析。スペクトルの増加量（オンセット強度）の、時間方向の周波数成分から BPM の候補と1拍目の位置を求める |
 | `ffi.rs` | wasm 向けの C ABI |
 
-FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効くようにしている）とリサンプル（窓付き sinc 補間。上げるときはカットオフを下げて折り返しを防ぐ）は `wevocal-lib` にある。`crate::fft` / `crate::resample` で今までどおり使える。
+FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効くようにしている）とリサンプル（窓付き sinc 補間。上げるときはカットオフを下げて折り返しを防ぐ）は `wevocal-lib` にある。`crate::fft` / `crate::resample` で今までどおり使える。周期的な Hann 窓（`wevocal_lib::window::hann`）、速い近似の ln / exp、位相の折り返し、中央値（`wevocal_lib::math`）も `wevocal-lib` にあり、ほかのソフトでも使えるようにしている。
 
 ### wasm の公開関数
 
