@@ -25,6 +25,8 @@ src/
 dsp/src/             Rust の DSP
 wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT・窓関数・速い近似の数値計算・F0 推定・テンポ解析・立ち上がりの検出）と、音声ファイルの読み込み（AIFF は自前）・書き出し、再生、録音、波形の表示の土台（TypeScript 側は `web/`）。submodule
 extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追加機能としてビルドする（docs/EXTRACTOR.md）。単体の Web ツールでもある
+analyzer/            声の解析（WeVocalAnalyzer）。submodule。スペクトログラムを追加機能として使う予定（準備中。analyzer/docs/PLAN.md）
+converter/           声の変換（WeVocalConverter）。submodule。今は Extractor を写した土台（準備中。converter/docs/PLAN.md）
 pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確認ダイアログ・分割バー・設定画面の部品・ダイアログを別の窓に表示する WindowDialog / WindowPortal・進み具合のゲージ・ファイルを開く画面と最近使用したファイル・IndexedDB）。submodule
 ```
 
