@@ -1,4 +1,4 @@
-import MobileEditBar from './components/layout/MobileEditBar'
+import MobileEditBar from './components/MobileEditBar'
 import { finishClip } from './audio/finish'
 import { canSaveToFolder, chooseSaveFolder, saveToFolder, savedFolderName } from 'pevenmui/web'
 import { sliceRanges } from './audio/multiRange'
@@ -10,7 +10,7 @@ import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, Button, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, setUiScale, FULL_HEIGHT, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, useShortcuts } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, setUiScale, FULL_HEIGHT, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, useShortcuts, DesktopLayout, MobileLayout } from 'pevenmui'
 import LevelMeter from './components/LevelMeter'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -20,7 +20,7 @@ import AppHeader from './components/AppHeader'
 import { EmptyState } from './components/EmptyState'
 import Waveform, { type DrawPoint } from './components/Waveform'
 import type { CurvePoint } from './hooks/useLaneCurve'
-import { SliderResetContext } from './components/inspector/Inspector'
+import { InspectorFlatContext, SliderResetContext } from './components/inspector/Inspector'
 import { useTrackArea } from './components/tracks/useTrackArea'
 import RenameDialog from './components/tracks/RenameDialog'
 import WaveformToolbar from './components/waveform/WaveformToolbar'
@@ -28,8 +28,6 @@ import Toolbar from './components/Toolbar'
 import StatusBar from './components/StatusBar'
 import SelectionField from './components/SelectionField'
 import TempoField from './components/TempoField'
-import DesktopLayout from './components/layout/DesktopLayout'
-import MobileLayout from './components/layout/MobileLayout'
 import EditPanel from './components/EditPanel'
 import VolumePanel from './components/VolumePanel'
 import PitchToolHost, { type PitchDialogKind } from './components/PitchToolHost'
@@ -617,9 +615,14 @@ export default function App() {
               </Stack>
               </>
             }
-            process={editPanel}
+            // タブで切り替えているので、中の区切りの見出し（たたむもの）は出さない
+            tabs={[
+              { key: 'process', label: t('process.title'), content: <InspectorFlatContext.Provider value>{editPanel}</InspectorFlatContext.Provider> },
+              { key: 'volume', label: t('volume.title'), content: <InspectorFlatContext.Provider value>{volumePanel}</InspectorFlatContext.Provider> },
+            ]}
             collapsible={settings.mobileUi === 'new'}
-            volume={volumePanel}
+            storageKey="wevocalsynth.mobilePanelPinned"
+            openLabel={t('mobilePanel.open')}
             view={viewTools}
             playBar={
               <MobilePlayBar
@@ -641,6 +644,7 @@ export default function App() {
           />
         ) : (
           <DesktopLayout
+            storageKey="wevocalsynth.inspectorWidth"
             toolbar={
               <Toolbar
                 playing={player.playing}

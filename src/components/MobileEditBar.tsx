@@ -2,7 +2,7 @@ import { Box, ButtonBase, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faCopy, faEllipsis, faHeadphones, faLayerGroup, faPaste, faScissors, faTrashCan } from '@fortawesome/free-solid-svg-icons'
-import { useT } from '../../i18n/i18n'
+import { useT } from '../i18n/i18n'
 
 interface Props {
   playSelection: () => void
