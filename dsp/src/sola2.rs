@@ -249,22 +249,5 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, p: &Params, progres
     out
 }
 
-/// 立ち上がり（破裂音など）の入力位置。1ms ごとのエネルギーが、直前 10ms の平均の 10 倍を超え、全体の平均の 1/4 以上の所
-pub(crate) fn onsets(x: &[f32], sample_rate: f32) -> Vec<i64> {
-    let w = (sample_rate * 0.001).max(1.0) as usize;
-    let e: Vec<f32> = x.chunks(w).map(|c| c.iter().map(|v| v * v).sum::<f32>() / c.len() as f32).collect();
-    let mean = e.iter().sum::<f32>() / e.len().max(1) as f32;
-    let mut out = Vec::new();
-    let mut k = 10;
-    while k < e.len() {
-        let before = e[k - 10..k].iter().sum::<f32>() / 10.0;
-        if e[k] > before * 10.0 + 1e-12 && e[k] > mean * 0.25 {
-            out.push((k * w) as i64);
-            // 同じ立ち上がりを何度も数えない
-            k += 20;
-        } else {
-            k += 1;
-        }
-    }
-    out
-}
+/// 立ち上がり（破裂音など）の検出は WeVocalLib に移した（ほかのソフトでも使えるように）
+pub(crate) use wevocal_lib::onset::energy_onsets as onsets;

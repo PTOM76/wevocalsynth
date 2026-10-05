@@ -9,7 +9,6 @@
 //! 素の `WebAssembly.instantiate` で読み込めるようにしている。
 
 pub mod curve;
-pub mod f0;
 mod ffi;
 // FFT とリサンプルは wevocal-lib（WeVocalExtractor と共有）のものを使う。`crate::fft` などのパスは今までどおり
 use wevocal_lib::fft;
@@ -22,7 +21,6 @@ pub mod sms;
 pub mod sola;
 pub mod sola2;
 pub mod spec;
-pub mod tempo;
 mod timemap;
 mod wsola;
 
@@ -33,4 +31,6 @@ pub use pipeline::{process, process_with_progress, Algorithm, Formant};
 // `resample` はモジュールと関数の両方を指す（`crate::resample::...` も `crate::resample(...)` も使える）
 pub use timemap::TimeMap;
 pub use wevocal_lib::{resample, resample_with};
+// F0 推定（YIN）とテンポ解析は WeVocalLib に移した（ほかのソフトでも使えるように）。今までどおり crate::f0 / crate::tempo で使える
+pub use wevocal_lib::{f0, tempo};
 pub use wsola::{wsola, wsola2, wsola2_map, wsola_map, wsola_with_progress};
