@@ -219,6 +219,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
           />
         </Row>
         <Check checked={draft.showMeters} onChange={(v) => set({ showMeters: v })} label={t('settings.showMeters')} help={t('settings.showMetersHelp')} />
+        <Check checked={draft.minimapPlayhead} onChange={(v) => set({ minimapPlayhead: v })} label={t('menu.minimapPlayhead')} help={t('settings.minimapPlayheadHelp')} />
         <Check checked={draft.liveSelection} onChange={(v) => set({ liveSelection: v })} label={t('settings.liveSelection')} help={t('settings.liveSelectionHelp')} />
         <Row label={t('settings.language')}>
           <Choice<LangSetting>

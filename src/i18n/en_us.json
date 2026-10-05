@@ -677,6 +677,7 @@
   "menu.overlayPitch": "Overlay pitch on waveform",
   "menu.minimap": "Minimap",
   "menu.minimapPlayhead": "Minimap playhead",
+  "settings.minimapPlayheadHelp": "Shows the playhead line on the minimap",
   "wave.showFormant": "Show formant",
   "wave.drawFormant": "Draw formant",
   "wave.drawFormantTooltip": "Draw a formant curve (Shift: snap to semitone / Alt: restore original)",

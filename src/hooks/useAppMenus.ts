@@ -111,22 +111,18 @@ interface Actions {
   zoomSelection: () => void
   follow: boolean
   toggleFollow: () => void
-  showMeters: boolean
   showNotes: boolean
   toggleNotes: () => void
   showPitchLine: boolean
   overlayPitch: boolean
   minimap: boolean
   toggleMinimap: () => void
-  minimapPlayhead: boolean
-  toggleMinimapPlayhead: () => void
   toggleOverlayPitch: () => void
   /** 波形の縦の拡大率 */
   waveScale: number
   stepWaveScale: (dir: 1 | -1) => void
   resetWaveScale: () => void
   togglePitchLine: () => void
-  toggleMeters: () => void
   // ---- トラック（選んでいるトラックに効く） ----
   trackCount: number
   /** 選んでいるトラックのミュート・ソロ・位相反転 */
@@ -298,7 +294,6 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.notes'), checked: a.showNotes, disabled: !a.hasClip || !a.showPitch || (a.showNotes && !a.showPitchLine), onClick: a.toggleNotes },
         { label: t('menu.overlayPitch'), checked: a.overlayPitch, disabled: !a.hasClip || !a.showPitch, onClick: a.toggleOverlayPitch },
         { label: t('menu.minimap'), checked: a.minimap, disabled: !a.hasClip, onClick: a.toggleMinimap },
-        { label: t('menu.minimapPlayhead'), checked: a.minimapPlayhead, disabled: !a.hasClip || !a.minimap, onClick: a.toggleMinimapPlayhead },
         { divider: true },
         { label: t('wave.zoomIn'), shortcut: a.wheelZoom === 'wheel' ? 'Wheel' : 'Ctrl+Wheel', disabled: !a.hasClip || !a.canZoomIn, onClick: a.zoomIn },
         { label: t('wave.zoomOut'), disabled: !a.hasClip || !a.zoomed, onClick: a.zoomOut },
@@ -315,7 +310,6 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         },
         { label: t('wave.follow'), checked: a.follow, onClick: a.toggleFollow },
         { divider: true },
-        { label: t('settings.showMeters'), checked: a.showMeters, onClick: a.toggleMeters },
       ],
     },
     {

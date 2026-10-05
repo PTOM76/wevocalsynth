@@ -677,6 +677,7 @@
   "menu.overlayPitch": "ピッチを波形に重ねる",
   "menu.minimap": "ミニマップ",
   "menu.minimapPlayhead": "ミニマップの再生位置",
+  "settings.minimapPlayheadHelp": "ミニマップに、再生位置の縦線を表示する",
   "wave.showFormant": "フォルマント表示",
   "wave.drawFormant": "フォルマントを描く",
   "wave.drawFormantTooltip": "フォルマントの曲線を描く（Shift: 半音に吸着 / Alt: 元に戻す）",
