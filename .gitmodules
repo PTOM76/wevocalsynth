@@ -7,3 +7,9 @@
 [submodule "pevenmui"]
 	path = pevenmui
 	url = https://github.com/PTOM76/pevenmui.git
+[submodule "analyzer"]
+	path = analyzer
+	url = https://github.com/PTOM76/wevocalanalyzer.git
+[submodule "converter"]
+	path = converter
+	url = https://github.com/PTOM76/wevocalconverter.git
