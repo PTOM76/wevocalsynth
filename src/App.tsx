@@ -51,7 +51,7 @@ import { licenseEntries } from './licenses'
 import { countRender } from './debug/debugStats'
 import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
-import { setFastMath } from './dsp/engine'
+import { setFastMath, setParallel } from './dsp/engine'
 import { checkForUpdate, promptUpdate } from 'pevenmui/pwa'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
@@ -81,6 +81,7 @@ export default function App() {
   // 継ぎ目のクロスフェード長（言語と同じく、描画中に設定へ合わせておく）
   setSpliceFadeSec(settings.spliceFadeMs / 1000)
   setFastMath(settings.fastMath)
+  setParallel(settings.parallelProcess)
   // 画面の大きさ（文字・入力欄・ボタンなどをまとめて拡大縮小する）
   useEffect(() => setUiScale(settings.uiScale), [settings.uiScale])
   // 描画中に合わせる（処理方式のメニューと設定画面が、最初から設定どおりの選択肢になるように。値を入れるだけ）

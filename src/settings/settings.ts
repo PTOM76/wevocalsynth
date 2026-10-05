@@ -135,6 +135,8 @@ export interface Settings {
   showMaterialButton: boolean
   /** 「和音を分ける」（試作）をメニューに表示する（開発者向け） */
   showVoiceSplit: boolean
+  /** 長い音の加工を、区間に分けて複数の Worker で並列に行う（試験的。dsp/src/segment.rs） */
+  parallelProcess: boolean
   /** キーボードショートカットのうち、既定から変えたもの（settings/keymap.ts） */
   keymap: KeymapOverrides
   /** 書き出し（フォルダーへの保存、外へのドラッグも）の仕上げ: ノーマライズと、両端のフェードの長さ（ms、0 でなし） */
@@ -209,6 +211,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showExperimentalAlgorithms: false,
   showMaterialButton: false,
   showVoiceSplit: false,
+  parallelProcess: false,
   keymap: {},
   exportNormalize: false,
   exportFadeMs: 0,

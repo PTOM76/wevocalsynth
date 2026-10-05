@@ -369,6 +369,8 @@
   "settings.showMaterialButton": "顯示選取範圍儲存按鈕",
   "settings.showMaterialButtonHelp": "在狀態列選取範圍右側顯示「WAV」。點擊儲存到資料夾，拖曳到資料夾匯出",
   "settings.showVoiceSplitHelp": "在「工具」和右鍵的「人聲擷取」中顯示拆分為兩個聲部（高音與低音，或大聲與小聲）的項目。有選取範圍時只拆分該範圍。適用於簡單和聲",
+  "settings.parallelProcess": "平行處理",
+  "settings.parallelProcessHelp": "將 20 秒以上音訊的音高變換按每 10 秒分段，在 CPU 的多個核心上同時處理。接縫處對齊波形相位後連接（每段最多偏移 5ms）。不包括音高曲線編輯和按節奏伸縮",
   "settings.showVoiceSplit": "顯示「拆分和聲」",
   "settings.suspendWhenStopped": "停止時暫停音訊處理",
   "settings.suspendWhenStoppedHelp": "停止時暫停 AudioContext。iOS 無聲時請關閉後嘗試",

@@ -1,5 +1,6 @@
 import { SPEC_ROWS, type DspRequest, type DspResponse } from './worker'
 import { markActivity, recordDspJob, reportMemory } from '../debug/debugStats'
+import { processParallel, shouldSplit } from './parallel'
 
 /** DSPエンジンの時間伸縮方式 */
 /** wsola / pv は従来の方式、psola はボーカル向けの新しい方式（Rust 側 `Algorithm::from_id` と対応） */
@@ -18,7 +19,8 @@ type Pending = {
  * Worker は2つに分ける。加工（加工・ピッチカーブ・フォルマントと、その試聴）と、解析（F0・スペクトログラム・テンポ）。
  * 1つだと順番待ちになり、ファイルを開いた直後の解析中に「適用」を押すと、解析が終わるまで進捗が 0% のまま止まって見えた
  */
-type Lane = 'edit' | 'analysis'
+// 'par0'… は、区間に分けて並列に加工するときの Worker（試験的。parallel.ts）
+export type Lane = 'edit' | 'analysis' | `par${number}`
 const laneOf = (req: DspRequest): Lane => (req.kind === 'f0' || req.kind === 'spec' || req.kind === 'tempo' ? 'analysis' : 'edit')
 
 let nextId = 1
@@ -75,7 +77,7 @@ export function releaseIdleDsp() {
   for (const [lane, worker] of workers) {
     // 解析中でも止める（解析は中断として扱い、通知しない。iOS は wasm のメモリの数にも上限があり、
     // 解析中の Worker が残ると抽出の実行環境を作れなかった）。加工は抽出と重ならないので、処理中なら止めない
-    if (lane === 'edit' && [...pending.values()].some((p) => p.lane === lane)) continue
+    if (lane !== 'analysis' && [...pending.values()].some((p) => p.lane === lane)) continue
     failLane(lane, new DOMException('cancelled', 'AbortError'))
     worker.terminate()
     workers.delete(lane)
@@ -92,26 +94,31 @@ export const isCancelled = (e: unknown) => e instanceof DOMException && e.name =
  * Worker は次のリクエストで作り直される（wasm の読み込みに少しかかる）
  */
 export function cancelDsp() {
-  const worker = workers.get('edit')
-  if (!worker) return
-  worker.terminate()
-  workers.delete('edit')
-  reportMemory('wasm edit', 0)
-  failLane('edit', new DOMException('cancelled', 'AbortError'))
+  for (const [lane, worker] of workers) {
+    if (lane === 'analysis') continue
+    worker.terminate()
+    workers.delete(lane)
+    reportMemory(`wasm ${lane}`, 0)
+    failLane(lane, new DOMException('cancelled', 'AbortError'))
+  }
 }
 
 /** リクエストを Worker に送り、結果（チャンネル配列）を待つ */
-function send(req: DspRequest, onProgress?: (p: number) => void): Promise<Float32Array[]> {
-  return sendRaw(req, onProgress) as Promise<Float32Array[]>
+function send(req: DspRequest, onProgress?: (p: number) => void, lane?: Lane): Promise<Float32Array[]> {
+  return sendRaw(req, onProgress, lane) as Promise<Float32Array[]>
 }
 
-function sendRaw(req: DspRequest, onProgress?: (p: number) => void): Promise<Float32Array[] | Uint8Array> {
+/** `lane` の Worker に送る（区間に分けて並列に加工するとき。parallel.ts） */
+export const sendTo = (lane: Lane, req: DspRequest, onProgress?: (p: number) => void) => send(req, onProgress, lane)
+export const newId = () => nextId++
+
+function sendRaw(req: DspRequest, onProgress?: (p: number) => void, toLane?: Lane): Promise<Float32Array[] | Uint8Array> {
   const t0 = performance.now()
   markActivity(`dsp ${req.kind}`)
   // デバッグ表示用に、処理の種類と所要時間を記録する
   const done = () => recordDspJob({ kind: req.kind, ms: performance.now() - t0 })
   return new Promise((resolve, reject) => {
-    const lane = laneOf(req)
+    const lane = toLane ?? laneOf(req)
     pending.set(req.id, {
       lane,
       resolve: (v) => {
@@ -121,7 +128,7 @@ function sendRaw(req: DspRequest, onProgress?: (p: number) => void): Promise<Flo
       reject,
       onProgress,
     })
-    const buffers = 'samples' in req ? [req.samples.buffer] : req.channels.map((c) => c.buffer)
+    const buffers = 'samples' in req ? [req.samples.buffer] : 'channels' in req ? req.channels.map((c) => c.buffer) : []
     if (req.kind === 'curve') buffers.push(req.ratios.buffer)
     getWorker(lane).postMessage(req, buffers)
   })
@@ -231,18 +238,16 @@ export function processAudio(
   opts: ProcessOptions,
   onProgress?: (p: number) => void,
 ): Promise<Float32Array[]> {
-  return send(
-    {
-      kind: 'process',
-      id: nextId++,
-      channels: channels.map((c) => c.slice()),
-      sampleRate,
-      ...opts,
-      algorithm: ALGORITHM_ID[opts.algorithm],
-      fastMath,
-    },
-    onProgress,
-  )
+  const req = { kind: 'process', id: nextId++, channels, sampleRate, ...opts, algorithm: ALGORITHM_ID[opts.algorithm], fastMath } as const
+  // 長い音は、区間に分けて並列に加工する（試験的。設定の開発者向け → 試験的機能）
+  if (parallel && shouldSplit(channels[0]?.length ?? 0, sampleRate)) return processParallel(req, onProgress)
+  return send({ ...req, channels: channels.map((c) => c.slice()) }, onProgress)
+}
+
+/** 区間に分けて並列に加工するか（設定。処理を頼むたびに見る） */
+let parallel = false
+export function setParallel(on: boolean) {
+  parallel = on
 }
 
 /**

@@ -36,6 +36,9 @@ interface DspExports {
   analyze_spectrogram(input: number, frames: number, sampleRate: number): number
   analyze_tempo(input: number, frames: number, sampleRate: number): number
   split_voices_planar(input: number, frames: number, channels: number, sampleRate: number, by: number): number
+  segment_count(frames: number, sampleRate: number): number
+  segment_bound(frames: number, sampleRate: number, k: number, field: number): number
+  stitch_planar(input: number, frames: number, channels: number, sampleRate: number, stretch: number): number
   output_u8_ptr(): number
   output_ptr(): number
   set_fast_math(on: number): void
@@ -104,7 +107,26 @@ export interface VoicesRequest {
   fastMath?: boolean
 }
 
-export type DspRequest = ProcessRequest | F0Request | CurveRequest | FormantCurveRequest | VoicesRequest
+/** 区間に分けて並列に加工するときの区間の割り当て（試験的。結果は [start, end, ctxStart, ctxEnd] を区間の数だけ並べたもの） */
+export interface SegmentPlanRequest {
+  kind: 'segplan'
+  id: number
+  frames: number
+  sampleRate: number
+}
+
+/** 区間ごとに加工した音をつなぐ（試験的）。`channels` は区間の順、その中はチャンネルの順 */
+export interface StitchRequest {
+  kind: 'stitch'
+  id: number
+  channels: Float32Array[]
+  frames: number
+  channelCount: number
+  sampleRate: number
+  stretch: number
+}
+
+export type DspRequest = ProcessRequest | F0Request | CurveRequest | FormantCurveRequest | VoicesRequest | SegmentPlanRequest | StitchRequest
 
 export type DspResponse =
   | { id: number; channels: Float32Array[] }
@@ -205,6 +227,25 @@ function runFormant(dsp: DspExports, req: FormantCurveRequest, input: number, fr
   }
 }
 
+/** 区間ごとに加工した音をつなぐ */
+function stitch(dsp: DspExports, req: StitchRequest): Float32Array[] {
+  const total = req.channels.reduce((n, c) => n + c.length, 0)
+  const input = dsp.alloc_f32(total)
+  try {
+    const view = new Float32Array(dsp.memory.buffer, input, total)
+    let at = 0
+    for (const c of req.channels) {
+      view.set(c, at)
+      at += c.length
+    }
+    const outFrames = dsp.stitch_planar(input, req.frames, req.channelCount, req.sampleRate, req.stretch)
+    const out = new Float32Array(dsp.memory.buffer, dsp.output_ptr(), outFrames * req.channelCount)
+    return Array.from({ length: req.channelCount }, (_, i) => out.slice(i * outFrames, (i + 1) * outFrames))
+  } finally {
+    dsp.free_f32(input, total)
+  }
+}
+
 /** スペクトログラム（フレームごとに ROWS バイト）を計算する */
 function analyzeSpectrogram(dsp: DspExports, req: F0Request): Uint8Array {
   const n = req.samples.length
@@ -241,6 +282,19 @@ scope.onmessage = async (e: MessageEvent<DspRequest>) => {
     const dsp = await ready
     currentId = req.id
     lastProgress = -1
+    if (req.kind === 'segplan') {
+      const n = dsp.segment_count(req.frames, req.sampleRate)
+      const plan = new Float64Array(n * 4)
+      for (let k = 0; k < n; k++) for (let f = 0; f < 4; f++) plan[k * 4 + f] = dsp.segment_bound(req.frames, req.sampleRate, k, f)
+      // 区間の境界は Float64 で返す（Float32 では 5 分を超える位置が丸まる）
+      scope.postMessage({ id: req.id, channels: [new Float32Array(plan.buffer)] } satisfies DspResponse, [plan.buffer])
+      return
+    }
+    if (req.kind === 'stitch') {
+      const channels = stitch(dsp, req)
+      scope.postMessage({ id: req.id, channels } satisfies DspResponse, channels.map((c) => c.buffer))
+      return
+    }
     if (req.kind === 'spec') {
       const bytes = analyzeSpectrogram(dsp, req)
       const res: DspResponse = { id: req.id, bytes }

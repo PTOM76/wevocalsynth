@@ -369,6 +369,8 @@
   "settings.showMaterialButton": "显示选区保存按钮",
   "settings.showMaterialButtonHelp": "在状态栏选区右侧显示「WAV」。点击保存到文件夹，拖动到文件夹导出",
   "settings.showVoiceSplitHelp": "在“工具”和右键的“人声提取”中显示拆分为两个声部（高音与低音，或大声与小声）的项目。有选区时只拆分选区。适用于简单和声",
+  "settings.parallelProcess": "并行处理",
+  "settings.parallelProcessHelp": "将 20 秒以上音频的音高变换按每 10 秒分段，在 CPU 的多个核心上同时处理。接缝处对齐波形相位后连接（每段最多偏移 5ms）。不包括音高曲线编辑和按节奏伸缩",
   "settings.showVoiceSplit": "显示“拆分和声”",
   "settings.suspendWhenStopped": "停止时暂停音频处理",
   "settings.suspendWhenStoppedHelp": "停止时暂停 AudioContext。iOS 无声时请关闭后尝试",

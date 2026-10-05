@@ -67,7 +67,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupDebugAudio', 'settings.fastMath', 'settings.fastMathHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp',
     'settings.spliceFade', 'settings.spliceFadeHelp', 'settings.suspendWhenStopped', 'settings.suspendWhenStoppedHelp', 'settings.playbackSession', 'settings.playbackSessionHelp',
   ],
-  experimental: ['settings.groupExperimental', 'settings.showExperimentalAlgorithms', 'settings.showExperimentalAlgorithmsHelp', 'settings.showVoiceSplit', 'settings.showVoiceSplitHelp'],
+  experimental: ['settings.groupExperimental', 'settings.showExperimentalAlgorithms', 'settings.showExperimentalAlgorithmsHelp', 'settings.showVoiceSplit', 'settings.showVoiceSplitHelp', 'settings.parallelProcess', 'settings.parallelProcessHelp'],
   diagnose: ['settings.groupDiagnose', 'settings.extractDiagnose', 'settings.extractDiagnoseHelp'],
 }
 

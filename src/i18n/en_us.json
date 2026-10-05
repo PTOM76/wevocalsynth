@@ -369,6 +369,8 @@
   "settings.showMaterialButton": "Show selection save button",
   "settings.showMaterialButtonHelp": "Show \"WAV\" next to the selection in the status bar. Click to save to folder, drag to a folder to export",
   "settings.showVoiceSplitHelp": "Adds items to Tools and the right-click \"Vocal extraction\" menu that split audio into two voices (higher and lower, or louder and quieter). Only the selection is split if there is one. Works best on simple harmony",
+  "settings.parallelProcess": "Process in parallel",
+  "settings.parallelProcessHelp": "Splits pitch changes of audio 20 seconds or longer into 10-second sections and processes them on multiple CPU cores at once. Seams are joined with matched waveform phase (each section may shift by up to 5 ms). Pitch curve edits and tempo stretching are not included",
   "settings.showVoiceSplit": "Show \"Split harmony\"",
   "settings.suspendWhenStopped": "Suspend audio while stopped",
   "settings.suspendWhenStoppedHelp": "Suspends the AudioContext while stopped. Turn off if iOS plays no sound",
