@@ -60,6 +60,8 @@ interface Actions {
   extract: (stem: 'vocals' | 'accompaniment') => void
   /** 選んでいるトラックを、ボーカルと伴奏の2トラックに分ける */
   splitStems: () => void
+  /** 和音を 2 つの声に分ける（試作。設定の開発者向けでオンのときだけ渡す） */
+  splitVoices?: (by: 'pitch' | 'volume') => void
   /** トラックの複製と、ファイルをトラックとして追加 */
   duplicateTrack: () => void
   /** 原音を新しいトラックに（原音が加工後と違うときだけ） */
@@ -188,6 +190,13 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { label: t('extract.vocalsMenu'), disabled: noClip, onClick: () => a.extract('vocals') },
     { label: t('extract.accompanimentMenu'), disabled: noClip, onClick: () => a.extract('accompaniment') },
     { label: t('extract.splitMenu'), disabled: noClip, onClick: a.splitStems },
+    ...(a.splitVoices
+      ? [
+          { divider: true } as const,
+          { label: t('voices.byPitchMenu'), disabled: noClip, onClick: () => a.splitVoices?.('pitch') },
+          { label: t('voices.byVolumeMenu'), disabled: noClip, onClick: () => a.splitVoices?.('volume') },
+        ]
+      : []),
   ]
   // 編集メニューに入れすぎないよう、加工の道具（抽出・音声の作成）は「ツール」にまとめる
   const tools: MenuEntry[] = [

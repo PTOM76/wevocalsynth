@@ -1,6 +1,6 @@
 //! wasm 向け C ABI。wasm-bindgen を使わず、Worker から素の `WebAssembly.instantiate` で呼べる関数だけを公開する。
 
-use crate::{curve, f0, formant, process_with_progress, spec, tempo, Algorithm, Formant};
+use crate::{curve, f0, formant, process_with_progress, spec, tempo, voices, Algorithm, Formant};
 use std::cell::RefCell;
 
 #[cfg(target_arch = "wasm32")]
@@ -232,6 +232,27 @@ pub unsafe extern "C" fn analyze_tempo(input: *const f32, frames: usize, sample_
     let n = out.len();
     OUTPUT.with(|o| *o.borrow_mut() = out);
     n
+}
+
+/// 和音を 2 つの声に分け（試作。`by` は 0 = 高さ、1 = 音量）、フレーム数（= `frames`）を返す。
+/// 結果は `output_ptr` で、A の全チャンネル、B の全チャンネルの順のプレーナー形式
+///
+/// # Safety
+/// `input` は `frames * channels` 個の有効な f32 を指していること。
+#[no_mangle]
+pub unsafe extern "C" fn split_voices_planar(input: *const f32, frames: usize, channels: usize, sample_rate: f32, by: u32) -> usize {
+    let all = std::slice::from_raw_parts(input, frames * channels);
+    let chans: Vec<&[f32]> = all.chunks(frames.max(1)).take(channels).collect();
+    let by = if by == 1 { voices::SplitBy::Volume } else { voices::SplitBy::Pitch };
+    let (a, b) = voices::split(&chans, sample_rate, by);
+    OUTPUT.with(|o| {
+        let mut o = o.borrow_mut();
+        o.clear();
+        for c in a.iter().chain(&b) {
+            o.extend_from_slice(c);
+        }
+    });
+    frames
 }
 
 #[no_mangle]

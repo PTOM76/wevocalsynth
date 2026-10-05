@@ -180,6 +180,7 @@ export default function App() {
     pitchLane: ed.focusLane === 'pitch',
     extract: (stem) => void ed.extract(stem),
     splitStems: () => void ed.splitStems(),
+    splitVoices: settings.showVoiceSplit ? (by) => void ed.splitVoices(by) : undefined,
     duplicateTrack: () => ed.tracks.duplicate(),
     hasOriginal: !!ed.tracks.tracks.find((tr) => tr.id === ed.tracks.activeId && tr.original !== tr.clip),
     trackFromOriginal: () => ed.tracks.fromOriginal(),

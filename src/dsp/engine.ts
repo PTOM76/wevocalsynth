@@ -199,6 +199,13 @@ export async function analyzeSpectrogram(channels: Float32Array[], sampleRate: n
   }
 }
 
+/** 和音を 2 つの声に分ける（試作。dsp/src/voices.rs）。`by` が pitch なら A が高い方、volume なら大きい方 */
+export async function splitVoices(channels: Float32Array[], sampleRate: number, by: 'pitch' | 'volume', onProgress?: (p: number) => void): Promise<{ a: Float32Array[]; b: Float32Array[] }> {
+  const out = await send({ kind: 'voices', id: nextId++, channels: channels.map((c) => c.slice()), sampleRate, by: by === 'volume' ? 1 : 0 }, onProgress)
+  const n = out.length / 2
+  return { a: out.slice(0, n), b: out.slice(n) }
+}
+
 export interface ProcessOptions {
   semitones: number
   stretch: number

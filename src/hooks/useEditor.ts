@@ -32,6 +32,7 @@ import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useAutosave } from './useAutosave'
 import { useVocalExtract } from './useVocalExtract'
+import { useVoiceSplit } from './useVoiceSplit'
 import { setGpuLostHandler } from '../audio/vocalExtract'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { useTracks } from './useTracks'
@@ -233,6 +234,14 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
 
   // ボーカル抽出（追加機能）。未導入なら確認ダイアログ（addonDialog）を出す
   const addons = useAddonInstall()
+  const splitVoices = useVoiceSplit({
+    tracks: history.tracks,
+    activeId: history.activeId,
+    split: tracks.split,
+    run: task.run,
+    setProgress,
+    notify: (message) => setToast({ severity: 'success', message }),
+  })
   const vocal = useVocalExtract({
     edited,
     editRanges,
@@ -697,6 +706,6 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     showPitch, setShowPitch, showSpec, setShowSpec, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty, exportFile, exportOpen, openExport, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,
+    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, splitVoices, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty, exportFile, exportOpen, openExport, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,
   }
 }

@@ -35,6 +35,7 @@ interface DspExports {
   analyze_f0(input: number, frames: number, sampleRate: number, minHz: number, maxHz: number, voicedLimit: number, silenceRms: number): number
   analyze_spectrogram(input: number, frames: number, sampleRate: number): number
   analyze_tempo(input: number, frames: number, sampleRate: number): number
+  split_voices_planar(input: number, frames: number, channels: number, sampleRate: number, by: number): number
   output_u8_ptr(): number
   output_ptr(): number
   set_fast_math(on: number): void
@@ -92,7 +93,18 @@ export interface FormantCurveRequest {
   fastMath?: boolean
 }
 
-export type DspRequest = ProcessRequest | F0Request | CurveRequest | FormantCurveRequest
+/** 和音を 2 つの声に分けるリクエスト（試作）。結果は A の全チャンネル、B の全チャンネルの順 */
+export interface VoicesRequest {
+  kind: 'voices'
+  id: number
+  channels: Float32Array[]
+  sampleRate: number
+  /** 0 = 高さ（A が高い方）、1 = 音量（A が大きい方）。Rust 側 `voices::SplitBy` と対応 */
+  by: number
+  fastMath?: boolean
+}
+
+export type DspRequest = ProcessRequest | F0Request | CurveRequest | FormantCurveRequest | VoicesRequest
 
 export type DspResponse =
   | { id: number; channels: Float32Array[] }
@@ -123,7 +135,7 @@ const ready: Promise<DspExports> = fetch(wasmUrl)
   .then((bytes) => WebAssembly.instantiate(bytes, { env: { report_progress: reportProgress } }))
   .then((r) => r.instance.exports as unknown as DspExports)
 
-function run(dsp: DspExports, req: ProcessRequest | CurveRequest | FormantCurveRequest): Float32Array[] {
+function run(dsp: DspExports, req: ProcessRequest | CurveRequest | FormantCurveRequest | VoicesRequest): Float32Array[] {
   const frames = req.channels[0]?.length ?? 0
   const count = req.channels.length
   const total = frames * count
@@ -137,6 +149,8 @@ function run(dsp: DspExports, req: ProcessRequest | CurveRequest | FormantCurveR
         ? runCurve(dsp, req, input, frames, count)
         : req.kind === 'formant'
           ? runFormant(dsp, req, input, frames, count)
+        : req.kind === 'voices'
+          ? dsp.split_voices_planar(input, frames, count, req.sampleRate, req.by)
         : dsp.process_planar(
             input,
             frames,
@@ -149,8 +163,10 @@ function run(dsp: DspExports, req: ProcessRequest | CurveRequest | FormantCurveR
             req.formantSemitones,
           )
     // 処理中にメモリが拡張されている可能性があるため、ビューは処理後に作り直す
-    const out = new Float32Array(dsp.memory.buffer, dsp.output_ptr(), outFrames * count)
-    return Array.from({ length: count }, (_, i) => out.slice(i * outFrames, (i + 1) * outFrames))
+    // 和音を分けたときは、A と B の 2 組
+    const outCount = req.kind === 'voices' ? count * 2 : count
+    const out = new Float32Array(dsp.memory.buffer, dsp.output_ptr(), outFrames * outCount)
+    return Array.from({ length: outCount }, (_, i) => out.slice(i * outFrames, (i + 1) * outFrames))
   } finally {
     dsp.free_f32(input, total)
   }

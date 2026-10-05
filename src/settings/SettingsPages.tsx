@@ -275,6 +275,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
         <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
         <Check checked={draft.devUpdates} onChange={(v) => set({ devUpdates: v })} label={t('settings.devUpdates')} help={t('settings.devUpdatesHelp')} />
         <Check checked={draft.showMaterialButton} onChange={(v) => set({ showMaterialButton: v })} label={t('settings.showMaterialButton')} help={t('settings.showMaterialButtonHelp')} />
+        <Check checked={draft.showVoiceSplit} onChange={(v) => set({ showVoiceSplit: v })} label={t('settings.showVoiceSplit')} help={t('settings.showVoiceSplitHelp')} />
         <Row label={t('settings.filePicker')} help={t('settings.filePickerHelp')}>
           <Choice<PickerMode>
             value={draft.filePicker}

@@ -127,6 +127,8 @@ export interface Settings {
   showExperimentalAlgorithms: boolean
   /** ステータスバーに、選択範囲を素材として保存する「WAV」のボタンを出す（開発者向け） */
   showMaterialButton: boolean
+  /** 「和音を分ける」（試作）をメニューに表示する（開発者向け） */
+  showVoiceSplit: boolean
   /** 書き出し（フォルダーへの保存、外へのドラッグも）の仕上げ: ノーマライズと、両端のフェードの長さ（ms、0 でなし） */
   exportNormalize: boolean
   exportFadeMs: number
@@ -194,6 +196,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showLegacyAlgorithms: false,
   showExperimentalAlgorithms: false,
   showMaterialButton: false,
+  showVoiceSplit: false,
   exportNormalize: false,
   exportFadeMs: 0,
   presets: [],
