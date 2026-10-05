@@ -58,7 +58,7 @@ DSP の Worker は、加工用と解析用の 2 つにしている。1 つだと
 | `pevenmui/` | 画面の部品（PevenMUI。テーマ、メニューバー、ダイアログ、ファイルを開く画面、進み具合のゲージなど） | 本体、ボーカル抽出の単体の画面 |
 | `extractor/` | ボーカル抽出の本体（WeVocalExtractor） | 本体（追加機能として組み込む） |
 | `analyzer/` | 声の解析（WeVocalAnalyzer。準備中） | 本体（スペクトログラムを追加機能として組み込む予定） |
-| `converter/` | 声の変換（WeVocalConverter。準備中） | 本体（追加機能として組み込む予定） |
+| `converter/` | 音声ファイルの形式の変換（WeVocalConverter。準備中） | 単体の Web ツール（読み込みと書き出しは Synth と同じ wevocal-lib） |
 
 submodule にした理由:
 
