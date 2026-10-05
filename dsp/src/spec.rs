@@ -4,7 +4,7 @@
 //! 表示専用なので精度より軽さを優先する。
 
 use crate::fft::Fft;
-use std::f64::consts::PI;
+use wevocal_lib::window::hann;
 
 /// 周波数軸の段数。
 pub const ROWS: usize = 128;
@@ -25,9 +25,7 @@ pub fn compute(x: &[f32], sample_rate: f32, progress: &mut dyn FnMut(f64)) -> Ve
     let n = FRAME;
     let bins = n / 2 + 1;
     let fft = Fft::new(n);
-    let window: Vec<f32> = (0..n)
-        .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32)
-        .collect();
+    let window: Vec<f32> = hann(n);
     // Hann 窓の振幅補正（フルスケールの正弦波がおよそ 0dB になる）。
     let ref_mag = n as f32 / 4.0;
 

@@ -12,8 +12,8 @@
 //! 取り除けるようにしている。
 
 use crate::fft::Fft;
-use std::f64::consts::PI;
 use std::sync::atomic::{AtomicBool, Ordering};
+use wevocal_lib::window::hann;
 
 /// 対数・指数に速い近似（`fast_ln` / `fast_exp`）を使うか。既定は使う。設定（開発者向け）で標準の関数に切り替えて聴き比べられる
 static FAST_MATH: AtomicBool = AtomicBool::new(true);
@@ -67,9 +67,7 @@ pub fn correct_varying(
     let hs = n / OVERLAP;
     let bins = n / 2 + 1;
     let fft = Fft::new(n);
-    let window: Vec<f32> = (0..n)
-        .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32)
-        .collect();
+    let window: Vec<f32> = hann(n);
     let lifter = Lifter {
         q_min: (sample_rate / F0_MAX) as usize,
         q_max: ((sample_rate / F0_MIN) as usize).min(n / 2 - 1),
@@ -225,26 +223,8 @@ impl Lifter {
     }
 }
 
-/// 速い自然対数（`x > 0`）。指数部と仮数部 m（1〜2）に分け、ln m を t = (m-1)/(m+1) の級数で求める（相対誤差 約 1e-7）。
-/// 標準の ln より速く、ここ（包絡の計算）にはこの精度で足りる
-pub(crate) fn fast_ln(x: f32) -> f32 {
-    let bits = x.to_bits();
-    let e = ((bits >> 23) & 0xff) as i32 - 127;
-    let m = f32::from_bits((bits & 0x007f_ffff) | 0x3f80_0000);
-    let t = (m - 1.0) / (m + 1.0);
-    let t2 = t * t;
-    e as f32 * std::f32::consts::LN_2 + 2.0 * t * (1.0 + t2 * (1.0 / 3.0 + t2 * (1.0 / 5.0 + t2 * (1.0 / 7.0))))
-}
-
-/// 速い指数関数（|x| が数十まで）。2 のべき乗に直し、整数部はビットで、小数部は多項式で求める（相対誤差 約 1e-6）
-pub(crate) fn fast_exp(x: f32) -> f32 {
-    let y = x * std::f32::consts::LOG2_E;
-    let k = y.floor();
-    let f = y - k;
-    // 2^f（0 ≤ f < 1）の多項式近似
-    let p = 1.0 + f * (0.693_147_2 + f * (0.240_226_5 + f * (0.055_504_1 + f * (0.009_618_1 + f * 0.001_333_6))));
-    f32::from_bits(((k as i32 + 127) as u32) << 23) * p
-}
+/// 速い近似の ln / exp は WeVocalLib に移した（ほかのソフトでも使えるように）
+pub(crate) use wevocal_lib::math::{fast_exp, fast_ln};
 
 /// 包絡 `env`（対数）を E(f) から E(c·f) に変えるビンごとのゲイン。ビン間は線形補間
 fn envelope_gain(env: &[f32], c: f64, gain: &mut [f32], fast: bool) {
@@ -280,9 +260,7 @@ pub(crate) fn correct_varying_reference(
     let hs = n / OVERLAP;
     let bins = n / 2 + 1;
     let fft = Fft::new(n);
-    let window: Vec<f32> = (0..n)
-        .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32)
-        .collect();
+    let window: Vec<f32> = hann(n);
     let q_min = (sample_rate / F0_MAX) as usize;
     let q_max = ((sample_rate / F0_MIN) as usize).min(n / 2 - 1);
     let default_cut = (sample_rate * 0.0015) as usize;

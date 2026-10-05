@@ -10,6 +10,7 @@
 use crate::{fft::Fft, TimeMap};
 use std::collections::HashMap;
 use std::f64::consts::PI;
+use wevocal_lib::window::hann;
 
 /// 分析の窓（48kHz で 2048 サンプル。低い音の倍音を分けられ、ビブラートで山がぼやけない長さ。4096 では振幅を小さく見積もった）と、分析の間隔
 const FRAME_SEC: f64 = 0.03;
@@ -78,7 +79,7 @@ pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progres
 fn frame_setup(sr: f64) -> (usize, usize, Vec<f32>) {
     let n = ((sr * FRAME_SEC) as usize).next_power_of_two();
     let hop = ((sr * HOP_SEC) as usize).max(1);
-    let window = (0..n).map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32).collect();
+    let window = hann(n);
     (n, hop, window)
 }
 
@@ -293,7 +294,7 @@ fn add_noise(out: &mut [f32], model: &Model, len: usize, map: &TimeMap, sr: f64)
     let ns = ((sr * NOISE_FRAME_SEC) as usize).next_power_of_two();
     let hs = ns / 4;
     let fft = Fft::new(ns);
-    let window: Vec<f32> = (0..ns).map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / ns as f64).cos()) as f32).collect();
+    let window: Vec<f32> = hann(ns);
     // 重なる窓の 2 乗和（Hann を 4 分の 1 ずつずらすと 1.5）
     let overlap = window.iter().map(|w| w * w).sum::<f32>() / hs as f32;
     // 分析の窓の bin から、鳴らし直す窓の bin への対応

@@ -17,6 +17,7 @@
 use crate::fft::Fft;
 use crate::TimeMap;
 use std::f64::consts::PI;
+use wevocal_lib::window::hann;
 
 /// 分析・合成フレーム長（秒）。2のべき乗に切り上げる。
 const FRAME_SEC: f32 = 0.046;
@@ -25,9 +26,7 @@ const OVERLAP: usize = 4;
 /// 立ち上がり保持（Phase Vocoder v2）: スペクトルの増え方（フラックス）が平均 + この倍の標準偏差を超えた所を立ち上がりとみなす
 const ONSET_SIGMA: f32 = 1.5;
 
-fn wrap(p: f64) -> f64 {
-    p - 2.0 * PI * ((p + PI) / (2.0 * PI)).floor()
-}
+use wevocal_lib::math::wrap_phase as wrap;
 
 /// 全チャンネルを `alpha` 倍に時間伸縮する（出力長 = 入力長 × alpha）。
 pub fn stretch(
@@ -310,9 +309,7 @@ fn stretch_map_with(
     let hs = n / OVERLAP;
     let bins = n / 2 + 1;
     let fft = Fft::new(n);
-    let window: Vec<f32> = (0..n)
-        .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32)
-        .collect();
+    let window: Vec<f32> = hann(n);
 
     // 末尾の扱いは WSOLA と同じ（`TimeMap::frame_pos` 参照）。
     let last_pos = len.saturating_sub(n) as f64;

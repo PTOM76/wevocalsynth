@@ -1,7 +1,7 @@
 //! WSOLA（Waveform Similarity Overlap-Add）による時間伸縮。
 
 use crate::TimeMap;
-use std::f64::consts::PI;
+use wevocal_lib::window::hann;
 
 /// 分析フレーム長（秒）。約46ms: 低い声でも十分な長さ。
 const FRAME_SEC: f32 = 0.046;
@@ -85,9 +85,7 @@ fn wsola_map_with(
     let hs = n / 2;
     let delta = ((sample_rate * TOLERANCE_SEC) as i64).max(8);
     // periodic Hann 窓: 50% オーバーラップで総和がちょうど 1 になる。
-    let window: Vec<f32> = (0..n)
-        .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32)
-        .collect();
+    let window: Vec<f32> = hann(n);
 
     // ゼロ詰めしたモノラルミックス。相関計算で境界チェックなしにスライスを使えるようにする。
     let pad_l = delta as usize + 8;

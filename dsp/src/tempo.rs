@@ -10,6 +10,7 @@
 
 use crate::fft::Fft;
 use std::f64::consts::PI;
+use wevocal_lib::window::hann;
 
 /// スペクトルを求める区間の長さ（サンプル、2 のべき乗）
 const FRAME: usize = 1024;
@@ -42,7 +43,7 @@ pub fn onset_envelope(x: &[f32], sample_rate: f32, progress: &mut dyn FnMut(f64)
     let frames = x.len() / hop + 1;
     let bins = FRAME / 2 + 1;
     let fft = Fft::new(FRAME);
-    let window: Vec<f32> = (0..FRAME).map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / FRAME as f64).cos()) as f32).collect();
+    let window: Vec<f32> = hann(FRAME);
     let (mut re, mut im) = (vec![0.0f32; FRAME], vec![0.0f32; FRAME]);
     let mut prev = vec![0.0f32; bins];
     let mut env = vec![0.0f32; frames];

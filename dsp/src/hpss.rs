@@ -10,7 +10,7 @@
 
 use crate::fft::Fft;
 use crate::{pv, TimeMap};
-use std::f64::consts::PI;
+use wevocal_lib::window::hann;
 
 /// 分離の STFT のフレーム長（秒。2 のべき乗に切り上げる）
 const SEP_FRAME_SEC: f32 = 0.046;
@@ -50,13 +50,7 @@ pub fn stretch_map(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, progres
     out
 }
 
-/// `values` の中央値（並べ替えに `buf` を使う）
-fn median(values: impl Iterator<Item = f32>, buf: &mut Vec<f32>) -> f32 {
-    buf.clear();
-    buf.extend(values);
-    let mid = buf.len() / 2;
-    *buf.select_nth_unstable_by(mid, |a, b| a.total_cmp(b)).1
-}
+use wevocal_lib::math::median;
 
 /// 伸びる成分と打つ成分に分ける（どちらも入力と同じ長さ・チャンネル数）。マスクはモノラルにまとめた音で決め、全チャンネルに使う
 pub(crate) fn separate(channels: &[&[f32]], sample_rate: f32, progress: &mut dyn FnMut(f64)) -> (Vec<Vec<f32>>, Vec<Vec<f32>>) {
@@ -65,7 +59,7 @@ pub(crate) fn separate(channels: &[&[f32]], sample_rate: f32, progress: &mut dyn
     let hop = n / 4;
     let bins = n / 2 + 1;
     let fft = Fft::new(n);
-    let window: Vec<f32> = (0..n).map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32).collect();
+    let window: Vec<f32> = hann(n);
     // 先頭と末尾も窓の中ほどで扱えるよう、半フレーム分ずらして始める
     let start = -(n as i64 / 2);
     let frames = ((len as i64 - start) as usize).div_ceil(hop) + 1;
@@ -179,7 +173,7 @@ fn ola(channels: &[&[f32]], map: &TimeMap, sample_rate: f32) -> Vec<Vec<f32>> {
     let mut n = ((sample_rate * OLA_FRAME_SEC) as usize).max(32);
     n += n % 2;
     let hs = n / 2;
-    let window: Vec<f32> = (0..n).map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32).collect();
+    let window: Vec<f32> = hann(n);
     let last_pos = len.saturating_sub(n) as f64;
     let mut out = vec![vec![0.0f32; out_len + n]; channels.len()];
     let mut wsum = vec![0.0f32; out_len + n];
