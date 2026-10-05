@@ -6,6 +6,7 @@ mod curve;
 mod formant;
 mod roundtrip;
 mod sola_params;
+mod segment;
 mod stretch;
 mod voices;
 

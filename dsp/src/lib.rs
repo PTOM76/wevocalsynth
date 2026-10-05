@@ -17,6 +17,7 @@ pub mod hpss;
 mod pipeline;
 pub mod psola;
 pub mod pv;
+pub mod segment;
 pub mod sms;
 pub mod sola;
 pub mod sola2;
