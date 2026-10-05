@@ -24,7 +24,7 @@ src/
 ├── pwa/             新しい版の確認
 └── i18n/            訳文と t()
 dsp/src/             Rust の DSP
-wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT・窓関数・速い近似の数値計算）と、音声ファイルの読み込み（AIFF は自前）・書き出し。submodule
+wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT・窓関数・速い近似の数値計算・F0 推定・テンポ解析・立ち上がりの検出）と、音声ファイルの読み込み（AIFF は自前）・書き出し。submodule
 extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追加機能としてビルドする（docs/EXTRACTOR.md）。単体の Web ツールでもある
 pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確認ダイアログ・分割バー・設定画面の部品・ダイアログを別の窓に出す WindowDialog / WindowPortal・進み具合のゲージ・ファイルを開く画面と最近使用したファイル・IndexedDB）。submodule
 ```
@@ -103,12 +103,12 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `timemap.rs` | 出力位置→入力位置の対応。一定倍率とピッチカーブの両方を表す |
 | `curve.rs` | ピッチカーブ編集。時間ごとのピッチ比から時間マップを作る |
 | `formant.rs` | ケプストラムによるスペクトル包絡の補正（一定の量と、時間で変わる量） |
-| `f0.rs` | YIN による F0 推定（16kHz に間引き、10ms 間隔）。探す範囲・有声判定・無音判定は `Params` で変えられる |
+| `f0.rs`（wevocal-lib） | YIN による F0 推定（16kHz に間引き、10ms 間隔）。探す範囲・有声判定・無音判定は `Params` で変えられる。`crate::f0` で使える |
 | `spec.rs` | 表示用スペクトログラム（STFT 2048/256、対数周波数 128段、1バイト） |
-| `tempo.rs` | テンポ解析。スペクトルの増加量（オンセット強度）の、時間方向の周波数成分から BPM の候補と1拍目の位置を求める |
+| `tempo.rs`（wevocal-lib） | テンポ解析。スペクトルの増加量（オンセット強度）の、時間方向の周波数成分から BPM の候補と1拍目の位置を求める。`crate::tempo` で使える |
 | `ffi.rs` | wasm 向けの C ABI |
 
-FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効くようにしている）とリサンプル（窓付き sinc 補間。上げるときはカットオフを下げて折り返しを防ぐ）は `wevocal-lib` にある。`crate::fft` / `crate::resample` で今までどおり使える。周期的な Hann 窓（`wevocal_lib::window::hann`）、速い近似の ln / exp、位相の折り返し、中央値（`wevocal_lib::math`）も `wevocal-lib` にあり、ほかのソフトでも使えるようにしている。
+FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効くようにしている）とリサンプル（窓付き sinc 補間。上げるときはカットオフを下げて折り返しを防ぐ）は `wevocal-lib` にある。`crate::fft` / `crate::resample` で今までどおり使える。周期的な Hann 窓（`wevocal_lib::window::hann`）、速い近似の ln / exp、位相の折り返し、中央値（`wevocal_lib::math`）、F0 推定（`f0`）、テンポ解析（`tempo`）、立ち上がりの検出（`onset`）も `wevocal-lib` にあり、ほかのソフトでも使えるようにしている。
 
 ### wasm の公開関数
 
