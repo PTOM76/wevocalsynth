@@ -12,6 +12,7 @@ import { backendAllowed } from '../../extractor/src/compat'
 import { visibleAlgorithms } from '../components/AlgorithmMenu'
 import ExtractDiagnose from '../debug/ExtractDiagnose'
 import OutputDeviceRow from './OutputDeviceRow'
+import ShortcutSection from './ShortcutSection'
 import type { Algorithm } from '../dsp/engine'
 import { t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
@@ -142,6 +143,7 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
               ]}
             />
           </Row>
+          <ShortcutSection keymap={draft.keymap} ctrlS={draft.ctrlS} onChange={(keymap) => set({ keymap })} />
         </Group>
       </>
     ),

@@ -1,5 +1,6 @@
 import type { SettingsCategory } from 'pevenmui'
 import type { MessageKey } from '../i18n/i18n'
+import { ACTIONS } from './keymap'
 import { canPickFiles } from 'pevenmui/web'
 
 /** 設定画面の分類 */
@@ -36,7 +37,7 @@ const INDEX: Record<Category, MessageKey[]> = {
   edit: [
     'settings.groupHistory', 'settings.keepOriginal', 'settings.keepOriginalHelp', 'settings.historyLimit', 'settings.historyMemory',
     'settings.groupInput', 'settings.sliderReset', 'settings.seekAfterInsert', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel',
-    'settings.groupShortcuts', 'settings.ctrlS',
+    'settings.groupShortcuts', 'settings.ctrlS', 'settings.keyResetAll', ...ACTIONS.map((a) => a.label),
   ],
   file: ['settings.groupFile', 'settings.rememberFolder', 'settings.rememberFolderHelp', 'settings.startFolder', 'settings.recentFiles', 'settings.recentFilesHelp'],
   display: ['settings.groupAppearance', 'settings.theme', 'settings.uiScale', 'settings.uiScaleHelp', 'settings.mobileUi', 'settings.mobileUiHelp', 'settings.touchSelect', 'settings.language', 'settings.showMeters', 'settings.showMetersHelp', 'settings.liveSelection', 'settings.liveSelectionHelp'],

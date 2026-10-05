@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react'
 import type { LangSetting } from '../i18n/i18n'
 import type { Algorithm, F0Params } from '../dsp/engine'
 import type { WindowMode } from 'pevenmui'
+import type { KeymapOverrides } from './keymap'
 import type { PickerMode, StartFolder } from 'pevenmui/web'
 
 /** ファイルを開いたときの処理モード。auto は素材から自動判定する */
@@ -129,6 +130,8 @@ export interface Settings {
   showMaterialButton: boolean
   /** 「和音を分ける」（試作）をメニューに表示する（開発者向け） */
   showVoiceSplit: boolean
+  /** キーボードショートカットのうち、既定から変えたもの（settings/keymap.ts） */
+  keymap: KeymapOverrides
   /** 書き出し（フォルダーへの保存、外へのドラッグも）の仕上げ: ノーマライズと、両端のフェードの長さ（ms、0 でなし） */
   exportNormalize: boolean
   exportFadeMs: number
@@ -197,6 +200,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showExperimentalAlgorithms: false,
   showMaterialButton: false,
   showVoiceSplit: false,
+  keymap: {},
   exportNormalize: false,
   exportFadeMs: 0,
   presets: [],

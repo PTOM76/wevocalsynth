@@ -1,39 +1,32 @@
 import { ShortcutsDialog as PevenShortcutsDialog } from 'pevenmui'
 import { useT, type MessageKey } from '../i18n/i18n'
 import type { WheelZoom } from '../settings/settings'
+import { ACTIONS, comboLabel, type Keymap } from '../settings/keymap'
 
-/** [キー（文字列または訳文キー）, 説明の訳文キー] */
-const SHORTCUTS: [string | MessageKey, MessageKey][] = [
-  ['Space', 'shortcuts.playPause'],
-  ['← / → (Shift)', 'shortcuts.seek'],
-  ['Home / End', 'shortcuts.seekEdge'],
-  ['Ctrl+Z / Ctrl+Y', 'shortcuts.undoRedo'],
-  ['Ctrl+X / C / V', 'shortcuts.clipboard'],
-  ['Ctrl+A / Esc', 'shortcuts.selectAll'],
-  ['Ctrl+O / Ctrl+S / Ctrl+Shift+S', 'shortcuts.openSave'],
+/** マウスなど、割り当てを変えられない操作: [キー（訳文キーまたはキー名）, 説明の訳文キー] */
+const POINTER: [string | MessageKey, MessageKey][] = [
   ['shortcuts.drag', 'shortcuts.select'],
   ['shortcuts.ctrlDrag', 'shortcuts.addRange'],
   ['shortcuts.edgeDrag', 'shortcuts.adjust'],
   ['shortcuts.rightClick', 'shortcuts.contextMenu'],
   ['shortcuts.wheel', 'shortcuts.scrollZoom'],
   ['shortcuts.penKeys', 'shortcuts.penModifiers'],
-  ['↑ / ↓ (Shift)', 'shortcuts.pitchShift'],
-  ['Tab / Shift+Tab', 'shortcuts.stepSelection'],
   ['Alt', 'shortcuts.noSnap'],
 ]
 
-/** キーボード・マウス操作の一覧 */
-export default function ShortcutsDialog({ open, onClose, wheelZoom = 'ctrl' }: { open: boolean; onClose: () => void; wheelZoom?: WheelZoom }) {
+/** キーボード・マウス操作の一覧。キーボードは今の割り当て（設定で変えたもの）を、キーのある操作だけ並べる */
+export default function ShortcutsDialog({ open, onClose, keymap, wheelZoom = 'ctrl' }: { open: boolean; onClose: () => void; keymap: Keymap; wheelZoom?: WheelZoom }) {
   const t = useT()
   // 'shortcuts.' で始まるものは訳文キー、それ以外はキー名そのもの
   const keyLabel = (k: string) => (k.startsWith('shortcuts.') ? t(k as MessageKey) : k)
+  const keys: [string, string][] = ACTIONS.filter((a) => keymap[a.id].length).map((a) => [keymap[a.id].map(comboLabel).join(' / '), t(a.label)])
   return (
     <PevenShortcutsDialog
       open={open}
       onClose={onClose}
       title={t('menu.shortcuts')}
       // ホイールだけで拡大縮小する設定なら、ホイールの説明を入れ替える
-      rows={SHORTCUTS.map(([key, desc]) => [keyLabel(key), t(desc === 'shortcuts.scrollZoom' && wheelZoom === 'wheel' ? 'shortcuts.zoomScroll' : desc)])}
+      rows={[...keys, ...POINTER.map(([key, desc]): [string, string] => [keyLabel(key), t(desc === 'shortcuts.scrollZoom' && wheelZoom === 'wheel' ? 'shortcuts.zoomScroll' : desc)])]}
     />
   )
 }

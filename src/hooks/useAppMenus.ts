@@ -1,9 +1,12 @@
 import type { MenuEntry, MenuGroup } from 'pevenmui'
+import { keyLabelOf, type ActionId, type Keymap } from '../settings/keymap'
 import { useT } from '../i18n/i18n'
 import { openExternal, USER_GUIDE_URL } from '../links'
 import type { WheelZoom } from '../settings/settings'
 
 interface Actions {
+  /** キーの割り当て（メニューの右に出すキー） */
+  keymap: Keymap
   hasClip: boolean
   hasSelection: boolean
   hasClipboard: boolean
@@ -159,17 +162,18 @@ interface Actions {
 
 /** メニューバー（スマホではメニュー一覧）と、波形の右クリックメニューの中身 */
 export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: MenuGroup[]; context: MenuEntry[] } {
+  const key = (id: ActionId) => keyLabelOf(a.keymap, id)
   const t = useT()
   const noClip = !a.hasClip || a.busy
   const noSel = noClip || !a.hasSelection
   // ピッチの強制表示・非表示は、ピッチを表示して解析が済んでから
   const noVoicing = noSel || !a.pitchReady
   const edit: MenuEntry[] = [
-    { label: t('edit.cut'), shortcut: 'Ctrl+X', disabled: noSel, onClick: a.cut },
-    { label: t('edit.copy'), shortcut: 'Ctrl+C', disabled: noSel, onClick: a.copy },
-    { label: t('edit.paste'), shortcut: 'Ctrl+V', disabled: noClip || !a.hasClipboard, onClick: a.paste },
-    { label: t('edit.delete'), shortcut: 'Delete', disabled: noSel, onClick: a.remove },
-    { label: t('edit.trim'), disabled: noSel || !a.canTrim, onClick: a.trim },
+    { label: t('edit.cut'), shortcut: key('cut'), disabled: noSel, onClick: a.cut },
+    { label: t('edit.copy'), shortcut: key('copy'), disabled: noSel, onClick: a.copy },
+    { label: t('edit.paste'), shortcut: key('paste'), disabled: noClip || !a.hasClipboard, onClick: a.paste },
+    { label: t('edit.delete'), shortcut: key('remove'), disabled: noSel, onClick: a.remove },
+    { label: t('edit.trim'), shortcut: key('trim'), disabled: noSel || !a.canTrim, onClick: a.trim },
     { label: t('edit.reverse'), disabled: noClip, onClick: a.reverse },
     { label: t('silence.menu'), disabled: noClip, onClick: a.insertSilence },
     { label: t('repeat.menu'), disabled: noSel, onClick: a.repeatSelection },
@@ -182,9 +186,9 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       ],
     },
     { divider: true },
-    { label: t('edit.selectAll'), shortcut: 'Ctrl+A', disabled: noClip, onClick: a.selectAll },
-    { label: t('soundSelect.menu'), disabled: noClip, onClick: a.selectSounds },
-    { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: noSel, onClick: a.clearSelection },
+    { label: t('edit.selectAll'), shortcut: key('selectAll'), disabled: noClip, onClick: a.selectAll },
+    { label: t('soundSelect.menu'), shortcut: key('selectSounds'), disabled: noClip, onClick: a.selectSounds },
+    { label: t('edit.clearSelection'), shortcut: key('clearSelection'), disabled: noSel, onClick: a.clearSelection },
   ]
   // ボーカル抽出（選択範囲、なければ全体）。メニューバーでは「ツール」、右クリックメニューでは編集の後ろに出す
   const extract: MenuEntry[] = [
@@ -240,13 +244,13 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       label: t('menu.file'),
       accessKey: 'F',
       entries: [
-        { label: t('menu.open'), shortcut: 'Ctrl+O', disabled: a.busy, onClick: a.open },
+        { label: t('menu.open'), shortcut: key('open'), disabled: a.busy, onClick: a.open },
         ...recentMenu,
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
-        { label: t('menu.saveProject'), shortcut: a.ctrlS === 'project' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.save },
+        { label: t('menu.saveProject'), shortcut: key('saveProject'), disabled: noClip, onClick: a.save },
         { label: t('menu.saveProjectAs'), disabled: noClip, onClick: a.saveAs },
         { divider: true },
-        { label: t('menu.export'), shortcut: a.ctrlS === 'export' ? 'Ctrl+S' : 'Ctrl+Shift+S', disabled: noClip, onClick: a.openExport },
+        { label: t('menu.export'), shortcut: key('exportAudio'), disabled: noClip, onClick: a.openExport },
         { divider: true },
         { label: t('menu.settings'), onClick: a.showSettings },
       ],
@@ -255,8 +259,8 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       label: t('menu.edit'),
       accessKey: 'E',
       entries: [
-        { label: t('common.undo'), shortcut: 'Ctrl+Z', disabled: !a.canUndo || a.busy, onClick: a.undo },
-        { label: t('common.redo'), shortcut: 'Ctrl+Y', disabled: !a.canRedo || a.busy, onClick: a.redo },
+        { label: t('common.undo'), shortcut: key('undo'), disabled: !a.canUndo || a.busy, onClick: a.undo },
+        { label: t('common.redo'), shortcut: key('redo'), disabled: !a.canRedo || a.busy, onClick: a.redo },
         { label: t('history.menu'), disabled: noClip, onClick: a.showHistory },
         { divider: true },
         ...edit,
@@ -265,7 +269,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
           label: t('menu.marker'),
           disabled: !a.hasClip,
           submenu: [
-            { label: t('marker.add'), shortcut: 'M', onClick: a.addMarker },
+            { label: t('marker.add'), shortcut: key('addMarker'), onClick: a.addMarker },
             { label: t('marker.rename'), disabled: !a.hasCurrentMarker, onClick: a.renameMarker },
             { label: t('marker.tempo'), disabled: !a.hasCurrentMarker, onClick: a.markerTempo },
             { label: t('marker.remove'), disabled: !a.hasCurrentMarker, onClick: a.removeMarker },
@@ -315,15 +319,15 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
       label: t('menu.play'),
       accessKey: 'P',
       entries: [
-        { label: t(a.playing ? 'play.pause' : 'play.play'), shortcut: 'Space', disabled: !a.hasClip, onClick: a.togglePlay },
+        { label: t(a.playing ? 'play.pause' : 'play.play'), shortcut: key('playPause'), disabled: !a.hasClip, onClick: a.togglePlay },
         { label: t('common.stop'), disabled: !a.hasClip, onClick: a.stop },
-        { label: t('play.playSelection'), disabled: noSel, onClick: a.playSelection },
-        { label: t('play.repeat'), checked: a.repeat, disabled: !a.hasClip, onClick: a.toggleLoop },
+        { label: t('play.playSelection'), shortcut: key('playSelection'), disabled: noSel, onClick: a.playSelection },
+        { label: t('play.repeat'), shortcut: key('toggleLoop'), checked: a.repeat, disabled: !a.hasClip, onClick: a.toggleLoop },
         { divider: true },
-        { label: t('play.toStart'), shortcut: 'Home', disabled: !a.hasClip, onClick: () => a.seekEdge('start') },
-        { label: t('play.toEnd'), shortcut: 'End', disabled: !a.hasClip, onClick: () => a.seekEdge('end') },
-        { label: t('marker.prev'), shortcut: 'Ctrl+←', disabled: !a.hasMarkers, onClick: () => a.seekMarker(-1) },
-        { label: t('marker.next'), shortcut: 'Ctrl+→', disabled: !a.hasMarkers, onClick: () => a.seekMarker(1) },
+        { label: t('play.toStart'), shortcut: key('seekStart'), disabled: !a.hasClip, onClick: () => a.seekEdge('start') },
+        { label: t('play.toEnd'), shortcut: key('seekEnd'), disabled: !a.hasClip, onClick: () => a.seekEdge('end') },
+        { label: t('marker.prev'), shortcut: key('prevMarker'), disabled: !a.hasMarkers, onClick: () => a.seekMarker(-1) },
+        { label: t('marker.next'), shortcut: key('nextMarker'), disabled: !a.hasMarkers, onClick: () => a.seekMarker(1) },
       ],
     },
     {
@@ -366,29 +370,29 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
   // 波形の右クリック。上の段は 10 個前後にし、まとまりはサブメニューにする（docs/DECISIONS.md の「メニューの構成」）
   const noPitch = noClip || !a.pitchReady
   const context: MenuEntry[] = [
-    { label: t('play.playSelection'), disabled: noSel, onClick: a.playSelection },
-    { label: t('play.repeat'), disabled: noClip, onClick: a.toggleLoop },
+    { label: t('play.playSelection'), shortcut: key('playSelection'), disabled: noSel, onClick: a.playSelection },
+    { label: t('play.repeat'), shortcut: key('toggleLoop'), disabled: noClip, onClick: a.toggleLoop },
     { divider: true },
-    { label: t('edit.cut'), shortcut: 'Ctrl+X', disabled: noSel, onClick: a.cut },
-    { label: t('edit.copy'), shortcut: 'Ctrl+C', disabled: noSel, onClick: a.copy },
-    { label: t('edit.paste'), shortcut: 'Ctrl+V', disabled: noClip || !a.hasClipboard, onClick: a.paste },
-    { label: t('edit.delete'), shortcut: 'Delete', disabled: noSel, onClick: a.remove },
+    { label: t('edit.cut'), shortcut: key('cut'), disabled: noSel, onClick: a.cut },
+    { label: t('edit.copy'), shortcut: key('copy'), disabled: noSel, onClick: a.copy },
+    { label: t('edit.paste'), shortcut: key('paste'), disabled: noClip || !a.hasClipboard, onClick: a.paste },
+    { label: t('edit.delete'), shortcut: key('remove'), disabled: noSel, onClick: a.remove },
     { divider: true },
     {
       label: t('context.select'),
       disabled: noClip,
       submenu: [
-        { label: t('edit.selectAll'), shortcut: 'Ctrl+A', onClick: a.selectAll },
-        { label: t('soundSelect.menu'), onClick: a.selectSounds },
+        { label: t('edit.selectAll'), shortcut: key('selectAll'), onClick: a.selectAll },
+        { label: t('soundSelect.menu'), shortcut: key('selectSounds'), onClick: a.selectSounds },
         { label: t('wave.zoomSelection'), disabled: !a.hasSelection, onClick: a.zoomSelection },
-        { label: t('edit.clearSelection'), shortcut: 'Esc', disabled: !a.hasSelection, onClick: a.clearSelection },
+        { label: t('edit.clearSelection'), shortcut: key('clearSelection'), disabled: !a.hasSelection, onClick: a.clearSelection },
       ],
     },
     {
       label: t('context.edit'),
       disabled: noClip,
       submenu: [
-        { label: t('edit.trim'), disabled: !a.hasSelection || !a.canTrim, onClick: a.trim },
+        { label: t('edit.trim'), shortcut: key('trim'), disabled: !a.hasSelection || !a.canTrim, onClick: a.trim },
         { label: t('edit.reverse'), onClick: a.reverse },
         { label: t('silence.menu'), onClick: a.insertSilence },
         { label: t('repeat.menu'), disabled: !a.hasSelection, onClick: a.repeatSelection },
@@ -402,8 +406,8 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
             label: t('context.pitch'),
             disabled: noPitch,
             submenu: [
-              { label: t('context.pitchUp'), shortcut: '↑', onClick: () => a.pitchTool.shift(1) },
-              { label: t('context.pitchDown'), shortcut: '↓', onClick: () => a.pitchTool.shift(-1) },
+              { label: t('context.pitchUp'), shortcut: key('pitchUp'), onClick: () => a.pitchTool.shift(1) },
+              { label: t('context.pitchDown'), shortcut: key('pitchDown'), onClick: () => a.pitchTool.shift(-1) },
               { label: t('context.flatten'), onClick: a.pitchTool.flatten },
               // ダイアログを開くものは「…」を付ける
               { label: `${t('snap.title')}…`, onClick: a.pitchTool.snap },
@@ -429,7 +433,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
     { divider: true },
     // 選択範囲があれば、書き出しの範囲は選択範囲で開く（ExportDialog）
     { label: t(a.hasSelection ? 'context.exportSelection' : 'menu.export'), disabled: noClip, onClick: a.openExport },
-    ...(a.saveToFolder ? [{ label: t('folder.save'), disabled: noSel, onClick: a.saveToFolder }] : []),
+    ...(a.saveToFolder ? [{ label: t('folder.save'), shortcut: key('saveToFolder'), disabled: noSel, onClick: a.saveToFolder }] : []),
     ...(a.saveManyToFolder ? [{ label: t('folder.saveMany', { n: a.selectionCount }), onClick: a.saveManyToFolder }] : []),
   ]
   // スマホの ⋮ は PC のメニューバーと同じまとまりにし、段階で開く（PevenMUI の DrillMenu。スマホから使えない操作をなくす）。

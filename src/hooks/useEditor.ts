@@ -24,6 +24,7 @@ import { usePitchTools } from './usePitchTools'
 import { useTempo } from './useTempo'
 import { clipBytes, reportAudioContext, reportMemory } from '../debug/debugStats'
 import { useShortcuts } from './useShortcuts'
+import { resolveKeymap } from '../settings/keymap'
 import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
 import { isOffloaded, offloadClip, restoreClip, useOffloadVersion } from '../audio/originalStore'
@@ -652,6 +653,8 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
   })
   /** フォーカスしている帯に効く、切り取り・コピー・貼り付け・選択範囲のみ残す */
   const onPitch = focusLane === 'pitch'
+  // キーの割り当て（設定で変えたものと既定）
+  const keymap = useMemo(() => resolveKeymap(settings.keymap, settings.ctrlS), [settings.keymap, settings.ctrlS])
   const clip = {
     cut: onPitch ? pitchClip.cut : cmd.cut,
     copy: onPitch ? pitchClip.copy : cmd.copy,
@@ -664,31 +667,43 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     hasClipboard: onPitch ? pitchClip.hasClipboard : cmd.hasClipboard,
   }
 
-  useShortcuts({
-    seekBy,
-    seekEdge,
-    togglePlay: playback.togglePlay,
+  // ↑↓: ピッチ帯で曲線を編集できるときは曲線（1 半音、Shift で 0.1 半音）、それ以外は加工のピッチ（1 半音、Shift で 12 半音）
+  const pitchCurve = showPitch && editing && pitchTools.ready && !busy ? pitchTools.shift : undefined
+  const nudge = editing && !busy ? (d: number) => setParams((p) => ({ ...p, semitones: Math.max(-24, Math.min(24, Math.round((p.semitones + d) * 100) / 100)) })) : undefined
+  const pitchKey = (small: number, large: number) => (pitchCurve ? () => pitchCurve(small) : nudge ? () => nudge(large) : undefined)
+  useShortcuts(keymap, {
+    seekBack: () => seekBy(-1, false),
+    seekForward: () => seekBy(1, false),
+    seekBackFine: () => seekBy(-1, true),
+    seekForwardFine: () => seekBy(1, true),
+    seekStart: () => seekEdge('start'),
+    seekEnd: () => seekEdge('end'),
+    playPause: playback.togglePlay,
     undo: history.undo,
     redo: history.redo,
     cut: clip.cut,
     copy: clip.copy,
     paste: clip.paste,
     remove: clip.remove,
+    trim: clip.trim,
     selectAll,
     clearSelection,
     open: () => picker.open(),
-    // Ctrl+S はプロジェクト保存か書き出しか（設定）。もう一方は Ctrl+Shift+S
-    save: settings.ctrlS === 'export' ? () => openExport() : () => saveProjectFile(),
-    saveAlt: settings.ctrlS === 'export' ? () => saveProjectFile() : () => openExport(),
+    saveProject: () => saveProjectFile(),
     exportAudio: () => openExport(),
-    pitchShift: showPitch && editing && pitchTools.ready && !busy ? pitchTools.shift : undefined,
-    nudgePitch: editing && !busy ? (d) => setParams((p) => ({ ...p, semitones: Math.max(-24, Math.min(24, Math.round((p.semitones + d) * 100) / 100)) })) : undefined,
-    stepSelection: selections.length > 1 ? stepSelection : undefined,
+    pitchUp: pitchKey(1, 1),
+    pitchDown: pitchKey(-1, -1),
+    pitchUpAlt: pitchKey(0.1, 12),
+    pitchDownAlt: pitchKey(-0.1, -12),
+    nextSelection: selections.length > 1 ? () => stepSelection(1) : undefined,
+    prevSelection: selections.length > 1 ? () => stepSelection(-1) : undefined,
     addMarker,
-    seekMarker,
+    prevMarker: () => seekMarker(-1),
+    nextMarker: () => seekMarker(1),
   })
 
   return {
+    keymap,
     // 素材と履歴
     fileName, projectTempo, tempoSegs, setProjectTempo, changeTempo, setProjectName: (name: string) => {
       if (!name.trim()) return

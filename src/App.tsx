@@ -52,6 +52,7 @@ import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
 import { setFastMath } from './dsp/engine'
 import { checkForUpdate, promptUpdate } from 'pevenmui/pwa'
+import { useShortcuts } from './hooks/useShortcuts'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 /** 選択範囲なし（描画のたびに新しい空配列を作らない） */
@@ -138,7 +139,17 @@ export default function App() {
   const activeSettings = ed.tracks.settingsOf(ed.tracks.activeId)
   const activeIndex = ed.tracks.tracks.findIndex((tr) => tr.id === ed.tracks.activeId)
 
+  // 切り出しと加工でよく使う操作のキー（既定はなし。設定で割り当てる。ほかの操作は useEditor）
+  useShortcuts(ed.keymap, {
+    playSelection: selection ? playback.playSelection : undefined,
+    toggleLoop: edited ? toggleRepeat : undefined,
+    apply: edited && !busy ? () => void ed.apply() : undefined,
+    toNewTrack: selection ? () => ed.tracks.fromSelection(ed.selections, false) : undefined,
+    saveToFolder: selection && canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
+    selectSounds: edited ? () => setSoundSelectOpen(true) : undefined,
+  })
   const { menus, mobileMenus, context } = useAppMenus({
+    keymap: ed.keymap,
     hasClip: !!edited,
     hasSelection: !!selection,
     hasClipboard: ed.clip.hasClipboard,
@@ -767,7 +778,7 @@ export default function App() {
       />
       <LicensesDialog open={licensesOpen} onClose={() => setLicensesOpen(false)} title={t('menu.licenses')} intro={t('licenses.intro')} entries={licenseEntries()} />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
-      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} wheelZoom={settings.wheelZoom} />
+      <ShortcutsDialog keymap={ed.keymap} open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} wheelZoom={settings.wheelZoom} />
       <SettingsDialog
         open={settingsOpen}
         focusSignal={settingsFocus}
