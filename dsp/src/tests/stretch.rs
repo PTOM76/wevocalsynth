@@ -330,3 +330,15 @@ fn bench_hpss_median() {
     }
     println!("hpss median {frames}x{bins}: {:?} ({count})", t.elapsed());
 }
+
+/// SOLAv3 の内訳を見るため、2 分のモノラルの F0 推定（YIN）だけの時間を測る
+/// `cargo test --release -- --ignored --nocapture bench_f0_two_minutes`
+#[test]
+#[ignore]
+fn bench_f0_two_minutes() {
+    let sr = 48000.0;
+    let x = vibrato_vowel(sr, 120.0, 220.0);
+    let t = std::time::Instant::now();
+    let f = crate::f0::estimate(&x, sr, &mut |_| {});
+    println!("f0 2min: {:?} ({} frames)", t.elapsed(), f.len());
+}
