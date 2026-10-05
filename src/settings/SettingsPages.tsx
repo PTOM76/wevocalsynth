@@ -60,6 +60,11 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
         <Group title={t('settings.groupOutput')}>
           <OutputDeviceRow value={draft.outputDevice} onChange={(v) => set({ outputDevice: v })} />
         </Group>
+        <Group title={t('settings.groupRecord')}>
+          <Check checked={draft.recordEchoCancellation} onChange={(v) => set({ recordEchoCancellation: v })} label={t('settings.recordEcho')} />
+          <Check checked={draft.recordNoiseSuppression} onChange={(v) => set({ recordNoiseSuppression: v })} label={t('settings.recordNoise')} />
+          <Check checked={draft.recordAutoGain} onChange={(v) => set({ recordAutoGain: v })} label={t('settings.recordAutoGain')} help={t('settings.recordHelp')} />
+        </Group>
         <Group title={t('settings.groupUpdate')}>
           <UpdateSection />
         </Group>

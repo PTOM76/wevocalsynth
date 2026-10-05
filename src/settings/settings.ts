@@ -58,6 +58,11 @@ export interface Settings {
   uiScale: number
   /** 音声の出力先のデバイス ID（'' は既定の出力） */
   outputDevice: string
+  /** 録音の入力元（'' は既定の入力）と、ブラウザの加工（声の素材にするため、既定はすべてオフ） */
+  inputDevice: string
+  recordEchoCancellation: boolean
+  recordNoiseSuppression: boolean
+  recordAutoGain: boolean
   keepOriginal: boolean
   historyLimit: number
   /** 元に戻す履歴が使うメモリの上限（MB）。超えたら古い段から捨てる */
@@ -189,6 +194,10 @@ export const DEFAULT_SETTINGS: Settings = {
   f0SilenceDb: -50,
   uiScale: 1,
   outputDevice: '',
+  inputDevice: '',
+  recordEchoCancellation: false,
+  recordNoiseSuppression: false,
+  recordAutoGain: false,
   keepOriginal: true,
   historyLimit: 50,
   historyMemoryMb: 512,

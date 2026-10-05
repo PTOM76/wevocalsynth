@@ -79,6 +79,8 @@ interface Actions {
   /** 選択範囲を同じ位置のまま新しいトラックへ（`move` なら元は無音に） */
   selectionToTrack: (move: boolean) => void
   addTrack: () => void
+  /** 録音のダイアログを開く（録音できないブラウザでは渡さない） */
+  record?: () => void
   /** 音を0から作る（新しいトラック。何も開いていなくても使える） */
   synth: () => void
   /** 選択範囲を MIDI の音符に並べる */
@@ -247,6 +249,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.open'), shortcut: key('open'), disabled: a.busy, onClick: a.open },
         ...recentMenu,
         { label: t('track.addMenu'), disabled: noClip, onClick: a.addTrack },
+        { label: t('record.menu'), disabled: a.busy || !a.record, onClick: () => a.record?.() },
         { label: t('menu.saveProject'), shortcut: key('saveProject'), disabled: noClip, onClick: a.save },
         { label: t('menu.saveProjectAs'), disabled: noClip, onClick: a.saveAs },
         { divider: true },

@@ -34,6 +34,8 @@ import VolumePanel from './components/VolumePanel'
 import PitchToolHost, { type PitchDialogKind } from './components/PitchToolHost'
 import SynthDialog from './components/SynthDialog'
 import SamplerDialog from './components/SamplerDialog'
+import RecordDialog from './components/RecordDialog'
+import { canRecord } from 'wevocal-lib'
 import SilenceDialog from './components/SilenceDialog'
 import SoundSelectDialog from './components/SoundSelectDialog'
 import { flattenPitch } from './audio/pitchTools'
@@ -110,6 +112,9 @@ export default function App() {
   // テンポを変えるマーカー（テンポが途中で変わる曲）
   const [tempoMarker, setTempoMarker] = useState<string | null>(null)
   const [silenceOpen, setSilenceOpen] = useState(false)
+  const [recordOpen, setRecordOpen] = useState(false)
+  // 録音したトラックの名前の番号（録音 1、録音 2…）
+  const recordCount = useRef(0)
   const [repeatOpen, setRepeatOpen] = useState(false)
   const [soundSelectOpen, setSoundSelectOpen] = useState(false)
   // 再生位置の入力を始める合図（目盛りの右クリックメニューから。増やすたびに始まる）
@@ -204,6 +209,7 @@ export default function App() {
     selectionCount: ed.selections.length,
     selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),
     addTrack: () => ed.addPicker.open(),
+    record: canRecord() ? () => setRecordOpen(true) : undefined,
     synth: () => setSynthOpen(true),
     sampler: () => setSamplerOpen(true),
     showShortcuts: () => setShortcutsOpen(true),
@@ -454,7 +460,7 @@ export default function App() {
       onFocusLane={onWaveFocus}
     />
   ) : (
-    <EmptyState onOpen={ed.picker.open} onSynth={() => setSynthOpen(true)} recent={ed.recent} />
+    <EmptyState onOpen={ed.picker.open} onSynth={() => setSynthOpen(true)} onRecord={canRecord() ? () => setRecordOpen(true) : undefined} recent={ed.recent} />
   )
   // トラックが2本以上あるときだけ、波形の上にトラックの欄を出す（広げると波形付きの一覧、折りたたむとタブ）
   const editor = (
@@ -752,6 +758,13 @@ export default function App() {
       />
       <SynthDialog open={synthOpen} bpm={bpm} onClose={() => setSynthOpen(false)} onCreate={ed.addSynth} />
       <RepeatDialog open={repeatOpen} onClose={() => setRepeatOpen(false)} onRepeat={ed.cmd.repeat} />
+      <RecordDialog
+        open={recordOpen}
+        input={{ deviceId: settings.inputDevice, echoCancellation: settings.recordEchoCancellation, noiseSuppression: settings.recordNoiseSuppression, autoGainControl: settings.recordAutoGain }}
+        onDevice={(id) => updateSettings({ inputDevice: id })}
+        onClose={() => setRecordOpen(false)}
+        onUse={(clip) => ed.addSynth(clip, t('record.trackName', { n: ++recordCount.current }))}
+      />
       <SilenceDialog
         open={silenceOpen}
         bpm={bpm}

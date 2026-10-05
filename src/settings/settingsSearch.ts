@@ -33,6 +33,7 @@ const INDEX: Record<Category, MessageKey[]> = {
   general: [
     'settings.groupStartup', 'settings.autoRestore', 'settings.autoRestoreHelp', 'settings.confirmClose', 'settings.confirmCloseHelp',
     'settings.groupOutput', 'settings.outputDevice', 'settings.outputDeviceHelp',
+    'settings.groupRecord', 'settings.recordEcho', 'settings.recordNoise', 'settings.recordAutoGain', 'settings.recordHelp',
     'settings.groupUpdate', 'update.check',
   ],
   edit: [

@@ -2,7 +2,7 @@ import { vw } from 'pevenmui'
 import { useState } from 'react'
 import { Box, Button, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faClockRotateLeft, faFileArrowUp, faFolderOpen, faWaveSquare } from '@fortawesome/free-solid-svg-icons'
+import { faClockRotateLeft, faFileArrowUp, faFolderOpen, faMicrophone, faWaveSquare } from '@fortawesome/free-solid-svg-icons'
 import { useT } from '../i18n/i18n'
 
 /** 最近使用したファイルを最初に見せる数（残りは「もっと見る」で出す） */
@@ -12,10 +12,13 @@ const RECENT_SHOWN = 3
 export function EmptyState({
   onOpen,
   onSynth,
+  onRecord,
   recent,
 }: {
   onOpen: () => void
   onSynth: () => void
+  /** 録音（録音できないブラウザでは渡さない） */
+  onRecord?: () => void
   /** 最近使用したファイル（使えないブラウザや、1つもなければ出さない） */
   recent?: { supported: boolean; names: string[]; open: (i: number) => void }
 }) {
@@ -37,6 +40,11 @@ export function EmptyState({
       <Button variant="text" size="small" startIcon={<FontAwesomeIcon icon={faWaveSquare} />} onClick={onSynth}>
         {t('synth.open')}
       </Button>
+      {onRecord && (
+        <Button variant="text" size="small" startIcon={<FontAwesomeIcon icon={faMicrophone} />} onClick={onRecord}>
+          {t('record.title')}
+        </Button>
+      )}
       {names.length > 0 && (
         <Stack spacing={0.25} sx={{ pt: 1, alignItems: 'center', maxWidth: `min(360px, ${vw(90)})`, width: '100%' }}>
           <Typography variant="caption" color="text.secondary">
