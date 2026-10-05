@@ -224,8 +224,8 @@ export function drawLaneFocus(c: DrawContext, lane: Lane) {
 
 /** 選択範囲の塗りと両端の線（高さ `h` まで） */
 /** 選択範囲の色（ライト / ダーク） */
-const SELECTION_LIGHT = '#0097A7'
-const SELECTION_DARK = '#4DD0E1'
+export const SELECTION_LIGHT = '#0097A7'
+export const SELECTION_DARK = '#4DD0E1'
 
 export function drawSelection(c: DrawContext, selection: Range, h: number) {
   const { g, dark } = c

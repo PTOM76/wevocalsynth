@@ -678,7 +678,7 @@ function Waveform(props: Props) {
       {/* 表示範囲の横スクロールバー */}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1 }}>
         {props.minimap ? (
-          <Minimap clip={clip} duration={duration} view={view} selections={props.selections} scrollTo={scrollTo} label={t('wave.scroll')} />
+          <Minimap clip={clip} duration={duration} view={view} selections={props.selections} scrollTo={scrollTo} label={t('wave.scroll')} position={position} playing={!!playing} livePosition={livePosition} />
         ) : (
         <Slider
           size="small"

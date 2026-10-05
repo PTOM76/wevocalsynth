@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { Clip, Range } from '../../audio/types'
-import type { View } from './draw'
+import { SELECTION_DARK, SELECTION_LIGHT, type View } from './draw'
 import { computePeaks } from './peaks'
 import { usePalette } from 'pevenmui'
 
@@ -16,11 +16,17 @@ interface Props {
   /** 表示開始位置を変更する */
   scrollTo: (start: number) => void
   label: string
+  /** 再生位置（秒） */
+  position: number
+  /** 再生中は毎フレーム今の位置を返す */
+  livePosition?: () => number
+  playing: boolean
 }
 
 /** 全体を縮小した波形。今の表示範囲を枠で示し、ドラッグやクリックで移動する */
-export default function Minimap({ clip, duration, view, selections, scrollTo, label }: Props) {
-  const { pal } = usePalette()
+export default function Minimap({ clip, duration, view, selections, scrollTo, label, position, livePosition, playing }: Props) {
+  const { pal, dark } = usePalette()
+  const headRef = useRef<HTMLDivElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [width, setWidth] = useState(0)
@@ -49,10 +55,11 @@ export default function Minimap({ clip, duration, view, selections, scrollTo, la
     g.setTransform(dpr, 0, 0, dpr, 0, 0)
     g.clearRect(0, 0, width, HEIGHT)
     const x = (t: number) => (t / duration) * width
-    g.fillStyle = alpha(pal.primary.main, 0.25)
+    // 色は本体の波形に合わせる（波形は青、選択範囲はシアン、再生位置は文字色）
+    g.fillStyle = alpha(dark ? SELECTION_DARK : SELECTION_LIGHT, 0.3)
     for (const r of selections) g.fillRect(x(r.start), 0, Math.max(1, x(r.end) - x(r.start)), HEIGHT)
     const mid = HEIGHT / 2
-    g.fillStyle = alpha(pal.text.primary, 0.45)
+    g.fillStyle = alpha(pal.primary.main, 0.6)
     for (let i = 0; i < width; i++) {
       const y0 = mid - peaks.max[i] * mid
       g.fillRect(i, y0, 1, Math.max(1, mid - peaks.min[i] * mid - y0))
@@ -60,12 +67,26 @@ export default function Minimap({ clip, duration, view, selections, scrollTo, la
     // 今の表示範囲
     const x0 = x(view.start)
     const w = Math.max(2, x(view.start + view.dur) - x0)
-    g.fillStyle = alpha(pal.warning.main, 0.12)
+    g.fillStyle = alpha(pal.primary.main, 0.15)
     g.fillRect(x0, 0, w, HEIGHT)
-    g.strokeStyle = pal.warning.main
+    g.strokeStyle = pal.primary.main
     g.lineWidth = 1.5
     g.strokeRect(x0 + 0.75, 0.75, w - 1.5, HEIGHT - 1.5)
-  }, [peaks, width, duration, view, selections, pal])
+  }, [peaks, width, duration, view, selections, pal, dark])
+
+  // 再生位置の線。再生中は React の再描画を待たず、毎フレーム動かす
+  useEffect(() => {
+    const el = headRef.current
+    if (!el || duration <= 0) return
+    const put = (t: number) => (el.style.left = `${Math.min(100, Math.max(0, (t / duration) * 100))}%`)
+    put(position)
+    if (!playing || !livePosition) return
+    let id = requestAnimationFrame(function tick() {
+      put(livePosition())
+      id = requestAnimationFrame(tick)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [position, playing, livePosition, duration])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -73,7 +94,7 @@ export default function Minimap({ clip, duration, view, selections, scrollTo, la
   }
 
   return (
-    <Box ref={boxRef} sx={{ flex: 1, minWidth: 0, height: HEIGHT }}>
+    <Box ref={boxRef} sx={{ flex: 1, minWidth: 0, height: HEIGHT, position: 'relative' }}>
       <canvas
         ref={canvasRef}
         role="scrollbar"
@@ -98,6 +119,7 @@ export default function Minimap({ clip, duration, view, selections, scrollTo, la
         onPointerUp={() => (drag.current = null)}
         onPointerCancel={() => (drag.current = null)}
       />
+      <Box ref={headRef} sx={{ position: 'absolute', top: 0, bottom: 0, width: 2, ml: '-1px', bgcolor: 'text.primary', pointerEvents: 'none' }} />
     </Box>
   )
 }
