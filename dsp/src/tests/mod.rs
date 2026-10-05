@@ -7,6 +7,7 @@ mod formant;
 mod roundtrip;
 mod sola_params;
 mod stretch;
+mod voices;
 
 use crate::{fft, process_with_progress, Algorithm, Formant};
 
