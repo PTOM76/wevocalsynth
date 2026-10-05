@@ -1,15 +1,15 @@
 [submodule "wevocal-lib"]
 	path = wevocal-lib
-	url = https://github.com/PTOM76/wevocal-lib.git
+	url = git@github.com:PTOM76/wevocal-lib.git
 [submodule "extractor"]
 	path = extractor
-	url = https://github.com/PTOM76/wevocalextractor.git
+	url = git@github.com:PTOM76/wevocalextractor.git
 [submodule "pevenmui"]
 	path = pevenmui
-	url = https://github.com/PTOM76/pevenmui.git
+	url = git@github.com:PTOM76/pevenmui.git
 [submodule "analyzer"]
 	path = analyzer
-	url = https://github.com/PTOM76/wevocalanalyzer.git
+	url = git@github.com:PTOM76/wevocalanalyzer.git
 [submodule "converter"]
 	path = converter
-	url = https://github.com/PTOM76/wevocalconverter.git
+	url = git@github.com:PTOM76/wevocalconverter.git
