@@ -20,13 +20,13 @@ src/
 ├── addons/          追加機能の導入・保存・読み込み（docs/EXTRACTOR.md）
 ├── settings/        設定と設定画面（分類ごとのページ、追加機能、データの削除、アップデートの確認）
 ├── debug/           デバッグ表示（FPS・描画回数・メモリの内訳・DSP の時間・画面が止まった記録）
-├── progress/        進み具合のゲージに出す処理の種類（本体は PevenMUI）
+├── progress/        進み具合のゲージに表示する処理の種類（本体は PevenMUI）
 ├── pwa/             新しい版の確認
 └── i18n/            訳文と t()
 dsp/src/             Rust の DSP
 wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT・窓関数・速い近似の数値計算・F0 推定・テンポ解析・立ち上がりの検出）と、音声ファイルの読み込み（AIFF は自前）・書き出し。submodule
 extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追加機能としてビルドする（docs/EXTRACTOR.md）。単体の Web ツールでもある
-pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確認ダイアログ・分割バー・設定画面の部品・ダイアログを別の窓に出す WindowDialog / WindowPortal・進み具合のゲージ・ファイルを開く画面と最近使用したファイル・IndexedDB）。submodule
+pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確認ダイアログ・分割バー・設定画面の部品・ダイアログを別の窓に表示する WindowDialog / WindowPortal・進み具合のゲージ・ファイルを開く画面と最近使用したファイル・IndexedDB）。submodule
 ```
 
 | フック | 担当 |
@@ -38,7 +38,7 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `usePlayback` | 再生・試聴・ループ（加工の欄）の切り替え（どれかを始めたらほかを止める） |
 | `usePreview` | 加工済みプレビューを裏で作る |
 | `useClipAnalysis` | F0・スペクトログラム（表示が ON のときだけ。解析の設定が変わったら解析し直す） |
-| `useLanes` | 帯パネル（波形・スペクトログラム・ピッチ・音量・フォルマント）の表示とフォーカス。ツールバーとショートカットはフォーカスしているパネルに効く |
+| `useLanes` | 帯パネル（波形・スペクトログラム・ピッチ・音量・フォルマント）の表示とフォーカス。ツールバーとショートカットはフォーカスしているパネルに反映される |
 | `useLaneCurve` / `useFormantCurve` | 音量・フォルマントパネルに描いた曲線（10ms 間隔）。音量は再生にすぐ反映し、フォルマントは試聴で加工して聴く。どちらも適用で確定する |
 | `usePitchClipboard` | ピッチパネルでの切り取り・コピー・貼り付け（曲線が対象） |
 | `usePitchTarget` / `usePitchTools` | 目標ピッチの曲線（ペン・一括の加工）と、適用前の試聴 |
@@ -96,19 +96,19 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `psola.rs` | PSOLA。声の周期（ピッチマーク）に合わせて切り貼りする。目印の置き方（`Marking`）で PSOLAv2 にもなる |
 | `sola.rs` | SOLA。50ms のブロックを 10ms の sin クロスフェードでつなぎ、区切り位置を2乗誤差で探す |
 | `sola2.rs` | SOLAv2 / SOLAv3。声のある所は 1 周期ずつ切り貼りし、近くの周期と混ぜる（v3 は前後約 3 周期を平均する。ボーカルの既定）。声のない所の繰り返しは 1 回おきに逆向きにする |
-| `hpss.rs` | HPSS。メディアンフィルタで打楽器の成分と伸びる成分に分け、Phase Vocoder と短い窓の OLA で伸ばして足す |
+| `hpss.rs` | HPSS。メディアンフィルタで打楽器の成分と伸びる成分に分け、Phase Vocoder と短い窓の OLA で伸ばして加える |
 | `wsola.rs` | WSOLA。フレーム 46ms・50% オーバーラップ・探索幅 ±12ms。類似度を正規化した WSOLAv2（`wsola2_map`）も |
 | `sms.rs` | SMS（愛称 Specraw。試験的）。正弦波の軌跡と帯域ごとの雑音に分けて鳴らし直す、できるだけ可逆な方式の試作 |
 | `pv.rs` | Phase Vocoder（identity phase locking）。フレーム 2048・75% オーバーラップ。楽器の既定。位相の回転を複素数の掛け算にし、隣り合う2フレームを1回の FFT で変換して速くしている |
 | `timemap.rs` | 出力位置→入力位置の対応。一定倍率とピッチカーブの両方を表す |
 | `curve.rs` | ピッチカーブ編集。時間ごとのピッチ比から時間マップを作る |
 | `formant.rs` | ケプストラムによるスペクトル包絡の補正（一定の量と、時間で変わる量） |
-| `f0.rs`（wevocal-lib） | YIN による F0 推定（16kHz に間引き、10ms 間隔）。探す範囲・有声判定・無音判定は `Params` で変えられる。`crate::f0` で使える |
+| `f0.rs`（wevocal-lib） | YIN による F0 推定（16kHz に間引き、10ms 間隔）。探す範囲・有声判定・無音判定は `Params` で変えられる。`crate::f0` で使用できる |
 | `spec.rs` | 表示用スペクトログラム（STFT 2048/256、対数周波数 128段、1バイト） |
-| `tempo.rs`（wevocal-lib） | テンポ解析。スペクトルの増加量（オンセット強度）の、時間方向の周波数成分から BPM の候補と1拍目の位置を求める。`crate::tempo` で使える |
+| `tempo.rs`（wevocal-lib） | テンポ解析。スペクトルの増加量（オンセット強度）の、時間方向の周波数成分から BPM の候補と1拍目の位置を求める。`crate::tempo` で使用できる |
 | `ffi.rs` | wasm 向けの C ABI |
 
-FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD が効くようにしている）とリサンプル（窓付き sinc 補間。上げるときはカットオフを下げて折り返しを防ぐ）は `wevocal-lib` にある。`crate::fft` / `crate::resample` で今までどおり使える。周期的な Hann 窓（`wevocal_lib::window::hann`）、速い近似の ln / exp、位相の折り返し、中央値（`wevocal_lib::math`）、F0 推定（`f0`）、テンポ解析（`tempo`）、立ち上がりの検出（`onset`）も `wevocal-lib` にあり、ほかのソフトでも使えるようにしている。
+FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD を活用できるようにしている）とリサンプル（窓付き sinc 補間。上げるときはカットオフを下げて折り返しを防ぐ）は `wevocal-lib` にある。`crate::fft` / `crate::resample` で今までどおり使用できる。周期的な Hann 窓（`wevocal_lib::window::hann`）、速い近似の ln / exp、位相の折り返し、中央値（`wevocal_lib::math`）、F0 推定（`f0`）、テンポ解析（`tempo`）、立ち上がりの検出（`onset`）も `wevocal-lib` にあり、ほかのソフトでも使用できるようにしている。
 
 ### wasm の公開関数
 

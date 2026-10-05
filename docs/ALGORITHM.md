@@ -26,13 +26,13 @@ WeVocalSynth の音声処理（ピッチ変更・時間伸縮・フォルマン�
 
 たとえば 1 オクターブ上げるときは、2 倍に伸ばしてから 2 倍速で読み直す。長さは元に戻り、高さだけが 2 倍になる。
 
-そのため、処理方式（次の節）はピッチの変更と長さの変更の両方に効く。ピッチだけを変えるときも、中ではピッチ比の分だけ選んだ方式で伸縮している。ピッチと長さで別々の方式は選べない（1 回の伸縮にまとめているため）。
+そのため、処理方式（次の節）はピッチの変更と長さの変更の両方に反映される。ピッチだけを変えるときも、中ではピッチ比の分だけ選んだ方式で伸縮している。ピッチと長さで別々の方式は選べない（1 回の伸縮にまとめているため）。
 
 リサンプルは、窓付き sinc 補間で行う（`wevocal-lib/src/resample.rs`）。速く読むときはカットオフを下げて、折り返しノイズ（高い音が低い音に化けること）を防ぐ。
 
 ## 処理方式（時間伸縮）
 
-処理方式は 10 個から選べる（v2・v3 は改良版で、従来版も残している。改良版がある SOLA・PSOLA・WSOLA は、設定で表示したときだけ選択肢に出す）。どれも時間伸縮の方式で、上のとおりピッチの変更にも使う。どれも「出力の各位置が、入力のどこに当たるか」という時間の対応（`timemap.rs`）に沿って、入力から断片を取ってきて並べ直す。一定の倍率の伸縮も、時間ごとに倍率が変わる伸縮（ピッチカーブ）も、同じ仕組みで扱う。
+処理方式は 10 個から選べる（v2・v3 は改良版で、従来版も残している。改良版がある SOLA・PSOLA・WSOLA は、設定で表示したときだけ選択肢に表示する）。どれも時間伸縮の方式で、上のとおりピッチの変更にも使う。どれも「出力の各位置が、入力のどこに当たるか」という時間の対応（`timemap.rs`）に沿って、入力から断片を取ってきて並べ直す。一定の倍率の伸縮も、時間ごとに倍率が変わる伸縮（ピッチカーブ）も、同じ仕組みで扱う。
 
 | 方式 | ファイル | 仕組み | 向いているもの |
 | --- | --- | --- | --- |
@@ -41,11 +41,11 @@ WeVocalSynth の音声処理（ピッチ変更・時間伸縮・フォルマン�
 | SOLAv2 | `sola2.rs` | 声のある所は 1 周期ずつの断片を、SOLA と同じ短いクロスフェードでつなぐ | 声。大きく伸ばすとき |
 | SOLAv3 | `sola2.rs`（`stretch_clean`） | SOLAv2 で、前後約 3 周期を平均して混ぜる | 声（ボーカルの既定）。整った滑らかな声にしたいとき |
 | WSOLA | `wsola.rs` | 約 46ms の断片を、半分ずつ重ねてつなぐ | 子音の多い音声。速い |
-| PSOLAv2 | `psola.rs`（`Marking::Correlation`） | PSOLA の目印を、前の周期と最も似ている位置に置く | 声 |
+| PSOLAv2 | `psola.rs`（`Marking::Correlation`） | PSOLA の目印を、前の周期と最も似ている位置に配置する | 声 |
 | WSOLAv2 | `wsola.rs`（`wsola2_map`） | WSOLA の位置合わせを、正規化した相互相関で行う | 子音の多い音声 |
 | Phase Vocoder | `pv.rs` | 周波数成分ごとに位相をそろえて伸ばす | 和音・楽器（楽器の既定） |
 | Phase Vocoder v2 | `pv.rs`（`stretch_map2`） | Phase Vocoder で、立ち上がりのまわりだけ伸ばさずに進める | 打楽器・ピアノなど立ち上がりのある音 |
-| HPSS | `hpss.rs` | 打楽器の成分と伸びる成分に分け、別々の方式で伸ばして足す | ドラム入りの曲。重い |
+| HPSS | `hpss.rs` | 打楽器の成分と伸びる成分に分け、別々の方式で伸ばして加える | ドラム入りの曲。重い |
 
 画面では方式名の代わりに愛称を表示する（`src/i18n/*.json` の `algorithm.*`）。コードとこのドキュメントでは方式名を使う。
 
@@ -57,13 +57,13 @@ WeVocalSynth の音声処理（ピッチ変更・時間伸縮・フォルマン�
 | Phase Vocoder / Phase Vocoder v2（以前の画面の名前は PhaseV / PhaseV v2） | Phasera / Phasera v2 |
 | HPSS | HPSS |
 
-「Legacy」が付く方式は、改良版がある従来の方式。既定では選択肢に出さない（設定の「従来の処理方式も表示する」）。
+「Legacy」が付く方式は、改良版がある従来の方式。既定では選択肢に表示しない（設定の「従来の処理方式も表示する」）。
 
 ステレオでは、全チャンネルで同じ切り貼りの位置を使う。チャンネルごとに位置がずれると、音の定位（左右の位置）が崩れるため。
 
 ### PSOLA（Pitch-Synchronous Overlap-Add）
 
-1. 声の 1 周期ごとに目印（ピッチマーク）を置く。前の目印から約 1 周期先の、波形の山を探す
+1. 声の 1 周期ごとに目印（ピッチマーク）を配置する。前の目印から約 1 周期先の、波形の山を探す
 2. 目印を中心に、2 周期分を窓で切り出す
 3. 出力の位置に合わせて、断片を 1 周期ずつずらして重ねる。伸ばすときは同じ断片を繰り返し、縮めるときは間引く
 
@@ -104,7 +104,7 @@ SOLA は約 50ms の断片を繰り返すので、伸ばすと断片の中の立
 | --- | --- |
 | 子音・音の切り替わりを伸ばさず、母音を多めに伸ばす（SOLA の 50ms のまま） | 悪化した。参考にした他ソフトの出力も、切り替わりは等倍ではなく全体と同じ倍率で伸びていた |
 | 断片を 15〜20ms にする | 違いが分からない程度 |
-| 断片を 3 周期前後（約 12ms）にする | 変な音が入る。同じ数周期の繰り返しで、その長さの周期の低いうなりが出るため |
+| 断片を 3 周期前後（約 12ms）にする | 変な音が入る。同じ数周期の繰り返しで、その長さの周期の低いうなりが生じるため |
 | 断片を 2 周期にする | 悪い |
 | 断片を 1 周期にする | だいぶ良くなった。ただし、まだブツブツ感は残る |
 | ＋声のない所を 1 回おきに逆向きにする | あまり変わらない（このサンプルは 9 割以上が声のある所のため） |
@@ -122,7 +122,7 @@ SOLA は約 50ms の断片を繰り返すので、伸ばすと断片の中の立
 | 破裂のかたまりの数・立ち上がり | 「た」の繰り返し、×3 | どれも 1.00、0〜0.3ms |
 | 雑音の音程感（2〜30ms のずれでの自己相関の最大。0 に近いほどよい） | 白色雑音、×3 | ブロック 8ms: 0.169、12ms（今の値）: 0.111、16ms・フェード 3ms: 0.102 |
 
-探索幅と、立ち上がりを読む長さは、結果に影響しなかった（声のない所は繰り返すときに位置合わせをしないため）。合成音では差がほとんどつかないので、値は変えていない（ブロック 12ms、フェード 5ms、探索幅 6ms、立ち上がり 15ms）。実際の声で詰めるときは、このテストに声の素材を足して比べる。
+探索幅と、立ち上がりを読む長さは、結果に影響しなかった（声のない所は繰り返すときに位置合わせをしないため）。合成音では差がほとんどつかないので、値は変えていない（ブロック 12ms、フェード 5ms、探索幅 6ms、立ち上がり 15ms）。実際の声で詰めるときは、このテストに声の素材を加えて比べる。
 
 #### WSOLAv2（類似度の正規化）
 
@@ -138,18 +138,18 @@ WSOLAv2 は、内積を候補のエネルギーの平方根で割った値（正
 
 1. 音声を STFT で周波数成分に分ける
 2. 出力のフレーム間隔に合わせて、各成分の位相（波のずれ）を進め直す
-3. 逆 FFT で音声に戻し、重ねて足す
+3. 逆 FFT で音声に戻し、重ねて加える
 
 位相の進め方は identity phase locking（Laroche & Dolson）を使う。スペクトルの山の位相だけを計算し、周りの成分はその山と同じだけ回す。成分ごとにばらばらに回すより、残響のような感じ（フェージー感）が少ない。断片を繰り返さないので大きく伸ばしてもなめらかだが、音の立ち上がりは少しにじむ。
 
 #### Phase Vocoder v2（立ち上がりの保持）
 
-伸ばすと、立ち上がりを含む分析フレーム（約 46ms の窓が重なり合ったもの）が出力の別々の場所に置かれ、立ち上がりが前後に広がって聞こえる。位相をそろえるだけではこれは直らない（立ち上がりの山の位相だけを入力に戻す形をまず試したが、効果がなかった）。
+伸ばすと、立ち上がりを含む分析フレーム（約 46ms の窓が重なり合ったもの）が出力の別々の場所に配置され、立ち上がりが前後に広がって聞こえる。位相をそろえるだけではこれは直らない（立ち上がりの山の位相だけを入力に戻す形をまず試したが、効果がなかった）。
 
 Phase Vocoder v2 は次のようにする（`detect_onsets` / `keep_transients`）。
 
 1. 入力のスペクトルの増え方（スペクトルフラックス）が、平均 + 1.5 × 標準偏差を超えて前後より大きいフレームを探す。フラックスが最大になるフレームは前後に 2 フレームほどぶれるので、その窓の範囲で 32 サンプルごとの音量が最も増えた所を立ち上がりの位置にする
-2. 各立ち上がりを、元の時間の対応どおりの出力時刻に置く（その時刻に窓の中ほどが来るフレームを決める）。その前後 2 フレームずつは、入力も出力と同じ幅で進める（伸ばさない）。区間の最初のフレームで位相を入力のものに戻すので、区間の中はほぼ元の波形になる
+2. 各立ち上がりを、元の時間の対応どおりの出力時刻に配置する（その時刻に窓の中ほどが来るフレームを決める）。その前後 2 フレームずつは、入力も出力と同じ幅で進める（伸ばさない）。区間の最初のフレームで位相を入力のものに戻すので、区間の中はほぼ元の波形になる
 3. 区間と区間の間は、前の区間の終わりと次の区間の始まりを直線でつなぐ
 
 最初は 3 を「伸ばさなかった分を、区間の外で少しずつ取り戻す」形にしていたが、取り戻しきれないうちに次の立ち上がりが来ると、ずれが溜まって続けて鳴るドラムがだんだんずれた。立ち上がりの時刻を固定する今の形では、8 回/秒の音を 1.5 倍に伸ばしたときのずれが最大 0.1ms（`transient_timing`）。
@@ -173,7 +173,7 @@ Phase Vocoder v2 は次のようにする（`detect_onsets` / `keep_transients`�
 
 測り方の注意:
 - SOLA 系は全体が少しずれるので、±50ms のうち最も近い所と比べる
-- 雑音は鳴らし直すと bin ごとの強さがでたらめに変わるので、前後 2 bin と前後 1 フレームでならしてから比べる。ならしても、同じ強さの別の白色雑音どうしは 1.9dB になる（雑音を作り直す方式は、雑音の所でこれくらいの差が出る）
+- 雑音は鳴らし直すと bin ごとの強さがでたらめに変わるので、前後 2 bin と前後 1 フレームでならしてから比べる。ならしても、同じ強さの別の白色雑音どうしは 1.9dB になる（雑音を作り直す方式は、雑音の所でこれくらいの差が生じる）
 
 | 方式 | 母音 ±3 | 母音 ×2/×0.5 | 母音 ±3 ×3 | 「た」 ±3 | 「た」 ×2/×0.5 | 「た」 ±3 ×3 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -217,13 +217,13 @@ Driedger・Müller・Ewert (2014) の方式。立ち上がりを見つける代�
 
 Phase Vocoder は立ち上がりがにじみ、短い窓の OLA は伸びる音がうなるので、それぞれ得意なほうに任せる形。全体の STFT を持つとメモリが大きい（3 分のステレオで数百 MB）ので、時間方向のメディアンに要る前後 17 フレーム分だけを持ちながら順に処理する。
 
-テスト（`tests/stretch.rs`、2026-10-02）では、分けた 2 本を足すと入力と一致し、持続音は伸びる成分、クリックは打つ成分に入る（`hpss_separation`）。短い減衰音の立ち上がりの集中度は Phase Vocoder 0.41 → HPSS 0.67（Phase Vocoder v2 は 0.95）。分離の分だけ重く、3 分のステレオを 2 倍に伸ばすのに約 17 秒かかる（Phase Vocoder は約 6 秒。ネイティブ、開発 PC）。
+テスト（`tests/stretch.rs`、2026-10-02）では、分けた 2 本を加算すると入力と一致し、持続音は伸びる成分、クリックは打つ成分に入る（`hpss_separation`）。短い減衰音の立ち上がりの集中度は Phase Vocoder 0.41 → HPSS 0.67（Phase Vocoder v2 は 0.95）。分離の分だけ重く、3 分のステレオを 2 倍に伸ばすのに約 17 秒かかる（Phase Vocoder は約 6 秒。ネイティブ、開発 PC）。
 
 ### 和音・楽器向けの候補（未実装）
 
 和音・楽器向けの方式を増やすために調べた候補のうち、まだ入れていないもの (2026-10-02)。Phase Vocoder の弱点は、残響のような感じ（フェージー感）と、立ち上がり（トランジェント）のにじみ（後者は Phase Vocoder v2・HPSS で対処）。
 
-| 候補 | 仕組み | 効くところ | 入れ方 |
+| 候補 | 仕組み | 効果のある所 | 入れ方 |
 | --- | --- | --- | --- |
 | PVSOLA | Phase Vocoder の出力に、相互相関で位置を合わせた入力のフレームをそのまま定期的に差し込み、位相のずれが溜まらないようにする。位相ロックが要らない。もとは単音の声向けで、和音向けの改良版もある | フェージー感 | 論文の方式なので自前で書ける。中くらい |
 | Rubber Band Library | 時間伸縮とピッチ変更のライブラリ | 全般 | GPL（または有償の商用ライセンス）。組み込むならアプリ本体とは分けた追加機能にする |
@@ -300,7 +300,7 @@ BPM と 1 拍目の位置を推定する（`tempo.rs`）。
 ボーカル抽出（Spleeter と MDX-Net による分離）の仕組みは、[ボーカル抽出](EXTRACTOR.md) と、その先の WeVocalExtractor のドキュメントにある。
 
 ## 無音で区切る
-[audio/silence.ts](../src/audio/silence.ts)（`findSounds`）。10ms ごとに、チャンネルのうち大きい方の RMS を測り、しきい値（既定 -40dBFS）より小さい区間を無音とする。無音が設定の長さ（既定 200ms）より短ければ区切りにせず、前後の音をつなぐ（息継ぎや子音の前の途切れで分かれないように）。50ms より短い音は捨て（クリック音など）、範囲の前後に 10ms の余白を足す（立ち上がりと余韻を切らないように）。
+[audio/silence.ts](../src/audio/silence.ts)（`findSounds`）。10ms ごとに、チャンネルのうち大きい方の RMS を測り、しきい値（既定 -40dBFS）より小さい区間を無音とする。無音が設定の長さ（既定 200ms）より短ければ区切りにせず、前後の音をつなぐ（息継ぎや子音の前の途切れで分かれないように）。50ms より短い音は捨て（クリック音など）、範囲の前後に 10ms の余白を加える（立ち上がりと余韻を切らないように）。
 
 ## 参考にした資料
 
@@ -314,8 +314,8 @@ BPM と 1 拍目の位置を推定する（`tempo.rs`）。
 | [A two-phase pitch marking method for TD-PSOLA synthesis](https://www.researchgate.net/publication/221488978_A_two-phase_pitch_marking_method_for_TD-PSOLA_synthesis)、[Robust pitch marking for prosodic modification of speech using TD-PSOLA](https://www.researchgate.net/publication/228362180_Robust_pitch_marking_for_prosodic_modification_of_spech_using_TD-PSOLA)、[An efficient and robust pitch marking algorithm on the speech waveform for TD-PSOLA](https://www.academia.edu/18002556/An_efficient_and_robust_pitch_marking_algorithm_on_the_speech_waveform_for_TD_PSOLA) | PSOLAv2。TD-PSOLA の音質は目印（周期の区切り）の決め方に強く左右されること。候補を推定したピッチとの一致度や相互相関で選ぶ考え方（1つ目は山・谷の候補を動的計画法で選ぶ。PSOLAv2 は前の周期との相互相関だけを取り入れた） |
 | W. Verhelst, M. Roelands, [An overlap-add technique based on waveform similarity (WSOLA) for high quality time-scale modification of speech](https://www.semanticscholar.org/paper/An-overlap-add-technique-based-on-waveform-(WSOLA)-Verhelst-Roelands/d94abd77e52a56c425e4b86e6c7d692583ea406d) (1993) | WSOLAv2。前の断片の自然な続きと最もよく似た位置を、類似度で選ぶこと |
 | A. Röbel, [Transient detection and preservation in the phase vocoder](http://recherche.ircam.fr/anasyn/roebel/paper/icmc2003.pdf) (2003) | Phase Vocoder v2。立ち上がりで位相を戻す従来の方式と、帯域ごとにまとめて戻すと伸びている音の位相まで壊すという指摘。v2 は従来の方式（立ち上がりで伸ばさず、位相を戻す）に近く、Röbel の山ごとの判定は入れていない |
-| [Audio time stretching and pitch scaling](https://en.wikipedia.org/wiki/Audio_time_stretching_and_pitch_scaling)（Wikipedia） | 方式ごとの弱点の整理。PSOLA は同じ断片の繰り返しでブザー音が出やすく、立ち上がりがにじみやすい。SOLA 系は単音には安く良い結果を出すが、和音には弱い |
-| J. Driedger, M. Müller, S. Ewert, [Improving Time-Scale Modification of Music Signals Using Harmonic-Percussive Separation](https://www.semanticscholar.org/paper/Improving-Time-Scale-Modification-of-Music-Signals-Driedger-M%C3%BCller/2936759a93ee6d6ce4109221bfbb08de0c7c569b) (2014) | HPSS。メディアンフィルタで伸びる成分と打つ成分に分け、前者を Phase Vocoder、後者を短い窓の OLA で伸ばして足す組み立て |
+| [Audio time stretching and pitch scaling](https://en.wikipedia.org/wiki/Audio_time_stretching_and_pitch_scaling)（Wikipedia） | 方式ごとの弱点の整理。PSOLA は同じ断片の繰り返しでブザー音が出やすく、立ち上がりがにじみやすい。SOLA 系は単音には安く良い結果が得られるが、和音には弱い |
+| J. Driedger, M. Müller, S. Ewert, [Improving Time-Scale Modification of Music Signals Using Harmonic-Percussive Separation](https://www.semanticscholar.org/paper/Improving-Time-Scale-Modification-of-Music-Signals-Driedger-M%C3%BCller/2936759a93ee6d6ce4109221bfbb08de0c7c569b) (2014) | HPSS。メディアンフィルタで伸びる成分と打つ成分に分け、前者を Phase Vocoder、後者を短い窓の OLA で伸ばして加える組み立て |
 
 和音・楽器向けの候補（未実装）を調べたときの資料:
 
@@ -323,7 +323,7 @@ BPM と 1 拍目の位置を推定する（`tempo.rs`）。
 | --- | --- |
 | [libtsm](https://github.com/meinardmueller/libtsm) | HPSS の方式などを Python で実装した道具箱 |
 | A. Moinet, T. Dutoit, [PVSOLA: A Phase Vocoder with Synchronized OverLap-Add](http://recherche.ircam.fr/pub/dafx11/Papers/57_e.pdf) (2011) | PVSOLA |
-| [Improved PVSOLA Time-Stretching and Pitch-Shifting for Polyphonic Audio](https://www.dafx12.york.ac.uk/papers/dafx12_submission_26.pdf) (2012) | 正弦波の成分と雑音の成分を分けて、PVSOLA を和音にも使えるようにする |
+| [Improved PVSOLA Time-Stretching and Pitch-Shifting for Polyphonic Audio](https://www.dafx12.york.ac.uk/papers/dafx12_submission_26.pdf) (2012) | 正弦波の成分と雑音の成分を分けて、PVSOLA を和音にも使用できるようにする |
 | [Rubber Band Library](https://breakfastquay.com/rubberband/) | GPL（または有償の商用ライセンス） |
 | J. Driedger, M. Müller, [A Review of Time-Scale Modification of Music Signals](https://mdpi.com/2076-3417/6/2/57/htm) (2016) | 時間伸縮の方式をまとめて比べた総説 |
 

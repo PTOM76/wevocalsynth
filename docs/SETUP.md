@@ -42,7 +42,7 @@ npm run preview      # ビルド結果の確認
 
 PWA（Service Worker）は開発サーバー（`npm run dev`）では動かない。オフライン動作・新しい版の通知・設定の「今すぐ確認」「オフライン用キャッシュを削除」は、`npm run build` のあと `npm run preview` で確かめる。
 
-画面の重さを調べるときは Ctrl+Shift+D（または「設定」→「開発者向け」）でデバッグ表示を出す。FPS・一番重かったフレーム・長いタスク・部品の描画回数・音声データの内訳・DSP の処理時間が見られる。部品の描画回数を数えたいときは、その部品の先頭で `countRender('名前')` を呼ぶ。
+画面の重さを調べるときは Ctrl+Shift+D（または「設定」→「開発者向け」）でデバッグ表示を有効にする。FPS・一番重かったフレーム・長いタスク・部品の描画回数・音声データの内訳・DSP の処理時間が見られる。部品の描画回数を数えたいときは、その部品の先頭で `countRender('名前')` を呼ぶ。
 
 3分の音声での処理時間は、`dsp/` で `cargo test --release -- --ignored --nocapture` を実行すると測れる。
 
@@ -74,4 +74,4 @@ main に push すると GitHub Actions（`.github/workflows/deploy.yml`）がビ
 | `npm run build:wasm` で `can't find crate for core` | wasm32 ターゲットが入っていない。`rustup target add wasm32-unknown-unknown` |
 | DSP を直したのに動きが変わらない | `src/dsp/wevocal_dsp.wasm` が古いまま。`npm run build:wasm` を実行し、ブラウザを再読み込みする |
 | `npm install` が終わらない、途中で止まる | 大きなパッケージの展開に時間がかかっている。`node_modules` を使っているエディタや別の npm を止めてからやり直す（`@mui/icons-material` はこれが原因で使うのをやめた） |
-| 起動時に前の作業が勝手に出てくる | 自動保存からの復元。「ファイル」→「設定…」で自動保存を OFF にすると、保存済みのデータも消える |
+| 起動時に前の作業が自動的に表示される | 自動保存からの復元。「ファイル」→「設定…」で自動保存を OFF にすると、保存済みのデータも削除される |

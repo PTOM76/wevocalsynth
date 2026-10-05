@@ -12,7 +12,7 @@ WeVocalSynth は、React の画面、Web Worker 上の Rust（WebAssembly）の 
 
 | 項目 | 選定 | 理由 |
 | --- | --- | --- |
-| 画面 | React + TypeScript + MUI | Material Design（Android / Google らしさ）をそのまま使える |
+| 画面 | React + TypeScript + MUI | Material Design（Android / Google らしさ）をそのまま使用できる |
 | アイコン | Font Awesome | `@mui/icons-material` はファイル数が多すぎてインストールが壊れた（[決定事項](DECISIONS.md)） |
 | ビルド | Vite | Worker、`?url` での wasm の読み込み、AudioWorklet のバンドルをそのまま扱える |
 | DSP | Rust → WebAssembly（素の C ABI） | `cargo test` でネイティブのままテストでき、wasm32 の準備も簡単。受け渡しは Float32Array だけなので wasm-bindgen は要らない |
@@ -62,7 +62,7 @@ submodule にした理由:
 
 - 共通化と再利用: FFT やリサンプルを本体とボーカル抽出の両方で使う。1 か所に置けば、直すのも速くするのも 1 回で済む
 - ひとまとまりで開発できる: 本体のリポジトリを clone すれば、モジュールも同じ場所に揃う。モジュールを直しながら本体で試せる（Rust はパス依存で直接参照する）
-- モジュールは単独でも使える: それぞれ別のリポジトリなので、本体とは関係なく使ったり公開したりできる
+- モジュールは単独でも使用できる: それぞれ別のリポジトリなので、本体とは関係なく使ったり公開したりできる
 - 依存の向きを保てる: 基本機能（ピッチ変更など）は `wevocal-lib` だけに頼り、追加機能の `extractor/` には頼らない。追加機能を入れなくても、本体は動く
 
 ボーカル抽出は「追加機能」として、使う人だけがダウンロードする。普段の起動を重くしないため（[ボーカル抽出](EXTRACTOR.md)）。
