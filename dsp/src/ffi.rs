@@ -244,7 +244,7 @@ pub unsafe extern "C" fn split_voices_planar(input: *const f32, frames: usize, c
     let all = std::slice::from_raw_parts(input, frames * channels);
     let chans: Vec<&[f32]> = all.chunks(frames.max(1)).take(channels).collect();
     let by = if by == 1 { voices::SplitBy::Volume } else { voices::SplitBy::Pitch };
-    let (a, b) = voices::split(&chans, sample_rate, by);
+    let (a, b) = voices::split(&chans, sample_rate, by, &mut host_progress);
     OUTPUT.with(|o| {
         let mut o = o.borrow_mut();
         o.clear();

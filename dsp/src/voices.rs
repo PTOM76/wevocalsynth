@@ -45,7 +45,7 @@ impl Voice {
 }
 
 /// フレームごとの声（0〜2 個）を推定する
-pub fn analyze(x: &[f32], sr: f32) -> Vec<Vec<Voice>> {
+pub fn analyze(x: &[f32], sr: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<Voice>> {
     let mut st = Stft::new(N_FFT, HOP);
     let b = st.bins();
     let (mut re, mut im) = (vec![0.0; b], vec![0.0; b]);
@@ -56,12 +56,15 @@ pub fn analyze(x: &[f32], sr: f32) -> Vec<Vec<Voice>> {
         st.forward(x, f, &mut re, &mut im);
         let mut mag: Vec<f32> = re.iter().zip(&im).map(|(r, i)| (r * r + i * i).sqrt()).collect();
         out.push(frame_voices(&mut mag, sr, &cands));
+        if f % 64 == 0 {
+            progress(f as f64 / frames as f64);
+        }
     }
     out
 }
 
 /// `x` を 2 つの声に分ける（A, B）。`x` が複数チャンネルでも、推定はチャンネルを混ぜた音で行う
-pub fn split(channels: &[&[f32]], sr: f32, by: SplitBy) -> (Vec<Vec<f32>>, Vec<Vec<f32>>) {
+pub fn split(channels: &[&[f32]], sr: f32, by: SplitBy, progress: &mut dyn FnMut(f64)) -> (Vec<Vec<f32>>, Vec<Vec<f32>>) {
     let len = channels.first().map_or(0, |c| c.len());
     // 端のフレームも窓が重なりきるように、前後を N_FFT だけ延ばす
     let pad = |c: &[f32]| {
@@ -76,7 +79,8 @@ pub fn split(channels: &[&[f32]], sr: f32, by: SplitBy) -> (Vec<Vec<f32>>, Vec<V
             *m += s / channels.len() as f32;
         }
     }
-    let voices = analyze(&mono, sr);
+    // 進み具合は、推定が前半、マスクで分けるのが後半（チャンネルごと）
+    let voices = analyze(&mono, sr, &mut |p| progress(p * 0.5));
     let assigned = assign(&voices, by);
     let mut st = Stft::new(N_FFT, HOP);
     let b = st.bins();
@@ -84,7 +88,8 @@ pub fn split(channels: &[&[f32]], sr: f32, by: SplitBy) -> (Vec<Vec<f32>>, Vec<V
     let (mut re, mut im) = (vec![0.0; b], vec![0.0; b]);
     let (mut ra, mut ia, mut rb, mut ib) = (vec![0.0; b], vec![0.0; b], vec![0.0; b], vec![0.0; b]);
     let mut outs = (Vec::new(), Vec::new());
-    for c in &padded {
+    let nch = padded.len() as f64;
+    for (ci, c) in padded.iter().enumerate() {
         let (mut ya, mut yb, mut w) = (vec![0.0; c.len()], vec![0.0; c.len()], vec![0.0; c.len()]);
         for (f, (va, vb)) in assigned.iter().enumerate() {
             st.forward(c, f, &mut re, &mut im);
@@ -97,11 +102,15 @@ pub fn split(channels: &[&[f32]], sr: f32, by: SplitBy) -> (Vec<Vec<f32>>, Vec<V
             }
             st.inverse_add(&ra, &ia, f, &mut ya, Some(&mut w));
             st.inverse_add(&rb, &ib, f, &mut yb, None);
+            if f % 64 == 0 {
+                progress(0.5 + 0.5 * (ci as f64 + f as f64 / assigned.len() as f64) / nch);
+            }
         }
         let norm = |y: &[f32]| (0..len).map(|i| y[N_FFT + i] / w[N_FFT + i].max(1e-6)).collect::<Vec<f32>>();
         outs.0.push(norm(&ya));
         outs.1.push(norm(&yb));
     }
+    progress(1.0);
     outs
 }
 
@@ -204,6 +213,7 @@ fn subtract(mag: &mut [f32], f0: f32, amps: &[f32], bin_hz: f32) {
 /// 1 フレームの声を最大 2 つ選ぶ。選ぶのは白色化したスペクトルで、振幅は元のスペクトルから求める。`mag` は差し引いた残りになる
 fn frame_voices(mag: &mut [f32], sr: f32, cands: &[f32]) -> Vec<Voice> {
     let bin_hz = sr / N_FFT as f32;
+    let orig = mag.to_vec();
     let mut white = whiten(mag);
     let floor = white.iter().fold(0.0f32, |a, &m| a.max(m)) * 1e-3;
     let mut voices: Vec<Voice> = Vec::new();
@@ -223,8 +233,56 @@ fn frame_voices(mag: &mut [f32], sr: f32, cands: &[f32]) -> Vec<Voice> {
         subtract(mag, f0, &amps, bin_hz);
         voices.push(Voice { f0, amps });
     }
+    if voices.len() == 2 {
+        resolve_overlap(&mut voices, &orig, bin_hz);
+    }
     voices
 }
+
+/// 重なった倍音を分ける。2 つの声の振幅を元のスペクトルから求め直し、もう一方の声の倍音と
+/// `OVERLAP_BIN` 以内で重なる倍音は、同じ声の重ならない前後の倍音から直線で補った値にする（5 度、8 度で効く）
+fn resolve_overlap(voices: &mut [Voice], orig: &[f32], bin_hz: f32) {
+    let f = [voices[0].f0, voices[1].f0];
+    for i in 0..2 {
+        let other = f[1 - i];
+        let n = voices[i].amps.len();
+        let raw: Vec<f32> = (1..=n).map(|h| peak(orig, h as f32 * f[i], bin_hz)).collect();
+        let overlapped: Vec<bool> = (1..=n)
+            .map(|h| {
+                let hz = h as f32 * f[i];
+                let m = (hz / other).round().max(1.0);
+                (hz - m * other).abs() / bin_hz < OVERLAP_BIN
+            })
+            .collect();
+        let near = |h: usize, step: isize| {
+            let mut j = h as isize + step;
+            while j >= 0 && (j as usize) < n {
+                if !overlapped[j as usize] {
+                    return Some((j as usize, raw[j as usize]));
+                }
+                j += step;
+            }
+            None
+        };
+        voices[i].amps = (0..n)
+            .map(|h| {
+                if !overlapped[h] {
+                    return raw[h];
+                }
+                let guess = match (near(h, -1), near(h, 1)) {
+                    (Some((a, x)), Some((b, y))) => x + (y - x) * (h - a) as f32 / (b - a) as f32,
+                    (Some((_, x)), None) | (None, Some((_, x))) => x,
+                    // すべて重なる（8 度の高い方）: 今までどおり滑らかさで抑えた値
+                    (None, None) => voices[i].amps[h],
+                };
+                guess.min(raw[h])
+            })
+            .collect();
+    }
+}
+
+/// 重なったとみなす倍音どうしの距離（ビン）
+const OVERLAP_BIN: f32 = 1.5;
 
 /// 各フレームの声を A・B に振り分ける
 fn assign(frames: &[Vec<Voice>], by: SplitBy) -> Vec<(Option<Voice>, Option<Voice>)> {

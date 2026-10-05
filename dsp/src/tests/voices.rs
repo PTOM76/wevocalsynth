@@ -39,7 +39,7 @@ fn sdr(truth: &[f32], est: &[f32]) -> f32 {
 /// 2 つの声を足して分け、(A の SDR, B の SDR) を返す。`a` が A に入るべき声
 fn run(a: &[f32], b: &[f32], by: SplitBy) -> (f32, f32) {
     let mix: Vec<f32> = a.iter().zip(b).map(|(x, y)| x + y).collect();
-    let (oa, ob) = split(&[&mix], SR, by);
+    let (oa, ob) = split(&[&mix], SR, by, &mut |_| {});
     // A + B は元の音と一致する
     let err = (0..mix.len()).map(|i| (oa[0][i] + ob[0][i] - mix[i]).abs()).fold(0.0f32, f32::max);
     assert!(err < 1e-3, "A + B と元の音の差 {err}");
@@ -88,7 +88,7 @@ fn voices_crossing() {
 fn voices_f0() {
     let (fl, fh) = (220.0, 220.0 * 2f32.powf(4.0 / 12.0));
     let mix: Vec<f32> = voice(|_| fl, &LOW, 1.0).iter().zip(voice(|_| fh, &HIGH, 1.0)).map(|(a, b)| a + b).collect();
-    let frames = analyze(&mix, SR);
+    let frames = analyze(&mix, SR, &mut |_| {});
     // ビブラートの分（±30 セント）を許す
     let near = |f: f32, t: f32| (1200.0 * (f / t).log2()).abs() < 60.0;
     let ok = frames.iter().filter(|v| v.len() == 2 && v.iter().any(|x| near(x.f0, fl)) && v.iter().any(|x| near(x.f0, fh))).count();
