@@ -3,7 +3,7 @@ import { Box } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { Clip, Range } from '../../audio/types'
 import { SELECTION_DARK, SELECTION_LIGHT, type View } from './draw'
-import { computePeaks } from './peaks'
+import { computePeaks } from 'wevocal-lib'
 import { usePalette } from 'pevenmui'
 
 const HEIGHT = 28

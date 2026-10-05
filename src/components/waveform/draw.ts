@@ -1,6 +1,6 @@
 import { beatsIn, type TempoSegment } from '../../audio/tempoMap'
 import { alpha, type Theme } from '@mui/material'
-import type { Range } from '../../audio/types'
+import { RULER_HEIGHT, SELECTION_DARK, SELECTION_LIGHT, timeToX, type View, type WaveColors, type WaveDrawContext } from 'wevocal-lib'
 import { F0_HOP_SEC, type Spectrogram } from '../../dsp/engine'
 import { renderSpectrogram } from './spectrogramImage'
 import { hzToMidi, noteName } from '../../audio/notes'
@@ -8,7 +8,8 @@ import { noteBlocks } from '../../audio/noteBlocks'
 import { markActivity } from '../../debug/debugStats'
 import { t } from '../../i18n/i18n'
 
-export const RULER_HEIGHT = 24
+export { RULER_HEIGHT, SELECTION_LIGHT, SELECTION_DARK }
+export { prepareCanvas, drawRuler, drawSelection, drawSelectionHandles, drawGhostWave, drawWave, drawPlayhead, type View } from 'wevocal-lib'
 /** 波形の欄の最低の高さ（画面が低くても、これより小さくしない） */
 const MIN_WAVE_HEIGHT = 80
 
@@ -38,12 +39,6 @@ export function laneHeights(total: number, show: { wave: boolean; spec: boolean;
 
 export { hzToMidi }
 
-/** 表示範囲（秒） */
-export interface View {
-  start: number
-  dur: number
-}
-
 /** ピッチ帯の縦軸（MIDIノート番号の範囲） */
 export interface PitchRange {
   lo: number
@@ -71,22 +66,11 @@ export function pitchRange(pitch: Float32Array): PitchRange {
   return { lo, hi }
 }
 
-/** ラベル間隔が約80px以上になるよう、きりのよい目盛り間隔を選ぶ */
-function rulerStep(duration: number, width: number) {
-  const target = (duration * 80) / Math.max(width, 1)
-  const steps = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300]
-  return steps.find((s) => s >= target) ?? 600
-}
-
-/** 描画に共通のコンテキスト */
-export interface DrawContext {
-  g: CanvasRenderingContext2D
-  width: number
-  view: View
+/** 描画に共通のコンテキスト（wevocal-lib の波形のものに、Synth の帯を足す） */
+export interface DrawContext extends WaveDrawContext {
   pal: Theme['palette']
   dark: boolean
-  /** 波形・スペクトログラム・ピッチ・音量・フォルマントの帯の高さ（`laneHeights` で決める。出さない帯は 0） */
-  waveH: number
+  /** スペクトログラム・ピッチ・音量・フォルマントの帯の高さ（`laneHeights` で決める。出さない帯は 0。波形は `waveH`） */
   specH: number
   pitchH: number
   gainH?: number
@@ -106,29 +90,11 @@ export const gainTop = (c: Pick<DrawContext, 'waveH' | 'specH' | 'pitchH'>) => R
 /** フォルマントの帯の上端 */
 export const formantTop = (c: Pick<DrawContext, 'waveH' | 'specH' | 'pitchH' | 'gainH'>) => gainTop(c) + (c.gainH ?? 0)
 
-const toX = ({ width, view }: DrawContext, t: number) => ((t - view.start) / view.dur) * width
+const toX = ({ width, view }: DrawContext, t: number) => timeToX(width, view, t)
 
-/** 上端の時間目盛り */
-export function drawRuler(c: DrawContext) {
-  const { g, width, view, pal } = c
-  g.fillStyle = pal.text.secondary
-  g.strokeStyle = pal.divider
-  const step = rulerStep(view.dur, width)
-  const digits = step < 0.01 ? 3 : step < 0.1 ? 2 : step < 1 ? 1 : 0
-  for (let t = Math.ceil(view.start / step) * step; t <= view.start + view.dur; t += step) {
-    const x = Math.round(toX(c, t)) + 0.5
-    g.beginPath()
-    g.moveTo(x, RULER_HEIGHT - 6)
-    g.lineTo(x, RULER_HEIGHT)
-    g.stroke()
-    const m = Math.floor(t / 60)
-    const label = m > 0 ? `${m}:${(t - m * 60).toFixed(digits).padStart(digits ? digits + 3 : 2, '0')}` : t.toFixed(digits)
-    g.fillText(label, x + 3, RULER_HEIGHT / 2 - 2)
-  }
-  g.beginPath()
-  g.moveTo(0, RULER_HEIGHT - 0.5)
-  g.lineTo(width, RULER_HEIGHT - 0.5)
-  g.stroke()
+/** テーマから波形の色を作る。波形は青、再生位置の線は文字色なので、選択範囲はそのどちらとも違うシアンで描き分ける */
+export function waveColors(pal: Theme['palette'], dark: boolean): WaveColors {
+  return { text: pal.text.primary, textSecondary: pal.text.secondary, divider: pal.divider, wave: pal.primary.main, selection: dark ? SELECTION_DARK : SELECTION_LIGHT }
 }
 
 /** 拍の目安線の設定 */
@@ -169,22 +135,6 @@ export function spectrogramLayer(spec: Spectrogram, width: number, specH: number
 }
 let specCanvas: OffscreenCanvas | null = null
 
-/**
- * Canvas の大きさを `w` × `h` にして、描く前の状態（真っさらで、設定も初期値）にする。
- * 大きさが同じなら作り直さずに reset で済ませる（width を代入すると、同じ大きさでも画像の領域を確保し直し、
- * 描き直すたびにメモリの掃除が増えて画面が止まる原因になった）
- */
-export function prepareCanvas(canvas: HTMLCanvasElement, w: number, h: number) {
-  const g = canvas.getContext('2d')
-  if (canvas.width === w && canvas.height === h && g && 'reset' in g) {
-    g.reset()
-    return g
-  }
-  canvas.width = w
-  canvas.height = h
-  return g
-}
-
 /** スペクトログラムの帯を描く（解析中はその旨を表示）。`layer` は `spectrogramLayer` で作った画像 */
 export function drawSpectrogram(c: DrawContext, spec: Spectrogram | null, layer: OffscreenCanvas | null) {
   const { g, width, pal, specH } = c
@@ -220,72 +170,6 @@ export function drawLaneFocus(c: DrawContext, lane: Lane) {
   if (h <= 0) return
   g.fillStyle = pal.primary.main
   g.fillRect(0, y, 3, h)
-}
-
-/** 選択範囲の塗りと両端の線（高さ `h` まで） */
-/** 選択範囲の色（ライト / ダーク） */
-export const SELECTION_LIGHT = '#0097A7'
-export const SELECTION_DARK = '#4DD0E1'
-
-export function drawSelection(c: DrawContext, selection: Range, h: number) {
-  const { g, dark } = c
-  const x0 = toX(c, selection.start)
-  const x1 = toX(c, selection.end)
-  // 波形は青、再生位置の線は文字色なので、選択範囲はそのどちらとも違うシアンで描き分ける
-  const color = dark ? SELECTION_DARK : SELECTION_LIGHT
-  g.fillStyle = alpha(color, 0.14)
-  g.fillRect(x0, RULER_HEIGHT, x1 - x0, h - RULER_HEIGHT)
-  g.fillStyle = color
-  g.fillRect(x0 - 1, RULER_HEIGHT, 2, h - RULER_HEIGHT)
-  g.fillRect(x1 - 1, RULER_HEIGHT, 2, h - RULER_HEIGHT)
-}
-
-/** 選択範囲の両端のつまみ（スマホの新しい画面。指でつかむ所。両端の線の下端に丸を描く） */
-export function drawSelectionHandles(c: DrawContext, selection: Range, h: number) {
-  const { g, dark } = c
-  g.fillStyle = dark ? SELECTION_DARK : SELECTION_LIGHT
-  for (const t of [selection.start, selection.end]) {
-    g.beginPath()
-    g.arc(toX(c, t), h - 14, 8, 0, Math.PI * 2)
-    g.fill()
-  }
-}
-
-/** ほかのトラックの波形を、大きな波形の後ろに薄く描く（タイミングを見比べるため。中央線は描かない） */
-export function drawGhostWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }, scale = 1) {
-  const { g, width, pal, waveH } = c
-  const mid = RULER_HEIGHT + waveH / 2
-  const amp = (waveH / 2 - 4) * scale
-  const lim = waveH / 2 - 4
-  g.fillStyle = alpha(pal.text.secondary, 0.28)
-  for (let x = 0; x < width; x++) {
-    const y0 = mid - Math.min(lim, peaks.max[x] * amp)
-    const y1 = mid - Math.max(-lim, peaks.min[x] * amp)
-    g.fillRect(x, y0, 1, Math.max(1, y1 - y0))
-  }
-}
-
-/** 波形（1ピクセル列ごとの最小値〜最大値の縦線）と中央線。`dim` ならピッチを重ねるので薄く描く */
-export function drawWave(c: DrawContext, peaks: { min: Float32Array; max: Float32Array }, scale = 1, dim = false) {
-  const { g, width, pal, waveH } = c
-  const mid = RULER_HEIGHT + waveH / 2
-  // 縦の拡大（`scale` 倍）。帯からはみ出す分は端で切る
-  const amp = (waveH / 2 - 4) * scale
-  const lim = waveH / 2 - 4
-  // ダークでは primary（明るい水色）のままだとまぶしく、選択範囲の白い線も埋もれるため、少し沈める。
-  // ライトでは primary.dark（紺）だと選択範囲の黒い線と見分けにくいため、primary（青）にする
-  g.fillStyle = alpha(pal.primary.main, dim ? 0.3 : 0.85)
-  for (let x = 0; x < width; x++) {
-    const y0 = mid - Math.min(lim, peaks.max[x] * amp)
-    const y1 = mid - Math.max(-lim, peaks.min[x] * amp)
-    g.fillRect(x, y0, 1, Math.max(1, y1 - y0))
-  }
-  g.fillStyle = pal.divider
-  g.fillRect(0, mid, width, 1)
-  if (scale > 1) {
-    g.fillStyle = pal.text.secondary
-    g.fillText(`×${scale}`, width - 32, RULER_HEIGHT + 12)
-  }
 }
 
 /** ピッチ帯: 音名のグリッドと F0 曲線。描いた目標ピッチがあれば元の曲線を薄くして重ねる */
@@ -361,10 +245,4 @@ export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range:
   curve(pitch, edited ? alpha(pal.secondary.main, 0.4) : pal.secondary.main)
   if (edited) curve(target, pal.primary.main)
   g.lineWidth = 1
-}
-
-/** 再生位置の縦線 */
-export function drawPlayhead(c: DrawContext, position: number, h: number) {
-  c.g.fillStyle = c.pal.text.primary
-  c.g.fillRect(Math.round(toX(c, position)) - 1, 0, 2, h)
 }

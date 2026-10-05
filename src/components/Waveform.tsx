@@ -33,9 +33,10 @@ import {
   pitchRange,
   type BeatGrid,
   type DrawContext,
+  waveColors,
 } from './waveform/draw'
 import type { useWaveformView } from './waveform/useWaveformView'
-import { computePeaks } from './waveform/peaks'
+import { computePeaks } from 'wevocal-lib'
 import { useTouchGestures } from './waveform/useTouchGestures'
 import { useEdgeScroll } from './waveform/useEdgeScroll'
 import Minimap from './waveform/Minimap'
@@ -180,6 +181,7 @@ function Waveform(props: Props) {
     props.onSelectionsChange(rs)
   }
   const { pal, dark, font } = usePalette()
+  const colors = useMemo(() => waveColors(pal, dark), [pal, dark])
   const t = useT()
   // 言語が変わったら Canvas の文字（「解析中…」）も描き直す
   const lang = useLang()
@@ -276,7 +278,7 @@ function Waveform(props: Props) {
     g.clearRect(0, 0, width, height)
     g.font = `11px ${font}`
     g.textBaseline = 'middle'
-    const c: DrawContext = { g, width, view, pal, dark, waveH, specH, pitchH, gainH, formantH, pitchY, pitchLaneH }
+    const c: DrawContext = { g, width, view, colors, pal, dark, waveH, specH, pitchH, gainH, formantH, pitchY, pitchLaneH }
 
     drawRuler(c)
     // スペクトログラムは波形の代わりに表示する。選択範囲は波形などに隠れないよう、最後に重ねる
@@ -294,7 +296,7 @@ function Waveform(props: Props) {
     // 帯が2本以上あるときだけ、どれにフォーカスしているかを示す
     if ([showWave, showSpectrogram, showPitch, showGain, showFormant].filter(Boolean).length > 1) drawLaneFocus(c, props.focusLane)
     // 選択範囲は上に重ねた Canvas に描く（範囲をドラッグしている間、波形などを描き直さないため）
-  }, [waveScale, showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, props.showNotes, props.showPitchLine, pitch, range, target, drawVersion, pitchY, pitchLaneH, overlay])
+  }, [waveScale, showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, colors, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, props.showNotes, props.showPitchLine, pitch, range, target, drawVersion, pitchY, pitchLaneH, overlay])
 
   // 選択範囲と再生位置の線（上に重ねた Canvas。再生中は毎フレーム、範囲のドラッグ中は動かすたびに、こちらだけを描き直す）
   useEffect(() => {
@@ -306,7 +308,7 @@ function Waveform(props: Props) {
       canvas.height = height * dpr
     }
     const g = canvas.getContext('2d')!
-    const c: DrawContext = { g, width, view, pal, dark, waveH, specH, pitchH, gainH, formantH }
+    const c: DrawContext = { g, width, view, colors, pal, dark, waveH, specH, pitchH, gainH, formantH }
     const draw = (t: number) => {
       g.setTransform(dpr, 0, 0, dpr, 0, 0)
       g.clearRect(0, 0, width, height)
@@ -356,7 +358,7 @@ function Waveform(props: Props) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [position, playing, livePosition, width, height, view, pal, dark, waveH, specH, pitchH, gainH, formantH, selections, noteGhost, range, pitchY, pitchLaneH, props.markers, font, props.touchHandles])
+  }, [position, playing, livePosition, width, height, view, colors, pal, dark, waveH, specH, pitchH, gainH, formantH, selections, noteGhost, range, pitchY, pitchLaneH, props.markers, font, props.touchHandles])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()

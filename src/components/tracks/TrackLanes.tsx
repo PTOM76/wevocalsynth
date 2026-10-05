@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Box, ButtonBase, Tooltip, Typography } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackFader, type TrackMix } from '../../audio/tracks'
-import { computePeaks } from '../waveform/peaks'
+import { computePeaks } from 'wevocal-lib'
 import { prepareCanvas, type View } from '../waveform/draw'
 import { canvasPixelRatio, LevelMeter, usePalette } from 'pevenmui'
 import { useT } from '../../i18n/i18n'
