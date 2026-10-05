@@ -69,8 +69,9 @@ export default function AddonSection({ ids }: { ids: string[] }) {
       {list.map((a) => {
         const s = status[a.id]
         const updatable = !!(s?.installed && s.latest && s.latest.version !== s.installed.version)
+        // 2 列をまたいだ幅は列の幅の合計で、中身の文字の長さ（導入の前と後でも変わる）で変わるので、まとまり（Group）の枠の幅いっぱいにそろえる（cqi は枠の幅）
         return (
-          <Box key={a.id} sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box key={a.id} sx={{ gridColumn: '1 / -1', width: '100cqi', maxWidth: '100cqi', display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontSize: 13, ...hit(t(a.shortName ?? a.name)) }}>{t(a.shortName ?? a.name)}</Typography>
               <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary' }}>{describe(s)}</Typography>
