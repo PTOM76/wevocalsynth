@@ -11,8 +11,7 @@ src/
 ├── components/      画面部品
 │   ├── waveform/    帯パネルの描画（Canvas）と表示範囲、ツールバーのボタン
 │   ├── inspector/   PC の右側のインスペクタ
-│   ├── tracks/      トラックの欄（波形付きの一覧 / タブ）・右クリックメニュー・名前の変更・並び替え
-│   └── layout/      PC とスマホのレイアウト
+│   └── tracks/      トラックの欄（波形付きの一覧 / タブ）・右クリックメニュー・名前の変更・並び替え
 ├── audio/           音声データの処理と再生（React に依存しない関数が中心）。トラック・ミックス・MIDI・音声の作成、区間ごとのテンポ（tempoMap.ts）、書き出しの仕上げ（finish.ts）もここ
 │   └── realtime/    ループ試聴の AudioWorklet
 ├── dsp/             Worker と wasm の橋渡し、wevocal_dsp.wasm
@@ -56,6 +55,8 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `useRangeNote` | 選択範囲の今の音程（「音程を合わせる」用） |
 
 キーボード操作（`useShortcuts`）と、設定のショートカットの割り当ての画面（`KeymapEditor`）、一覧のダイアログ（`ShortcutsDialog`）は PevenMUI の keymap を使う。Synth に残るのは操作の一覧と既定のキー（`settings/keymap.ts`。Ctrl+S の入れ替えも）と、一覧のマウスの操作の行。
+
+PC とスマホの画面の配置（`DesktopLayout` / `MobileLayout`）、ステータスバーとスマホの下のバーの枠（`StatusBar` / `BottomBar`）は PevenMUI のものを使う。中身（`components/StatusBar.tsx`、`MobilePlayBar.tsx`、範囲を選んだときの編集の列 `MobileEditBar.tsx`）は Synth。インスペクタの幅と、スマホの横向きの右の欄の固定は、今までと同じキー（`wevocalsynth.inspectorWidth`、`wevocalsynth.mobilePanelPinned`）で覚える。
 
 ファイルのドロップと選択の画面（`useFileDrop` / `useFilePicker`）、最近使用したファイル（`useRecentFiles`）、閉じる前の保存確認（`useLeaveGuard`）は PevenMUI のフックを `useEditor` から使う。
 
