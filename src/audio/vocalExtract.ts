@@ -29,6 +29,7 @@ export const VOCAL_MODELS: Record<VocalModel, { addon: string; label: MessageKey
   fp32: { addon: 'spleeter-fp32', label: 'addon.modelPrecise' },
   'voc-ft': { addon: 'uvr-mdx-voc-ft', label: 'addon.modelVocalHq', mdx: 'voc-ft' },
   'inst-hq4': { addon: 'uvr-mdx-inst-hq4', label: 'addon.modelInstHq', mdx: 'inst-hq4' },
+  kara2: { addon: 'uvr-mdx-kara2', label: 'addon.modelLead', mdx: 'kara2' },
 }
 
 /** UVR の MDX-Net か（CPU では曲の長さの約 10 倍かかる。extractor/docs/MODELS.md） */

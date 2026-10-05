@@ -84,7 +84,7 @@ for (const [kind, m] of Object.entries(MODELS)) {
 }
 
 // UVR の MDX-Net（sherpa-onnx が ONNX にして配っているもの）。1 ファイルを model.onnx に名前をそろえる（extractor/src/mdxModels.ts）
-const MDX = { 'uvr-mdx-voc-ft': 'UVR-MDX-NET-Voc_FT.onnx', 'uvr-mdx-inst-hq4': 'UVR-MDX-NET-Inst_HQ_4.onnx' }
+const MDX = { 'uvr-mdx-voc-ft': 'UVR-MDX-NET-Voc_FT.onnx', 'uvr-mdx-inst-hq4': 'UVR-MDX-NET-Inst_HQ_4.onnx', 'uvr-mdx-kara2': 'UVR_MDXNET_KARA_2.onnx' }
 for (const [id, file] of Object.entries(MDX)) {
   const src = join(CACHE, file)
   if (!existsSync(src)) run(`curl -sSfL -o "${src}" ${RELEASE}/${file}`)
