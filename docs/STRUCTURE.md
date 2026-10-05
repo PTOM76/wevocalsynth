@@ -50,11 +50,12 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `useTask` | 時間のかかる処理の、処理中の表示・進捗・中断（加工用の DSP の Worker を止める） |
 | `useAutosave` | IndexedDB への自動保存（トラックごと）と、起動時の復元 |
 | `useAppMenus` | メニューバー・⋮ メニュー・右クリックメニューの中身 |
-| `useShortcuts` | キーボード操作 |
 | `useSeek` | 矢印キー・Home / End での再生位置の移動 |
 | `useOutput` | プロジェクトの保存（開いたファイルへの上書き）と、音声の書き出し（ミックス、仕上げ、保存先フォルダーとファイル名） |
 | `useMarkers` | マーカー（追加、名前の変更、削除、ドラッグでの移動、ここからのテンポ）。元に戻すの対象にはしない |
 | `useRangeNote` | 選択範囲の今の音程（「音程を合わせる」用） |
+
+キーボード操作（`useShortcuts`）と、設定のショートカットの割り当ての画面（`KeymapEditor`）、一覧のダイアログ（`ShortcutsDialog`）は PevenMUI の keymap を使う。Synth に残るのは操作の一覧と既定のキー（`settings/keymap.ts`。Ctrl+S の入れ替えも）と、一覧のマウスの操作の行。
 
 ファイルのドロップと選択の画面（`useFileDrop` / `useFilePicker`）、最近使用したファイル（`useRecentFiles`）、閉じる前の保存確認（`useLeaveGuard`）は PevenMUI のフックを `useEditor` から使う。
 
