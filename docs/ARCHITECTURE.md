@@ -57,7 +57,7 @@ DSP の Worker は、加工用と解析用の 2 つにしている。1 つだと
 | `wevocal-lib/` | 信号処理の部品（FFT・リサンプル・STFT）と、音声ファイルの読み書き、再生の開始と停止、波形の表示の土台（`web/`。React のものは `wevocal-lib/react`） | 本体の DSP と画面、ボーカル抽出 |
 | `pevenmui/` | 画面の部品（PevenMUI。テーマ、メニューバー、ダイアログ、ファイルを開く画面、進み具合のゲージなど） | 本体、ボーカル抽出の単体の画面 |
 | `extractor/` | ボーカル抽出の本体（WeVocalExtractor） | 本体（追加機能として組み込む） |
-| `analyzer/` | 声の解析（WeVocalAnalyzer。準備中） | 本体（スペクトログラムを追加機能として組み込む予定） |
+| `analyzer/` | 声の解析（WeVocalAnalyzer） | 本体（スペクトログラムを追加機能「解析」として組み込む） |
 | `converter/` | 音声ファイルの形式の変換（WeVocalConverter。準備中） | 単体の Web ツール（読み込みと書き出しは Synth と同じ wevocal-lib） |
 
 submodule にした理由:

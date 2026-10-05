@@ -1,4 +1,4 @@
-import { SPEC_ROWS, type DspRequest, type DspResponse } from './worker'
+import type { DspRequest, DspResponse } from './worker'
 import { markActivity, recordDspJob, reportMemory } from '../debug/debugStats'
 import { processParallel, shouldSplit } from './parallel'
 
@@ -21,7 +21,7 @@ type Pending = {
  */
 // 'par0'… は、区間に分けて並列に加工するときの Worker（試験的。parallel.ts）
 export type Lane = 'edit' | 'analysis' | `par${number}`
-const laneOf = (req: DspRequest): Lane => (req.kind === 'f0' || req.kind === 'spec' || req.kind === 'tempo' ? 'analysis' : 'edit')
+const laneOf = (req: DspRequest): Lane => (req.kind === 'f0' || req.kind === 'tempo' ? 'analysis' : 'edit')
 
 let nextId = 1
 const workers = new Map<Lane, Worker>()
@@ -43,7 +43,7 @@ function getWorker(lane: Lane) {
       }
       pending.delete(e.data.id)
       if ('error' in e.data) p.reject(new Error(e.data.error))
-      else p.resolve('bytes' in e.data ? e.data.bytes : e.data.channels)
+      else p.resolve(e.data.channels)
     }
     worker.onerror = (e) => failLane(lane, new Error(e.message || 'DSP worker error'))
     workers.set(lane, worker)
@@ -177,33 +177,6 @@ export async function analyzeTempo(channels: Float32Array[], sampleRate: number)
   const out: TempoCandidate[] = []
   for (let i = 0; i + 2 < raw.length; i += 3) out.push({ bpm: raw[i], strength: raw[i + 1], offset: raw[i + 2] })
   return out
-}
-
-/** スペクトログラム。`data[k * rows + r]`（r = 0 が最低周波数）が 0〜255 の明るさ */
-export interface Spectrogram {
-  data: Uint8Array
-  frames: number
-  rows: number
-  /** フレーム間隔（秒）。フレーム k の中心は k × hopSec */
-  hopSec: number
-  minHz: number
-  maxHz: number
-}
-
-/** Rust 側 `spec::HOP` / `spec::MIN_HZ` と一致させる */
-const SPEC_HOP = 256
-const SPEC_MIN_HZ = 50
-
-export async function analyzeSpectrogram(channels: Float32Array[], sampleRate: number): Promise<Spectrogram> {
-  const data = (await sendRaw({ kind: 'spec', id: nextId++, samples: mixDown(channels), sampleRate })) as Uint8Array
-  return {
-    data,
-    frames: data.length / SPEC_ROWS,
-    rows: SPEC_ROWS,
-    hopSec: SPEC_HOP / sampleRate,
-    minHz: SPEC_MIN_HZ,
-    maxHz: sampleRate / 2,
-  }
 }
 
 /** 和音を 2 つの声に分ける（試作。dsp/src/voices.rs）。`by` が pitch なら A が高い方、volume なら大きい方 */

@@ -1,7 +1,7 @@
 //! F0 推定・スペクトログラムのテスト。
 
 use super::*;
-use crate::{f0, spec};
+use crate::f0;
 
 #[test]
 fn f0_detects_pitch() {
@@ -22,23 +22,6 @@ fn f0_detects_pitch() {
             }
         }
     }
-}
-
-/// 1kHz の正弦波で、1kHz 付近の段が最も明るく、無音部分は 0 になること。
-#[test]
-fn spectrogram_peak_row() {
-    let sr = 48000.0;
-    let mut x = sine(1000.0, sr, 0.5);
-    x.extend(vec![0.0; 24000]);
-    let s = spec::compute(&x, sr, &mut |_| {});
-    let rows = spec::ROWS;
-    let k = (0.25 * sr) as usize / spec::HOP;
-    let frame = &s[k * rows..(k + 1) * rows];
-    let peak = (0..rows).max_by_key(|&r| frame[r]).unwrap();
-    let f = spec::MIN_HZ * (sr / 2.0 / spec::MIN_HZ).powf(peak as f32 / (rows - 1) as f32);
-    assert!((f / 1000.0 - 1.0).abs() < 0.06, "peak row at {f}Hz");
-    let quiet = (0.9 * sr) as usize / spec::HOP;
-    assert!(s[quiet * rows..(quiet + 1) * rows].iter().all(|&v| v == 0));
 }
 
 #[test]

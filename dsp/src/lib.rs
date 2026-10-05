@@ -21,7 +21,6 @@ pub mod segment;
 pub mod sms;
 pub mod sola;
 pub mod sola2;
-pub mod spec;
 pub mod voices;
 mod timemap;
 mod wsola;

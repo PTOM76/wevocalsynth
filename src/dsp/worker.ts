@@ -1,9 +1,6 @@
 // wasm の DSP エンジンをメインスレッド外で実行する Worker
 import wasmUrl from './wevocal_dsp.wasm?url'
 
-/** スペクトログラムの周波数方向の段数。Rust 側 `spec::ROWS` と一致させる */
-export const SPEC_ROWS = 128
-
 interface DspExports {
   memory: WebAssembly.Memory
   alloc_f32(len: number): number
@@ -33,13 +30,11 @@ interface DspExports {
   ): number
   formant_curve_planar(input: number, frames: number, channels: number, sampleRate: number, shifts: number, shiftCount: number, hop: number): number
   analyze_f0(input: number, frames: number, sampleRate: number, minHz: number, maxHz: number, voicedLimit: number, silenceRms: number): number
-  analyze_spectrogram(input: number, frames: number, sampleRate: number): number
   analyze_tempo(input: number, frames: number, sampleRate: number): number
   split_voices_planar(input: number, frames: number, channels: number, sampleRate: number, by: number): number
   segment_count(frames: number, sampleRate: number): number
   segment_bound(frames: number, sampleRate: number, k: number, field: number): number
   stitch_planar(input: number, frames: number, channels: number, sampleRate: number, stretch: number): number
-  output_u8_ptr(): number
   output_ptr(): number
   set_fast_math(on: number): void
 }
@@ -61,9 +56,9 @@ export interface ProcessRequest {
   fastMath?: boolean
 }
 
-/** F0 解析・スペクトログラム・テンポ解析のリクエスト（モノラル） */
+/** F0 解析・テンポ解析のリクエスト（モノラル） */
 export interface F0Request {
-  kind: 'f0' | 'spec' | 'tempo'
+  kind: 'f0' | 'tempo'
   id: number
   samples: Float32Array
   sampleRate: number
@@ -130,7 +125,6 @@ export type DspRequest = ProcessRequest | F0Request | CurveRequest | FormantCurv
 
 export type DspResponse =
   | { id: number; channels: Float32Array[] }
-  | { id: number; bytes: Uint8Array }
   | { id: number; error: string }
   | { id: number; progress: number }
   /** 処理のあとの wasm のメモリの大きさ（バイト。デバッグ表示用。wasm のメモリは縮まない） */
@@ -246,19 +240,6 @@ function stitch(dsp: DspExports, req: StitchRequest): Float32Array[] {
   }
 }
 
-/** スペクトログラム（フレームごとに ROWS バイト）を計算する */
-function analyzeSpectrogram(dsp: DspExports, req: F0Request): Uint8Array {
-  const n = req.samples.length
-  const input = dsp.alloc_f32(n)
-  try {
-    new Float32Array(dsp.memory.buffer, input, n).set(req.samples)
-    const frames = dsp.analyze_spectrogram(input, n, req.sampleRate)
-    return new Uint8Array(dsp.memory.buffer, dsp.output_u8_ptr(), frames * SPEC_ROWS).slice()
-  } finally {
-    dsp.free_f32(input, n)
-  }
-}
-
 /** F0 解析とテンポ解析（どちらも結果は f32 の並び） */
 function analyzeF0(dsp: DspExports, req: F0Request): Float32Array {
   const n = req.samples.length
@@ -293,12 +274,6 @@ scope.onmessage = async (e: MessageEvent<DspRequest>) => {
     if (req.kind === 'stitch') {
       const channels = stitch(dsp, req)
       scope.postMessage({ id: req.id, channels } satisfies DspResponse, channels.map((c) => c.buffer))
-      return
-    }
-    if (req.kind === 'spec') {
-      const bytes = analyzeSpectrogram(dsp, req)
-      const res: DspResponse = { id: req.id, bytes }
-      scope.postMessage(res, [bytes.buffer])
       return
     }
     const channels = 'samples' in req ? [analyzeF0(dsp, req)] : run(dsp, req)

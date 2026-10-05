@@ -25,7 +25,7 @@ src/
 dsp/src/             Rust の DSP
 wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT・窓関数・速い近似の数値計算・F0 推定・テンポ解析・立ち上がりの検出）と、音声ファイルの読み込み（AIFF は自前）・書き出し、再生、録音、波形の表示の土台（TypeScript 側は `web/`）。submodule
 extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追加機能としてビルドする（docs/EXTRACTOR.md）。単体の Web ツールでもある
-analyzer/            声の解析（WeVocalAnalyzer）。submodule。スペクトログラムを追加機能として使う予定（準備中。analyzer/docs/REQUIREMENT.md）
+analyzer/            声の解析（WeVocalAnalyzer）。submodule。スペクトログラムを追加機能「解析」として使う（analyzer/docs/REQUIREMENT.md）
 converter/           音声ファイルの形式の変換（WeVocalConverter）。submodule。今は Extractor を写した土台（準備中。converter/docs/REQUIREMENT.md）
 pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確認ダイアログ・分割バー・設定画面の部品・ダイアログを別の窓に表示する WindowDialog / WindowPortal・進み具合のゲージ・ファイルを開く画面と最近使用したファイル・IndexedDB）。submodule
 ```
@@ -38,7 +38,7 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `usePlayer` | Web Audio での再生。ほかのトラックも一緒に鳴らし、フェーダー・適用前の音量とパン・ミュートをすぐ反映する。範囲のループ再生、再生中のトラックの切り替えにも対応する。音量メーター用の AnalyserNode も持つ。AudioContext の起動と一時停止は wevocal-lib の `startContext` / `suspendContext`（`web/src/playback.ts`。iOS の再生用オーディオセッション、`interrupted` の状態からの復帰、停止と再生の競合の回避） |
 | `usePlayback` | 再生・試聴・ループ（加工の欄）の切り替え（どれかを始めたらほかを止める） |
 | `usePreview` | 加工済みプレビューを裏で作る |
-| `useClipAnalysis` | F0・スペクトログラム（表示が ON のときだけ。解析の設定が変わったら解析し直す） |
+| `useClipAnalysis` | F0・スペクトログラム（表示が ON のときだけ。解析の設定が変わったら解析し直す）。スペクトログラムは追加機能「解析」で計算する（`audio/spectrogram.ts`） |
 | `useLanes` | 帯パネル（波形・スペクトログラム・ピッチ・音量・フォルマント）の表示とフォーカス。ツールバーとショートカットはフォーカスしているパネルに反映される |
 | `useLaneCurve` / `useFormantCurve` | 音量・フォルマントパネルに描いた曲線（10ms 間隔）。音量は再生にすぐ反映し、フォルマントは試聴で加工して聴く。どちらも適用で確定する |
 | `usePitchClipboard` | ピッチパネルでの切り取り・コピー・貼り付け（曲線が対象） |
@@ -67,7 +67,6 @@ PC とスマホの画面の配置（`DesktopLayout` / `MobileLayout`）、ステ
 | ファイル | 担当 |
 | --- | --- |
 | `draw.ts` | Canvas への描画のうち Synth だけのもの（スペクトログラム・ピッチ・拍の線・帯のフォーカス）と、パネルの高さの割り振り（`laneHeights`）。テーマから波形の色を作る `waveColors`。目盛り・波形・選択範囲・再生位置は wevocal-lib のものを同じ名前で出し直す |
-| `spectrogramImage.ts` | スペクトログラムの画像を作る（画像の置き場は使い回す） |
 | `WaveformToolbar.tsx` | 表示のボタンと、フォーカスしているパネルの操作のボタン |
 | `curveLane.ts` | 音量・フォルマントパネル（目盛りと描いた曲線。縦軸の範囲だけを変えて共通に使う） |
 | `useLanePen.ts` | パネルのペン。押したパネルで描き始め、離すまでそのパネルに描く（ピッチ・音量・フォルマントで共通） |
@@ -112,7 +111,6 @@ WeVocalAnalyzer でも使う共通の部分は wevocal-lib にある（[wevocal-
 | `curve.rs` | ピッチカーブ編集。時間ごとのピッチ比から時間マップを作る |
 | `formant.rs` | ケプストラムによるスペクトル包絡の補正（一定の量と、時間で変わる量） |
 | `f0.rs`（wevocal-lib） | YIN による F0 推定（16kHz に間引き、10ms 間隔）。探す範囲・有声判定・無音判定は `Params` で変えられる。`crate::f0` で使用できる |
-| `spec.rs` | 表示用スペクトログラム（STFT 2048/256、対数周波数 128段、1バイト） |
 | `tempo.rs`（wevocal-lib） | テンポ解析。スペクトルの増加量（オンセット強度）の、時間方向の周波数成分から BPM の候補と1拍目の位置を求める。`crate::tempo` で使用できる |
 | `ffi.rs` | wasm 向けの C ABI |
 
@@ -126,7 +124,7 @@ FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD を活用�
 | `process_planar` | ピッチ変更・時間伸縮・フォルマント（全チャンネル） |
 | `process_curve_planar` | ピッチカーブに従った処理 |
 | `formant_curve_planar` | フォルマントカーブに従った処理（フォルマントだけを動かし、ピッチと長さは変えない） |
-| `analyze_f0` / `analyze_spectrogram` / `analyze_tempo` | F0 推定（設定つき）、スペクトログラム、テンポの候補（モノラル） |
+| `analyze_f0` / `analyze_tempo` | F0 推定（設定つき）、テンポの候補（モノラル）。スペクトログラムは追加機能「解析」（analyzer/ の dsp） |
 | `output_ptr` / `output_u8_ptr` | 直前の結果の置き場所 |
 
 進捗は、Worker が渡す `env.report_progress(p)` を wasm から呼んで通知する。

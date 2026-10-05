@@ -1,6 +1,6 @@
 //! wasm 向け C ABI。wasm-bindgen を使わず、Worker から素の `WebAssembly.instantiate` で呼べる関数だけを公開する。
 
-use crate::{curve, f0, formant, process_with_progress, segment, spec, tempo, voices, Algorithm, Formant};
+use crate::{curve, f0, formant, process_with_progress, segment, tempo, voices, Algorithm, Formant};
 use std::cell::RefCell;
 
 #[cfg(target_arch = "wasm32")]
@@ -21,7 +21,6 @@ fn host_progress(p: f64) {
 
 thread_local! {
     static OUTPUT: RefCell<Vec<f32>> = const { RefCell::new(Vec::new()) };
-    static OUTPUT_U8: RefCell<Vec<u8>> = const { RefCell::new(Vec::new()) };
 }
 
 /// フォルマント補正で速い対数・指数の近似を使うか（0 なら標準の関数）。Worker が処理の前に設定の値を入れる
@@ -198,24 +197,6 @@ pub unsafe extern "C" fn analyze_f0(
     n
 }
 
-/// モノラル音声のスペクトログラムを計算し、フレーム数を返す。結果（フレームごとに
-/// `spec::ROWS` バイト）は `output_u8_ptr` で取得する。
-///
-/// # Safety
-/// `input` は `frames` 個の有効な f32 を指していること。
-#[no_mangle]
-pub unsafe extern "C" fn analyze_spectrogram(
-    input: *const f32,
-    frames: usize,
-    sample_rate: f32,
-) -> usize {
-    let x = std::slice::from_raw_parts(input, frames);
-    let out = spec::compute(x, sample_rate, &mut host_progress);
-    let n = out.len() / spec::ROWS;
-    OUTPUT_U8.with(|o| *o.borrow_mut() = out);
-    n
-}
-
 /// モノラル音声のテンポを解析し、結果の値の個数を返す。結果は `output_ptr` で取得する:
 /// [候補1の BPM, 強さ, 1拍目の位置（秒）, 候補2の BPM, …]（強い順）
 ///
@@ -303,10 +284,6 @@ pub unsafe extern "C" fn stitch_planar(input: *const f32, frames: usize, channel
     out_frames
 }
 
-#[no_mangle]
-pub extern "C" fn output_u8_ptr() -> *const u8 {
-    OUTPUT_U8.with(|o| o.borrow().as_ptr())
-}
 
 #[no_mangle]
 pub extern "C" fn output_ptr() -> *const f32 {
