@@ -237,6 +237,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
   const splitVoices = useVoiceSplit({
     tracks: history.tracks,
     activeId: history.activeId,
+    selections,
     split: tracks.split,
     run: task.run,
     setProgress,

@@ -3,7 +3,7 @@ import type { MessageKey } from '../i18n/i18n'
 import { canPickFiles } from 'pevenmui/web'
 
 /** 設定画面の分類 */
-export type Category = 'project' | 'general' | 'edit' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'data' | 'debug' | 'debugAudio' | 'diagnose'
+export type Category = 'project' | 'general' | 'edit' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'data' | 'debug' | 'debugAudio' | 'experimental' | 'diagnose'
 /** 並び順と親子（親のない分類と、その下のサブアイテム） */
 const TREE: [Category, Category?][] = [
   ['project'],
@@ -18,6 +18,7 @@ const TREE: [Category, Category?][] = [
   ['data'],
   ['debug'],
   ['debugAudio', 'debug'],
+  ['experimental', 'debug'],
   ['diagnose', 'debug'],
 ]
 
@@ -57,9 +58,10 @@ const INDEX: Record<Category, MessageKey[]> = {
   ],
   debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.devUpdates', 'settings.devUpdatesHelp', 'settings.showMaterialButton', 'settings.showMaterialButtonHelp', 'settings.filePicker', 'settings.filePickerHelp', 'settings.dialogWindow'],
   debugAudio: [
-    'settings.groupDebugAudio', 'settings.showExperimentalAlgorithms', 'settings.showExperimentalAlgorithmsHelp', 'settings.fastMath', 'settings.fastMathHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp',
+    'settings.groupDebugAudio', 'settings.fastMath', 'settings.fastMathHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp',
     'settings.spliceFade', 'settings.spliceFadeHelp', 'settings.suspendWhenStopped', 'settings.suspendWhenStoppedHelp', 'settings.playbackSession', 'settings.playbackSessionHelp',
   ],
+  experimental: ['settings.groupExperimental', 'settings.showExperimentalAlgorithms', 'settings.showExperimentalAlgorithmsHelp', 'settings.showVoiceSplit', 'settings.showVoiceSplitHelp'],
   diagnose: ['settings.groupDiagnose', 'settings.extractDiagnose', 'settings.extractDiagnoseHelp'],
 }
 
