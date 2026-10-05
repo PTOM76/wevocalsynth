@@ -24,7 +24,7 @@ src/
 ├── pwa/             新しい版の確認
 └── i18n/            訳文と t()
 dsp/src/             Rust の DSP
-wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT・窓関数・速い近似の数値計算・F0 推定・テンポ解析・立ち上がりの検出）と、音声ファイルの読み込み（AIFF は自前）・書き出し。submodule
+wevocal-lib/         共有の信号処理（FFT・リサンプル・STFT・窓関数・速い近似の数値計算・F0 推定・テンポ解析・立ち上がりの検出）と、音声ファイルの読み込み（AIFF は自前）・書き出し、再生、録音、波形の表示の土台（TypeScript 側は `web/`）。submodule
 extractor/           ボーカル抽出（WeVocalExtractor）。submodule。追加機能としてビルドする（docs/EXTRACTOR.md）。単体の Web ツールでもある
 pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確認ダイアログ・分割バー・設定画面の部品・ダイアログを別の窓に表示する WindowDialog / WindowPortal・進み具合のゲージ・ファイルを開く画面と最近使用したファイル・IndexedDB）。submodule
 ```
@@ -62,19 +62,22 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 
 | ファイル | 担当 |
 | --- | --- |
-| `draw.ts` | Canvas への描画（目盛り・波形・スペクトログラム・ピッチ・拍の線・選択範囲）と、パネルの高さの割り振り（`laneHeights`）。`prepareCanvas` は大きさが同じなら Canvas を確保し直さない |
+| `draw.ts` | Canvas への描画のうち Synth だけのもの（スペクトログラム・ピッチ・拍の線・帯のフォーカス）と、パネルの高さの割り振り（`laneHeights`）。テーマから波形の色を作る `waveColors`。目盛り・波形・選択範囲・再生位置は wevocal-lib のものを同じ名前で出し直す |
 | `spectrogramImage.ts` | スペクトログラムの画像を作る（画像の置き場は使い回す） |
 | `WaveformToolbar.tsx` | 表示のボタンと、フォーカスしているパネルの操作のボタン |
-| `Minimap.tsx` | 全体を縮小した波形と今の表示範囲。ドラッグやクリックで表示範囲を移動する |
 | `curveLane.ts` | 音量・フォルマントパネル（目盛りと描いた曲線。縦軸の範囲だけを変えて共通に使う） |
 | `useLanePen.ts` | パネルのペン。押したパネルで描き始め、離すまでそのパネルに描く（ピッチ・音量・フォルマントで共通） |
 | `usePitchGrab.ts` | ピッチの線を掴んで上下に動かす（掴むモード。選択範囲の中ならその範囲、外なら途切れるまで） |
 | `useLaneDivider.ts` | 上のパネル（波形・スペクトログラム）と下のパネル（ピッチ・音量・フォルマント）の境目のドラッグ |
-| `peaks.ts` | 波形の最小値・最大値のピラミッド。拡大率に合った段から求めるので、全体表示でも速い |
-| `useWaveformView.ts` | 表示範囲（拡大縮小・スクロール・再生中の追従） |
-| `useRangeEdges.ts` | 範囲の端のドラッグ |
-| `useTouchGestures.ts` | スマホ: ピンチで横の拡大縮小、目盛りのタップ・ドラッグ・長押し（横移動） |
-| `useEdgeScroll.ts` | 目盛りのドラッグで端に来たら表示範囲を流す |
+
+WeVocalAnalyzer でも使う共通の部分は wevocal-lib にある（[wevocal-lib の README](../wevocal-lib/README.md)）。
+
+| 場所 | 担当 |
+| --- | --- |
+| `wevocal-lib/web/src/waveform/`（`wevocal-lib`） | 表示範囲（`View`）、ピーク（最小値・最大値のピラミッド。拡大率に合った段から求めるので、全体表示でも速い）、色（`WaveColors`）、目盛り・波形・選択範囲・再生位置の描画、`prepareCanvas`（大きさが同じなら Canvas を確保し直さない） |
+| `wevocal-lib/web/src/react/`（`wevocal-lib/react`） | `useWaveformView`（拡大縮小・スクロール・再生中の追従）、`useRangeEdges`（範囲の端のドラッグ）、`useTouchGestures`（スマホ: ピンチ、目盛りのタップ・ドラッグ・長押し）、`useEdgeScroll`（目盛りのドラッグで端に来たら流す）、`Minimap`（全体の縮図と表示範囲） |
+
+ピークの表を作ったときの計測は、`main.tsx` で `setPeaksOnBuild` に `markActivity` を渡して残す。
 
 再生位置の線は、波形の上に重ねた別の Canvas に描く（再生中に波形全体を描き直さないため）。
 
