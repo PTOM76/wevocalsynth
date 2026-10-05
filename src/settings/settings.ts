@@ -94,6 +94,8 @@ export interface Settings {
   overlayPitch: boolean
   /** 波形の下にミニマップを表示する（オフなら従来のスクロールバー） */
   minimap: boolean
+  /** ミニマップに再生位置の線を表示する */
+  minimapPlayhead: boolean
   /** 貼り付け・無音の挿入のあと、再生位置を入れた範囲の終わりへ移す */
   seekAfterInsert: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
@@ -165,6 +167,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showPitchLine: true,
   overlayPitch: false,
   minimap: true,
+  minimapPlayhead: true,
   seekAfterInsert: true,
   liveSelection: false,
   followPlayhead: true,

@@ -110,6 +110,8 @@ interface Actions {
   overlayPitch: boolean
   minimap: boolean
   toggleMinimap: () => void
+  minimapPlayhead: boolean
+  toggleMinimapPlayhead: () => void
   toggleOverlayPitch: () => void
   /** 波形の縦の拡大率 */
   waveScale: number
@@ -278,6 +280,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.notes'), checked: a.showNotes, disabled: !a.hasClip || !a.showPitch || (a.showNotes && !a.showPitchLine), onClick: a.toggleNotes },
         { label: t('menu.overlayPitch'), checked: a.overlayPitch, disabled: !a.hasClip || !a.showPitch, onClick: a.toggleOverlayPitch },
         { label: t('menu.minimap'), checked: a.minimap, disabled: !a.hasClip, onClick: a.toggleMinimap },
+        { label: t('menu.minimapPlayhead'), checked: a.minimapPlayhead, disabled: !a.hasClip || !a.minimap, onClick: a.toggleMinimapPlayhead },
         { divider: true },
         { label: t('wave.zoomIn'), shortcut: a.wheelZoom === 'wheel' ? 'Wheel' : 'Ctrl+Wheel', disabled: !a.hasClip || !a.canZoomIn, onClick: a.zoomIn },
         { label: t('wave.zoomOut'), disabled: !a.hasClip || !a.zoomed, onClick: a.zoomOut },

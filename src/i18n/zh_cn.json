@@ -665,6 +665,7 @@
   "menu.notes": "音符",
   "menu.overlayPitch": "将音高叠加在波形上",
   "menu.minimap": "缩略图",
+  "menu.minimapPlayhead": "缩略图播放位置",
   "wave.showFormant": "显示共振峰",
   "wave.drawFormant": "绘制共振峰",
   "wave.drawFormantTooltip": "绘制共振峰曲线（Shift：对齐半音 / Alt：恢复原样）",

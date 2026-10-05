@@ -21,10 +21,12 @@ interface Props {
   /** 再生中は毎フレーム今の位置を返す */
   livePosition?: () => number
   playing: boolean
+  /** 再生位置の線を表示する */
+  showPlayhead: boolean
 }
 
 /** 全体を縮小した波形。今の表示範囲を枠で示し、ドラッグやクリックで移動する */
-export default function Minimap({ clip, duration, view, selections, scrollTo, label, position, livePosition, playing }: Props) {
+export default function Minimap({ clip, duration, view, selections, scrollTo, label, position, livePosition, playing, showPlayhead }: Props) {
   const { pal, dark } = usePalette()
   const headRef = useRef<HTMLDivElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
@@ -77,7 +79,7 @@ export default function Minimap({ clip, duration, view, selections, scrollTo, la
   // 再生位置の線。再生中は React の再描画を待たず、毎フレーム動かす
   useEffect(() => {
     const el = headRef.current
-    if (!el || duration <= 0) return
+    if (!el || duration <= 0 || !showPlayhead) return
     const put = (t: number) => (el.style.left = `${Math.min(100, Math.max(0, (t / duration) * 100))}%`)
     put(position)
     if (!playing || !livePosition) return
@@ -86,7 +88,7 @@ export default function Minimap({ clip, duration, view, selections, scrollTo, la
       id = requestAnimationFrame(tick)
     })
     return () => cancelAnimationFrame(id)
-  }, [position, playing, livePosition, duration])
+  }, [position, playing, livePosition, duration, showPlayhead])
 
   const timeAt = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -119,7 +121,7 @@ export default function Minimap({ clip, duration, view, selections, scrollTo, la
         onPointerUp={() => (drag.current = null)}
         onPointerCancel={() => (drag.current = null)}
       />
-      <Box ref={headRef} sx={{ position: 'absolute', top: 0, bottom: 0, width: 2, ml: '-1px', bgcolor: 'text.primary', pointerEvents: 'none' }} />
+      {showPlayhead && <Box ref={headRef} sx={{ position: 'absolute', top: 0, bottom: 0, width: 2, ml: '-1px', bgcolor: 'text.primary', pointerEvents: 'none' }} />}
     </Box>
   )
 }

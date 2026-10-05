@@ -103,6 +103,8 @@ interface Props {
   overlayPitch?: boolean
   /** スクロールバーの代わりにミニマップを表示する */
   minimap?: boolean
+  /** ミニマップに再生位置の線を表示する */
+  minimapPlayhead?: boolean
   /** 描いた目標ピッチ（`pitch` と同じ長さ、0 は未編集） */
   target: Float32Array | null
   penMode: boolean
@@ -678,7 +680,7 @@ function Waveform(props: Props) {
       {/* 表示範囲の横スクロールバー */}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1 }}>
         {props.minimap ? (
-          <Minimap clip={clip} duration={duration} view={view} selections={props.selections} scrollTo={scrollTo} label={t('wave.scroll')} position={position} playing={!!playing} livePosition={livePosition} />
+          <Minimap clip={clip} duration={duration} view={view} selections={props.selections} scrollTo={scrollTo} label={t('wave.scroll')} position={position} playing={!!playing} livePosition={livePosition} showPlayhead={props.minimapPlayhead ?? true} />
         ) : (
         <Slider
           size="small"
