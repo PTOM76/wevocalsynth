@@ -23,7 +23,7 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 | [wevocal-lib](https://github.com/PTOM76/wevocal-lib) | WeVocalSynth と WeVocalExtractor が使う信号処理の部品 | submodule ＋ `dsp/Cargo.toml` のパス依存 |
 | [wevocalextractor](https://github.com/PTOM76/wevocalextractor) | ボーカル抽出の本体（UI なし） | submodule。ビルドして追加機能として配る |
 
-- 共通の部品を Extractor 側に配置しないのは、依存の向きを保つため。WeVocalSynth の基本機能（ピッチ変更・スペクトログラム）が、追加機能の Extractor に依存しないようにする
+- 共通の部品を Extractor 側に配置しないのは、依存の向きを保つため。WeVocalSynth の基本機能（ピッチ変更など）が、追加機能の Extractor に依存しないようにする。スペクトログラムは追加機能の WeVocalAnalyzer に移す（[決定事項](DECISIONS.md)）
 - submodule ＋パス依存にするのは、両方を同時に直しながら開発しやすいため
 - clone するときは `--recursive` を付ける（付け忘れたら `git submodule update --init`）
 
