@@ -309,7 +309,6 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
           ],
         },
         { label: t('wave.follow'), checked: a.follow, onClick: a.toggleFollow },
-        { divider: true },
       ],
     },
     {

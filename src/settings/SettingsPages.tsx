@@ -17,6 +17,7 @@ import type { Algorithm } from '../dsp/engine'
 import { t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
 import type { PickerMode, StartFolder } from 'pevenmui/web'
+import { Button } from '@mui/material'
 import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
 
 /** 画面の大きさの選択肢（倍率） */
@@ -34,12 +35,14 @@ interface PageProps {
   onClose: () => void
   t: (key: MessageKey) => string
   project: ProjectSettings | null
+  /** 別の分類を開く */
+  go: (category: Category) => void
 }
 
 /**
  * 設定画面の分類ごとの中身。項目を足したら settingsSearch.ts の検索の対象にも足す
  */
-export function settingsPages({ draft, set, onClose, t, project }: PageProps): Record<Category, ReactNode> {
+export function settingsPages({ draft, set, onClose, t, project, go }: PageProps): Record<Category, ReactNode> {
   // 既定の処理方式の選択肢（従来の方式は、表示する設定か、今選んでいるときだけ）
   const algorithmOptions = visibleAlgorithms(draft.showLegacyAlgorithms, [draft.vocalAlgorithm, draft.instrumentAlgorithm]).map(
     (a): [Algorithm, string] => [a.value, t(a.label)],
@@ -275,7 +278,21 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
           </Row>
         </Group>
         <Group title={t('settings.groupAddons')}>
+          <Row label={t('settings.addonsMoved')}>
+            <Button size="small" onClick={() => go('addons')}>
+              {t('settings.openAddons')}
+            </Button>
+          </Row>
+        </Group>
+      </>
+    ),
+    addons: (
+      <>
+        <Group title={t('settings.groupAddonVocal')}>
           <AddonSection ids={VOCAL_ADDONS} />
+        </Group>
+        <Group title={t('settings.groupAddonAnalyzer')}>
+          <AddonSection ids={['analyzer']} />
         </Group>
       </>
     ),

@@ -33,7 +33,7 @@ export default function SettingsDialog({ open, onClose, settings, onChange, proj
       onChange={onChange}
       categories={settingsCategories(t)}
       initial="general"
-      pages={(draft, set) => settingsPages({ draft, set, onClose, t, project })}
+      pages={(draft, set, go) => settingsPages({ draft, set, onClose, t, project, go })}
     />
   )
 }

@@ -4,7 +4,7 @@ import { ACTIONS } from './keymap'
 import { canPickFiles } from 'pevenmui/web'
 
 /** 設定画面の分類 */
-export type Category = 'project' | 'general' | 'edit' | 'keys' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'data' | 'debug' | 'debugAudio' | 'experimental' | 'diagnose'
+export type Category = 'project' | 'general' | 'edit' | 'keys' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'addons' | 'data' | 'debug' | 'debugAudio' | 'experimental' | 'diagnose'
 /** 並び順と親子（親のない分類と、その下のサブアイテム） */
 const TREE: [Category, Category?][] = [
   ['project'],
@@ -17,6 +17,7 @@ const TREE: [Category, Category?][] = [
   ['pitch', 'process'],
   ['tempo', 'process'],
   ['vocal', 'process'],
+  ['addons'],
   ['data'],
   ['debug'],
   ['debugAudio', 'debug'],
@@ -56,8 +57,9 @@ const INDEX: Record<Category, MessageKey[]> = {
   ],
   vocal: [
     'settings.groupVocal', 'settings.vocalModel', 'settings.vocalFresh', 'settings.vocalFreshHelp', 'settings.vocalGpu', 'settings.vocalGpuHelp', 'settings.vocalKeepHighBand', 'settings.vocalKeepHighBandHelp', 'settings.vocalMemory', 'settings.vocalMemoryHelp',
-    'settings.groupAddons', 'addon.modelStandard', 'addon.modelLight', 'addon.modelPrecise',
+    'settings.groupAddons', 'settings.addonsMoved', 'settings.openAddons',
   ],
+  addons: ['settings.groupAddonVocal', 'settings.groupAddonAnalyzer', 'addon.modelStandard', 'addon.modelLight', 'addon.modelPrecise', 'addon.modelVocalHq', 'addon.modelInstHq', 'addon.modelLead', 'addon.analyzer'],
   data: [
     'settings.groupData', 'data.work', 'data.workHelp', 'data.cache', 'data.cacheHelp', 'data.addons',
     'data.settings', 'data.settingsHelp', 'data.all', 'data.persist', 'data.persistHelp',
