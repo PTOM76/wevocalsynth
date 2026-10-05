@@ -662,6 +662,7 @@
   "menu.pitchLine": "ピッチの線",
   "menu.notes": "音符",
   "menu.overlayPitch": "ピッチを波形に重ねる",
+  "menu.minimap": "ミニマップ",
   "wave.showFormant": "フォルマント表示",
   "wave.drawFormant": "フォルマントを描く",
   "wave.drawFormantTooltip": "フォルマントの曲線を描く（Shift: 半音に吸着 / Alt: 元に戻す）",

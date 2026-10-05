@@ -662,6 +662,7 @@
   "menu.pitchLine": "Pitch line",
   "menu.notes": "Notes",
   "menu.overlayPitch": "Overlay pitch on waveform",
+  "menu.minimap": "Minimap",
   "wave.showFormant": "Show formant",
   "wave.drawFormant": "Draw formant",
   "wave.drawFormantTooltip": "Draw a formant curve (Shift: snap to semitone / Alt: restore original)",

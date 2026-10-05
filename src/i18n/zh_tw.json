@@ -662,6 +662,7 @@
   "menu.pitchLine": "音高線",
   "menu.notes": "音符",
   "menu.overlayPitch": "將音高疊加在波形上",
+  "menu.minimap": "縮圖",
   "wave.showFormant": "顯示共振峰",
   "wave.drawFormant": "繪製共振峰",
   "wave.drawFormantTooltip": "繪製共振峰曲線（Shift：對齊半音 / Alt：恢復原樣）",

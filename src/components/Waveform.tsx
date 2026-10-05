@@ -38,6 +38,7 @@ import type { useWaveformView } from './waveform/useWaveformView'
 import { computePeaks } from './waveform/peaks'
 import { useTouchGestures } from './waveform/useTouchGestures'
 import { useEdgeScroll } from './waveform/useEdgeScroll'
+import Minimap from './waveform/Minimap'
 import { useLang, useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 
@@ -98,6 +99,8 @@ interface Props {
   touchHandles?: boolean
   /** ピッチを波形の帯に重ねる（オーバーパネル。波形とピッチの両方を出しているとき） */
   overlayPitch?: boolean
+  /** スクロールバーの代わりにミニマップを表示する */
+  minimap?: boolean
   /** 描いた目標ピッチ（`pitch` と同じ長さ、0 は未編集） */
   target: Float32Array | null
   penMode: boolean
@@ -672,6 +675,9 @@ function Waveform(props: Props) {
       </Box>
       {/* 表示範囲の横スクロールバー */}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1 }}>
+        {props.minimap ? (
+          <Minimap clip={clip} duration={duration} view={view} selections={props.selections} scrollTo={scrollTo} label={t('wave.scroll')} />
+        ) : (
         <Slider
           size="small"
           aria-label={t('wave.scroll')}
@@ -682,6 +688,7 @@ function Waveform(props: Props) {
           step={view.dur / 100}
           onChange={(_, v) => scrollTo(v as number)}
         />
+        )}
         <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
           {view.dur.toFixed(view.dur < 1 ? 3 : 1)}s
         </Typography>

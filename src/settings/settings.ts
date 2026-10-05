@@ -92,6 +92,8 @@ export interface Settings {
   showPitchLine: boolean
   /** ピッチを波形の帯に重ねる（オーバーパネル） */
   overlayPitch: boolean
+  /** 波形の下にミニマップを表示する（オフなら従来のスクロールバー） */
+  minimap: boolean
   /** 貼り付け・無音の挿入のあと、再生位置を入れた範囲の終わりへ移す */
   seekAfterInsert: boolean
   /** デバッグ表示（FPS など。Ctrl+Shift+D でも切り替え） */
@@ -160,6 +162,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showNotes: false,
   showPitchLine: true,
   overlayPitch: false,
+  minimap: true,
   seekAfterInsert: true,
   liveSelection: false,
   followPlayhead: true,

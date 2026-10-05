@@ -239,6 +239,8 @@ export default function App() {
     togglePitchLine: () => updateSettings({ showPitchLine: !settings.showPitchLine }),
     overlayPitch: settings.overlayPitch,
     toggleOverlayPitch: () => updateSettings({ overlayPitch: !settings.overlayPitch }),
+    minimap: settings.minimap,
+    toggleMinimap: () => updateSettings({ minimap: !settings.minimap }),
     trackCount: ed.tracks.tracks.length,
     activeMute: activeSettings.mix.mute,
     activeSolo: activeSettings.mix.solo,
@@ -411,6 +413,7 @@ export default function App() {
       showNotes={settings.showNotes}
       showPitchLine={settings.showPitchLine || !settings.showNotes}
       overlayPitch={settings.overlayPitch}
+      minimap={settings.minimap}
       touchHandles={mobile && settings.mobileUi === 'new'}
       target={ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null}
       penMode={ed.penMode && editing}
