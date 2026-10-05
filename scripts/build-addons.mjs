@@ -5,6 +5,7 @@
 // - vocal-extractor-gpu / -cpu: ONNX Runtime の wasm（WebGPU 対応版 / WASM 版。要る方だけ入れる）
 // - spleeter-<種類>: モデル。sherpa-onnx の配布物を取得し、vocals.onnx / accompaniment.onnx に名前をそろえる
 // - uvr-mdx-<種類>: UVR の MDX-Net のモデル（model.onnx）
+// - analyzer: 解析（analyzer/ をビルド。今はスペクトログラム）
 // 各フォルダに manifest.json（ファイルの大きさとハッシュ、内容から決めたバージョン）を書く
 import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -69,6 +70,10 @@ for (const [id, pattern] of [['vocal-extractor-gpu', /^ort-wasm-simd-threaded\.j
 }
 addLicenses(base, ['onnxruntime-MIT.txt'])
 writeManifest('vocal-extractor', base, 'index.js')
+
+// 解析。モデルは使わない（wasm は analyzer/src/dsp.wasm をそのまま使う）
+run('npx vite build -c vite.addons.analyzer.config.ts')
+writeManifest('analyzer', join(OUT, 'analyzer'), 'index.js')
 
 // モデル
 mkdirSync(CACHE, { recursive: true })
