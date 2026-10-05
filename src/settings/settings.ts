@@ -15,8 +15,8 @@ export type ThemeSetting = 'system' | 'light' | 'dark'
 /** Ctrl+S で行うこと。もう一方は Ctrl+Shift+S になる */
 export type CtrlSAction = 'project' | 'export'
 
-/** ホイールでの拡大縮小。ctrl は Ctrl+ホイールで拡大縮小（ホイールで横スクロール）、wheel はその逆 */
-export type WheelZoom = 'ctrl' | 'wheel'
+import type { WheelZoom } from 'wevocal-lib/react'
+export type { WheelZoom }
 
 /** ピッチ解析で声とみなす判定の厳しさ。ゆるいほど、かすれた声も拾うが、雑音も拾いやすい */
 export type F0Voicing = 'strict' | 'normal' | 'loose'

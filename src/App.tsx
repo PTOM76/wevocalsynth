@@ -14,7 +14,7 @@ import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, Licen
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
 import { useAppMenus } from './hooks/useAppMenus'
-import { useWaveformView, ZOOM_STEP } from './components/waveform/useWaveformView'
+import { useWaveformView, ZOOM_STEP } from 'wevocal-lib/react'
 import AppHeader from './components/AppHeader'
 import { EmptyState } from './components/EmptyState'
 import Waveform, { type DrawPoint } from './components/Waveform'
