@@ -317,6 +317,8 @@
   "settings.defaultBpmHelp": "自動解析しない場合に使用",
   "settings.cat.tempo": "テンポ",
   "settings.cat.edit": "編集",
+  "settings.cat.keys": "キーとマウス",
+  "settings.groupMouse": "マウス",
   "settings.cat.file": "ファイル",
   "settings.groupStartup": "起動と保存",
   "settings.groupProcess": "処理",

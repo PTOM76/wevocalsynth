@@ -317,6 +317,8 @@
   "settings.defaultBpmHelp": "Used without auto-detection",
   "settings.cat.tempo": "Tempo",
   "settings.cat.edit": "Edit",
+  "settings.cat.keys": "Keys and mouse",
+  "settings.groupMouse": "Mouse",
   "settings.cat.file": "Files",
   "settings.groupStartup": "Startup and saving",
   "settings.groupProcess": "Processing",

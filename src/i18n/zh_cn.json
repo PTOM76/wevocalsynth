@@ -317,6 +317,8 @@
   "settings.defaultBpmHelp": "不自动分析时使用",
   "settings.cat.tempo": "速度",
   "settings.cat.edit": "编辑",
+  "settings.cat.keys": "按键与鼠标",
+  "settings.groupMouse": "鼠标",
   "settings.cat.file": "文件",
   "settings.groupStartup": "启动与保存",
   "settings.groupProcess": "处理",

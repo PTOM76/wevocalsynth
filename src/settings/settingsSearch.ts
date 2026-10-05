@@ -4,12 +4,13 @@ import { ACTIONS } from './keymap'
 import { canPickFiles } from 'pevenmui/web'
 
 /** 設定画面の分類 */
-export type Category = 'project' | 'general' | 'edit' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'data' | 'debug' | 'debugAudio' | 'experimental' | 'diagnose'
+export type Category = 'project' | 'general' | 'edit' | 'keys' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'data' | 'debug' | 'debugAudio' | 'experimental' | 'diagnose'
 /** 並び順と親子（親のない分類と、その下のサブアイテム） */
 const TREE: [Category, Category?][] = [
   ['project'],
   ['general'],
   ['edit', 'general'],
+  ['keys', 'general'],
   ['file', 'general'],
   ['display'],
   ['process'],
@@ -36,7 +37,10 @@ const INDEX: Record<Category, MessageKey[]> = {
   ],
   edit: [
     'settings.groupHistory', 'settings.keepOriginal', 'settings.keepOriginalHelp', 'settings.historyLimit', 'settings.historyMemory',
-    'settings.groupInput', 'settings.sliderReset', 'settings.seekAfterInsert', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel',
+    'settings.groupInput', 'settings.sliderReset', 'settings.seekAfterInsert',
+  ],
+  keys: [
+    'settings.groupMouse', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel',
     'settings.groupShortcuts', 'settings.ctrlS', 'settings.keyResetAll', ...ACTIONS.map((a) => a.label),
   ],
   file: ['settings.groupFile', 'settings.rememberFolder', 'settings.rememberFolderHelp', 'settings.startFolder', 'settings.recentFiles', 'settings.recentFilesHelp'],

@@ -121,6 +121,12 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             label={t('settings.sliderReset')}
           />
           <Check checked={draft.seekAfterInsert} onChange={(v) => set({ seekAfterInsert: v })} label={t('settings.seekAfterInsert')} />
+        </Group>
+      </>
+    ),
+    keys: (
+      <>
+        <Group title={t('settings.groupMouse')}>
           <Row label={t('settings.wheelZoom')}>
             <Choice<WheelZoom>
               value={draft.wheelZoom}
