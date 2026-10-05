@@ -9,7 +9,7 @@ import { useLanePen } from './waveform/useLanePen'
 import { usePitchGrab } from './waveform/usePitchGrab'
 import type { NoteGhost } from './waveform/useNoteDrag'
 import type { Marker } from '../project/projectFile'
-import { useEdgeScroll, useRangeEdges, useTouchGestures, type EdgeDrag, type useWaveformView } from 'wevocal-lib/react'
+import { useEdgeScroll, useRangeEdges, useTouchGestures, type EdgeDrag, type useWaveformView, Minimap } from 'wevocal-lib/react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { F0_HOP_SEC, type Spectrogram } from '../dsp/engine'
@@ -36,7 +36,6 @@ import {
   waveColors,
 } from './waveform/draw'
 import { computePeaks } from 'wevocal-lib'
-import Minimap from './waveform/Minimap'
 import { useLang, useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 
@@ -679,7 +678,7 @@ function Waveform(props: Props) {
       {/* 表示範囲の横スクロールバー */}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1 }}>
         {props.minimap ? (
-          <Minimap clip={clip} duration={duration} view={view} selections={props.selections} scrollTo={scrollTo} label={t('wave.scroll')} position={position} playing={!!playing} livePosition={livePosition} showPlayhead={props.minimapPlayhead ?? true} />
+          <Minimap clip={clip} colors={colors} duration={duration} view={view} selections={props.selections} scrollTo={scrollTo} label={t('wave.scroll')} position={position} playing={!!playing} livePosition={livePosition} showPlayhead={props.minimapPlayhead ?? true} />
         ) : (
         <Slider
           size="small"
