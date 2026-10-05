@@ -415,6 +415,7 @@ export default function App() {
       overlayPitch={settings.overlayPitch}
       minimap={settings.minimap}
       touchHandles={mobile && settings.mobileUi === 'new'}
+      touchPan={mobile && settings.mobileUi === 'new' && settings.touchSelect === 'longPress'}
       target={ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null}
       penMode={ed.penMode && editing}
       onDraw={onWaveDraw}

@@ -134,6 +134,8 @@ export interface Settings {
   flattenStrength: number
   /** スマホの画面。new は新しい画面（選択したときの編集の列、両端のつまみ、なぞるとスクロール）、classic は以前の画面 */
   mobileUi: 'new' | 'classic'
+  /** スマホの新しい画面での範囲選択。drag はなぞって選択、longPress は長押しで選択（なぞるとスクロール） */
+  touchSelect: 'drag' | 'longPress'
   /** ホイールでの拡大縮小の割り当て */
   wheelZoom: WheelZoom
   /** 開く・保存するフォルダを用途ごとに覚える（Chrome・Edge。project/fileAccess.ts） */
@@ -194,6 +196,7 @@ export const DEFAULT_SETTINGS: Settings = {
   presets: [],
   flattenStrength: 1,
   mobileUi: 'new',
+  touchSelect: 'drag',
   wheelZoom: 'ctrl',
   rememberFolder: true,
   startFolder: 'downloads',

@@ -185,6 +185,18 @@ export function settingsPages({ draft, set, onClose, t, project }: PageProps): R
             ]}
           />
         </Row>
+        {draft.mobileUi === 'new' && (
+          <Row label={t('settings.touchSelect')}>
+            <Choice<Settings['touchSelect']>
+              value={draft.touchSelect}
+              onChange={(v) => set({ touchSelect: v })}
+              options={[
+                ['drag', t('settings.touchSelectDrag')],
+                ['longPress', t('settings.touchSelectLongPress')],
+              ]}
+            />
+          </Row>
+        )}
         <Row label={t('settings.uiScale')} help={t('settings.uiScaleHelp')}>
           <Choice<string>
             value={String(draft.uiScale)}

@@ -97,6 +97,8 @@ interface Props {
   showPitchLine?: boolean
   /** 選択範囲の両端に指でつかむつまみを出す（スマホの新しい画面） */
   touchHandles?: boolean
+  /** 指でなぞるとスクロール、長押しで範囲選択（オフならなぞって範囲選択） */
+  touchPan?: boolean
   /** ピッチを波形の帯に重ねる（オーバーパネル。波形とピッチの両方を出しているとき） */
   overlayPitch?: boolean
   /** スクロールバーの代わりにミニマップを表示する */
@@ -492,7 +494,7 @@ function Waveform(props: Props) {
           e.preventDefault()
           // 新しいスマホの画面: 指の長押しはブラウザも右クリックとして送ってくるが、範囲選択に使うのでメニューは出さない
           // （出すとメニューが指の操作を奪い、選択が続かない。メニューは編集の列の「その他」）
-          if (props.touchHandles && (panRef.current || longPressRef.current || dragRef.current)) return
+          if (props.touchPan && (panRef.current || longPressRef.current || dragRef.current)) return
           // 目盛りの上なら、その位置（マーカーの追加など）も渡す
           const ruler = localPoint(e.currentTarget, e.clientX, e.clientY).y <= RULER_HEIGHT
           props.onContextMenu(e.clientX, e.clientY, ruler ? { time: snapTime(e.clientX), markerId: markerAt(e.clientX)?.id ?? null } : undefined)
@@ -540,7 +542,7 @@ function Waveform(props: Props) {
             return
           }
           // 新しいスマホの画面: なぞるとスクロール、長押しで範囲選択（memo/mobile-ui.md の 4.4）。長押しのメニューは編集の列の「⋯」へ
-          if (e.pointerType === 'touch' && props.touchHandles) {
+          if (e.pointerType === 'touch' && props.touchPan) {
             const { clientX: x, clientY: y } = e
             const timer = window.setTimeout(() => {
               longPressRef.current = null
@@ -577,7 +579,7 @@ function Waveform(props: Props) {
           }
           const add = e.ctrlKey || e.metaKey
           dragRef.current = { x0: e.clientX, t0, dragging: false, base: add ? selections : [] }
-          if (e.pointerType === 'touch' && props.touchHandles) panRef.current = { x0: e.clientX, start0: view.start, dur: view.dur, moved: false, selecting: false }
+          if (e.pointerType === 'touch' && props.touchPan) panRef.current = { x0: e.clientX, start0: view.start, dur: view.dur, moved: false, selecting: false }
         }}
         onPointerMove={(e) => {
           altRef.current = e.altKey
