@@ -17,7 +17,7 @@ import type { Algorithm } from '../dsp/engine'
 import { t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
 import type { PickerMode, StartFolder } from 'pevenmui/web'
-import { Button } from '@mui/material'
+import { Box, Button, Typography } from '@mui/material'
 import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
 
 /** 画面の大きさの選択肢（倍率） */
@@ -278,11 +278,13 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
           </Row>
         </Group>
         <Group title={t('settings.groupAddons')}>
-          <Row label={t('settings.addonsMoved')}>
-            <Button size="small" onClick={() => go('addons')}>
+          {/* 追加機能の一覧（AddonSection）と同じく、説明は左、ボタンは右 */}
+          <Box sx={{ gridColumn: '1 / -1', width: '100cqi', maxWidth: '100cqi', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography sx={{ flex: 1, minWidth: 0, fontSize: 13 }}>{t('settings.addonsMoved')}</Typography>
+            <Button size="small" variant="outlined" onClick={() => go('addons')} sx={{ flexShrink: 0 }}>
               {t('settings.openAddons')}
             </Button>
-          </Row>
+          </Box>
         </Group>
       </>
     ),
