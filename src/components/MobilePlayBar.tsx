@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
-import { Box, IconButton, Paper, Stack, Typography } from '@mui/material'
+import { Box, IconButton, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCirclePlay, faPause, faPlay, faRepeat, faStop } from '@fortawesome/free-solid-svg-icons'
 import { useT } from '../i18n/i18n'
 import LiveTime from './LiveTime'
-import { JobGauge, useJobs } from 'pevenmui'
+import { BottomBar } from 'pevenmui'
 import type { JobKind } from '../progress/jobs'
 
 interface Props {
@@ -26,22 +26,11 @@ interface Props {
   meter?: ReactNode
 }
 
-/** スマホ用: 画面下の再生バー（親指で押しやすい位置に大きめのボタンを置く）。画面の縦の並びの最後に置く */
+/** スマホ用: 画面下の再生バー（大きめのボタン）。枠と処理の進み具合は PevenMUI の BottomBar */
 export default function MobilePlayBar(p: Props) {
   const t = useT()
-  const busy = useJobs().length > 0
   return (
-    <Paper
-      square
-      elevation={0}
-      sx={{ pb: 'env(safe-area-inset-bottom)', borderTop: 1, borderColor: 'divider' }}
-    >
-      {/* 進んでいる処理（スマホにはステータスバーが無いので、ここに出す） */}
-      {busy && (
-        <Box sx={{ px: 1.5, pt: 0.75 }}>
-          <JobGauge<JobKind> compact kindLabel={(k) => t(`job.kind.${k}`)} />
-        </Box>
-      )}
+    <BottomBar<JobKind> kindLabel={(k) => t(`job.kind.${k}`)}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1, py: 0.5 }}>
         <IconButton aria-label={t('play.playPause')} color="primary" size="large" onClick={p.onTogglePlay}>
           <FontAwesomeIcon icon={p.playing ? faPause : faPlay} />
@@ -62,6 +51,6 @@ export default function MobilePlayBar(p: Props) {
           {p.meter}
         </Box>
       </Stack>
-    </Paper>
+    </BottomBar>
   )
 }

@@ -1,10 +1,10 @@
-import { Box, ButtonBase, Stack, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material'
+import { ToggleButton, ToggleButtonGroup } from '@mui/material'
 import type { Clip, Range } from '../audio/types'
 import { useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import type { ReactNode } from 'react'
 import SelectionField from './SelectionField'
-import { JobGauge } from 'pevenmui'
+import { JobGauge, StatusBar as Bar, StatusButton, StatusItem, StatusSpacer } from 'pevenmui'
 import type { JobKind } from '../progress/jobs'
 import { stableMemo } from './stableMemo'
 
@@ -35,37 +35,25 @@ interface Props {
   tempo: ReactNode
 }
 
-const ITEM_SX = { px: 1, height: '100%', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', lineHeight: 'inherit' } as const
-
 /**
- * PC 用のステータスバー（高さ 24px）。ファイルの情報、選択範囲（クリックで数値入力）、
- * 処理中の進捗、加工後／原音の切替を並べる。常に見えていてほしいが、場所は取りたくない情報を置く
+ * PC 用のステータスバーの中身（枠は PevenMUI）。ファイルの情報、選択範囲（クリックで数値入力）、
+ * 処理中の進捗、加工後／原音の切替を並べる
  */
 function StatusBar(p: Props) {
   countRender('StatusBar')
   const t = useT()
   return (
-    <Stack
-      direction="row"
-      // 行の高さを固定し、英字と日本語のフォントが混ざっても文字の高さがそろうようにする
-      sx={{ height: 24, lineHeight: '23px', fontSize: 12, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper', alignItems: 'center' }}
-    >
+    <Bar>
       {/* プロジェクト名。押すと名前を変えられる（保存・書き出しのファイル名になる） */}
-      <Tooltip title={t('project.renameHint')}>
-        <ButtonBase
-          disabled={!p.clip}
-          onClick={p.onRename}
-          sx={{ ...ITEM_SX, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', fontFamily: 'inherit', fontSize: 12, '&:hover': { bgcolor: 'action.hover' } }}
-        >
-          {p.fileName || '—'}
-          {p.dirty && ' *'}
-        </ButtonBase>
-      </Tooltip>
+      <StatusButton title={t('project.renameHint')} disabled={!p.clip} onClick={p.onRename}>
+        {p.fileName || '—'}
+        {p.dirty && ' *'}
+      </StatusButton>
       {/* 長さは上の再生時間に出ているので、ここはサンプルレートとチャンネルだけ */}
       {p.clip && (
-        <Box sx={{ ...ITEM_SX, color: 'text.secondary' }}>
+        <StatusItem secondary>
           {p.clip.sampleRate} Hz・{p.clip.channels.length === 1 ? 'Mono' : `${p.clip.channels.length} ch`}
-        </Box>
+        </StatusItem>
       )}
       <SelectionField
         duration={p.duration}
@@ -78,7 +66,7 @@ function StatusBar(p: Props) {
         disabled={!p.clip}
       />
       {p.tempo}
-      <Box sx={{ flexGrow: 1 }} />
+      <StatusSpacer />
       <JobGauge<JobKind> kindLabel={(k) => t(`job.kind.${k}`)} />
       {p.showSource && (
         <ToggleButtonGroup
@@ -93,7 +81,7 @@ function StatusBar(p: Props) {
           <ToggleButton value="original">{t('clip.original')}</ToggleButton>
         </ToggleButtonGroup>
       )}
-    </Stack>
+    </Bar>
   )
 }
 
