@@ -12,7 +12,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "build:addons": "node scripts/build-addons.mjs",
-    "build:addons:dev": "node scripts/build-addons.mjs public"
+    "build:addons:dev": "node scripts/build-addons.mjs public",
+    "docs:shots": "node scripts/screenshots/run.mjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
