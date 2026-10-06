@@ -208,9 +208,9 @@ fn standard_formants(v: Vowel) -> [f32; 3] {
 /// 響きを動かす STFT の長さとホップ（サンプル。44.1kHz で約 46ms と 12ms）
 const MORPH_FFT: usize = 2048;
 const MORPH_HOP: usize = 512;
-/// 包絡の比で掛ける大きさの範囲（極端に強めたり弱めたりしない）
-const MORPH_GAIN_MIN: f32 = 0.01;
-const MORPH_GAIN_MAX: f32 = 100.0;
+/// 包絡の比で掛ける大きさの上限（dB。極端に強めたり弱めたりしない）と、ならすフレームの数（前後それぞれ）
+const MORPH_MAX_DB: f32 = 30.0;
+const MORPH_SMOOTH: usize = 2;
 
 /// 響きを見るサンプルレート（Hz）と LPC の次数。F3 くらいまで（約 5.5kHz）を細かく見る（Analyzer のフォルマント推定と同じ考え方）
 const ENV_RATE: f32 = 11025.0;
@@ -297,23 +297,49 @@ fn from_poles(p: &[C]) -> Vec<f32> {
     c.iter().map(|v| v.0 as f32).collect()
 }
 
-/// 極の角度（周波数）を `map`（Hz → Hz）で動かした LPC 係数。原点からの距離（山の鋭さ）はそのまま。実数の極は動かさない
-fn shift_poles(a: &[f32], rate: f32, map: &dyn Fn(f32) -> f32) -> Vec<f32> {
+/// F1〜F3 とみなす極の条件: 周波数の範囲（Hz）と、帯域幅の上限（Hz）
+const FORMANT_POLE_MIN_HZ: f32 = 150.0;
+const FORMANT_POLE_MAX_HZ: f32 = 5000.0;
+const FORMANT_POLE_MAX_BW: f32 = 600.0;
+/// 極を鋭くしすぎない帯域幅の下限（Hz。実際の声のフォルマントの帯域幅はおよそ 60〜150Hz）。鋭すぎる山を谷の位置へ動かすと、比が極端に大きくなるため
+const MIN_POLE_BW: f32 = 80.0;
+
+/// フレームの LPC の極のうち、F1〜F3 にあたるもの（低い方から 3 つ）だけを動かした係数。
+/// それぞれ `src`（素材の F1〜F3 の中央値）からのずれの比を保って、`tgt`（目標の F1〜F3）へ置く。ほかの極は動かさない。
+/// 極の帯域幅は MIN_POLE_BW より狭くしない。F1〜F3 が 3 つ見つからなければ None
+fn shift_formants(a: &[f32], rate: f32, src: &[f32], tgt: &[f32]) -> Option<Vec<f32>> {
     let to_hz = rate as f64 / std::f64::consts::TAU;
-    let moved: Vec<C> = poles(a)
-        .into_iter()
-        .map(|z| {
-            let ang = z.arg();
-            if z.1.abs() < 1e-9 {
-                return z;
-            }
-            let hz = (ang.abs() * to_hz) as f32;
-            let new = (map(hz) as f64 / to_hz).min(std::f64::consts::PI - 1e-3) * ang.signum();
-            let m = z.abs();
-            C(m * new.cos(), m * new.sin())
+    let min_r = (-std::f64::consts::PI * MIN_POLE_BW as f64 / rate as f64).exp();
+    let mut p = poles(a);
+    // 上半分（虚部が正）の極のうち、F1〜F3 の条件に合うもの
+    let mut cand: Vec<usize> = (0..p.len())
+        .filter(|&i| {
+            let z = p[i];
+            let hz = (z.arg() * to_hz) as f32;
+            let bw = (-(z.abs().ln()) * rate as f64 / std::f64::consts::PI) as f32;
+            z.1 > 1e-9 && hz > FORMANT_POLE_MIN_HZ && hz < FORMANT_POLE_MAX_HZ && bw < FORMANT_POLE_MAX_BW
         })
         .collect();
-    from_poles(&moved)
+    cand.sort_by(|&i, &j| p[i].arg().total_cmp(&p[j].arg()));
+    if cand.len() < 3 {
+        return None;
+    }
+    for (k, &i) in cand.iter().take(3).enumerate() {
+        let z = p[i];
+        let hz = (z.arg() * to_hz) as f32;
+        let new_hz = tgt[k] * (hz / src[k]);
+        let ang = (new_hz as f64 / to_hz).min(std::f64::consts::PI - 1e-3);
+        let m = z.abs().min(min_r);
+        p[i] = C(m * ang.cos(), m * ang.sin());
+        // 共役の極（下半分）も同じに動かす。いちばん近いものを探す
+        if let Some(j) = (0..p.len()).filter(|&j| p[j].1 < -1e-9).min_by(|&j, &l| {
+            let d = |q: C| (q.0 - z.0).hypot(q.1 + z.1);
+            d(p[j]).total_cmp(&d(p[l]))
+        }) {
+            p[j] = C(m * ang.cos(), -m * ang.sin());
+        }
+    }
+    Some(from_poles(&p))
 }
 
 /// 包絡の山（低い方から 3 つ、Hz）。200Hz〜4500Hz の間で探す
@@ -323,7 +349,8 @@ fn peaks(env: &[f32], sample_rate: f32) -> Vec<f32> {
 }
 
 /// 素材の母音 `from` を、母音 `to` に作り替える（声帯の音はそのまま、響きの山の位置だけを動かす）。
-/// 素材のフレームごとの LPC の極（共振）の周波数を、素材の F1〜F3 が目標の F1〜F3 に移るように動かし（極の鋭さはそのまま）、元の包絡との比を掛ける。
+/// 素材のフレームごとの LPC の極のうち F1〜F3 にあたるものを、目標の F1〜F3 へ動かし（そのフレームのずれの比と、極の鋭さは保つ）、
+/// 元の包絡との比（±MORPH_MAX_DB、前後のフレームでならす）を掛ける。
 /// 目標の F1〜F3 は、標準の値に素材の声道の長さの倍率（素材の F1〜F3 ÷ `from` の標準の値）を掛けたもの
 pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel) -> Vec<f32> {
     let mut st = wevocal_lib::stft::Stft::new(MORPH_FFT, MORPH_HOP);
@@ -354,21 +381,7 @@ pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel) -> Vec<f
     let std_from = standard_formants(from);
     let scale = (0..3).map(|i| src[i] / std_from[i]).sum::<f32>() / 3.0;
     let tgt: Vec<f32> = standard_formants(to).iter().map(|f| f * scale).collect();
-    // 対応の点（目標の周波数, 素材の周波数）。両端は 0 とナイキスト
     let nyq = sample_rate / 2.0;
-    let mut pts = vec![(0.0f32, 0.0f32)];
-    for i in 0..3 {
-        if tgt[i] > pts.last().unwrap().0 && src[i] > pts.last().unwrap().1 && tgt[i] < nyq && src[i] < nyq {
-            pts.push((tgt[i], src[i]));
-        }
-    }
-    pts.push((nyq, nyq));
-    // 素材の周波数 → 目標の周波数（区分的に一次）
-    let to_tgt = |f: f32| {
-        let i = pts.windows(2).position(|w| f <= w[1].1).unwrap_or(pts.len() - 2);
-        let ((t0, s0), (t1, s1)) = (pts[i], pts[i + 1]);
-        t0 + (f - s0) / (s1 - s0).max(1e-6) * (t1 - t0)
-    };
     let bin_hz = nyq / (bins - 1) as f32;
     let env_nyq = env_rate / 2.0;
     // 包絡の値（周波数 Hz を、間引いた音の包絡の点に直して一次補間）
@@ -377,21 +390,37 @@ pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel) -> Vec<f
         let (i0, g) = (p.floor() as usize, p.fract());
         env[i0] + (env[(i0 + 1).min(env.len() - 1)] - env[i0]) * g
     };
+    // フレームごとの、目標の包絡 ÷ 元の包絡（dB、±MORPH_MAX_DB）。F1〜F3 が見つからないフレームは動かさない
+    let raw: Vec<Option<Vec<f32>>> = envs
+        .iter()
+        .map(|e| {
+            let (a, env) = e.as_ref()?;
+            let target = lpc::envelope(&shift_formants(a, env_rate, &src, &tgt)?, env.len());
+            Some(env.iter().zip(&target).map(|(e, t)| (10.0 * (t / e.max(1e-12)).log10()).clamp(-MORPH_MAX_DB, MORPH_MAX_DB)).collect())
+        })
+        .collect();
+    // 前後のフレームと平均して、フレームごとの揺れをならす（動かさないフレームは 0dB として数える）
+    let gains: Vec<Option<Vec<f32>>> = (0..raw.len())
+        .map(|k| {
+            raw[k].as_ref()?;
+            let near: Vec<&Vec<f32>> = (k.saturating_sub(MORPH_SMOOTH)..=(k + MORPH_SMOOTH).min(raw.len() - 1)).filter_map(|j| raw[j].as_ref()).collect();
+            let len = raw[k].as_ref().unwrap().len();
+            Some((0..len).map(|i| near.iter().map(|g| g[i]).sum::<f32>() / near.len() as f32).collect())
+        })
+        .collect();
     let mut out = vec![0.0f32; x.len() + MORPH_FFT];
     let mut wsum = vec![0.0f32; x.len() + MORPH_FFT];
     let (mut re, mut im) = (vec![0.0f32; bins], vec![0.0f32; bins]);
-    for (k, env) in envs.iter().enumerate() {
+    for k in 0..envs.len() {
         st.forward(x, k, &mut re, &mut im);
-        if let Some((a, env)) = env {
-            // 極を動かした包絡（目標）
-            let target = lpc::envelope(&shift_poles(a, env_rate, &to_tgt), env.len());
+        if let Some(gains) = &gains[k] {
             for b in 0..bins {
                 let hz = b as f32 * bin_hz;
                 if hz >= env_nyq {
                     continue;
                 }
-                // 目標の包絡 ÷ 元の包絡 の大きさを掛ける。包絡はパワーなので平方根。上のほうはなめらかに 1 に戻す
-                let gain = (env_at(&target, hz) / env_at(env, hz).max(1e-12)).sqrt().clamp(MORPH_GAIN_MIN, MORPH_GAIN_MAX);
+                // 目標の包絡 ÷ 元の包絡 の大きさ（dB をならしたもの）を掛ける。上のほうはなめらかに 1 に戻す
+                let gain = 10f32.powf(env_at(gains, hz) / 20.0);
                 let blend = ((env_nyq - hz) / (env_nyq - MORPH_TOP_HZ)).clamp(0.0, 1.0);
                 let g = 1.0 + (gain - 1.0) * blend;
                 re[b] *= g;
@@ -495,6 +524,63 @@ mod tests {
         // F1 は下がり（800 → 300 付近）、F2 は上がる（1200 → 2300 付近）
         assert!(got[0] < 500.0, "F1 {got:?}");
         assert!(got.iter().any(|&f| (f - 2300.0).abs() < 350.0), "F2 {got:?}");
+    }
+
+    /// 診断（手動）: 実際の声のサンプルで、極の計算が正しいか、掛ける大きさがどうなっているかを出す
+    /// cargo test --release --manifest-path dsp/Cargo.toml diagnose_morph -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn diagnose_morph() {
+        let path = std::env::var("KANA_WAV").unwrap_or_else(|_| "../sample/HIKAKIN Bad Apple!! BPM138_raw.wav".into());
+        let b = std::fs::read(&path).expect("wav");
+        let (mut p, mut ch, mut sr, mut data) = (12usize, 1usize, 44100.0f32, &b[0..0]);
+        while p + 8 <= b.len() {
+            let id = &b[p..p + 4];
+            let sz = u32::from_le_bytes(b[p + 4..p + 8].try_into().unwrap()) as usize;
+            if id == b"fmt " {
+                ch = u16::from_le_bytes([b[p + 10], b[p + 11]]) as usize;
+                sr = u32::from_le_bytes(b[p + 12..p + 16].try_into().unwrap()) as f32;
+            }
+            if id == b"data" {
+                data = &b[p + 8..(p + 8 + sz).min(b.len())];
+            }
+            p += 8 + sz + (sz & 1);
+        }
+        let x: Vec<f32> = data.chunks_exact(2 * ch).map(|f| (0..ch).map(|c| i16::from_le_bytes([f[2 * c], f[2 * c + 1]]) as f32 / 32768.0).sum::<f32>() / ch as f32).collect();
+        let ratio = (sr / ENV_RATE) as f64;
+        let y = resample(&x, ratio, (x.len() as f64 / ratio) as usize);
+        let n = 512;
+        let w = hann(n);
+        let (mut bad, mut total, mut worst) = (0, 0, 0.0f32);
+        let mut prev: Option<Vec<f32>> = None;
+        let mut jumps = Vec::new();
+        let mut maxgain = Vec::new();
+        for k in 0..(y.len() / 128) {
+            let Some((a, env)) = frame_envelope(&y, k as f32 * 128.0 / ENV_RATE, n, &w, 257) else { continue };
+            total += 1;
+            let back = from_poles(&poles(&a));
+            let err = a.iter().zip(&back).map(|(p, q)| (p - q).abs()).fold(0.0f32, f32::max);
+            worst = worst.max(err);
+            if err > 1e-2 {
+                bad += 1;
+            }
+            // 「あ」→「い」へ動かしたときの包絡の比（dB。頭打ちにする前）
+            let Some(moved) = shift_formants(&a, ENV_RATE, &[800.0, 1200.0, 2500.0], &[300.0, 2300.0, 3000.0]) else { continue };
+            let tgt = lpc::envelope(&moved, 257);
+            let g: Vec<f32> = env.iter().zip(&tgt).map(|(e, t)| 10.0 * (t / e.max(1e-12)).log10()).collect();
+            maxgain.push(g.iter().fold(0.0f32, |m, v| m.max(v.abs())));
+            if let Some(pg) = &prev {
+                jumps.push(g.iter().zip(pg).map(|(a, b)| (a - b).abs()).fold(0.0f32, f32::max));
+            }
+            prev = Some(g);
+        }
+        let med = |v: &mut Vec<f32>| {
+            v.sort_by(|a, b| a.total_cmp(b));
+            (v[v.len() / 2], v[v.len() * 9 / 10], v[v.len() - 1])
+        };
+        eprintln!("frames {total}, root reconstruction bad {bad} (worst {worst:.3e})");
+        eprintln!("max |gain| dB median/p90/max {:?}", med(&mut maxgain));
+        eprintln!("frame-to-frame gain jump dB median/p90/max {:?}", med(&mut jumps));
     }
 
     #[test]
