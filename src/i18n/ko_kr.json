@@ -369,7 +369,7 @@
   "settings.showMaterialButton": "선택 범위 저장 버튼 표시",
   "settings.showMaterialButtonHelp": "상태 표시줄의 선택 범위 오른쪽에 「WAV」 표시. 누르면 폴더에 저장, 드래그하면 폴더로 내보내기",
   "settings.showVoiceSplitHelp": "\"도구\"와 오른쪽 클릭의 \"보컬 추출\"에, 두 목소리(높은 쪽과 낮은 쪽, 또는 큰 쪽과 작은 쪽)로 나누는 항목을 표시합니다. 선택 범위가 있으면 그 범위만 나눕니다. 단순한 화음용",
-  "settings.parallelProcess": "가공을 병렬로 실행",
+  "settings.parallelProcess": "GPU 병렬 처리 사용",
   "settings.parallelProcessHelp": "20초 이상의 음성의 피치 변환을 10초씩 구간으로 나누어 CPU의 여러 코어에서 동시에 처리합니다. 경계는 파형의 위상을 맞춰 연결합니다(구간마다 최대 5ms 어긋남). 피치 커브 편집과 템포에 맞춘 신축은 대상이 아닙니다",
   "settings.showVoiceSplit": "\"화음 나누기\" 표시",
   "settings.suspendWhenStopped": "정지 중 오디오 처리 중지",
