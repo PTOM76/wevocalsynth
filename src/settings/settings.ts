@@ -135,6 +135,8 @@ export interface Settings {
   showMaterialButton: boolean
   /** 「和音を分ける」（試作）をメニューに表示する（開発者向け） */
   showVoiceSplit: boolean
+  /** 声の素材から一音を作る（試験的。memo/kana-voice.md）。今は母音の作り直しの試しだけ */
+  showKanaVoice: boolean
   /** 長い音の加工を、区間に分けて複数の Worker で並列に行う（試験的。dsp/src/segment.rs） */
   parallelProcess: boolean
   /** キーボードショートカットのうち、既定から変えたもの（settings/keymap.ts） */
@@ -211,6 +213,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showExperimentalAlgorithms: false,
   showMaterialButton: false,
   showVoiceSplit: false,
+  showKanaVoice: false,
   parallelProcess: false,
   keymap: {},
   exportNormalize: false,

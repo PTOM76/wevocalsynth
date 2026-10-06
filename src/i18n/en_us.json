@@ -779,5 +779,11 @@
   "toast.silentNormalize": "Cannot normalize silence",
 
   "project.invalid": "Not a project file",
-  "project.unsupported": "Unsupported project version"
+  "project.unsupported": "Unsupported project version",
+  "settings.showKanaVoice": "Create sounds from voice material (experimental)",
+  "settings.showKanaVoiceHelp": "Adds a Tools item that resynthesizes the selection as a vowel (original pitch, +4 and +7 semitones on a new track)",
+  "kana.demoMenu": "Resynthesize selection as a vowel (experimental)",
+  "kana.noVoice": "No voiced part found in the selection",
+  "kana.demoTrack": "{name} (vowel resynthesis)",
+  "task.kanaDemo": "Vowel resynthesis"
 }

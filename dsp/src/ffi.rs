@@ -1,6 +1,6 @@
 //! wasm 向け C ABI。wasm-bindgen を使わず、Worker から素の `WebAssembly.instantiate` で呼べる関数だけを公開する。
 
-use crate::{curve, f0, formant, process_with_progress, segment, tempo, voices, Algorithm, Formant};
+use crate::{curve, f0, formant, kana, process_with_progress, segment, tempo, voices, Algorithm, Formant};
 use std::cell::RefCell;
 
 #[cfg(target_arch = "wasm32")]
@@ -288,4 +288,17 @@ pub unsafe extern "C" fn stitch_planar(input: *const f32, frames: usize, channel
 #[no_mangle]
 pub extern "C" fn output_ptr() -> *const f32 {
     OUTPUT.with(|o| o.borrow().as_ptr())
+}
+
+/// 声の素材から一音を作る（試験的）の試し: モノラルの母音を作り直して並べ、長さを返す（`kana::demo`）。結果は `output_ptr` で取得する。
+///
+/// # Safety
+/// `input` は `frames` 個の有効な f32 を指していること。
+#[no_mangle]
+pub unsafe extern "C" fn kana_vowel_demo(input: *const f32, frames: usize, sample_rate: f32) -> usize {
+    let x = std::slice::from_raw_parts(input, frames);
+    let out = kana::demo(x, sample_rate);
+    let n = out.len();
+    OUTPUT.with(|o| *o.borrow_mut() = out);
+    n
 }

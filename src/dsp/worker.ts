@@ -32,6 +32,7 @@ interface DspExports {
   analyze_f0(input: number, frames: number, sampleRate: number, minHz: number, maxHz: number, voicedLimit: number, silenceRms: number): number
   analyze_tempo(input: number, frames: number, sampleRate: number): number
   split_voices_planar(input: number, frames: number, channels: number, sampleRate: number, by: number): number
+  kana_vowel_demo(input: number, frames: number, sampleRate: number): number
   segment_count(frames: number, sampleRate: number): number
   segment_bound(frames: number, sampleRate: number, k: number, field: number): number
   stitch_planar(input: number, frames: number, channels: number, sampleRate: number, stretch: number): number
@@ -56,9 +57,9 @@ export interface ProcessRequest {
   fastMath?: boolean
 }
 
-/** F0 解析・テンポ解析のリクエスト（モノラル） */
+/** F0 解析・テンポ解析・母音の作り直しの試し（kana）のリクエスト（モノラル） */
 export interface F0Request {
-  kind: 'f0' | 'tempo'
+  kind: 'f0' | 'tempo' | 'kana'
   id: number
   samples: Float32Array
   sampleRate: number
@@ -250,6 +251,8 @@ function analyzeF0(dsp: DspExports, req: F0Request): Float32Array {
     const count =
       req.kind === 'tempo'
         ? dsp.analyze_tempo(input, n, req.sampleRate)
+        : req.kind === 'kana'
+          ? dsp.kana_vowel_demo(input, n, req.sampleRate)
         : dsp.analyze_f0(input, n, req.sampleRate, p?.minHz ?? 60, p?.maxHz ?? 1000, p?.voicedLimit ?? 0.35, p?.silenceRms ?? 0.003)
     return new Float32Array(dsp.memory.buffer, dsp.output_ptr(), count).slice()
   } finally {

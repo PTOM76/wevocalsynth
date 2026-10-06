@@ -21,7 +21,7 @@ type Pending = {
  */
 // 'par0'… は、区間に分けて並列に加工するときの Worker（試験的。parallel.ts）
 export type Lane = 'edit' | 'analysis' | `par${number}`
-const laneOf = (req: DspRequest): Lane => (req.kind === 'f0' || req.kind === 'tempo' ? 'analysis' : 'edit')
+const laneOf = (req: DspRequest): Lane => (req.kind === 'f0' || req.kind === 'tempo' || req.kind === 'kana' ? 'analysis' : 'edit')
 
 let nextId = 1
 const workers = new Map<Lane, Worker>()
@@ -177,6 +177,12 @@ export async function analyzeTempo(channels: Float32Array[], sampleRate: number)
   const out: TempoCandidate[] = []
   for (let i = 0; i + 2 < raw.length; i += 3) out.push({ bpm: raw[i], strength: raw[i + 1], offset: raw[i + 2] })
   return out
+}
+
+/** 声の素材から一音を作る（試験的。dsp/src/kana.rs）の試し: 母音の素材を、元の高さ、4 半音上、7 半音上で作り直して並べる。声のある所がなければ null */
+export async function kanaVowelDemo(channels: Float32Array[], sampleRate: number): Promise<Float32Array | null> {
+  const [out] = await send({ kind: 'kana', id: nextId++, samples: mixDown(channels), sampleRate })
+  return out.length ? out : null
 }
 
 /** 和音を 2 つの声に分ける（試作。dsp/src/voices.rs）。`by` が pitch なら A が高い方、volume なら大きい方 */

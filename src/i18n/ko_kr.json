@@ -779,5 +779,11 @@
   "toast.silentNormalize": "무음이라 노멀라이즈할 수 없습니다",
 
   "project.invalid": "프로젝트 파일이 아닙니다",
-  "project.unsupported": "지원하지 않는 버전입니다"
+  "project.unsupported": "지원하지 않는 버전입니다",
+  "settings.showKanaVoice": "목소리 소재로 한 음 만들기(실험적)",
+  "settings.showKanaVoiceHelp": "「도구」에 선택 범위를 모음 소재로 다시 만드는 시험을 표시한다(원래 높이, 4반음 위, 7반음 위를 새 트랙에 배치)",
+  "kana.demoMenu": "선택 범위를 모음으로 다시 만들기(실험적)",
+  "kana.noVoice": "선택 범위에서 유성 부분을 찾을 수 없습니다",
+  "kana.demoTrack": "{name}(모음 재합성)",
+  "task.kanaDemo": "모음 재합성"
 }

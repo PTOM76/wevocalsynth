@@ -779,5 +779,11 @@
   "toast.silentNormalize": "無音のためノーマライズできません",
 
   "project.invalid": "プロジェクトファイルではありません",
-  "project.unsupported": "対応していないバージョンです"
+  "project.unsupported": "対応していないバージョンです",
+  "settings.showKanaVoice": "声の素材から一音を作る（試験的）",
+  "settings.showKanaVoiceHelp": "「ツール」に、選択範囲を母音の素材にして作り直す試しを出す（元の高さ、4 半音上、7 半音上を新しいトラックに並べる）",
+  "kana.demoMenu": "選択範囲を母音として作り直す（試験的）",
+  "kana.noVoice": "選択範囲に声のある所が見つかりません",
+  "kana.demoTrack": "{name}（母音の作り直し）",
+  "task.kanaDemo": "母音の作り直し"
 }

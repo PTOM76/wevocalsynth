@@ -14,6 +14,7 @@ mod ffi;
 use wevocal_lib::fft;
 pub mod formant;
 pub mod hpss;
+pub mod kana;
 mod pipeline;
 pub mod psola;
 pub mod pv;

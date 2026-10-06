@@ -66,6 +66,8 @@ interface Actions {
   splitLeadStems: () => void
   /** 和音を 2 つの声に分ける（試作。設定の開発者向けでオンのときだけ渡す） */
   splitVoices?: (by: 'pitch' | 'volume') => void
+  /** 声の素材から一音を作る（試験的）の試し。設定で ON のときだけ */
+  kanaDemo?: () => void
   /** トラックの複製と、ファイルをトラックとして追加 */
   duplicateTrack: () => void
   /** 原音を新しいトラックに（原音が加工後と違うときだけ） */
@@ -201,6 +203,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
           { label: t('voices.byVolumeMenu'), disabled: noClip, onClick: () => a.splitVoices?.('volume') },
         ]
       : []),
+    ...(a.kanaDemo ? [{ divider: true } as const, { label: t('kana.demoMenu'), disabled: noClip, onClick: a.kanaDemo }] : []),
   ]
   // 編集メニューに入れすぎないよう、加工の道具（抽出・音声の作成）は「ツール」にまとめる
   const tools: MenuEntry[] = [

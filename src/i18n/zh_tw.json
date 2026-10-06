@@ -779,5 +779,11 @@
   "toast.silentNormalize": "靜音，無法正規化",
 
   "project.invalid": "不是專案檔",
-  "project.unsupported": "不支援的版本"
+  "project.unsupported": "不支援的版本",
+  "settings.showKanaVoice": "從聲音素材產生單音（實驗性）",
+  "settings.showKanaVoiceHelp": "在「工具」中顯示將選取範圍作為母音素材重新合成的試驗（原音高、高 4 個半音、高 7 個半音排在新軌道上）",
+  "kana.demoMenu": "將選取範圍作為母音重新合成（實驗性）",
+  "kana.noVoice": "選取範圍中找不到有聲部分",
+  "kana.demoTrack": "{name}（母音重新合成）",
+  "task.kanaDemo": "母音重新合成"
 }
