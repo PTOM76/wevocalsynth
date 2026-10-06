@@ -1,6 +1,7 @@
 // 追加機能を <出力先>/addons/ に作る。docs/EXTRACTOR.md
 //   node scripts/build-addons.mjs          … dist（npm run build の後に実行する。CI はこちら）
 //   node scripts/build-addons.mjs public   … public（npm run dev でも使える。npm run build でも dist にコピーされる）
+//   node scripts/build-addons.mjs public analyzer converter … 名前を並べると、その分だけ作る（extractor、analyzer、converter、models。モデルの取得を避けたいときなど）
 // - vocal-extractor: ボーカル抽出の実行環境（extractor/ をビルド）
 // - vocal-extractor-gpu / -cpu: ONNX Runtime の wasm（WebGPU 対応版 / WASM 版。要る方だけ入れる）
 // - spleeter-<種類>: モデル。sherpa-onnx の配布物を取得し、vocals.onnx / accompaniment.onnx に名前をそろえる
@@ -14,6 +15,9 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameS
 import { join, relative } from 'node:path'
 
 const OUT = `${process.argv[2] ?? 'dist'}/addons`
+/** 作るもの（省くと全部） */
+const ONLY = process.argv.slice(3)
+const want = (group) => !ONLY.length || ONLY.includes(group)
 /** 取得したモデルの置き場所（git には入れない。CI ではキャッシュする） */
 const CACHE = '.cache/addon-models'
 const RELEASE = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/source-separation-models'
@@ -57,51 +61,59 @@ const addLicenses = (dir, names) => {
 // 実行環境。ONNX Runtime の wasm は大きいので、使う計算の種類ごとの追加機能に分け、要る方だけを入れる
 // （gpu: WebGPU 対応版 28MB / cpu: WASM 版 14MB。アプリが場所を Worker に渡す。src/audio/vocalExtract.ts）
 process.env.ADDONS_OUT = OUT
-run('npx vite build -c vite.addons.config.ts')
-const base = join(OUT, 'vocal-extractor')
-for (const [id, pattern] of [['vocal-extractor-gpu', /^ort-wasm-simd-threaded\.jsep-.*\.wasm$/], ['vocal-extractor-cpu', /^ort-wasm-simd-threaded-.*\.wasm$/]]) {
-  const dir = join(OUT, id)
-  rmSync(dir, { recursive: true, force: true })
-  mkdirSync(dir, { recursive: true })
-  const files = readdirSync(join(base, 'assets')).filter((n) => pattern.test(n))
-  if (files.length !== 1) throw new Error(`${id}: ONNX Runtime の wasm が見つからない（${files.join(', ')}）`)
-  renameSync(join(base, 'assets', files[0]), join(dir, files[0]))
-  addLicenses(dir, ['onnxruntime-MIT.txt'])
-  writeManifest(id, dir, null)
+if (want('extractor')) {
+  run('npx vite build -c vite.addons.config.ts')
+  const base = join(OUT, 'vocal-extractor')
+  for (const [id, pattern] of [['vocal-extractor-gpu', /^ort-wasm-simd-threaded\.jsep-.*\.wasm$/], ['vocal-extractor-cpu', /^ort-wasm-simd-threaded-.*\.wasm$/]]) {
+    const dir = join(OUT, id)
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(dir, { recursive: true })
+    const files = readdirSync(join(base, 'assets')).filter((n) => pattern.test(n))
+    if (files.length !== 1) throw new Error(`${id}: ONNX Runtime の wasm が見つからない（${files.join(', ')}）`)
+    renameSync(join(base, 'assets', files[0]), join(dir, files[0]))
+    addLicenses(dir, ['onnxruntime-MIT.txt'])
+    writeManifest(id, dir, null)
+  }
+  addLicenses(base, ['onnxruntime-MIT.txt'])
+  writeManifest('vocal-extractor', base, 'index.js')
 }
-addLicenses(base, ['onnxruntime-MIT.txt'])
-writeManifest('vocal-extractor', base, 'index.js')
 
 // 解析。モデルは使わない（wasm は analyzer/src/dsp.wasm をそのまま使う）
-run('npx vite build -c vite.addons.analyzer.config.ts')
-writeManifest('analyzer', join(OUT, 'analyzer'), 'index.js')
-
-// 変換。今は動画の書き出しだけ（converter/src/video/）
-run('npx vite build -c vite.addons.converter.config.ts')
-writeManifest('converter', join(OUT, 'converter'), 'index.js')
-
-// モデル
-mkdirSync(CACHE, { recursive: true })
-for (const [kind, m] of Object.entries(MODELS)) {
-  const src = join(CACHE, `sherpa-onnx-spleeter-2stems${m.archive}`)
-  if (!existsSync(src)) run(`curl -sSfL ${RELEASE}/sherpa-onnx-spleeter-2stems${m.archive}.tar.bz2 | tar xj -C ${CACHE}`)
-  const dir = join(OUT, `spleeter-${kind}`)
-  rmSync(dir, { recursive: true, force: true })
-  mkdirSync(dir, { recursive: true })
-  for (const stem of ['vocals', 'accompaniment']) copyFileSync(join(src, `${stem}.${m.file}`), join(dir, `${stem}.onnx`))
-  addLicenses(dir, ['spleeter-MIT.txt', 'sherpa-onnx-Apache-2.0.txt'])
-  writeManifest(`spleeter-${kind}`, dir, null)
+if (want('analyzer')) {
+  run('npx vite build -c vite.addons.analyzer.config.ts')
+  writeManifest('analyzer', join(OUT, 'analyzer'), 'index.js')
 }
 
-// UVR の MDX-Net（sherpa-onnx が ONNX にして配っているもの）。1 ファイルを model.onnx に名前をそろえる（extractor/src/mdxModels.ts）
-const MDX = { 'uvr-mdx-voc-ft': 'UVR-MDX-NET-Voc_FT.onnx', 'uvr-mdx-inst-hq4': 'UVR-MDX-NET-Inst_HQ_4.onnx', 'uvr-mdx-kara2': 'UVR_MDXNET_KARA_2.onnx' }
-for (const [id, file] of Object.entries(MDX)) {
-  const src = join(CACHE, file)
-  if (!existsSync(src)) run(`curl -sSfL -o "${src}" ${RELEASE}/${file}`)
-  const dir = join(OUT, id)
-  rmSync(dir, { recursive: true, force: true })
-  mkdirSync(dir, { recursive: true })
-  copyFileSync(src, join(dir, 'model.onnx'))
-  addLicenses(dir, ['uvr-MIT.txt', 'sherpa-onnx-Apache-2.0.txt'])
-  writeManifest(id, dir, null)
+// 変換。今は動画の書き出しだけ（converter/src/video/）
+if (want('converter')) {
+  run('npx vite build -c vite.addons.converter.config.ts')
+  writeManifest('converter', join(OUT, 'converter'), 'index.js')
+}
+
+// モデル
+if (want('models')) {
+  mkdirSync(CACHE, { recursive: true })
+  for (const [kind, m] of Object.entries(MODELS)) {
+    const src = join(CACHE, `sherpa-onnx-spleeter-2stems${m.archive}`)
+    if (!existsSync(src)) run(`curl -sSfL ${RELEASE}/sherpa-onnx-spleeter-2stems${m.archive}.tar.bz2 | tar xj -C ${CACHE}`)
+    const dir = join(OUT, `spleeter-${kind}`)
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(dir, { recursive: true })
+    for (const stem of ['vocals', 'accompaniment']) copyFileSync(join(src, `${stem}.${m.file}`), join(dir, `${stem}.onnx`))
+    addLicenses(dir, ['spleeter-MIT.txt', 'sherpa-onnx-Apache-2.0.txt'])
+    writeManifest(`spleeter-${kind}`, dir, null)
+  }
+
+  // UVR の MDX-Net（sherpa-onnx が ONNX にして配っているもの）。1 ファイルを model.onnx に名前をそろえる（extractor/src/mdxModels.ts）
+  const MDX = { 'uvr-mdx-voc-ft': 'UVR-MDX-NET-Voc_FT.onnx', 'uvr-mdx-inst-hq4': 'UVR-MDX-NET-Inst_HQ_4.onnx', 'uvr-mdx-kara2': 'UVR_MDXNET_KARA_2.onnx' }
+  for (const [id, file] of Object.entries(MDX)) {
+    const src = join(CACHE, file)
+    if (!existsSync(src)) run(`curl -sSfL -o "${src}" ${RELEASE}/${file}`)
+    const dir = join(OUT, id)
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(dir, { recursive: true })
+    copyFileSync(src, join(dir, 'model.onnx'))
+    addLicenses(dir, ['uvr-MIT.txt', 'sherpa-onnx-Apache-2.0.txt'])
+    writeManifest(id, dir, null)
+  }
 }
