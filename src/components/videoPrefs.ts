@@ -20,7 +20,7 @@ export interface VideoExportPrefs {
 export const DEFAULT_VIDEO_PREFS: VideoExportPrefs = {
   container: 'mp4',
   size: '1280x720',
-  style: 'scope',
+  style: 'bars',
   position: 'center',
   bg: '#101418',
   wave: '#5c6b7a',
