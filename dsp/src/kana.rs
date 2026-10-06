@@ -194,16 +194,37 @@ pub enum Vowel {
 }
 pub const VOWELS: [Vowel; 5] = [Vowel::A, Vowel::I, Vowel::U, Vowel::E, Vowel::O];
 
-/// 母音の標準的なフォルマント F1〜F3（Hz。日本語の成人男性の目安）。素材の声道の長さの倍率を掛けて使う
-fn standard_formants(v: Vowel) -> [f32; 3] {
-    match v {
-        Vowel::A => [800.0, 1200.0, 2500.0],
-        Vowel::I => [300.0, 2300.0, 3000.0],
-        Vowel::U => [350.0, 1300.0, 2400.0],
-        Vowel::E => [500.0, 1900.0, 2500.0],
-        Vowel::O => [500.0, 800.0, 2500.0],
-    }
+/// 日本語の母音の F1〜F3（Hz）の目安。男声と女声で母音ごとに比が違う（一律の倍率ではない）ので、表を分けて持つ。
+/// F1、F2 は川端豪「音声の基礎」（関西学院大学の講義資料）の表。F3 はその資料にないので、男声は一般的な目安、女声はその 1.15 倍（推定）
+fn standard_formants(v: Vowel, female: bool) -> [f32; 3] {
+    let [f1, f2, f3] = match (v, female) {
+        (Vowel::A, false) => [700.0, 1400.0, 2500.0],
+        (Vowel::I, false) => [300.0, 2500.0, 3000.0],
+        (Vowel::U, false) => [300.0, 1000.0, 2400.0],
+        (Vowel::E, false) => [500.0, 1600.0, 2500.0],
+        (Vowel::O, false) => [500.0, 1000.0, 2500.0],
+        (Vowel::A, true) => [900.0, 1800.0, 2500.0],
+        (Vowel::I, true) => [400.0, 2700.0, 3000.0],
+        (Vowel::U, true) => [400.0, 1200.0, 2400.0],
+        (Vowel::E, true) => [500.0, 2200.0, 2500.0],
+        (Vowel::O, true) => [500.0, 1200.0, 2500.0],
+    };
+    [f1, f2, if female { f3 * 1.15 } else { f3 }]
 }
+
+/// 男声と女声の表を `w`（0 が男声、1 が女声）で混ぜた F1〜F3（周波数なので対数で混ぜる）
+fn mixed_formants(v: Vowel, w: f32) -> [f32; 3] {
+    let (m, f) = (standard_formants(v, false), standard_formants(v, true));
+    [0, 1, 2].map(|i| m[i].powf(1.0 - w) * f[i].powf(w))
+}
+
+/// 測った F1〜F3（母音 `v`）が、男声と女声の表のどちらに近いか（0 が男声、1 が女声。対数の距離の比）
+fn female_weight(measured: &[f32], v: Vowel) -> f32 {
+    let dist = |t: [f32; 3]| (0..3).map(|i| (measured[i] / t[i]).ln().abs()).sum::<f32>();
+    let (dm, df) = (dist(standard_formants(v, false)), dist(standard_formants(v, true)));
+    if dm + df > 0.0 { dm / (dm + df) } else { 0.5 }
+}
+
 
 /// 響きを動かす STFT の長さとホップ（サンプル。44.1kHz で約 46ms と 12ms）
 const MORPH_FFT: usize = 2048;
@@ -351,7 +372,7 @@ fn peaks(env: &[f32], sample_rate: f32) -> Vec<f32> {
 /// 素材の母音 `from` を、母音 `to` に作り替える（声帯の音はそのまま、響きの山の位置だけを動かす）。
 /// 素材のフレームごとの LPC の極のうち F1〜F3 にあたるものを、目標の F1〜F3 へ動かし（そのフレームのずれの比と、極の鋭さは保つ）、
 /// 元の包絡との比（±MORPH_MAX_DB、前後のフレームでならす）を掛ける。
-/// 目標の F1〜F3 は、標準の値に素材の声道の長さの倍率（素材の F1〜F3 ÷ `from` の標準の値）を掛けたもの
+/// 目標の F1〜F3 は、男声と女声の表を素材の声に合わせて混ぜた値に、残りの個人差の倍率を掛けたもの
 pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel) -> Vec<f32> {
     let mut st = wevocal_lib::stft::Stft::new(MORPH_FFT, MORPH_HOP);
     let bins = st.bins();
@@ -378,9 +399,11 @@ pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel) -> Vec<f
             v[v.len() / 2]
         })
         .collect();
-    let std_from = standard_formants(from);
+    // 男声と女声の表を、元にした母音の測った値に近いほうへ混ぜ、残りの個人差を倍率で掛ける
+    let w = female_weight(&src, from);
+    let std_from = mixed_formants(from, w);
     let scale = (0..3).map(|i| src[i] / std_from[i]).sum::<f32>() / 3.0;
-    let tgt: Vec<f32> = standard_formants(to).iter().map(|f| f * scale).collect();
+    let tgt: Vec<f32> = mixed_formants(to, w).iter().map(|f| f * scale).collect();
     let nyq = sample_rate / 2.0;
     let bin_hz = nyq / (bins - 1) as f32;
     let env_nyq = env_rate / 2.0;
@@ -581,6 +604,16 @@ mod tests {
         eprintln!("frames {total}, root reconstruction bad {bad} (worst {worst:.3e})");
         eprintln!("max |gain| dB median/p90/max {:?}", med(&mut maxgain));
         eprintln!("frame-to-frame gain jump dB median/p90/max {:?}", med(&mut jumps));
+    }
+
+    /// 女声の「あ」の値なら女声の表に寄り、「え」の目標の F2 が男声の表（1600Hz）より女声の表（2200Hz）に近くなること
+    #[test]
+    fn female_voice_uses_female_table() {
+        let w = female_weight(&[880.0, 1750.0, 2850.0], Vowel::A);
+        assert!(w > 0.7, "w {w}");
+        let e = mixed_formants(Vowel::E, w);
+        assert!(e[1] > 2000.0, "F2 {}", e[1]);
+        assert!(female_weight(&[690.0, 1420.0, 2480.0], Vowel::A) < 0.3);
     }
 
     #[test]
