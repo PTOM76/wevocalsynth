@@ -226,9 +226,9 @@ fn female_weight(measured: &[f32], v: Vowel) -> f32 {
 }
 
 
-/// 響きを動かす STFT の長さとホップ（サンプル。44.1kHz で約 46ms と 12ms）
-const MORPH_FFT: usize = 2048;
-const MORPH_HOP: usize = 512;
+/// 響きを動かす STFT の長さとホップ（サンプル。44.1kHz で約 23ms と 6ms。長いと声帯の細かな揺れがぼやけ、声質が変わる）
+const MORPH_FFT: usize = 1024;
+const MORPH_HOP: usize = 256;
 /// 包絡の比で掛ける大きさの上限（dB。極端に強めたり弱めたりしない）と、ならすフレームの数（前後それぞれ）
 const MORPH_MAX_DB: f32 = 30.0;
 const MORPH_SMOOTH: usize = 2;
@@ -369,6 +369,22 @@ fn peaks(env: &[f32], sample_rate: f32) -> Vec<f32> {
     (1..env.len() - 1).filter(|&g| env[g] > env[g - 1] && env[g] >= env[g + 1] && hz(g) > 200.0 && hz(g) < 4500.0).map(hz).take(3).collect()
 }
 
+/// 掛ける大きさ（dB、周波数の順）から、全体の傾き（周波数に対する一次の直線）を引く。
+/// 極を動かすと包絡全体の傾きも変わり、声の明るさや息の多さ（声質）まで変わってしまうので、山の位置の変化だけを残す
+fn remove_tilt(db: &[f32]) -> Vec<f32> {
+    let n = db.len() as f32;
+    let mx = (n - 1.0) / 2.0;
+    let my = db.iter().sum::<f32>() / n;
+    let (mut sxy, mut sxx) = (0.0f32, 0.0f32);
+    for (i, &y) in db.iter().enumerate() {
+        let dx = i as f32 - mx;
+        sxy += dx * (y - my);
+        sxx += dx * dx;
+    }
+    let slope = if sxx > 0.0 { sxy / sxx } else { 0.0 };
+    db.iter().enumerate().map(|(i, &y)| y - (my + slope * (i as f32 - mx))).collect()
+}
+
 /// 素材の母音 `from` を、母音 `to` に作り替える（声帯の音はそのまま、響きの山の位置だけを動かす）。
 /// 素材のフレームごとの LPC の極のうち F1〜F3 にあたるものを、目標の F1〜F3 へ動かし（そのフレームのずれの比と、極の鋭さは保つ）、
 /// 元の包絡との比（±MORPH_MAX_DB、前後のフレームでならす）を掛ける。
@@ -419,10 +435,11 @@ pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel) -> Vec<f
         .map(|e| {
             let (a, env) = e.as_ref()?;
             let target = lpc::envelope(&shift_formants(a, env_rate, &src, &tgt)?, env.len());
-            Some(env.iter().zip(&target).map(|(e, t)| (10.0 * (t / e.max(1e-12)).log10()).clamp(-MORPH_MAX_DB, MORPH_MAX_DB)).collect())
+            let db: Vec<f32> = env.iter().zip(&target).map(|(e, t)| 10.0 * (t / e.max(1e-12)).log10()).collect();
+            Some(remove_tilt(&db).into_iter().map(|g| g.clamp(-MORPH_MAX_DB, MORPH_MAX_DB)).collect())
         })
         .collect();
-    // 前後のフレームと平均して、フレームごとの揺れをならす（動かさないフレームは 0dB として数える）
+    // 前後のフレームと平均して、フレームごとの揺れをならす（F1〜F3 が見つからないフレームは数に入れない）
     let gains: Vec<Option<Vec<f32>>> = (0..raw.len())
         .map(|k| {
             raw[k].as_ref()?;
