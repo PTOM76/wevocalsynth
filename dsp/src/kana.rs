@@ -370,9 +370,8 @@ fn peaks(env: &[f32], sample_rate: f32) -> Vec<f32> {
     (1..env.len() - 1).filter(|&g| env[g] > env[g - 1] && env[g] >= env[g + 1] && hz(g) > 200.0 && hz(g) < 4500.0).map(hz).take(3).collect()
 }
 
-/// 掛ける大きさ（dB、周波数の順）から、全体の傾き（周波数に対する一次の直線）を引く。
-/// 極を動かすと包絡全体の傾きも変わり、声の明るさや息の多さ（声質）まで変わってしまうので、山の位置の変化だけを残す
-fn remove_tilt(db: &[f32]) -> Vec<f32> {
+/// 値（dB、周波数の順）に当てはめた一次の直線（切片、傾き。添字に対して）
+fn fit_line(db: &[f32]) -> (f32, f32) {
     let n = db.len() as f32;
     let mx = (n - 1.0) / 2.0;
     let my = db.iter().sum::<f32>() / n;
@@ -383,8 +382,37 @@ fn remove_tilt(db: &[f32]) -> Vec<f32> {
         sxx += dx * dx;
     }
     let slope = if sxx > 0.0 { sxy / sxx } else { 0.0 };
-    db.iter().enumerate().map(|(i, &y)| y - (my + slope * (i as f32 - mx))).collect()
+    (my - slope * mx, slope)
 }
+
+/// 掛ける大きさ（dB、周波数の順）の全体の傾きを、母音が変わることで本来変わる傾き（`expected`）に置き換える。
+/// 極を動かすと、測り方による余計な傾き（声の明るさ、息の多さ＝声質の変化）も付くので、それは取り除く。
+/// ただし、い、えのように F2、F3 が高い母音は本来明るいので、その分の傾きは残す（全部取り除くと太い声になる）
+fn retilt(db: &[f32], expected: &[f32]) -> Vec<f32> {
+    let (a, b) = fit_line(db);
+    let (ea, eb) = fit_line(expected);
+    db.iter().enumerate().map(|(i, &y)| y - (a + b * i as f32) + (ea + eb * i as f32)).collect()
+}
+
+/// F1〜F3（Hz）だけを持つ理想的な響き（全極の包絡。帯域幅は 80、100、150Hz）。母音ごとの本来の明るさの違いを見るためのもの
+fn formant_envelope(f: &[f32], rate: f32, bins: usize) -> Vec<f32> {
+    let mut a = vec![1.0f32];
+    for (k, &hz) in f.iter().enumerate() {
+        let bw = [80.0f32, 100.0, 150.0][k.min(2)];
+        let r = (-std::f32::consts::PI * bw / rate).exp();
+        let c = 2.0 * r * (std::f32::consts::TAU * hz / rate).cos();
+        // (1 - c z^-1 + r^2 z^-2) を掛ける
+        let mut next = vec![0.0f32; a.len() + 2];
+        for (i, &v) in a.iter().enumerate() {
+            next[i] += v;
+            next[i + 1] -= c * v;
+            next[i + 2] += r * r * v;
+        }
+        a = next;
+    }
+    lpc::envelope(&a, bins)
+}
+
 
 /// 声道の長さの倍率の上限と下限。測り違えても、極端に低い（重たい、太い）声や高い声にしない
 const SCALE_MIN: f32 = 0.85;
@@ -446,6 +474,11 @@ pub fn morph_vowel(orig: &[f32], sample_rate: f32, from: Vowel, to: Vowel, stren
         env[i0] + (env[(i0 + 1).min(env.len() - 1)] - env[i0]) * g
     };
     // フレームごとの、目標の包絡 ÷ 元の包絡（dB、±MORPH_MAX_DB）。F1〜F3 が見つからないフレームは動かさない
+    // 元の母音と目標の母音の理想的な響きの比（dB）。母音が変わることで本来変わる傾きを、ここから取る
+    let expected: Vec<f32> = {
+        let (es, et) = (formant_envelope(&src, env_rate, env_bins), formant_envelope(&tgt, env_rate, env_bins));
+        es.iter().zip(&et).map(|(s, t)| 10.0 * (t / s.max(1e-12)).log10()).collect()
+    };
     let raw: Vec<Option<Vec<f32>>> = envs
         .iter()
         .map(|e| {
@@ -453,7 +486,7 @@ pub fn morph_vowel(orig: &[f32], sample_rate: f32, from: Vowel, to: Vowel, stren
             let target = lpc::envelope(&shift_formants(a, env_rate, &src, &tgt)?, env.len());
             let db: Vec<f32> = env.iter().zip(&target).map(|(e, t)| 10.0 * (t / e.max(1e-12)).log10()).collect();
             // 強さ（0〜1）を掛ける。弱めると母音らしさと引き換えに元の声質が残る
-            Some(remove_tilt(&db).into_iter().map(|g| g.clamp(-MORPH_MAX_DB, MORPH_MAX_DB) * strength.clamp(0.0, 1.0)).collect())
+            Some(retilt(&db, &expected).into_iter().map(|g| g.clamp(-MORPH_MAX_DB, MORPH_MAX_DB) * strength.clamp(0.0, 1.0)).collect())
         })
         .collect();
     // 前後のフレームと平均して、フレームごとの揺れをならす（F1〜F3 が見つからないフレームは数に入れない）
@@ -673,6 +706,26 @@ mod tests {
         let low_f1 = vocal_scale(&[table[0] * 0.5, table[1], table[2]], &table);
         assert!((honest - 1.0).abs() < 1e-3 && (low_f1 - 1.0).abs() < 1e-3, "{honest} {low_f1}");
         assert!(vocal_scale(&[100.0, 500.0, 1000.0], &table) >= SCALE_MIN);
+    }
+
+    /// 「あ」から「い」を作ると、本来の明るさ（高い所の強さ）が付き、太い声にならないこと（包絡の傾きが上がる）
+    #[test]
+    fn front_vowel_gets_brighter() {
+        let sr = 44100.0;
+        let x = vowel(sr, 140.0, 0.6, &[(800.0, 80.0), (1200.0, 90.0), (2500.0, 120.0)]);
+        let y = morph_vowel(&x, sr, Vowel::A, Vowel::I, 1.0);
+        let slope = |v: &[f32]| {
+            let ratio = (sr / ENV_RATE) as f64;
+            let d = resample(v, ratio, (v.len() as f64 / ratio) as usize);
+            let mid = d.len() / 2;
+            let w = hann(512);
+            let frame: Vec<f32> = (0..512).map(|i| d[mid + i] * w[i]).collect();
+            let (a, _) = lpc::lpc(&frame, ENV_ORDER).unwrap();
+            let db: Vec<f32> = lpc::envelope(&a, 257).iter().map(|e| 10.0 * e.max(1e-12).log10()).collect();
+            fit_line(&db).1
+        };
+        // 傾きを丸ごと取り除く前の作り方では、ほぼ同じ（差 0.006）で、太い声に聞こえた。今は差 0.06 ほど
+        assert!(slope(&y) - slope(&x) > 0.03, "a {} → i {}", slope(&x), slope(&y));
     }
 
     #[test]
