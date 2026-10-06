@@ -16,9 +16,10 @@ export async function canEncodeVideo(container: Video.VideoContainer, width: num
   return (await load()).canEncodeVideo(container, width, height)
 }
 
-/** 動画の 1 フレームを画像にする（プレビュー） */
-export async function renderFrame(clip: Clip, look: Video.VideoLook, time: number) {
-  return (await load()).renderFrame(clip, look, time)
+/** 動画の 1 フレームを画像にする（プレビュー）。曲の中ほどで音が最も大きいところを描く */
+export async function renderPreview(clip: Clip, look: Video.VideoLook) {
+  const m = await load()
+  return m.renderFrame(clip, look, m.previewTime(clip))
 }
 
 /** 音声に簡易な波形を付けて動画にする */

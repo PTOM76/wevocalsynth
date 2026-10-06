@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Box, Button, Checkbox, DialogActions, DialogContent, FormControlLabel, LinearProgress, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import { enterToSubmit, WindowDialog } from 'pevenmui'
-import { canEncodeVideo, renderFrame, VIDEO_EXT, type VideoContainer } from '../audio/video'
+import { canEncodeVideo, renderPreview, VIDEO_EXT, type VideoContainer } from '../audio/video'
 import type { Clip } from '../audio/types'
 import { useT } from '../i18n/i18n'
 import { Choice } from './ExportDialog'
@@ -57,15 +57,13 @@ export default function VideoExportDialog(p: Props) {
   const [width, height] = pr.size.split('x').map(Number)
   const [preview, setPreview] = useState<string | null>(null)
 
-  // 選んだものが変わるたびに、曲の真ん中のフレームをプレビューとして描き直す（続けて変えたときは最後の 1 回だけ）
+  // 選んだものが変わるたびに、音の大きいところのフレームをプレビューとして描き直す（続けて変えたときは最後の 1 回だけ）
   useEffect(() => {
     if (!p.open) return
     let url: string | null = null
     let cancelled = false
     const timer = setTimeout(() => {
-      const clip = p.previewClip
-      const mid = clip.channels[0].length / clip.sampleRate / 2
-      void renderFrame(clip, videoLook(pr, image?.bitmap ?? null, s.fileName.trim()), mid).then((blob) => {
+      void renderPreview(p.previewClip, videoLook(pr, image?.bitmap ?? null, s.fileName.trim())).then((blob) => {
         if (cancelled) return
         url = URL.createObjectURL(blob)
         setPreview(url)
@@ -112,7 +110,7 @@ export default function VideoExportDialog(p: Props) {
     >
       <DialogContent>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
-          {/* プレビュー（曲の真ん中のフレーム。縦長の動画は高さを抑える） */}
+          {/* プレビュー（音の大きいところのフレーム。縦長の動画は高さを抑える） */}
           <Box sx={{ display: 'flex', justifyContent: 'center', bgcolor: 'action.hover', borderRadius: 1, overflow: 'hidden', aspectRatio: '16 / 9' }}>
             {preview && <Box component="img" src={preview} alt={t('video.preview')} sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />}
           </Box>
@@ -163,6 +161,27 @@ export default function VideoExportDialog(p: Props) {
               ]}
             />
           </Stack>
+          {pr.style === 'bars' && (
+            <Choice
+              label={t('video.bars')}
+              value={pr.bars ?? 64}
+              onChange={(bars) => setPr({ bars })}
+              options={[
+                [32, t('video.bars32')],
+                [64, t('video.bars64')],
+                [128, t('video.bars128')],
+                [256, t('video.bars256')],
+                [512, t('video.bars512')],
+              ]}
+            />
+          )}
+          {pr.style === 'bars' && (
+            <FormControlLabel
+              sx={{ m: 0 }}
+              control={<Checkbox size="small" checked={!!pr.gradient} onChange={(e) => setPr({ gradient: e.target.checked })} />}
+              label={<Typography sx={{ fontSize: 13 }}>{t('video.gradient')}</Typography>}
+            />
+          )}
           <Stack direction="row" spacing={1}>
             <ColorField label={t('video.bg')} value={pr.bg} onChange={(bg) => setPr({ bg })} />
             <ColorField label={t('video.wave')} value={pr.wave} onChange={(wave) => setPr({ wave })} />
@@ -238,27 +257,6 @@ export default function VideoExportDialog(p: Props) {
             onChange={(e) => setS({ ...s, fileName: e.target.value })}
             slotProps={{ input: { endAdornment: <Typography color="text.secondary">{VIDEO_EXT[container]}</Typography> } }}
           />
-          {pr.style === 'bars' && (
-            <Choice
-              label={t('video.bars')}
-              value={pr.bars ?? 64}
-              onChange={(bars) => setPr({ bars })}
-              options={[
-                [32, t('video.bars32')],
-                [64, t('video.bars64')],
-                [128, t('video.bars128')],
-                [256, t('video.bars256')],
-                [512, t('video.bars512')],
-              ]}
-            />
-          )}
-          {pr.style === 'bars' && (
-            <FormControlLabel
-              sx={{ m: 0 }}
-              control={<Checkbox size="small" checked={!!pr.gradient} onChange={(e) => setPr({ gradient: e.target.checked })} />}
-              label={<Typography sx={{ fontSize: 13 }}>{t('video.gradient')}</Typography>}
-            />
-          )}
           <FormControlLabel
             sx={{ m: 0 }}
             control={<Checkbox size="small" checked={pr.title} onChange={(e) => setPr({ title: e.target.checked })} />}
