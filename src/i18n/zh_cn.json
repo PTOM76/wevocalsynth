@@ -822,5 +822,9 @@
   "licenses.mediabunny": "视频导出时将画面和音频合并为一个文件（附加功能，未经修改使用）",
   "settings.groupAddonConverter": "转换",
   "video.styleScope": "瞬时波形",
-  "video.gradient": "渐变（从波形颜色到已播放颜色）"
+  "video.gradient": "渐变（从波形颜色到已播放颜色）",
+  "video.bars": "细致度",
+  "video.bars32": "粗（32）",
+  "video.bars64": "标准（64）",
+  "video.bars128": "细（128）"
 }

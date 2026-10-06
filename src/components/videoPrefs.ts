@@ -17,6 +17,8 @@ export interface VideoExportPrefs {
   title: boolean
   /** 音量波形をグラデーションにする */
   gradient: boolean
+  /** 音量波形の棒の数（細かさ） */
+  bars: 32 | 64 | 128
 }
 
 export const DEFAULT_VIDEO_PREFS: VideoExportPrefs = {
@@ -30,4 +32,5 @@ export const DEFAULT_VIDEO_PREFS: VideoExportPrefs = {
   fit: 'cover',
   title: false,
   gradient: false,
+  bars: 64,
 }

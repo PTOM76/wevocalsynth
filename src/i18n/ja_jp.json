@@ -822,5 +822,9 @@
   "licenses.mediabunny": "動画の書き出しで、映像と音声を 1 つのファイルにまとめる（追加機能。改変せずに使用しています）",
   "settings.groupAddonConverter": "変換",
   "video.styleScope": "その瞬間の波形",
-  "video.gradient": "グラデーションにする（波形の色から再生済みの色へ）"
+  "video.gradient": "グラデーションにする（波形の色から再生済みの色へ）",
+  "video.bars": "細かさ",
+  "video.bars32": "粗い（32）",
+  "video.bars64": "標準（64）",
+  "video.bars128": "細かい（128）"
 }

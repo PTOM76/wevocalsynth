@@ -822,5 +822,9 @@
   "licenses.mediabunny": "Combines video and audio into one file for video export (add-on, used unmodified)",
   "settings.groupAddonConverter": "Conversion",
   "video.styleScope": "Oscilloscope",
-  "video.gradient": "Gradient (wave color to played color)"
+  "video.gradient": "Gradient (wave color to played color)",
+  "video.bars": "Detail",
+  "video.bars32": "Coarse (32)",
+  "video.bars64": "Normal (64)",
+  "video.bars128": "Fine (128)"
 }
