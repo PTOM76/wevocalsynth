@@ -34,6 +34,13 @@
 - MANUAL.md に `##` の見出しを追加したら、スクリプトの `PAGES` にどのページに入れるかを追加する（追加しないとスクリプトが止まる）
 - wiki に `<details>`（折りたたみ）は使わないため、wiki のページでは見出しに置き換える
 
+## 画像
+- 画面の画像（`docs/images/`）は `npm run docs:shots` で撮り直す（`scripts/screenshots/`）。開発サーバーを立て、ヘッドレスの Chrome でアプリを操作して撮る。一部だけなら `npm run docs:shots -- main toolbar` のように名前を並べる
+- 追加機能の画面を撮るときは、先に `node scripts/build-addons.mjs public analyzer converter` を実行する（モデルの取得は要らない）
+- 撮影用の音声は、スクリプトの中で作る（実在の曲を使わない）
+- 番号付きの画像（`_with_note`）の番号は、ボタンなどの位置から計算して重ねる。MANUAL.md の表の番号と合わせる
+- 新しい画像は `scripts/screenshots/` の desktop.mjs、dialogs.mjs、mobile.mjs に手順を追加する
+
 ## 更新
 - コードを変えて内容が食い違ったら、同じ変更の中でドキュメントも直す
 - 処理時間や「未確認のこと」のような時点で変わる情報には日付を付ける（例: `(2026-09-27 時点)`）

@@ -149,6 +149,7 @@ FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD を活用�
 | `npm run build:addons` | 追加機能（ボーカル抽出の実行環境とモデル、解析、変換）を `dist/addons/` に作る。`npm run build` の後に実行する |
 | `npm run build:addons:dev` | 同じものを `public/addons/` に作る（git には入れない）。`npm run dev` でも追加機能を試せる。一度作れば `npm run build` でも `dist/` にコピーされる |
 
+| `npm run docs:shots` | 画面の画像（`docs/images/`）を撮り直す（`scripts/screenshots/`。docs/WRITING.md の「画像」） |
 | `node scripts/docs-to-dokuwiki.mjs` | `docs/MANUAL.md` を分けて `docs/wiki/` のページを作り直し、DokuWiki の記法にして `dist/dokuwiki/` に書き出す |
 
 `.wasm` はリポジトリに含めているので、Rust がない環境でも `npm install && npm run dev` で動く。
