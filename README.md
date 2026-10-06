@@ -1,29 +1,37 @@
 # WeVocalSynth
-WeVocalSynthは、Webブラウザ上で音声素材のピッチおよび時間を編集するための音声加工ツールである。
+WeVocalSynth は、Web ブラウザで音声のピッチ（音の高さ）と長さを編集する音声加工ツールである。
 
 - https://wevocalsynth.pitan76.net/
 
-<img width="600" alt="image" src="https://github.com/user-attachments/assets/397d3a1e-edca-466e-87da-d06de4418ccc" />
-<img width="200" alt="image" src="https://github.com/user-attachments/assets/4314c95d-22d2-4b0c-b854-07e8ebb0998b" />
+<img width="600" alt="パソコンの画面" src="docs/images/readme-pc.png" />
+<img width="200" alt="スマホの画面" src="docs/images/readme-mobile.png" />
 
 
-インストール不要で、ブラウザだけでボーカルや音声素材の編集ができる。<br />
-音声ファイルはサーバーへ送らず、処理はすべてブラウザ内で行う。
+インストールは不要。音声ファイルはサーバーへ送らず、処理はすべてブラウザ内で行う。
 
 ## できること
 | 分類 | 機能 |
 | --- | --- |
-| 加工 | ピッチ変更（0.01半音単位）、時間伸縮、フォルマント保持、移動、ボーカル/楽器モード、素材に合わせて選べる処理方式（Vesola、Solis、Phasera、HPSS など）、逆再生 |
-| ピッチ | 範囲の今の音程の表示と「音程を合わせる」、ピッチ曲線の表示とペンでの描き直し、半音上下、平らにする、音階に揃える、ビブラート、MIDI の音程を当てはめる |
+| 加工 | ピッチ変更（0.01半音単位）、時間伸縮、フォルマント保持、移動、ボーカルと楽器のモード、音の種類に合わせて選べる処理方式（Vesola、Solis、Phasera、HPSS など）、逆再生 |
+| ピッチ | 範囲の音程の表示と最寄りの音名に合わせる、ピッチ曲線の表示とペンでの描き直し、半音上下、平らにする、音階に揃える、ビブラート、MIDI の音程を当てはめる |
 | 編集 | 範囲選択（複数可）、切り取り、コピー、貼り付け（ピッチの曲線にも）、無音の挿入、音量編集、音量とフォルマントの曲線を描く、音符ブロックの移動と伸縮、マーカー、元に戻す、やり直す、操作履歴 |
 | トラック | 複数トラック（複製/追加/分割/統合、選択範囲を新しいトラックへ）、トラックごとの音量/パン（非破壊）、ミュート/ソロ、ほかのトラックを重ねて表示、音量メーター |
-| 音声の作成 | 声、楽器の音色で、単音または MIDI のメロディから音声を作成して新しいトラックに追加（フォルマント/音量を指定、作成前に試聴）、素材を MIDI の音符に並べる |
+| 音声の作成 | 声、楽器の音色で、単音または MIDI のメロディから音声を作成（フォルマントと音量を指定、作成前に試聴）、選択範囲を MIDI の音符に並べる、録音 |
 | テンポ | BPM自動解析、拍の線と拍への吸着、BPM変更に合わせた全体の伸縮 |
-| 確認 | 加工済みの試聴、スライダー操作をすぐ反映するループ試聴、原音との比較、帯パネルごとの表示（波形/ピッチ/音量/フォルマント） |
-| 保存 | WAV / MP3 /Opus の書き出し、プロジェクトの保存（.wvsp）、作業の自動保存と復元、保存先の選択と最近使用したファイル（Chrome、Edge） |
-| その他 | PC/スマホ対応、オフライン利用（PWA/.wvsp をダブルクリックで開く）、日本語/英語/韓国語/中国語（簡体字、繁体字）、録音、ミニマップ |
-| 試験的機能 | ボーカル和音分離、音声から五十音の作成、GPUでの加工処理 |
-| 追加機能 (アドオン) | ボーカル抽出 (from WeVocalExtractor)、スペクトロムグラム (from WeVocalAnalyzer)、動画出力(from WeVocalConverter) |
+| 確認 | 加工後の試聴、スライダーの操作を即座に反映するループ試聴、原音との比較、帯パネルごとの表示（波形、ピッチ、音量、フォルマント） |
+| 保存 | WAV / MP3 / Opus の書き出し、選択範囲をフォルダーへ保存、プロジェクトの保存（.wvsp）、作業の自動保存と復元、保存先の選択と最近使用したファイル（Chrome、Edge） |
+| その他 | パソコンとスマホに対応、オフラインで使用できる（PWA）、.wvsp をダブルクリックで開く、日本語、英語、韓国語、中国語（簡体字、繁体字）、ミニマップ、キーの割り当て |
+| 試験的機能 | 和音を分ける、声から五十音を作る、GPU での加工 |
+| 追加機能 | ボーカル抽出、スペクトログラム、動画の書き出し（使用するときだけダウンロードする） |
+
+### 追加機能と関連ツール
+追加機能の本体は、別のリポジトリのツールである。どれも単体の Web ツールとして使用でき、画面を持たないライブラリとして WeVocalSynth の追加機能にも組み込んでいる。
+
+| ツール | 単体での用途 | WeVocalSynth での追加機能 |
+| --- | --- | --- |
+| [WeVocalExtractor](https://github.com/PTOM76/wevocalextractor) | 曲からボーカルと伴奏を取り出す | ボーカル抽出 |
+| [WeVocalAnalyzer](https://github.com/PTOM76/wevocalanalyzer) | 声の解析（F0、フォルマント、スペクトログラム、歌詞の文字化） | スペクトログラム |
+| [WeVocalConverter](https://github.com/PTOM76/wevocalconverter) | 音声ファイルの形式の変換、動画の書き出し | 動画の書き出し |
 
 ## 技術スタック
 | 項目 | 内容 |
@@ -40,10 +48,19 @@ npm install
 npm run dev
 ```
 
-`extractor/`（ボーカル抽出）、`wevocal-lib/`（共有の信号処理）、`pevenmui/`（UI 部品）は submodule。`--recursive` を付け忘れたら `git submodule update --init` で取得する。
-`--recursive` だと `extractor/pevenmui/` も取得されるが、直すのはルートの `pevenmui/` の方。紛らわしければ `extractor/` で `todo setup:nested` を実行して隠す。
+次のフォルダーは submodule。`--recursive` を付け忘れたら `git submodule update --init` で取得する。
 
-音声処理（`dsp/`）を変えるときだけ Rust が要る。ビルド済みの `.wasm` をリポジトリに含めているので、画面だけなら Node.js だけで動く。
+| フォルダー | 内容 |
+| --- | --- |
+| `extractor/` | WeVocalExtractor（ボーカル抽出） |
+| `analyzer/` | WeVocalAnalyzer（スペクトログラム） |
+| `converter/` | WeVocalConverter（動画の書き出し） |
+| `wevocal-lib/` | 共有の信号処理と、音声の読み込み、書き出し |
+| `pevenmui/` | 画面の部品 |
+
+`--recursive` だと `extractor/pevenmui/` なども取得されるが、修正するのはルートの `pevenmui/` の方。紛らわしければ、それぞれのフォルダーで `todo setup:nested` を実行して隠す。追加機能を開発サーバーで試すときは、先に `npm run build:addons:dev` を実行する。
+
+音声処理（`dsp/`）を変更するときだけ Rust が必要になる。ビルド済みの `.wasm` をリポジトリに含めているので、画面だけなら Node.js だけで動作する。
 
 [Todofile](https://github.com/Pitan76/Todofile)を導入している場合は、クローン後、`todo setup` と `todo dev` で同様のセットアップが可能。
 
@@ -72,7 +89,7 @@ npm run dev
 | プロジェクトファイルの形式 | [docs/PROJECT_FORMAT.md](docs/PROJECT_FORMAT.md) |
 | アルゴリズム | [docs/ALGORITHM.md](docs/ALGORITHM.md) |
 | 速さの計測 | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) |
-| ボーカル抽出 | [docs/EXTRACTOR.md](docs/EXTRACTOR.md) |
+| 追加機能とボーカル抽出 | [docs/EXTRACTOR.md](docs/EXTRACTOR.md) |
 | バージョン履歴 | [docs/VERSION.md](docs/VERSION.md) |
 | ドキュメントの書き方 | [docs/WRITING.md](docs/WRITING.md) |
 | 小ネタ | [docs/TIPS.md](docs/TIPS.md) |
@@ -82,3 +99,4 @@ This project is licensed under the MIT License.
 
 Third-party software:
 - @breezystack/lamejs — LGPL-3.0
+- 追加機能に含めて配るもの（ONNX Runtime Web、学習済みモデル、Mediabunny など）は [LICENSE-THIRD-PARTY.md](LICENSE-THIRD-PARTY.md)

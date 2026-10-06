@@ -52,7 +52,8 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 | `useAutosave` | IndexedDB への自動保存（トラックごと）と、起動時の復元 |
 | `useAppMenus` | メニューバー・⋮ メニュー・右クリックメニューの中身 |
 | `useSeek` | 矢印キー・Home / End での再生位置の移動 |
-| `useOutput` | プロジェクトの保存（開いたファイルへの上書き）と、音声の書き出し（ミックス、仕上げ、保存先フォルダーとファイル名） |
+| `useOutput` | プロジェクトの保存（開いたファイルへの上書き）と、音声の書き出し（ミックス、仕上げ、保存先フォルダーとファイル名）。書き出す音声を作る `renderClip` は動画の書き出しでも使う |
+| `useVideoExport` | 動画の書き出し（追加機能「変換」。`audio/video.ts`）。導入しているときだけメニューに表示する |
 | `useMarkers` | マーカー（追加、名前の変更、削除、ドラッグでの移動、ここからのテンポ）。元に戻すの対象にはしない |
 | `useRangeNote` | 選択範囲の今の音程（「音程を合わせる」用） |
 
@@ -145,7 +146,9 @@ FFT（radix-2。回転因子を段ごとに連続して並べ、SIMD を活用�
 | `npm run dev` / `npm run build` | Vite の開発サーバー / 本番ビルド |
 | `npm run test:dsp` | DSP のテスト |
 | `npm run build:wasm:extractor` | ボーカル抽出の STFT（`extractor/dsp`）を wasm にビルド（隣の `wevocal-lib` を使う） |
-| `npm run build:addons` | 追加機能（ボーカル抽出の実行環境とモデル）を `dist/addons/` に作る。`npm run build` の後に実行する |
-| `npm run build:addons:dev` | 同じものを `public/addons/` に作る（git には入れない）。`npm run dev` でもボーカル抽出を試せる。一度作れば `npm run build` でも `dist/` にコピーされる |
+| `npm run build:addons` | 追加機能（ボーカル抽出の実行環境とモデル、解析、変換）を `dist/addons/` に作る。`npm run build` の後に実行する |
+| `npm run build:addons:dev` | 同じものを `public/addons/` に作る（git には入れない）。`npm run dev` でも追加機能を試せる。一度作れば `npm run build` でも `dist/` にコピーされる |
+
+| `node scripts/docs-to-dokuwiki.mjs` | `docs/MANUAL.md` を分けて `docs/wiki/` のページを作り直し、DokuWiki の記法にして `dist/dokuwiki/` に書き出す |
 
 `.wasm` はリポジトリに含めているので、Rust がない環境でも `npm install && npm run dev` で動く。

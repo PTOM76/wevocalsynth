@@ -1,16 +1,104 @@
-// docs/wiki/*.md と docs/VERSION.md を DokuWiki 記法へ変換して dist/dokuwiki/ に書き出す
-// 使い方: node scripts/docs-to-dokuwiki.mjs [名前空間=wevocalsynth]
+// 使い方の wiki を作る
+// 1. docs/MANUAL.md を見出しごとに分けて docs/wiki/<ページ>.md を作り直す（start.md だけは手で書く）
+// 2. docs/wiki/*.md と docs/VERSION.md を DokuWiki 記法へ変換して dist/dokuwiki/ に書き出す
+// 使い方: node scripts/docs-to-dokuwiki.mjs [名前空間]
+//   名前空間を省くと、ページを wiki の直下に置き、リンクも [[pitch]] のようにページ名だけにする（WeVocalSynth だけの wiki のため）
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { join, basename } from 'node:path';
 
-const NS = process.argv[2] ?? 'wevocalsynth';
+const NS = process.argv[2] ?? '';
 const SRC = 'docs/wiki';
+const MANUAL = 'docs/MANUAL.md';
 // wiki 以外から載せるページ
 const EXTRA = ['docs/VERSION.md'];
 // 画像は GitHub の raw URL を直接参照する
 const IMAGE_URL = 'https://raw.githubusercontent.com/PTOM76/wevocalsynth/main/docs/images';
 const OUT = 'dist/dokuwiki';
 
+// MANUAL.md の ## の見出しを、どのページに入れるか。ページの題と同じ見出しは題に含め、その中の見出しを 1 段上げる
+const PAGES = [
+	{ name: 'glossary', title: '用語', desc: 'このアプリで使う言葉の意味。', sections: ['用語'] },
+	{ name: 'screen', title: '画面', desc: 'パソコンとスマホの画面の各部の名前と役割。', sections: ['画面'] },
+	{ name: 'basics', title: '基本の流れ', desc: '音声を開いてから書き出すまでの流れと、対応ファイル、データの保存先。', sections: ['基本の流れ', '対応ファイル', 'オフラインとデータの保存'] },
+	{ name: 'waveform', title: '波形の操作', desc: '波形の選択、拡大、移動と、帯パネルの表示。', sections: ['波形の操作', '帯パネルの表示'] },
+	{ name: 'processing', title: '加工', desc: '選択範囲のピッチ、長さ、声質の加工と、処理方式の選び方。', sections: ['加工'] },
+	{ name: 'pitch', title: 'ピッチの編集', desc: 'ピッチ曲線を描く、掴んで動かす、一括で加工する方法。', sections: ['ピッチの編集'] },
+	{ name: 'volume', title: '音量とフォルマント', desc: '音量とフォルマント（声質）の編集。', sections: ['音量', 'フォルマント'] },
+	{ name: 'tracks', title: 'トラック', desc: '複数の音声を重ねるトラックの操作。', sections: ['トラック'] },
+	{ name: 'extract', title: 'ボーカル抽出', desc: '曲から声を取り出す機能。', sections: ['ボーカル抽出'] },
+	{ name: 'create', title: '音声の作成と MIDI', desc: '音声の作成、録音と、MIDI に並べる機能。', sections: ['音声の作成', '録音', 'MIDI に並べる'] },
+	{ name: 'tempo', title: 'テンポとマーカー', desc: 'テンポ（BPM）、拍の線、マーカーの使い方。', sections: ['テンポ（BPM）と拍の線', 'マーカー'] },
+	{ name: 'save', title: '保存と書き出し', desc: '操作履歴、保存、音声と動画の書き出し。', sections: ['操作履歴', '保存と書き出し'] },
+	{ name: 'settings', title: '設定', desc: '設定画面とダイアログの操作。', sections: ['設定'] },
+	{ name: 'shortcuts', title: 'キーボード操作', desc: 'キーボードで使用できる操作の一覧。', sections: ['キーボード操作'] },
+	{ name: 'troubleshooting', title: '困ったとき', desc: 'うまく動かないときの対処と、アプリの情報、更新。', sections: ['困ったとき', 'このアプリについて', '新しいバージョン'] },
+];
+
+// GitHub の見出しのアンカー（MANUAL.md の中のリンクはこれで書いている）
+const slug = (s) => s.trim().toLowerCase().replace(/[^\p{L}\p{N}\s_-]/gu, '').replace(/\s/g, '-');
+
+/** MANUAL.md を PAGES に分けて docs/wiki/<ページ>.md に書く */
+function splitManual() {
+	const lines = readFileSync(MANUAL, 'utf8').replace(/\r\n/g, '\n').split('\n');
+	// ## ごとのかたまり
+	const sections = new Map();
+	let current = null;
+	let fence = false;
+	for (const line of lines) {
+		if (/^\s*```/.test(line)) fence = !fence;
+		const h2 = !fence && line.match(/^## (.+)$/);
+		if (h2) sections.set((current = h2[1].trim()), []);
+		else if (current) sections.get(current).push(line);
+	}
+	const used = new Set(PAGES.flatMap((p) => p.sections));
+	const missing = [...sections.keys()].filter((k) => k !== '目次' && !used.has(k));
+	if (missing.length) throw new Error(`MANUAL.md の見出しをどのページに入れるか決まっていない: ${missing.join(', ')}（PAGES に足す）`);
+	// アンカー → ページ
+	const where = new Map();
+	for (const p of PAGES) {
+		where.set(slug(p.title), p.name);
+		for (const name of p.sections) {
+			if (!sections.has(name)) throw new Error(`MANUAL.md に「## ${name}」がない`);
+			where.set(slug(name), p.name);
+			for (const l of sections.get(name)) {
+				const h = l.match(/^#{3,6} (.+)$/);
+				if (h) where.set(slug(h[1]), p.name);
+			}
+		}
+	}
+	for (const p of PAGES) {
+		const out = [`# ${p.title}`, p.desc, ''];
+		for (const name of p.sections) {
+			const promote = name === p.title;
+			if (!promote) out.push(`## ${name}`);
+			for (const l of sections.get(name)) out.push(promote ? l.replace(/^#(#{2,5}) /, '$1 ') : l);
+		}
+		// 折りたたみ（<details>）は wiki では使わず、直前の見出しの 1 段下の見出しにする
+		let level = 1;
+		const flat = [];
+		for (const l of out) {
+			const h = l.match(/^(#{1,6}) /);
+			if (h) level = h[1].length;
+			if (/^\s*<\/?details[^>]*>\s*$/.test(l)) continue;
+			const summary = l.match(/^\s*<summary>(.*)<\/summary>\s*$/);
+			flat.push(summary ? `${'#'.repeat(Math.min(6, level + 1))} ${summary[1].replace(/<\/?b>/g, '')}` : l);
+		}
+		const md = flat
+			.join('\n')
+			.replace(/\]\(#([^)]+)\)/g, (all, a) => {
+				const page = where.get(a);
+				if (!page || page === p.name) return all;
+				return a === slug(PAGES.find((x) => x.name === page).title) ? `](${page}.md)` : `](${page}.md#${a})`;
+			})
+			.replace(/src="images\//g, 'src="../images/')
+			.replace(/\n{3,}/g, '\n\n')
+			.trimEnd();
+		writeFileSync(join(SRC, `${p.name}.md`), `${md}\n`);
+	}
+}
+
+splitManual();
+const pageId = (name) => (NS ? `${NS}:${name}` : name);
 const sources = [...readdirSync(SRC).filter((f) => f.endsWith('.md')).map((f) => `${SRC}/${f}`), ...EXTRA];
 const pageName = (file) => basename(file, '.md').toLowerCase();
 const known = new Set(sources.map(pageName));
@@ -27,7 +115,9 @@ function inline(text) {
 		const src = tag.match(/src="([^"]+)"/)?.[1] ?? '';
 		const alt = tag.match(/alt="([^"]*)"/)?.[1];
 		const w = tag.match(/width="(\d+)"/)?.[1];
-		return `{{${IMAGE_URL}/${basename(src)}${w ? `?${w}` : ''}${alt ? `|${alt}` : ''}}}`;
+		// 外部の画像（README の画像など）はそのまま参照する
+		const url = /^https?:/.test(src) ? src : `${IMAGE_URL}/${basename(src)}`;
+		return `{{${url}${w ? `?${w}` : ''}${alt ? `|${alt}` : ''}}}`;
 	});
 	text = text.replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, (_, alt, src) =>
 		`{{${IMAGE_URL}/${basename(src)}${alt ? `|${alt}` : ''}}}`);
@@ -36,7 +126,7 @@ function inline(text) {
 		const [path, hash] = href.split('#');
 		if (!path && hash) return `[[#${anchor(hash)}|${label}]]`;
 		if (path.endsWith('.md') && known.has(pageName(path))) {
-			return `[[${NS}:${pageName(path)}${hash ? `#${anchor(hash)}` : ''}|${label}]]`;
+			return `[[${pageId(pageName(path))}${hash ? `#${anchor(hash)}` : ''}|${label}]]`;
 		}
 		// wiki に載せないファイルへのリンクは文字だけ残す
 		return label;
@@ -104,14 +194,14 @@ function convert(md) {
 }
 
 rmSync(OUT, { recursive: true, force: true });
-const pagesDir = join(OUT, 'pages', ...NS.split(':'));
+const pagesDir = join(OUT, 'pages', ...(NS ? NS.split(':') : []));
 mkdirSync(pagesDir, { recursive: true });
 
 const manifest = [];
 for (const src of sources) {
 	const name = pageName(src);
 	writeFileSync(join(pagesDir, `${name}.txt`), convert(readFileSync(src, 'utf8')));
-	manifest.push({ id: `${NS}:${name}`, source: src, file: `pages/${NS.replace(/:/g, '/')}/${name}.txt` });
+	manifest.push({ id: pageId(name), source: src, file: ['pages', ...(NS ? NS.split(':') : []), `${name}.txt`].join('/') });
 }
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(manifest, null, '\t'));
 console.log(`${manifest.length} 件を ${OUT} に書き出した`);
