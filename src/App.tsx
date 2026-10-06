@@ -10,7 +10,7 @@ import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, Button, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, setUiScale, FULL_HEIGHT, PevenLabels, LABELS, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, useShortcuts, DesktopLayout, MobileLayout } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, useShortcuts, DesktopLayout, MobileLayout } from 'pevenmui'
 import LevelMeter from './components/LevelMeter'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -49,7 +49,7 @@ import DebugOverlay from './debug/DebugOverlay'
 import UpdatePrompt from './components/UpdatePrompt'
 import { licenseEntries } from './licenses'
 import { countRender } from './debug/debugStats'
-import { LangContext, resolveLang, setLang, t } from './i18n/i18n'
+import { i18n, LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
 import { setFastMath, setParallel } from './dsp/engine'
 import { checkForUpdate, promptUpdate } from 'pevenmui/pwa'
@@ -275,7 +275,7 @@ export default function App() {
       void checkForUpdate().then((r) => {
         // 新しい版があれば、版の表示と更新ボタンのある通知を出す
         if (r.kind === 'found') return promptUpdate(r.build)
-        const l = LABELS[lang]
+        const l = i18n.labels(lang)
         const text = { found: l.updateAvailable, latest: l.updateLatest, unsupported: l.updateUnsupported, failed: l.updateFailed }[r.kind]
         ed.setToast({ severity: r.kind === 'failed' ? 'error' : 'info', message: text })
       }),
@@ -567,7 +567,7 @@ export default function App() {
 
   return (
     <LangContext.Provider value={lang}>
-      <PevenLabels.Provider value={LABELS[lang]}>
+      <PevenLabels.Provider value={i18n.labels(lang)}>
       <WindowModeContext.Provider value={settings.dialogWindow === 'auto' ? autoWindowMode() : settings.dialogWindow}>
       <SliderResetContext.Provider value={settings.sliderDoubleClickReset}>
       {!mobile && <GlobalStyles styles={desktopStyles} />}

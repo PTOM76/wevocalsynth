@@ -14,11 +14,11 @@ import ExtractDiagnose from '../debug/ExtractDiagnose'
 import OutputDeviceRow from './OutputDeviceRow'
 import ShortcutSection from './ShortcutSection'
 import type { Algorithm } from '../dsp/engine'
-import { t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
+import { i18n, t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
 import type { PickerMode, StartFolder } from 'pevenmui/web'
 import { Box, Button, Typography } from '@mui/material'
-import { Check, Choice, Group, LANG_NAMES, Row, type WindowMode } from 'pevenmui'
+import { Check, Choice, Group, Row, type WindowMode } from 'pevenmui'
 
 /** 画面の大きさの選択肢（倍率） */
 const UI_SCALES = [0.9, 1, 1.1, 1.25, 1.5]
@@ -228,7 +228,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
           <Choice<LangSetting>
             value={draft.language}
             onChange={(v) => set({ language: v })}
-            options={[['auto', t('settings.languageAuto')], ...LANG_NAMES]}
+            options={[['auto', t('settings.languageAuto')], ...i18n.options()]}
           />
         </Row>
       </Group>
