@@ -64,8 +64,8 @@ const BITRATES: Record<'mp3' | 'opus', number[]> = {
 }
 const RATES = [22050, 32000, 44100, 48000, 96000]
 
-/** ラベル付きのセレクトボックス */
-function Choice<T extends string | number>(p: { label: string; value: T; options: [T, ReactNode][]; onChange: (v: T) => void; disabled?: boolean }) {
+/** ラベル付きのセレクトボックス（VideoExportDialog でも使う） */
+export function Choice<T extends string | number>(p: { label: string; value: T; options: [T, ReactNode][]; onChange: (v: T) => void; disabled?: boolean }) {
   return (
     <FormControl size="small" fullWidth disabled={p.disabled}>
       <InputLabel>{p.label}</InputLabel>

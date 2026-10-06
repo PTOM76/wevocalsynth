@@ -36,6 +36,7 @@ import { useVocalExtract } from './useVocalExtract'
 import { useVoiceSplit } from './useVoiceSplit'
 import { setGpuLostHandler } from '../audio/vocalExtract'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
+import { useVideoExport } from './useVideoExport'
 import { installedManifest } from '../addons/addons'
 import { useTracks } from './useTracks'
 import { useMarkers } from './useMarkers'
@@ -507,7 +508,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
   // プロジェクトの保存と書き出し
   const projectFileRef = useRef<SavedFile | null>(null)
   const [, setSavedTick] = useState(0)
-  const { baseName, exportName, saveProjectFile, exportFile } = useOutput({
+  const { baseName, exportName, saveProjectFile, exportFile, renderClip } = useOutput({
     fileName,
     named,
     params,
@@ -527,6 +528,16 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     projectFile: projectFileRef,
     exportToFolder: canSaveToFolder(),
     finish: { normalize: settings.exportNormalize, fadeMs: settings.exportFadeMs },
+  })
+  // 動画として書き出す（追加機能「変換」）
+  const video = useVideoExport({
+    present: history.present,
+    renderClip,
+    prefs: settings.exportVideo,
+    task,
+    ensure: addons.ensure,
+    exportToFolder: canSaveToFolder(),
+    notify: (message) => setToast({ severity: 'success', message }),
   })
 
   // 閉じるときの保存確認（自動保存を切っていて、PWA として開いているとき。設定の「全般」）。
@@ -744,6 +755,6 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
     showPitch, setShowPitch, showSpec, setShowSpec: requestShowSpec, analyzerInstalled, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, splitLeadStems: vocal.splitLeadStems, splitVoices, kanaDemo, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty, exportFile, exportOpen, openExport, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,
+    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, splitLeadStems: vocal.splitLeadStems, splitVoices, kanaDemo, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty, exportFile, exportOpen, openExport, video, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,
   }
 }

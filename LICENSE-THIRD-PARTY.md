@@ -20,3 +20,9 @@ MP3 以外（WAV / Opus）の書き出しと、アプリのほかの部分は la
 
 モデルのライセンスの扱い（学習済みモデルに個別の記載がないこと、など）は、WeVocalExtractor の [LICENSE-THIRD-PARTY.md](https://github.com/PTOM76/wevocalextractor/blob/main/LICENSE-THIRD-PARTY.md) にまとめている（手元では `extractor/LICENSE-THIRD-PARTY.md`）。
 ライセンスの全文は `extractor/licenses/` にあり、追加機能を作るときにそれぞれのフォルダ（`addons/<id>/licenses/`）にも入れて一緒に配っている。
+
+## 追加機能（変換）
+| 追加機能 | 含むもの | ライセンス |
+| --- | --- | --- |
+| `converter` | WeVocalConverter の動画の書き出し（`converter/src/video/`） | MIT |
+| `converter` | Mediabunny（映像と音声を 1 つのファイルにまとめる。配布元 https://github.com/Vanilagy/mediabunny） | MPL-2.0。改変せずに使用しており、ファイル単位の条件のため、ほかの部分には及ばない |

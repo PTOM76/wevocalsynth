@@ -51,6 +51,8 @@ export const ADDONS: AddonInfo[] = [
   { id: 'uvr-mdx-kara2', name: 'addon.uvrKara2', shortName: 'addon.modelLead', requires: ['vocal-extractor'] },
   // 解析（analyzer/ の WeVocalAnalyzer）。今はスペクトログラムの表示に使う（src/audio/spectrogram.ts）
   { id: 'analyzer', name: 'addon.analyzer' },
+  // 変換（converter/ の WeVocalConverter）。今は動画の書き出しに使う（src/audio/video.ts）
+  { id: 'converter', name: 'addon.converter' },
 ]
 
 /** `id` と、その導入に要る追加機能（依存を先に並べる） */

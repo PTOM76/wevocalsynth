@@ -1,0 +1,228 @@
+import { useEffect, useRef, useState } from 'react'
+import { Box, Button, Checkbox, DialogActions, DialogContent, FormControlLabel, LinearProgress, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import { enterToSubmit, WindowDialog } from 'pevenmui'
+import { canEncodeVideo, VIDEO_EXT, type VideoContainer } from '../audio/video'
+import { useT } from '../i18n/i18n'
+import { Choice } from './ExportDialog'
+import type { VideoExportPrefs } from './videoPrefs'
+
+/** ダイアログで選んだもの（覚えるもの以外） */
+export interface VideoExportSettings {
+  fileName: string
+  selectionOnly: boolean
+  mix: boolean
+  /** 背景の画像（なければ単色） */
+  image: ImageBitmap | null
+  /** 実際に使う形式（覚えたものが作れなければ、もう一方） */
+  container: VideoContainer
+}
+
+interface Props {
+  open: boolean
+  onClose: () => void
+  baseName: string
+  hasSelection: boolean
+  trackCount: number
+  busy: boolean
+  progress: number
+  prefs: VideoExportPrefs
+  onPrefsChange: (p: VideoExportPrefs) => void
+  onExport: (s: VideoExportSettings, win?: Window | null) => void
+  /** 保存先のフォルダー（音声の書き出しと同じもの） */
+  folder?: { name: string | null; choose: (win: Window | null) => void }
+}
+
+/** 色を選ぶ欄 */
+function ColorField(p: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <Box component="label" sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+      <input type="color" value={p.value} onChange={(e) => p.onChange(e.target.value)} style={{ width: 32, height: 24, padding: 0, border: 'none', background: 'none' }} />
+      <Typography sx={{ fontSize: 13 }}>{p.label}</Typography>
+    </Box>
+  )
+}
+
+/** 音声に簡易な波形を付けて動画として書き出す（追加機能「変換」） */
+export default function VideoExportDialog(p: Props) {
+  const t = useT()
+  const [s, setS] = useState<Omit<VideoExportSettings, 'image' | 'container'>>({ fileName: '', selectionOnly: false, mix: true })
+  const [image, setImage] = useState<{ bitmap: ImageBitmap; name: string } | null>(null)
+  const [support, setSupport] = useState<Record<VideoContainer, boolean> | null>(null)
+  const input = useRef<HTMLInputElement>(null)
+  const pr = p.prefs
+  const setPr = (patch: Partial<VideoExportPrefs>) => p.onPrefsChange({ ...pr, ...patch })
+  const [width, height] = pr.size.split('x').map(Number)
+
+  // 開くたびにファイル名と範囲を今の状態に合わせる
+  useEffect(() => {
+    if (!p.open) return
+    setS((v) => ({ ...v, fileName: p.baseName, selectionOnly: p.hasSelection }))
+  }, [p.open, p.baseName, p.hasSelection])
+  // 作れる形式を調べる（大きさで変わることがある）
+  useEffect(() => {
+    if (!p.open) return
+    void Promise.all([canEncodeVideo('mp4', width, height), canEncodeVideo('webm', width, height)]).then(([mp4, webm]) => setSupport({ mp4, webm }))
+  }, [p.open, width, height])
+  // 選んでいる形式が作れなければ、もう一方にする
+  const container: VideoContainer = support && !support[pr.container] && support[pr.container === 'mp4' ? 'webm' : 'mp4'] ? (pr.container === 'mp4' ? 'webm' : 'mp4') : pr.container
+  const ok = !!support?.[container]
+
+  const pickImage = async (f: File) => {
+    const bitmap = await createImageBitmap(f)
+    setImage((old) => (old?.bitmap.close(), { bitmap, name: f.name }))
+  }
+  const run = (win?: Window | null) => p.onExport({ ...s, image: image?.bitmap ?? null, container }, win)
+  const canRun = !p.busy && ok && !!s.fileName.trim()
+
+  return (
+    <WindowDialog
+      open={p.open}
+      onClose={p.busy ? undefined : p.onClose}
+      title={t('video.title')}
+      name="exportVideo"
+      width={444}
+      height={680}
+      dialogProps={{ fullWidth: true, maxWidth: 'xs' }}
+      onKeyDown={(e) => enterToSubmit(() => run(e.currentTarget.ownerDocument.defaultView), canRun)(e)}
+    >
+      <DialogContent>
+        <Stack spacing={2.5} sx={{ pt: 1 }}>
+          <ToggleButtonGroup exclusive fullWidth size="small" value={container} onChange={(_, v: VideoContainer | null) => v && setPr({ container: v })}>
+            <ToggleButton value="mp4" disabled={!support?.mp4}>
+              MP4
+            </ToggleButton>
+            <ToggleButton value="webm" disabled={!support?.webm}>
+              WebM
+            </ToggleButton>
+          </ToggleButtonGroup>
+          {support && !ok && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: '4px !important' }}>
+              {t('video.unsupported')}
+            </Typography>
+          )}
+          <Choice
+            label={t('video.size')}
+            value={pr.size}
+            onChange={(size) => setPr({ size })}
+            options={[
+              ['1280x720', '1280×720'],
+              ['1920x1080', '1920×1080'],
+              ['1080x1920', t('video.sizePortrait')],
+              ['1080x1080', t('video.sizeSquare')],
+            ]}
+          />
+          <Stack direction="row" spacing={1}>
+            <Choice
+              label={t('video.style')}
+              value={pr.style}
+              onChange={(style) => setPr({ style })}
+              options={[
+                ['overview', t('video.styleOverview')],
+                ['scroll', t('video.styleScroll')],
+                ['bars', t('video.styleBars')],
+              ]}
+            />
+            <Choice
+              label={t('video.position')}
+              value={pr.position}
+              onChange={(position) => setPr({ position })}
+              options={[
+                ['bottom', t('video.posBottom')],
+                ['center', t('video.posCenter')],
+              ]}
+            />
+          </Stack>
+          <Stack direction="row" spacing={1}>
+            <ColorField label={t('video.bg')} value={pr.bg} onChange={(bg) => setPr({ bg })} />
+            <ColorField label={t('video.wave')} value={pr.wave} onChange={(wave) => setPr({ wave })} />
+            <ColorField label={t('video.played')} value={pr.played} onChange={(played) => setPr({ played })} />
+          </Stack>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <input
+              ref={input}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void pickImage(f)
+                e.target.value = ''
+              }}
+            />
+            <TextField size="small" fullWidth label={t('video.bgImage')} value={image?.name ?? t('video.bgImageNone')} slotProps={{ input: { readOnly: true } }} />
+            {image ? (
+              <Button variant="outlined" onClick={() => setImage((old) => (old?.bitmap.close(), null))} sx={{ flexShrink: 0 }}>
+                {t('video.bgImageClear')}
+              </Button>
+            ) : (
+              <Button variant="outlined" onClick={() => input.current?.click()} sx={{ flexShrink: 0 }}>
+                {t('export.folderBrowse')}
+              </Button>
+            )}
+          </Stack>
+          {image && (
+            <Choice
+              label={t('video.fit')}
+              value={pr.fit}
+              onChange={(fit) => setPr({ fit })}
+              options={[
+                ['cover', t('video.fitCover')],
+                ['contain', t('video.fitContain')],
+              ]}
+            />
+          )}
+          {p.trackCount > 1 && (
+            <Choice
+              label={t('export.target')}
+              value={s.mix ? 'mix' : 'active'}
+              onChange={(v) => setS({ ...s, mix: v === 'mix' })}
+              options={[
+                ['mix', t('export.targetMix')],
+                ['active', t('export.targetActive')],
+              ]}
+            />
+          )}
+          <Choice
+            label={t('export.range')}
+            value={s.selectionOnly ? 'selection' : 'whole'}
+            onChange={(v) => setS({ ...s, selectionOnly: v === 'selection' })}
+            options={[
+              ['whole', t('common.whole')],
+              ['selection', t('common.selection')],
+            ]}
+            disabled={!p.hasSelection}
+          />
+          {p.folder && (
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <TextField size="small" fullWidth label={t('export.folderLabel')} value={p.folder.name ?? t('export.folderUnset')} slotProps={{ input: { readOnly: true } }} />
+              <Button variant="outlined" disabled={p.busy} onClick={(e) => p.folder?.choose(e.currentTarget.ownerDocument.defaultView)} sx={{ flexShrink: 0 }}>
+                {t('export.folderBrowse')}
+              </Button>
+            </Stack>
+          )}
+          <TextField
+            size="small"
+            label={t('export.fileName')}
+            value={s.fileName}
+            onChange={(e) => setS({ ...s, fileName: e.target.value })}
+            slotProps={{ input: { endAdornment: <Typography color="text.secondary">{VIDEO_EXT[container]}</Typography> } }}
+          />
+          <FormControlLabel
+            sx={{ m: 0 }}
+            control={<Checkbox size="small" checked={pr.title} onChange={(e) => setPr({ title: e.target.checked })} />}
+            label={<Typography sx={{ fontSize: 13 }}>{t('video.showTitle')}</Typography>}
+          />
+          {p.busy && <LinearProgress variant="determinate" value={p.progress * 100} />}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={p.onClose} disabled={p.busy}>
+          {t('common.cancel')}
+        </Button>
+        <Button disabled={!canRun} onClick={(e) => run(e.currentTarget.ownerDocument.defaultView)}>
+          {t('export.run')}
+        </Button>
+      </DialogActions>
+    </WindowDialog>
+  )
+}

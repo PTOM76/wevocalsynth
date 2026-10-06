@@ -41,6 +41,7 @@ import { flattenPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
 import ShortcutsDialog from './components/ShortcutsDialog'
 import ExportDialog from './components/ExportDialog'
+import VideoExportDialog from './components/VideoExportDialog'
 import AboutDialog from './components/AboutDialog'
 import HistoryDialog from './components/HistoryDialog'
 import { useSettings } from './settings/settings'
@@ -169,6 +170,7 @@ export default function App() {
     save: () => void ed.saveProjectFile(),
     saveAs: () => void ed.saveProjectFile(true),
     openExport: () => ed.openExport(),
+    openVideoExport: () => void ed.video.openDialog(),
     undo: ed.history.undo,
     redo: ed.history.redo,
     // 切り取り・コピー・貼り付けは、フォーカスしている帯（波形なら音声、ピッチなら曲線）に効く
@@ -340,8 +342,8 @@ export default function App() {
   const exportToFolder = canSaveToFolder()
   const [exportFolder, setExportFolder] = useState<string | null>(null)
   useEffect(() => {
-    if (exportToFolder && ed.exportOpen) void savedFolderName('export').then(setExportFolder)
-  }, [exportToFolder, ed.exportOpen])
+    if (exportToFolder && (ed.exportOpen || ed.video.open)) void savedFolderName('export').then(setExportFolder)
+  }, [exportToFolder, ed.exportOpen, ed.video.open])
   const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
 
   const tempoField = (fontSize?: number) => (
@@ -748,6 +750,21 @@ export default function App() {
           activeOnly={ed.exportActiveOnly}
           finish={finishOpts}
           onFinishChange={(f) => updateSettings({ exportNormalize: f.normalize, exportFadeMs: f.fadeMs })}
+          folder={exportToFolder ? { name: exportFolder, choose: (win) => void chooseSaveFolder('export', win ?? window).then((n) => n && setExportFolder(n), folderFailed) } : undefined}
+        />
+      )}
+      {edited && (
+        <VideoExportDialog
+          open={ed.video.open}
+          onClose={() => ed.video.setOpen(false)}
+          baseName={ed.exportName}
+          hasSelection={!!selection}
+          trackCount={ed.tracks.tracks.length}
+          busy={busy}
+          progress={ed.progress}
+          prefs={settings.exportVideo}
+          onPrefsChange={(exportVideo) => updateSettings({ exportVideo })}
+          onExport={(s, win) => void ed.video.exportVideo(s, win)}
           folder={exportToFolder ? { name: exportFolder, choose: (win) => void chooseSaveFolder('export', win ?? window).then((n) => n && setExportFolder(n), folderFailed) } : undefined}
         />
       )}

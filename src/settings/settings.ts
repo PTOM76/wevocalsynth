@@ -17,6 +17,7 @@ export type CtrlSAction = 'project' | 'export'
 
 import type { WheelZoom } from 'wevocal-lib/react'
 import { app } from '../appConfig'
+import { DEFAULT_VIDEO_PREFS, type VideoExportPrefs } from '../components/videoPrefs'
 export type { WheelZoom }
 
 /** ピッチ解析で声とみなす判定の厳しさ。ゆるいほど、かすれた声も拾うが、雑音も拾いやすい */
@@ -147,6 +148,8 @@ export interface Settings {
   /** 書き出し（フォルダーへの保存、外へのドラッグも）の仕上げ: ノーマライズと、両端のフェードの長さ（ms、0 でなし） */
   exportNormalize: boolean
   exportFadeMs: number
+  /** 動画の書き出しで前に選んだもの（components/VideoExportDialog.tsx） */
+  exportVideo: VideoExportPrefs
   /** 加工のプリセット（components/PresetMenu.tsx） */
   presets: Preset[]
   /** 「平らにする」の強さ（0〜1。1 未満なら元の揺れを少し残す） */
@@ -222,6 +225,7 @@ export const DEFAULT_SETTINGS: Settings = {
   keymap: {},
   exportNormalize: false,
   exportFadeMs: 0,
+  exportVideo: DEFAULT_VIDEO_PREFS,
   presets: [],
   flattenStrength: 1,
   mobileUi: 'new',

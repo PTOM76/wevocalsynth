@@ -28,7 +28,7 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 - clone するときは `--recursive` を付ける（付け忘れたら `git submodule update --init`）
 
 ## 追加機能の仕組み
-ボーカル抽出は「追加機能」として、使いたい人だけが導入する。普段の起動を重くしないため、かつ導入した人はオフラインでも使用できるようにするため。仕組みは汎用にし、ボーカル抽出をその第1号とする（[src/addons/](../src/addons/)）。第2号はスペクトログラムの「解析」（`analyzer`。submodule の analyzer/ をビルドしたもの。`vite.addons.analyzer.config.ts`、[src/audio/spectrogram.ts](../src/audio/spectrogram.ts)）。
+ボーカル抽出は「追加機能」として、使いたい人だけが導入する。普段の起動を重くしないため、かつ導入した人はオフラインでも使用できるようにするため。仕組みは汎用にし、ボーカル抽出をその第1号とする（[src/addons/](../src/addons/)）。第2号はスペクトログラムの「解析」（`analyzer`。submodule の analyzer/ をビルドしたもの。`vite.addons.analyzer.config.ts`、[src/audio/spectrogram.ts](../src/audio/spectrogram.ts)）。第3号は動画の書き出しの「変換」（`converter`。submodule の converter/ の `src/video/` をビルドしたもの。`vite.addons.converter.config.ts`、[src/audio/video.ts](../src/audio/video.ts)。「ファイル」→「動画として書き出す…」で、ダイアログを開く前に導入を確かめる）。
 
 ### 導入の流れ
 ```text

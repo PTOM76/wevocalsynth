@@ -79,6 +79,27 @@ export function useOutput(d: Deps) {
   }
 
   /**
+   * 書き出す音声を作る。選んでいるトラックか、全トラックのミックス（`mix`）。
+   * 選択範囲のみなら、どのトラックも同じ時間を切り出す（複数の範囲はつなげる）。仕上げ（ノーマライズ、フェード）も掛ける
+   */
+  const renderClip = async (edited: Clip, s: { selectionOnly: boolean; mix: boolean }) => {
+    // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
+    const render = (c: Clip, id: string) => {
+      const part = s.selectionOnly && d.selections.length ? sliceRanges(c, d.selections) : c
+      const f = tracks.faderOf(id)
+      return applyFader(part, f.db, f.pan, f.invert)
+    }
+    // ミックス: 再生と同じく、ミュート・ソロに従って鳴るトラックだけを混ぜる（サンプルレートは選んでいるトラックに合わせる）
+    const audible = history.tracks.filter((tr) => isAudible(tr.id, tracks.mix, history.tracks))
+    let clip = render(edited, history.activeId)
+    if (s.mix && history.tracks.length > 1 && audible.length) {
+      const parts = audible.map((tr) => render(tr.clip, tr.id))
+      clip = await mixClips(parts, edited.sampleRate, Math.max(...parts.map((c) => c.channels.length)))
+    }
+    return finishClip(clip, d.finish)
+  }
+
+  /**
    * 書き出しダイアログの設定で音声ファイルを作る。選んでいるトラックか、全トラックのミックス。
    * 選択範囲のみなら、どのトラックも同じ時間を切り出す（複数の範囲はつなげる）
    */
@@ -97,20 +118,7 @@ export function useOutput(d: Deps) {
     const target = folder ?? (await pickSaveTarget(fileName, 'audio', { description: t('file.audioType'), mime: EXPORT_MIME[s.format], ext }, win ?? window))
     if (!target) return
     await d.task.run(t('task.exporting'), async (signal) => {
-      // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
-      const render = (c: Clip, id: string) => {
-        const part = s.selectionOnly && d.selections.length ? sliceRanges(c, d.selections) : c
-        const f = tracks.faderOf(id)
-        return applyFader(part, f.db, f.pan, f.invert)
-      }
-      // ミックス: 再生と同じく、ミュート・ソロに従って鳴るトラックだけを混ぜる（サンプルレートは選んでいるトラックに合わせる）
-      const audible = history.tracks.filter((tr) => isAudible(tr.id, tracks.mix, history.tracks))
-      let clip = render(edited, history.activeId)
-      if (s.mix && history.tracks.length > 1 && audible.length) {
-        const parts = audible.map((tr) => render(tr.clip, tr.id))
-        clip = await mixClips(parts, edited.sampleRate, Math.max(...parts.map((c) => c.channels.length)))
-      }
-      clip = finishClip(clip, d.finish)
+      const clip = await renderClip(edited, s)
       const blob = await exportAudio(clip, { ...s, range: null, sampleRate: s.sampleRate || clip.sampleRate }, d.task.setProgress)
       // MP3 などの Worker は止められないので、中断されていたら結果を捨てる
       if (signal.aborted) return
@@ -121,5 +129,5 @@ export function useOutput(d: Deps) {
     }, 'export')
   }
 
-  return { baseName, exportName, saveProjectFile, exportFile }
+  return { baseName, exportName, saveProjectFile, exportFile, renderClip }
 }

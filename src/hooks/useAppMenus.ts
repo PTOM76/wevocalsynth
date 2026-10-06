@@ -23,6 +23,8 @@ interface Actions {
   save: () => void
   saveAs: () => void
   openExport: () => void
+  /** 動画として書き出す（追加機能「変換」） */
+  openVideoExport: () => void
   /** 選択範囲を書き出し先のフォルダーへ保存する（使えなければ undefined） */
   saveToFolder?: () => void
   /** 選択範囲が 2 つ以上のとき、別々のファイルにして保存する */
@@ -262,6 +264,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.saveProjectAs'), disabled: noClip, onClick: a.saveAs },
         { divider: true },
         { label: t('menu.export'), shortcut: key('exportAudio'), disabled: noClip, onClick: a.openExport },
+        { label: t('menu.exportVideo'), disabled: noClip, onClick: a.openVideoExport },
         { divider: true },
         { label: t('menu.settings'), onClick: a.showSettings },
       ],
