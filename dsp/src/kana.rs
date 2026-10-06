@@ -218,9 +218,10 @@ fn mixed_formants(v: Vowel, w: f32) -> [f32; 3] {
     [0, 1, 2].map(|i| m[i].powf(1.0 - w) * f[i].powf(w))
 }
 
-/// 測った F1〜F3（母音 `v`）が、男声と女声の表のどちらに近いか（0 が男声、1 が女声。対数の距離の比）
+/// 測った F1〜F3（母音 `v`）が、男声と女声の表のどちらに近いか（0 が男声、1 が女声。対数の距離の比）。
+/// F1 は、F0 が高めの声では倍音に引っ張られて低く出やすいので、F2 と F3 だけで見る
 fn female_weight(measured: &[f32], v: Vowel) -> f32 {
-    let dist = |t: [f32; 3]| (0..3).map(|i| (measured[i] / t[i]).ln().abs()).sum::<f32>();
+    let dist = |t: [f32; 3]| (1..3).map(|i| (measured[i] / t[i]).ln().abs()).sum::<f32>();
     let (dm, df) = (dist(standard_formants(v, false)), dist(standard_formants(v, true)));
     if dm + df > 0.0 { dm / (dm + df) } else { 0.5 }
 }
@@ -385,6 +386,16 @@ fn remove_tilt(db: &[f32]) -> Vec<f32> {
     db.iter().enumerate().map(|(i, &y)| y - (my + slope * (i as f32 - mx))).collect()
 }
 
+/// 声道の長さの倍率の上限と下限。測り違えても、極端に低い（重たい、太い）声や高い声にしない
+const SCALE_MIN: f32 = 0.85;
+const SCALE_MAX: f32 = 1.25;
+
+/// 声道の長さの倍率（測った値 ÷ 表の値）。F1 は倍音に引っ張られて低く出やすく、倍率が下がって重たい声になるので、
+/// F2 と F3 の比の幾何平均を使い、SCALE_MIN〜SCALE_MAX に収める
+fn vocal_scale(measured: &[f32], table: &[f32; 3]) -> f32 {
+    ((measured[1] / table[1]) * (measured[2] / table[2])).sqrt().clamp(SCALE_MIN, SCALE_MAX)
+}
+
 /// 素材の母音 `from` を、母音 `to` に作り替える（`strength` は響きを動かす強さ、0〜1）（声帯の音はそのまま、響きの山の位置だけを動かす）。
 /// 素材のフレームごとの LPC の極のうち F1〜F3 にあたるものを、目標の F1〜F3 へ動かし（そのフレームのずれの比と、極の鋭さは保つ）、
 /// 元の包絡との比（±MORPH_MAX_DB、前後のフレームでならす）を掛ける。
@@ -423,7 +434,7 @@ pub fn morph_vowel(orig: &[f32], sample_rate: f32, from: Vowel, to: Vowel, stren
     // 男声と女声の表を、元にした母音の測った値に近いほうへ混ぜ、残りの個人差を倍率で掛ける
     let w = female_weight(&src, from);
     let std_from = mixed_formants(from, w);
-    let scale = (0..3).map(|i| src[i] / std_from[i]).sum::<f32>() / 3.0;
+    let scale = vocal_scale(&src, &std_from);
     let tgt: Vec<f32> = mixed_formants(to, w).iter().map(|f| f * scale).collect();
     let nyq = sample_rate / 2.0;
     let bin_hz = nyq / (bins - 1) as f32;
@@ -652,6 +663,16 @@ mod tests {
         let edge = 256;
         assert!(peak(&y[..edge]) <= body * 1.5, "head {} vs body {body}", peak(&y[..edge]));
         assert!(peak(&y[y.len() - edge..]) <= body * 1.5, "tail {} vs body {body}", peak(&y[y.len() - edge..]));
+    }
+
+    /// F1 だけが低く測られても（倍音に引っ張られたとき）、倍率が下がらない（重たい声にならない）こと
+    #[test]
+    fn low_f1_does_not_make_heavy_voice() {
+        let table = mixed_formants(Vowel::A, 0.5);
+        let honest = vocal_scale(&[table[0], table[1], table[2]], &table);
+        let low_f1 = vocal_scale(&[table[0] * 0.5, table[1], table[2]], &table);
+        assert!((honest - 1.0).abs() < 1e-3 && (low_f1 - 1.0).abs() < 1e-3, "{honest} {low_f1}");
+        assert!(vocal_scale(&[100.0, 500.0, 1000.0], &table) >= SCALE_MIN);
     }
 
     #[test]
