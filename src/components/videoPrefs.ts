@@ -1,4 +1,4 @@
-import type { VideoContainer, WaveStyle } from '../audio/video'
+import type { VideoContainer, VideoLook, WaveStyle } from '../audio/video'
 
 /** 動画の書き出しで選んだもの（設定に覚える。背景の画像は覚えない） */
 export interface VideoExportPrefs {
@@ -18,7 +18,7 @@ export interface VideoExportPrefs {
   /** 音量波形をグラデーションにする */
   gradient: boolean
   /** 音量波形の棒の数（細かさ） */
-  bars: 32 | 64 | 128
+  bars: 32 | 64 | 128 | 256 | 512
 }
 
 export const DEFAULT_VIDEO_PREFS: VideoExportPrefs = {
@@ -33,4 +33,17 @@ export const DEFAULT_VIDEO_PREFS: VideoExportPrefs = {
   title: false,
   gradient: false,
   bars: 64,
+}
+
+/** 選んだものから動画の見た目を作る（書き出しとプレビューで同じものを使う）。`title` は空なら曲名を入れない */
+export function videoLook(pr: VideoExportPrefs, image: ImageBitmap | null, title: string): VideoLook {
+  const [width, height] = pr.size.split('x').map(Number)
+  return {
+    width,
+    height,
+    background: { color: pr.bg, image, fit: pr.fit },
+    wave: { style: pr.style, color: pr.wave, playedColor: pr.played, position: pr.position, height: 0.25, gradient: pr.gradient, bars: pr.bars ?? 64 },
+    title: pr.title ? title : '',
+    titleColor: '#ffffff',
+  }
 }

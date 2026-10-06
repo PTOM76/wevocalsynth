@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Box, Button, Checkbox, DialogActions, DialogContent, FormControlLabel, LinearProgress, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import { enterToSubmit, WindowDialog } from 'pevenmui'
-import { canEncodeVideo, VIDEO_EXT, type VideoContainer } from '../audio/video'
+import { canEncodeVideo, renderFrame, VIDEO_EXT, type VideoContainer } from '../audio/video'
+import type { Clip } from '../audio/types'
 import { useT } from '../i18n/i18n'
 import { Choice } from './ExportDialog'
-import type { VideoExportPrefs } from './videoPrefs'
+import { videoLook, type VideoExportPrefs } from './videoPrefs'
 
 /** ダイアログで選んだもの（覚えるもの以外） */
 export interface VideoExportSettings {
@@ -25,6 +26,8 @@ interface Props {
   trackCount: number
   busy: boolean
   progress: number
+  /** プレビューに使う音声（選んでいるトラック） */
+  previewClip: Clip
   prefs: VideoExportPrefs
   onPrefsChange: (p: VideoExportPrefs) => void
   onExport: (s: VideoExportSettings, win?: Window | null) => void
@@ -52,6 +55,28 @@ export default function VideoExportDialog(p: Props) {
   const pr = p.prefs
   const setPr = (patch: Partial<VideoExportPrefs>) => p.onPrefsChange({ ...pr, ...patch })
   const [width, height] = pr.size.split('x').map(Number)
+  const [preview, setPreview] = useState<string | null>(null)
+
+  // 選んだものが変わるたびに、曲の真ん中のフレームをプレビューとして描き直す（続けて変えたときは最後の 1 回だけ）
+  useEffect(() => {
+    if (!p.open) return
+    let url: string | null = null
+    let cancelled = false
+    const timer = setTimeout(() => {
+      const clip = p.previewClip
+      const mid = clip.channels[0].length / clip.sampleRate / 2
+      void renderFrame(clip, videoLook(pr, image?.bitmap ?? null, s.fileName.trim()), mid).then((blob) => {
+        if (cancelled) return
+        url = URL.createObjectURL(blob)
+        setPreview(url)
+      })
+    }, 150)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [p.open, p.previewClip, pr, image, s.fileName])
 
   // 開くたびにファイル名と範囲を今の状態に合わせる
   useEffect(() => {
@@ -81,12 +106,16 @@ export default function VideoExportDialog(p: Props) {
       title={t('video.title')}
       name="exportVideo"
       width={444}
-      height={680}
+      height={860}
       dialogProps={{ fullWidth: true, maxWidth: 'xs' }}
       onKeyDown={(e) => enterToSubmit(() => run(e.currentTarget.ownerDocument.defaultView), canRun)(e)}
     >
       <DialogContent>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
+          {/* プレビュー（曲の真ん中のフレーム。縦長の動画は高さを抑える） */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', bgcolor: 'action.hover', borderRadius: 1, overflow: 'hidden', aspectRatio: '16 / 9' }}>
+            {preview && <Box component="img" src={preview} alt={t('video.preview')} sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />}
+          </Box>
           <ToggleButtonGroup exclusive fullWidth size="small" value={container} onChange={(_, v: VideoContainer | null) => v && setPr({ container: v })}>
             <ToggleButton value="mp4" disabled={!support?.mp4}>
               MP4
@@ -117,6 +146,7 @@ export default function VideoExportDialog(p: Props) {
               value={pr.style}
               onChange={(style) => setPr({ style })}
               options={[
+                ['none', t('video.styleNone')],
                 ['scope', t('video.styleScope')],
                 ['overview', t('video.styleOverview')],
                 ['scroll', t('video.styleScroll')],
@@ -217,6 +247,8 @@ export default function VideoExportDialog(p: Props) {
                 [32, t('video.bars32')],
                 [64, t('video.bars64')],
                 [128, t('video.bars128')],
+                [256, t('video.bars256')],
+                [512, t('video.bars512')],
               ]}
             />
           )}

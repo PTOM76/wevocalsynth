@@ -16,6 +16,11 @@ export async function canEncodeVideo(container: Video.VideoContainer, width: num
   return (await load()).canEncodeVideo(container, width, height)
 }
 
+/** 動画の 1 フレームを画像にする（プレビュー） */
+export async function renderFrame(clip: Clip, look: Video.VideoLook, time: number) {
+  return (await load()).renderFrame(clip, look, time)
+}
+
 /** 音声に簡易な波形を付けて動画にする */
 export async function renderVideo(clip: Clip, options: Video.VideoOptions) {
   return (await load()).renderVideo(clip, options)

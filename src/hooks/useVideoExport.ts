@@ -4,7 +4,7 @@ import { renderVideo, VIDEO_EXT, VIDEO_MIME } from '../audio/video'
 import { installedManifest, onAddonsChanged } from '../addons/addons'
 import type { Clip } from '../audio/types'
 import type { VideoExportSettings } from '../components/VideoExportDialog'
-import type { VideoExportPrefs } from '../components/videoPrefs'
+import { videoLook, type VideoExportPrefs } from '../components/videoPrefs'
 import type { useTask } from './useTask'
 import { t } from '../i18n/i18n'
 
@@ -48,20 +48,13 @@ export function useVideoExport(d: Deps) {
     if (folder?.exists && !(win ?? window).confirm(t('export.overwrite', { name: folder.name }))) return
     const target = folder ?? (await pickSaveTarget(fileName, 'video', { description: t('video.fileType'), mime: VIDEO_MIME[s.container], ext }, win ?? window))
     if (!target) return
-    const pr = d.prefs
-    const [width, height] = pr.size.split('x').map(Number)
     await d.task.run(t('task.exporting'), async (signal) => {
       const clip = await d.renderClip(edited, s)
       const blob = await renderVideo(clip, {
+        ...videoLook(d.prefs, s.image, s.fileName.trim()),
         container: s.container,
-        width,
-        height,
         fps: 30,
         kbps: 192,
-        background: { color: pr.bg, image: s.image, fit: pr.fit },
-        wave: { style: pr.style, color: pr.wave, playedColor: pr.played, position: pr.position, height: 0.25, gradient: pr.gradient, bars: pr.bars ?? 64 },
-        title: pr.title ? s.fileName.trim() : '',
-        titleColor: '#ffffff',
         onProgress: d.task.setProgress,
         signal,
       })

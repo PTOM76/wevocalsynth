@@ -763,6 +763,7 @@ export default function App() {
           trackCount={ed.tracks.tracks.length}
           busy={busy}
           progress={ed.progress}
+          previewClip={edited}
           prefs={settings.exportVideo}
           onPrefsChange={(exportVideo) => updateSettings({ exportVideo })}
           onExport={(s, win) => void ed.video.exportVideo(s, win)}
