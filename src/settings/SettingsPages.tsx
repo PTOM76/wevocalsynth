@@ -363,6 +363,11 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         />
         <Check checked={draft.showVoiceSplit} onChange={(v) => set({ showVoiceSplit: v })} label={t('settings.showVoiceSplit')} help={t('settings.showVoiceSplitHelp')} />
         <Check checked={draft.showKanaVoice} onChange={(v) => set({ showKanaVoice: v })} label={t('settings.showKanaVoice')} help={t('settings.showKanaVoiceHelp')} />
+        {draft.showKanaVoice && (
+          <Row label={t('settings.kanaStrength')} help={t('settings.kanaStrengthHelp')}>
+            <Choice<string> value={String(draft.kanaStrength)} onChange={(v) => set({ kanaStrength: Number(v) })} options={['50', '70', '85', '100'].map((p): [string, string] => [p, `${p}%`])} />
+          </Row>
+        )}
         <Check checked={draft.parallelProcess} onChange={(v) => set({ parallelProcess: v })} label={t('settings.parallelProcess')} help={t('settings.parallelProcessHelp')} />
       </Group>
     ),

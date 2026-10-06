@@ -790,5 +790,7 @@
   "kana.from.i": "「い」の声から",
   "kana.from.u": "「う」の声から",
   "kana.from.e": "「え」の声から",
-  "kana.from.o": "「お」の声から"
+  "kana.from.o": "「お」の声から",
+  "settings.kanaStrength": "響きを変える強さ",
+  "settings.kanaStrengthHelp": "弱めると、母音らしさは減るが、元の声質が残る"
 }

@@ -790,5 +790,7 @@
   "kana.from.i": "用「い」的声音",
   "kana.from.u": "用「う」的声音",
   "kana.from.e": "用「え」的声音",
-  "kana.from.o": "用「お」的声音"
+  "kana.from.o": "用「お」的声音",
+  "settings.kanaStrength": "改变共振的强度",
+  "settings.kanaStrengthHelp": "减弱后元音感会降低，但能保留原本的音色"
 }

@@ -385,11 +385,11 @@ fn remove_tilt(db: &[f32]) -> Vec<f32> {
     db.iter().enumerate().map(|(i, &y)| y - (my + slope * (i as f32 - mx))).collect()
 }
 
-/// 素材の母音 `from` を、母音 `to` に作り替える（声帯の音はそのまま、響きの山の位置だけを動かす）。
+/// 素材の母音 `from` を、母音 `to` に作り替える（`strength` は響きを動かす強さ、0〜1）（声帯の音はそのまま、響きの山の位置だけを動かす）。
 /// 素材のフレームごとの LPC の極のうち F1〜F3 にあたるものを、目標の F1〜F3 へ動かし（そのフレームのずれの比と、極の鋭さは保つ）、
 /// 元の包絡との比（±MORPH_MAX_DB、前後のフレームでならす）を掛ける。
 /// 目標の F1〜F3 は、男声と女声の表を素材の声に合わせて混ぜた値に、残りの個人差の倍率を掛けたもの
-pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel) -> Vec<f32> {
+pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel, strength: f32) -> Vec<f32> {
     let mut st = wevocal_lib::stft::Stft::new(MORPH_FFT, MORPH_HOP);
     let bins = st.bins();
     let frames = x.len() / MORPH_HOP + 1;
@@ -436,7 +436,8 @@ pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel) -> Vec<f
             let (a, env) = e.as_ref()?;
             let target = lpc::envelope(&shift_formants(a, env_rate, &src, &tgt)?, env.len());
             let db: Vec<f32> = env.iter().zip(&target).map(|(e, t)| 10.0 * (t / e.max(1e-12)).log10()).collect();
-            Some(remove_tilt(&db).into_iter().map(|g| g.clamp(-MORPH_MAX_DB, MORPH_MAX_DB)).collect())
+            // 強さ（0〜1）を掛ける。弱めると母音らしさと引き換えに元の声質が残る
+            Some(remove_tilt(&db).into_iter().map(|g| g.clamp(-MORPH_MAX_DB, MORPH_MAX_DB) * strength.clamp(0.0, 1.0)).collect())
         })
         .collect();
     // 前後のフレームと平均して、フレームごとの揺れをならす（F1〜F3 が見つからないフレームは数に入れない）
@@ -482,12 +483,12 @@ pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel) -> Vec<f
     out
 }
 
-/// 試し: 素材の母音（`from`）から、あいうえおの 5 つを作って並べる（間に 0.2 秒の無音）。声帯の音は素材のまま、響きだけを動かす
-pub fn morph_demo(x: &[f32], sample_rate: f32, from: Vowel) -> Vec<f32> {
+/// 試し: 素材の母音（`from`）から、あいうえおの 5 つを作って並べる（間に 0.2 秒の無音）。声帯の音は素材のまま、響きだけを `strength`（0〜1）の強さで動かす
+pub fn morph_demo(x: &[f32], sample_rate: f32, from: Vowel, strength: f32) -> Vec<f32> {
     let gap = vec![0.0f32; (0.2 * sample_rate) as usize];
     let mut out = Vec::new();
     for to in VOWELS {
-        out.extend(if to == from { x.to_vec() } else { morph_vowel(x, sample_rate, from, to) });
+        out.extend(if to == from { x.to_vec() } else { morph_vowel(x, sample_rate, from, to, strength) });
         out.extend_from_slice(&gap);
     }
     out
@@ -558,7 +559,7 @@ mod tests {
     fn morphs_a_to_i() {
         let sr = 44100.0;
         let x = vowel(sr, 140.0, 0.8, &[(800.0, 80.0), (1200.0, 90.0), (2500.0, 120.0)]);
-        let y = morph_vowel(&x, sr, Vowel::A, Vowel::I);
+        let y = morph_vowel(&x, sr, Vowel::A, Vowel::I, 1.0);
         let got = formants_of(&y, sr);
         assert!(got.len() >= 2, "got {got:?}");
         // F1 は下がり（800 → 300 付近）、F2 は上がる（1200 → 2300 付近）

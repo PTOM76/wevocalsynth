@@ -790,5 +790,7 @@
   "kana.from.i": "From an \"i\" voice",
   "kana.from.u": "From a \"u\" voice",
   "kana.from.e": "From an \"e\" voice",
-  "kana.from.o": "From an \"o\" voice"
+  "kana.from.o": "From an \"o\" voice",
+  "settings.kanaStrength": "Resonance change strength",
+  "settings.kanaStrengthHelp": "Lower values keep more of the original voice quality at the cost of vowel clarity"
 }

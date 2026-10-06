@@ -138,6 +138,8 @@ export interface Settings {
   showVoiceSplit: boolean
   /** 声の素材から一音を作る（試験的。memo/kana-voice.md）。今は母音の作り直しの試しだけ */
   showKanaVoice: boolean
+  /** 声から五十音を作るとき、響きを動かす強さ（%）。弱めると母音らしさと引き換えに元の声質が残る */
+  kanaStrength: number
   /** 長い音の加工を、区間に分けて複数の Worker で並列に行う（試験的。dsp/src/segment.rs） */
   parallelProcess: boolean
   /** キーボードショートカットのうち、既定から変えたもの（settings/keymap.ts） */
@@ -215,6 +217,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showMaterialButton: false,
   showVoiceSplit: false,
   showKanaVoice: false,
+  kanaStrength: 100,
   parallelProcess: false,
   keymap: {},
   exportNormalize: false,

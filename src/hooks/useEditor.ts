@@ -462,7 +462,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
       const active = history.tracks.find((tr) => tr.id === history.activeId)
       if (!edited || !active) return
       const sample = selections.length ? sliceRanges(edited, selections.slice(0, 1)) : edited
-      const out = await kanaVowelDemo(sample.channels, sample.sampleRate, vowel)
+      const out = await kanaVowelDemo(sample.channels, sample.sampleRate, vowel, settings.kanaStrength / 100)
       if (signal.aborted) return
       if (!out) return setToast({ severity: 'error', message: t('kana.noVoice') })
       tracks.addClip({ sampleRate: sample.sampleRate, channels: [out] }, t('kana.demoTrack', { name: active.name }))
