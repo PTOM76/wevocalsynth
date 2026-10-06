@@ -171,6 +171,7 @@ export default function App() {
     saveAs: () => void ed.saveProjectFile(true),
     openExport: () => ed.openExport(),
     openVideoExport: () => void ed.video.openDialog(),
+    videoAvailable: ed.video.available,
     undo: ed.history.undo,
     redo: ed.history.redo,
     // 切り取り・コピー・貼り付けは、フォーカスしている帯（波形なら音声、ピッチなら曲線）に効く

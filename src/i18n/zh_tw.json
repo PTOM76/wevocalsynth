@@ -819,5 +819,6 @@
   "video.showTitle": "將檔案名稱作為標題顯示",
   "video.fileType": "影片檔案",
   "licenses.converter": "影片匯出（附加功能）",
-  "licenses.mediabunny": "影片匯出時將畫面與音訊合併為一個檔案（附加功能，未經修改使用）"
+  "licenses.mediabunny": "影片匯出時將畫面與音訊合併為一個檔案（附加功能，未經修改使用）",
+  "settings.groupAddonConverter": "轉換"
 }

@@ -819,5 +819,6 @@
   "video.showTitle": "ファイル名を曲名として入れる",
   "video.fileType": "動画ファイル",
   "licenses.converter": "動画の書き出し（追加機能）",
-  "licenses.mediabunny": "動画の書き出しで、映像と音声を 1 つのファイルにまとめる（追加機能。改変せずに使用しています）"
+  "licenses.mediabunny": "動画の書き出しで、映像と音声を 1 つのファイルにまとめる（追加機能。改変せずに使用しています）",
+  "settings.groupAddonConverter": "変換"
 }

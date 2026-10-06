@@ -819,5 +819,6 @@
   "video.showTitle": "Show file name as title",
   "video.fileType": "Video file",
   "licenses.converter": "Video export (add-on)",
-  "licenses.mediabunny": "Combines video and audio into one file for video export (add-on, used unmodified)"
+  "licenses.mediabunny": "Combines video and audio into one file for video export (add-on, used unmodified)",
+  "settings.groupAddonConverter": "Conversion"
 }

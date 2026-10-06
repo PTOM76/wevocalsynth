@@ -819,5 +819,6 @@
   "video.showTitle": "将文件名作为标题显示",
   "video.fileType": "视频文件",
   "licenses.converter": "视频导出（附加功能）",
-  "licenses.mediabunny": "视频导出时将画面和音频合并为一个文件（附加功能，未经修改使用）"
+  "licenses.mediabunny": "视频导出时将画面和音频合并为一个文件（附加功能，未经修改使用）",
+  "settings.groupAddonConverter": "转换"
 }

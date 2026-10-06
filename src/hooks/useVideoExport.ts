@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { folderFileTarget, pickSaveTarget } from 'pevenmui/web'
 import { renderVideo, VIDEO_EXT, VIDEO_MIME } from '../audio/video'
+import { installedManifest, onAddonsChanged } from '../addons/addons'
 import type { Clip } from '../audio/types'
 import type { VideoExportSettings } from '../components/VideoExportDialog'
 import type { VideoExportPrefs } from '../components/videoPrefs'
@@ -22,8 +23,15 @@ interface Deps {
 /** 動画の書き出し（追加機能「変換」。memo/video-export.md） */
 export function useVideoExport(d: Deps) {
   const [open, setOpen] = useState(false)
+  // 追加機能を導入しているときだけメニューに出す（導入と削除は設定の「追加機能」）
+  const [available, setAvailable] = useState(false)
+  useEffect(() => {
+    const check = () => void installedManifest('converter').then((m) => setAvailable(!!m))
+    check()
+    return onAddonsChanged(check)
+  }, [])
 
-  /** 導入を確かめてからダイアログを開く（やめたら開かない） */
+  /** 導入と版を確かめてからダイアログを開く（更新があれば案内する。やめたら開かない） */
   const openDialog = async () => {
     if (!d.present || !(await d.ensure('converter'))) return
     setOpen(true)
@@ -63,5 +71,5 @@ export function useVideoExport(d: Deps) {
     }, 'export')
   }
 
-  return { open, setOpen, openDialog, exportVideo }
+  return { open, setOpen, available, openDialog, exportVideo }
 }

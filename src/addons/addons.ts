@@ -141,10 +141,20 @@ export async function install(m: AddonManifest, onProgress: (p: number) => void,
     for (const req of await cache.keys()) {
       if (req.url.startsWith(base.href) && !keep.has(req.url)) await cache.delete(req)
     }
+    changed()
   } catch (e) {
     await uninstall(m.id)
     throw e
   }
+}
+
+// 導入、削除のたびに知らせる（メニューに出すかを決め直すため。設定を別の窓で開いていても同じ JS の中で動く）
+const listeners = new Set<() => void>()
+const changed = () => listeners.forEach((fn) => fn())
+/** 追加機能を導入、削除したときに `fn` を呼ぶ。戻り値で解除する */
+export function onAddonsChanged(fn: () => void) {
+  listeners.add(fn)
+  return () => void listeners.delete(fn)
 }
 
 /** 追加機能のファイルをすべて消す */
@@ -155,6 +165,7 @@ export async function uninstall(id: string) {
   for (const req of await cache.keys()) {
     if (req.url.startsWith(base)) await cache.delete(req)
   }
+  changed()
 }
 
 /**
@@ -187,6 +198,7 @@ export async function installedAddonsSize(): Promise<number> {
 /** 導入済みの追加機能をすべて消す（設定の「データ」） */
 export async function clearAddons() {
   if (addonsSupported()) await caches.delete(ADDON_CACHE)
+  changed()
 }
 
 /** 導入済みの追加機能を読み込む。モジュールの形は追加機能ごとに決める */

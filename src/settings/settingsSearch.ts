@@ -59,7 +59,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupVocal', 'settings.vocalModel', 'settings.vocalFresh', 'settings.vocalFreshHelp', 'settings.vocalGpu', 'settings.vocalGpuHelp', 'settings.vocalKeepHighBand', 'settings.vocalKeepHighBandHelp', 'settings.vocalMemory', 'settings.vocalMemoryHelp',
     'settings.groupAddons', 'settings.addonsMoved', 'settings.openAddons',
   ],
-  addons: ['settings.groupAddonVocal', 'settings.groupAddonAnalyzer', 'addon.modelStandard', 'addon.modelLight', 'addon.modelPrecise', 'addon.modelVocalHq', 'addon.modelInstHq', 'addon.modelLead', 'addon.analyzer'],
+  addons: ['settings.groupAddonVocal', 'settings.groupAddonAnalyzer', 'settings.groupAddonConverter', 'addon.modelStandard', 'addon.modelLight', 'addon.modelPrecise', 'addon.modelVocalHq', 'addon.modelInstHq', 'addon.modelLead', 'addon.analyzer', 'addon.converter'],
   data: [
     'settings.groupData', 'data.work', 'data.workHelp', 'data.cache', 'data.cacheHelp', 'data.addons',
     'data.settings', 'data.settingsHelp', 'data.all', 'data.persist', 'data.persistHelp',
