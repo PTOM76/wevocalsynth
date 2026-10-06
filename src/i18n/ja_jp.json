@@ -369,7 +369,7 @@
   "settings.showMaterialButton": "選択範囲の保存ボタンを表示する",
   "settings.showMaterialButtonHelp": "ステータスバーの選択範囲の右に「WAV」を表示する。クリックするとフォルダーへ保存し、ドラッグするとフォルダーへ書き出す",
   "settings.showVoiceSplitHelp": "「ツール」と右クリックの「ボーカル抽出」に、2 つの声（高い方と低い方、または大きい方と小さい方）に分ける項目を表示する。選択範囲があれば、その範囲だけを分ける。単純な和音向け",
-  "settings.parallelProcess": "加工を並列で行う",
+  "settings.parallelProcess": "GPUでの並列処理を有効する",
   "settings.parallelProcessHelp": "20 秒以上の音のピッチ変換を、10 秒ずつの区間に分けて、CPU の複数のコアで同時に行う。境目は波形の位相を合わせてつなぐ（区間ごとに最大 5ms ずれる）。ピッチカーブの編集とテンポに合わせた伸縮は対象外",
   "settings.showVoiceSplit": "「和音を分ける」を表示する",
   "settings.suspendWhenStopped": "停止中は音声処理を一時停止する",
