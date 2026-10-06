@@ -29,6 +29,7 @@ const PAGES = [
 	{ name: 'create', title: '音声の作成と MIDI', desc: '音声の作成、録音と、MIDI に並べる機能。', sections: ['音声の作成', '録音', 'MIDI に並べる'] },
 	{ name: 'tempo', title: 'テンポとマーカー', desc: 'テンポ（BPM）、拍の線、マーカーの使い方。', sections: ['テンポ（BPM）と拍の線', 'マーカー'] },
 	{ name: 'save', title: '保存と書き出し', desc: '操作履歴、保存、音声と動画の書き出し。', sections: ['操作履歴', '保存と書き出し'] },
+	{ name: 'experimental', title: '試験的機能', desc: '開発中の機能の使い方。', sections: ['試験的機能'] },
 	{ name: 'settings', title: '設定', desc: '設定画面とダイアログの操作。', sections: ['設定'] },
 	{ name: 'shortcuts', title: 'キーボード操作', desc: 'キーボードで使用できる操作の一覧。', sections: ['キーボード操作'] },
 	{ name: 'troubleshooting', title: '困ったとき', desc: 'うまく動かないときの対処と、アプリの情報、更新。', sections: ['困ったとき', 'このアプリについて', '新しいバージョン'] },
