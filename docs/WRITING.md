@@ -30,7 +30,7 @@
 - 新しいファイルを作ったら、[docs/README.md](README.md) の目次に追加する
 
 ## 使い方（MANUAL.md）と wiki
-- 使い方は [MANUAL.md](MANUAL.md) だけを書く。`docs/wiki/` のページ（`start.md` 以外）は `node scripts/docs-to-dokuwiki.mjs` が MANUAL.md から作るので、手で書き換えない
+- 使い方は [MANUAL.md](MANUAL.md) だけを書く。`docs/wiki/` のページ（`start.md` 以外）は `node scripts/docs-to-dokuwiki.mjs` が MANUAL.md、VERSION.md、TIPS.md から作るので、手で書き換えない
 - MANUAL.md に `##` の見出しを追加したら、スクリプトの `PAGES` にどのページに入れるかを追加する（追加しないとスクリプトが止まる）
 - wiki に `<details>`（折りたたみ）は使わないため、wiki のページでは見出しに置き換える
 

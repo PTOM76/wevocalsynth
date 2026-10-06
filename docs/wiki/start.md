@@ -6,7 +6,6 @@ WeVocalSynth は、Web ブラウザで音声のピッチ（音の高さ）と長
 - ソースコード: https://github.com/PTOM76/wevocalsynth
 
 <img src="../images/readme-pc.png" alt="パソコンの画面" width="600">
-<img src="../images/readme-mobile.png" alt="スマホの画面" width="200">
 
 ## はじめに
 1. [アプリ](https://wevocalsynth.pitan76.net/)を開き、音声ファイルを画面にドラッグ＆ドロップする（または「ファイル」→「開く…」）
@@ -46,5 +45,6 @@ WeVocalSynth は、Web ブラウザで音声のピッチ（音の高さ）と長
 | [困ったとき](troubleshooting.md) | うまく動かないときの対処 |
 
 ## その他
-- [バージョン履歴](../VERSION.md)
+- [バージョン履歴](version.md)
 - [用語](glossary.md)
+- [小ネタ](tips.md)（作ったきっかけ、名前の由来）

@@ -1,6 +1,6 @@
 // 使い方の wiki を作る
-// 1. docs/MANUAL.md を見出しごとに分けて docs/wiki/<ページ>.md を作り直す（start.md だけは手で書く）
-// 2. docs/wiki/*.md と docs/VERSION.md を DokuWiki 記法へ変換して dist/dokuwiki/ に書き出す
+// 1. docs/MANUAL.md を見出しごとに分けて docs/wiki/<ページ>.md を作り直し、EXTRA のページも写す（start.md だけは手で書く）
+// 2. docs/wiki/*.md を DokuWiki 記法へ変換して dist/dokuwiki/ に書き出す
 // 使い方: node scripts/docs-to-dokuwiki.mjs [名前空間]
 //   名前空間を省くと、ページを wiki の直下に置き、リンクも [[pitch]] のようにページ名だけにする（WeVocalSynth だけの wiki のため）
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
@@ -9,8 +9,8 @@ import { join, basename } from 'node:path';
 const NS = process.argv[2] ?? '';
 const SRC = 'docs/wiki';
 const MANUAL = 'docs/MANUAL.md';
-// wiki 以外から載せるページ
-const EXTRA = ['docs/VERSION.md'];
+// MANUAL.md 以外から wiki に写すページ（docs のファイル → wiki のページ名）。docs の目次への「関連:」の行は外す
+const EXTRA = { 'docs/VERSION.md': 'version', 'docs/TIPS.md': 'tips' };
 // 画像は GitHub の raw URL を直接参照する
 const IMAGE_URL = 'https://raw.githubusercontent.com/PTOM76/wevocalsynth/main/docs/images';
 const OUT = 'dist/dokuwiki';
@@ -98,8 +98,12 @@ function splitManual() {
 }
 
 splitManual();
+for (const [file, name] of Object.entries(EXTRA)) {
+	const md = readFileSync(file, 'utf8').replace(/\r\n/g, '\n').replace(/^関連: .*\n+/m, '').replace(/src="images\//g, 'src="../images/');
+	writeFileSync(join(SRC, `${name}.md`), md);
+}
 const pageId = (name) => (NS ? `${NS}:${name}` : name);
-const sources = [...readdirSync(SRC).filter((f) => f.endsWith('.md')).map((f) => `${SRC}/${f}`), ...EXTRA];
+const sources = readdirSync(SRC).filter((f) => f.endsWith('.md')).map((f) => `${SRC}/${f}`);
 const pageName = (file) => basename(file, '.md').toLowerCase();
 const known = new Set(sources.map(pageName));
 
