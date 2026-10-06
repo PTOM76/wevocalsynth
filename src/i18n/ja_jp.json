@@ -780,15 +780,15 @@
 
   "project.invalid": "プロジェクトファイルではありません",
   "project.unsupported": "対応していないバージョンです",
-  "settings.showKanaVoice": "声の素材から一音を作る（試験的）",
-  "settings.showKanaVoiceHelp": "「ツール」に、選択範囲の母音を素材にしてあいうえおを作る試しを出す（声帯の音は素材のまま、響きだけを動かす）",
-  "kana.demoMenu": "選択範囲の母音からあいうえおを作る（試験的）",
-  "kana.noVoice": "選択範囲に声のある所が見つかりません",
+  "settings.showKanaVoice": "声から五十音を作る（試験的）",
+  "settings.showKanaVoiceHelp": "「ツール」に「母音からあいうえおを作る」を表示する。選択範囲（なければ全体）の母音の声を元に、ほかの母音を作る（声の質はそのまま、響きだけを変える）",
+  "kana.demoMenu": "母音からあいうえおを作る（試験的）",
+  "kana.noVoice": "選択範囲（なければ全体）に声の部分が見つかりません",
   "kana.demoTrack": "{name}（あいうえお）",
-  "task.kanaDemo": "母音の作り直し",
-  "kana.from.a": "素材を「あ」として",
-  "kana.from.i": "素材を「い」として",
-  "kana.from.u": "素材を「う」として",
-  "kana.from.e": "素材を「え」として",
-  "kana.from.o": "素材を「お」として"
+  "task.kanaDemo": "あいうえおの作成",
+  "kana.from.a": "「あ」の声から",
+  "kana.from.i": "「い」の声から",
+  "kana.from.u": "「う」の声から",
+  "kana.from.e": "「え」の声から",
+  "kana.from.o": "「お」の声から"
 }

@@ -456,7 +456,7 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
       tracks.addClip(clip, t('sampler.trackName', { name: active.name, midi: o.midiName }))
     })
 
-  /** 声の素材から一音を作る（試験的）の試し: 選択範囲（なければ全体）を母音 `vowel`（0〜4 が あ〜お）の素材にして、あいうえおを作って新しいトラックにする */
+  /** 声から五十音を作る（試験的）の試し: 選択範囲（なければ全体。素材がクリップしているときなどに全体を使える）を母音 `vowel`（0〜4 が あ〜お）の声として、あいうえおを作って新しいトラックにする */
   const kanaDemo = (vowel: number) =>
     task.run(t('task.kanaDemo'), async (signal) => {
       const active = history.tracks.find((tr) => tr.id === history.activeId)

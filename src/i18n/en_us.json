@@ -780,15 +780,15 @@
 
   "project.invalid": "Not a project file",
   "project.unsupported": "Unsupported project version",
-  "settings.showKanaVoice": "Create sounds from voice material (experimental)",
-  "settings.showKanaVoiceHelp": "Adds a Tools item that creates a, i, u, e, o from the selected vowel (keeps the voice source and moves only the resonances)",
-  "kana.demoMenu": "Create vowels from the selected vowel (experimental)",
-  "kana.noVoice": "No voiced part found in the selection",
+  "settings.showKanaVoice": "Create kana sounds from a voice (experimental)",
+  "settings.showKanaVoiceHelp": "Shows \"Create vowels from a vowel\" in Tools. Creates the other vowels from the vowel in the selection (or the whole track), keeping the voice quality and changing only the resonances",
+  "kana.demoMenu": "Create vowels from a vowel (experimental)",
+  "kana.noVoice": "No voiced part found in the selection (or the whole track)",
   "kana.demoTrack": "{name} (a i u e o)",
-  "task.kanaDemo": "Vowel resynthesis",
-  "kana.from.a": "Material is \"a\"",
-  "kana.from.i": "Material is \"i\"",
-  "kana.from.u": "Material is \"u\"",
-  "kana.from.e": "Material is \"e\"",
-  "kana.from.o": "Material is \"o\""
+  "task.kanaDemo": "Creating vowels",
+  "kana.from.a": "From an \"a\" voice",
+  "kana.from.i": "From an \"i\" voice",
+  "kana.from.u": "From a \"u\" voice",
+  "kana.from.e": "From an \"e\" voice",
+  "kana.from.o": "From an \"o\" voice"
 }

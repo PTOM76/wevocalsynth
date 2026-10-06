@@ -780,15 +780,15 @@
 
   "project.invalid": "不是專案檔",
   "project.unsupported": "不支援的版本",
-  "settings.showKanaVoice": "從聲音素材產生單音（實驗性）",
-  "settings.showKanaVoiceHelp": "在「工具」中顯示用選取範圍母音產生あいうえお的試驗（保留聲源，只移動共振）",
-  "kana.demoMenu": "用選取範圍的母音產生あいうえお（實驗性）",
-  "kana.noVoice": "選取範圍中找不到有聲部分",
+  "settings.showKanaVoice": "用聲音產生五十音（實驗性）",
+  "settings.showKanaVoiceHelp": "在「工具」中顯示「用母音產生あいうえお」。以選取範圍（無則為全部）的母音聲音為基礎產生其他母音（保留音質，只改變共振）",
+  "kana.demoMenu": "用母音產生あいうえお（實驗性）",
+  "kana.noVoice": "選取範圍（無則為全部）中找不到有聲部分",
   "kana.demoTrack": "{name}（あいうえお）",
-  "task.kanaDemo": "母音重新合成",
-  "kana.from.a": "素材為「あ」",
-  "kana.from.i": "素材為「い」",
-  "kana.from.u": "素材為「う」",
-  "kana.from.e": "素材為「え」",
-  "kana.from.o": "素材為「お」"
+  "task.kanaDemo": "產生あいうえお",
+  "kana.from.a": "用「あ」的聲音",
+  "kana.from.i": "用「い」的聲音",
+  "kana.from.u": "用「う」的聲音",
+  "kana.from.e": "用「え」的聲音",
+  "kana.from.o": "用「お」的聲音"
 }
