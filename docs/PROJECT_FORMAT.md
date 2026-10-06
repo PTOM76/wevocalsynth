@@ -1,5 +1,5 @@
 # プロジェクトファイル（.wvsp）の形式
-WeVocalSynth の作業（トラックの音声・加工のパラメータ・テンポ・マーカーなど）を保存するファイルの形式。読み書きは [src/project/projectFile.ts](../src/project/projectFile.ts)（`saveProject` / `loadProject`）。
+WeVocalSynth の作業（トラックの音声・加工のパラメータ・テンポ・マーカーなど）を保存するファイルの形式。読み書きの本体は wevocal-lib の [web/src/wvsp.ts](../wevocal-lib/web/src/wvsp.ts)（`writeWvsp` / `readWvsp`。WeVocalAnalyzer も同じものを使って開く）。Synth の型との受け渡しは [src/project/projectFile.ts](../src/project/projectFile.ts)（`saveProject` / `loadProject`）。
 
 元に戻す履歴は保存しない（音声を丸ごと持つため、ファイルが大きくなりすぎる）。
 
