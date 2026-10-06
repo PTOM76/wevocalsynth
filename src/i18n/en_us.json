@@ -820,5 +820,6 @@
   "video.fileType": "Video file",
   "licenses.converter": "Video export (add-on)",
   "licenses.mediabunny": "Combines video and audio into one file for video export (add-on, used unmodified)",
-  "settings.groupAddonConverter": "Conversion"
+  "settings.groupAddonConverter": "Conversion",
+  "video.styleScope": "Oscilloscope"
 }

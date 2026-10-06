@@ -117,6 +117,7 @@ export default function VideoExportDialog(p: Props) {
               value={pr.style}
               onChange={(style) => setPr({ style })}
               options={[
+                ['scope', t('video.styleScope')],
                 ['overview', t('video.styleOverview')],
                 ['scroll', t('video.styleScroll')],
                 ['bars', t('video.styleBars')],
