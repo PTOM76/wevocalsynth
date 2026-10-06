@@ -389,7 +389,12 @@ fn remove_tilt(db: &[f32]) -> Vec<f32> {
 /// 素材のフレームごとの LPC の極のうち F1〜F3 にあたるものを、目標の F1〜F3 へ動かし（そのフレームのずれの比と、極の鋭さは保つ）、
 /// 元の包絡との比（±MORPH_MAX_DB、前後のフレームでならす）を掛ける。
 /// 目標の F1〜F3 は、男声と女声の表を素材の声に合わせて混ぜた値に、残りの個人差の倍率を掛けたもの
-pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel, strength: f32) -> Vec<f32> {
+pub fn morph_vowel(orig: &[f32], sample_rate: f32, from: Vowel, to: Vowel, strength: f32) -> Vec<f32> {
+    // 前後に 1 フレーム分の無音を足してから処理する。足さないと、先頭と末尾は窓の端しか重ならず、
+    // 窓の 2 乗の和で割るときに極端に大きくなって「ぶつ」という音が出る
+    let pad = MORPH_FFT;
+    let padded: Vec<f32> = std::iter::repeat_n(0.0, pad).chain(orig.iter().copied()).chain(std::iter::repeat_n(0.0, pad)).collect();
+    let x = &padded[..];
     let mut st = wevocal_lib::stft::Stft::new(MORPH_FFT, MORPH_HOP);
     let bins = st.bins();
     let frames = x.len() / MORPH_HOP + 1;
@@ -406,7 +411,7 @@ pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel, strength
     // 素材の F1〜F3（声のあるフレームの中央値）
     let found: Vec<Vec<f32>> = envs.iter().flatten().map(|(_, e)| peaks(e, env_rate)).filter(|p| p.len() == 3).collect();
     if found.is_empty() {
-        return x.to_vec();
+        return orig.to_vec();
     }
     let src: Vec<f32> = (0..3)
         .map(|i| {
@@ -470,15 +475,16 @@ pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel, strength
         }
         st.inverse_add(&re, &im, k, &mut out, Some(&mut wsum));
     }
-    out.truncate(x.len());
     for (v, w) in out.iter_mut().zip(&wsum) {
         if *w > 1e-6 {
             *v /= w;
         }
     }
+    // 足した無音を切り落とす
+    let mut out = out[pad..pad + orig.len()].to_vec();
     // 大きさを素材にそろえる
     let rms = |v: &[f32]| (v.iter().map(|&s| s as f64 * s as f64).sum::<f64>() / v.len().max(1) as f64).sqrt() as f32;
-    let g = rms(x) / rms(&out).max(1e-9);
+    let g = rms(orig) / rms(&out).max(1e-9);
     out.iter_mut().for_each(|v| *v *= g);
     out
 }
@@ -632,6 +638,20 @@ mod tests {
         let e = mixed_formants(Vowel::E, w);
         assert!(e[1] > 2000.0, "F2 {}", e[1]);
         assert!(female_weight(&[690.0, 1420.0, 2480.0], Vowel::A) < 0.3);
+    }
+
+    /// 作った母音の先頭と末尾に、大きな飛び（「ぶつ」という音）が出ないこと
+    #[test]
+    fn no_click_at_edges() {
+        let sr = 44100.0;
+        let x = vowel(sr, 140.0, 0.5, &[(800.0, 80.0), (1200.0, 90.0), (2500.0, 120.0)]);
+        let y = morph_vowel(&x, sr, Vowel::A, Vowel::I, 1.0);
+        assert_eq!(y.len(), x.len());
+        let peak = |v: &[f32]| v.iter().fold(0.0f32, |m, s| m.max(s.abs()));
+        let body = peak(&y[y.len() / 4..y.len() * 3 / 4]);
+        let edge = 256;
+        assert!(peak(&y[..edge]) <= body * 1.5, "head {} vs body {body}", peak(&y[..edge]));
+        assert!(peak(&y[y.len() - edge..]) <= body * 1.5, "tail {} vs body {body}", peak(&y[y.len() - edge..]));
     }
 
     #[test]
