@@ -803,7 +803,7 @@
   "video.style": "波形",
   "video.styleOverview": "全局与播放位置",
   "video.styleScroll": "滚动波形",
-  "video.styleBars": "音量柱",
+  "video.styleBars": "音量波形",
   "video.position": "位置",
   "video.posBottom": "底部",
   "video.posCenter": "居中",
