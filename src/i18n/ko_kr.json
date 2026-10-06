@@ -821,5 +821,6 @@
   "licenses.converter": "동영상 내보내기(추가 기능)",
   "licenses.mediabunny": "동영상 내보내기에서 영상과 음성을 하나의 파일로 합침(추가 기능, 수정 없이 사용)",
   "settings.groupAddonConverter": "변환",
-  "video.styleScope": "순간 파형"
+  "video.styleScope": "순간 파형",
+  "video.gradient": "그라데이션(파형 색에서 재생한 부분 색으로)"
 }

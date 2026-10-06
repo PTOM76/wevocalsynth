@@ -15,6 +15,8 @@ export interface VideoExportPrefs {
   fit: 'cover' | 'contain'
   /** ファイル名を曲名として入れる */
   title: boolean
+  /** 音量波形をグラデーションにする */
+  gradient: boolean
 }
 
 export const DEFAULT_VIDEO_PREFS: VideoExportPrefs = {
@@ -27,4 +29,5 @@ export const DEFAULT_VIDEO_PREFS: VideoExportPrefs = {
   played: '#4fc3f7',
   fit: 'cover',
   title: false,
+  gradient: false,
 }

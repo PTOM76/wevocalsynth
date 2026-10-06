@@ -208,6 +208,13 @@ export default function VideoExportDialog(p: Props) {
             onChange={(e) => setS({ ...s, fileName: e.target.value })}
             slotProps={{ input: { endAdornment: <Typography color="text.secondary">{VIDEO_EXT[container]}</Typography> } }}
           />
+          {pr.style === 'bars' && (
+            <FormControlLabel
+              sx={{ m: 0 }}
+              control={<Checkbox size="small" checked={!!pr.gradient} onChange={(e) => setPr({ gradient: e.target.checked })} />}
+              label={<Typography sx={{ fontSize: 13 }}>{t('video.gradient')}</Typography>}
+            />
+          )}
           <FormControlLabel
             sx={{ m: 0 }}
             control={<Checkbox size="small" checked={pr.title} onChange={(e) => setPr({ title: e.target.checked })} />}

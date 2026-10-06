@@ -59,7 +59,7 @@ export function useVideoExport(d: Deps) {
         fps: 30,
         kbps: 192,
         background: { color: pr.bg, image: s.image, fit: pr.fit },
-        wave: { style: pr.style, color: pr.wave, playedColor: pr.played, position: pr.position, height: 0.25 },
+        wave: { style: pr.style, color: pr.wave, playedColor: pr.played, position: pr.position, height: 0.25, gradient: pr.gradient },
         title: pr.title ? s.fileName.trim() : '',
         titleColor: '#ffffff',
         onProgress: d.task.setProgress,

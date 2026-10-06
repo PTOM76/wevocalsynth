@@ -821,5 +821,6 @@
   "licenses.converter": "视频导出（附加功能）",
   "licenses.mediabunny": "视频导出时将画面和音频合并为一个文件（附加功能，未经修改使用）",
   "settings.groupAddonConverter": "转换",
-  "video.styleScope": "瞬时波形"
+  "video.styleScope": "瞬时波形",
+  "video.gradient": "渐变（从波形颜色到已播放颜色）"
 }
