@@ -781,9 +781,14 @@
   "project.invalid": "Not a project file",
   "project.unsupported": "Unsupported project version",
   "settings.showKanaVoice": "Create sounds from voice material (experimental)",
-  "settings.showKanaVoiceHelp": "Adds a Tools item that resynthesizes the selection as a vowel (original pitch, +4 and +7 semitones on a new track)",
-  "kana.demoMenu": "Resynthesize selection as a vowel (experimental)",
+  "settings.showKanaVoiceHelp": "Adds a Tools item that creates a, i, u, e, o from the selected vowel (keeps the voice source and moves only the resonances)",
+  "kana.demoMenu": "Create vowels from the selected vowel (experimental)",
   "kana.noVoice": "No voiced part found in the selection",
-  "kana.demoTrack": "{name} (vowel resynthesis)",
-  "task.kanaDemo": "Vowel resynthesis"
+  "kana.demoTrack": "{name} (a i u e o)",
+  "task.kanaDemo": "Vowel resynthesis",
+  "kana.from.a": "Material is \"a\"",
+  "kana.from.i": "Material is \"i\"",
+  "kana.from.u": "Material is \"u\"",
+  "kana.from.e": "Material is \"e\"",
+  "kana.from.o": "Material is \"o\""
 }

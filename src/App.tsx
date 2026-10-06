@@ -198,7 +198,7 @@ export default function App() {
     splitStems: () => void ed.splitStems(),
     splitLeadStems: () => void ed.splitLeadStems(),
     splitVoices: settings.showVoiceSplit ? (by) => void ed.splitVoices(by) : undefined,
-    kanaDemo: settings.showKanaVoice ? () => void ed.kanaDemo() : undefined,
+    kanaDemo: settings.showKanaVoice ? (v) => void ed.kanaDemo(v) : undefined,
     duplicateTrack: () => ed.tracks.duplicate(),
     hasOriginal: !!ed.tracks.tracks.find((tr) => tr.id === ed.tracks.activeId && tr.original !== tr.clip),
     trackFromOriginal: () => ed.tracks.fromOriginal(),

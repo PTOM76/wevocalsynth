@@ -179,9 +179,9 @@ export async function analyzeTempo(channels: Float32Array[], sampleRate: number)
   return out
 }
 
-/** 声の素材から一音を作る（試験的。dsp/src/kana.rs）の試し: 母音の素材を、元の高さ、4 半音上、7 半音上で作り直して並べる。声のある所がなければ null */
-export async function kanaVowelDemo(channels: Float32Array[], sampleRate: number): Promise<Float32Array | null> {
-  const [out] = await send({ kind: 'kana', id: nextId++, samples: mixDown(channels), sampleRate })
+/** 声の素材から一音を作る（試験的。dsp/src/kana.rs）の試し: 母音の素材（`vowel`。0〜4 が あ〜お）から、あいうえおを作って並べる。声のある所がなければ null */
+export async function kanaVowelDemo(channels: Float32Array[], sampleRate: number, vowel: number): Promise<Float32Array | null> {
+  const [out] = await send({ kind: 'kana', id: nextId++, samples: mixDown(channels), sampleRate, vowel })
   return out.length ? out : null
 }
 

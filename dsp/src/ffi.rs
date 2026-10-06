@@ -290,14 +290,15 @@ pub extern "C" fn output_ptr() -> *const f32 {
     OUTPUT.with(|o| o.borrow().as_ptr())
 }
 
-/// 声の素材から一音を作る（試験的）の試し: モノラルの母音を作り直して並べ、長さを返す（`kana::demo`）。結果は `output_ptr` で取得する。
+/// 声の素材から一音を作る（試験的）の試し: モノラルの母音（`from`。0〜4 が あ〜お）から、あいうえおを作って並べ、長さを返す
+/// （`kana::morph_demo`）。結果は `output_ptr` で取得する。
 ///
 /// # Safety
 /// `input` は `frames` 個の有効な f32 を指していること。
 #[no_mangle]
-pub unsafe extern "C" fn kana_vowel_demo(input: *const f32, frames: usize, sample_rate: f32) -> usize {
+pub unsafe extern "C" fn kana_vowel_demo(input: *const f32, frames: usize, sample_rate: f32, from: u32) -> usize {
     let x = std::slice::from_raw_parts(input, frames);
-    let out = kana::demo(x, sample_rate);
+    let out = kana::morph_demo(x, sample_rate, kana::VOWELS[(from as usize).min(4)]);
     let n = out.len();
     OUTPUT.with(|o| *o.borrow_mut() = out);
     n

@@ -456,13 +456,13 @@ export function useEditor(settings: Settings, updateSettings: (patch: Partial<Se
       tracks.addClip(clip, t('sampler.trackName', { name: active.name, midi: o.midiName }))
     })
 
-  /** 声の素材から一音を作る（試験的）の試し: 選択範囲（なければ全体）を母音の素材にして作り直し、新しいトラックにする */
-  const kanaDemo = () =>
+  /** 声の素材から一音を作る（試験的）の試し: 選択範囲（なければ全体）を母音 `vowel`（0〜4 が あ〜お）の素材にして、あいうえおを作って新しいトラックにする */
+  const kanaDemo = (vowel: number) =>
     task.run(t('task.kanaDemo'), async (signal) => {
       const active = history.tracks.find((tr) => tr.id === history.activeId)
       if (!edited || !active) return
       const sample = selections.length ? sliceRanges(edited, selections.slice(0, 1)) : edited
-      const out = await kanaVowelDemo(sample.channels, sample.sampleRate)
+      const out = await kanaVowelDemo(sample.channels, sample.sampleRate, vowel)
       if (signal.aborted) return
       if (!out) return setToast({ severity: 'error', message: t('kana.noVoice') })
       tracks.addClip({ sampleRate: sample.sampleRate, channels: [out] }, t('kana.demoTrack', { name: active.name }))

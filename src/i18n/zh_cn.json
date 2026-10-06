@@ -781,9 +781,14 @@
   "project.invalid": "不是工程文件",
   "project.unsupported": "不支持的版本",
   "settings.showKanaVoice": "从声音素材生成单音（实验性）",
-  "settings.showKanaVoiceHelp": "在「工具」中显示将选区作为元音素材重新合成的试验（原音高、高 4 个半音、高 7 个半音排在新轨道上）",
-  "kana.demoMenu": "将选区作为元音重新合成（实验性）",
+  "settings.showKanaVoiceHelp": "在「工具」中显示用选区元音生成あいうえお的试验（保留声源，只移动共振）",
+  "kana.demoMenu": "用选区的元音生成あいうえお（实验性）",
   "kana.noVoice": "选区中找不到有声部分",
-  "kana.demoTrack": "{name}（元音重新合成）",
-  "task.kanaDemo": "元音重新合成"
+  "kana.demoTrack": "{name}（あいうえお）",
+  "task.kanaDemo": "元音重新合成",
+  "kana.from.a": "素材为「あ」",
+  "kana.from.i": "素材为「い」",
+  "kana.from.u": "素材为「う」",
+  "kana.from.e": "素材为「え」",
+  "kana.from.o": "素材为「お」"
 }

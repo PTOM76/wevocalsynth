@@ -183,14 +183,242 @@ pub fn synth_vowel(m: &VowelModel, f0: f32, dur: f32) -> Vec<f32> {
     out
 }
 
-/// 試し: 素材の母音を、元の高さ、4 半音上、7 半音上で 1 秒ずつ作り直して並べる（間に 0.2 秒の無音）。
-/// 開発者向けの入口で聴いて確かめるためのもの。声のある所がなければ空
-pub fn demo(x: &[f32], sample_rate: f32) -> Vec<f32> {
-    let Some(m) = analyze_vowel(x, sample_rate) else { return Vec::new() };
+/// 日本語の母音。並びは あ、い、う、え、お
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Vowel {
+    A,
+    I,
+    U,
+    E,
+    O,
+}
+pub const VOWELS: [Vowel; 5] = [Vowel::A, Vowel::I, Vowel::U, Vowel::E, Vowel::O];
+
+/// 母音の標準的なフォルマント F1〜F3（Hz。日本語の成人男性の目安）。素材の声道の長さの倍率を掛けて使う
+fn standard_formants(v: Vowel) -> [f32; 3] {
+    match v {
+        Vowel::A => [800.0, 1200.0, 2500.0],
+        Vowel::I => [300.0, 2300.0, 3000.0],
+        Vowel::U => [350.0, 1300.0, 2400.0],
+        Vowel::E => [500.0, 1900.0, 2500.0],
+        Vowel::O => [500.0, 800.0, 2500.0],
+    }
+}
+
+/// 響きを動かす STFT の長さとホップ（サンプル。44.1kHz で約 46ms と 12ms）
+const MORPH_FFT: usize = 2048;
+const MORPH_HOP: usize = 512;
+/// 包絡の比で掛ける大きさの範囲（極端に強めたり弱めたりしない）
+const MORPH_GAIN_MIN: f32 = 0.01;
+const MORPH_GAIN_MAX: f32 = 100.0;
+
+/// 響きを見るサンプルレート（Hz）と LPC の次数。F3 くらいまで（約 5.5kHz）を細かく見る（Analyzer のフォルマント推定と同じ考え方）
+const ENV_RATE: f32 = 11025.0;
+const ENV_ORDER: usize = 14;
+/// 響きを動かす上限（Hz）。これより上はそのまま残し、MORPH_TOP_HZ〜ENV_RATE / 2 でなめらかにつなぐ
+const MORPH_TOP_HZ: f32 = 4500.0;
+
+/// 間引いた音 `y` の、時刻 `center`（秒）を中心にしたフレームの LPC 係数と包絡（プリエンファシスあり。包絡は 0〜ENV_RATE / 2 を `bins` 点）。無音なら None
+fn frame_envelope(y: &[f32], center: f32, n: usize, window: &[f32], bins: usize) -> Option<(Vec<f32>, Vec<f32>)> {
+    let start = (center * ENV_RATE) as i64 - (n / 2) as i64;
+    let at = |j: i64| if j >= 0 && (j as usize) < y.len() { y[j as usize] } else { 0.0 };
+    let frame: Vec<f32> = (0..n).map(|i| (at(start + i as i64) - PRE * at(start + i as i64 - 1)) * window[i]).collect();
+    let (a, _) = lpc::lpc(&frame, ENV_ORDER)?;
+    let env = lpc::envelope(&a, bins);
+    Some((a, env))
+}
+
+/// 複素数（多項式の根を求めるためだけのもの）
+#[derive(Clone, Copy)]
+struct C(f64, f64);
+impl C {
+    fn mul(self, o: C) -> C {
+        C(self.0 * o.0 - self.1 * o.1, self.0 * o.1 + self.1 * o.0)
+    }
+    fn sub(self, o: C) -> C {
+        C(self.0 - o.0, self.1 - o.1)
+    }
+    fn div(self, o: C) -> C {
+        let d = o.0 * o.0 + o.1 * o.1 + 1e-300;
+        C((self.0 * o.0 + self.1 * o.1) / d, (self.1 * o.0 - self.0 * o.1) / d)
+    }
+    fn abs(self) -> f64 {
+        self.0.hypot(self.1)
+    }
+    fn arg(self) -> f64 {
+        self.1.atan2(self.0)
+    }
+}
+
+/// A(z) = a[0] + a[1] z^-1 + … の極（z^order A(z) の根）。Durand-Kerner 法ですべての根を同時に求める
+fn poles(a: &[f32]) -> Vec<C> {
+    let n = a.len() - 1;
+    // 最高次の係数を 1 にした多項式 z^n + c[1] z^(n-1) + … + c[n]
+    let c: Vec<f64> = a.iter().map(|&v| v as f64 / a[0] as f64).collect();
+    let eval = |z: C| c.iter().fold(C(0.0, 0.0), |acc, &k| C(acc.mul(z).0 + k, acc.mul(z).1));
+    // 初期値は単位円の少し内側に、等しくない角度で並べる
+    let mut r: Vec<C> = (0..n).map(|i| {
+        let t = 0.4 + std::f64::consts::TAU * i as f64 / n as f64;
+        C(0.9 * t.cos(), 0.9 * t.sin())
+    }).collect();
+    for _ in 0..200 {
+        let mut moved = 0.0f64;
+        for i in 0..n {
+            let mut den = C(1.0, 0.0);
+            for j in 0..n {
+                if i != j {
+                    den = den.mul(r[i].sub(r[j]));
+                }
+            }
+            let step = eval(r[i]).div(den);
+            r[i] = r[i].sub(step);
+            moved = moved.max(step.abs());
+        }
+        if moved < 1e-12 {
+            break;
+        }
+    }
+    r
+}
+
+/// 極から A(z) の係数を作り直す（共役の対がそろっているので、係数は実数）
+fn from_poles(p: &[C]) -> Vec<f32> {
+    let mut c = vec![C(1.0, 0.0)];
+    for &z in p {
+        // (1 - z w^-1) を掛ける
+        let mut next = vec![C(0.0, 0.0); c.len() + 1];
+        for (i, &v) in c.iter().enumerate() {
+            next[i] = C(next[i].0 + v.0, next[i].1 + v.1);
+            let t = v.mul(z);
+            next[i + 1] = next[i + 1].sub(t);
+        }
+        c = next;
+    }
+    c.iter().map(|v| v.0 as f32).collect()
+}
+
+/// 極の角度（周波数）を `map`（Hz → Hz）で動かした LPC 係数。原点からの距離（山の鋭さ）はそのまま。実数の極は動かさない
+fn shift_poles(a: &[f32], rate: f32, map: &dyn Fn(f32) -> f32) -> Vec<f32> {
+    let to_hz = rate as f64 / std::f64::consts::TAU;
+    let moved: Vec<C> = poles(a)
+        .into_iter()
+        .map(|z| {
+            let ang = z.arg();
+            if z.1.abs() < 1e-9 {
+                return z;
+            }
+            let hz = (ang.abs() * to_hz) as f32;
+            let new = (map(hz) as f64 / to_hz).min(std::f64::consts::PI - 1e-3) * ang.signum();
+            let m = z.abs();
+            C(m * new.cos(), m * new.sin())
+        })
+        .collect();
+    from_poles(&moved)
+}
+
+/// 包絡の山（低い方から 3 つ、Hz）。200Hz〜4500Hz の間で探す
+fn peaks(env: &[f32], sample_rate: f32) -> Vec<f32> {
+    let hz = |g: usize| g as f32 / (env.len() - 1) as f32 * sample_rate / 2.0;
+    (1..env.len() - 1).filter(|&g| env[g] > env[g - 1] && env[g] >= env[g + 1] && hz(g) > 200.0 && hz(g) < 4500.0).map(hz).take(3).collect()
+}
+
+/// 素材の母音 `from` を、母音 `to` に作り替える（声帯の音はそのまま、響きの山の位置だけを動かす）。
+/// 素材のフレームごとの LPC の極（共振）の周波数を、素材の F1〜F3 が目標の F1〜F3 に移るように動かし（極の鋭さはそのまま）、元の包絡との比を掛ける。
+/// 目標の F1〜F3 は、標準の値に素材の声道の長さの倍率（素材の F1〜F3 ÷ `from` の標準の値）を掛けたもの
+pub fn morph_vowel(x: &[f32], sample_rate: f32, from: Vowel, to: Vowel) -> Vec<f32> {
+    let mut st = wevocal_lib::stft::Stft::new(MORPH_FFT, MORPH_HOP);
+    let bins = st.bins();
+    let frames = x.len() / MORPH_HOP + 1;
+    // 響きは間引いた音で見る（フレームの長さは同じ時間）
+    let ratio = (sample_rate / ENV_RATE) as f64;
+    let y = if ratio > 1.0 { wevocal_lib::resample(x, ratio, (x.len() as f64 / ratio) as usize) } else { x.to_vec() };
+    let env_rate = if ratio > 1.0 { ENV_RATE } else { sample_rate };
+    let n_low = ((MORPH_FFT as f32 * env_rate / sample_rate) as usize).max(64);
+    let env_bins = 257;
+    let window_low = hann(n_low);
+    let envs: Vec<Option<(Vec<f32>, Vec<f32>)>> = (0..frames)
+        .map(|k| frame_envelope(&y, (k * MORPH_HOP + MORPH_FFT / 2) as f32 / sample_rate, n_low, &window_low, env_bins))
+        .collect();
+    // 素材の F1〜F3（声のあるフレームの中央値）
+    let found: Vec<Vec<f32>> = envs.iter().flatten().map(|(_, e)| peaks(e, env_rate)).filter(|p| p.len() == 3).collect();
+    if found.is_empty() {
+        return x.to_vec();
+    }
+    let src: Vec<f32> = (0..3)
+        .map(|i| {
+            let mut v: Vec<f32> = found.iter().map(|p| p[i]).collect();
+            v.sort_by(|a, b| a.total_cmp(b));
+            v[v.len() / 2]
+        })
+        .collect();
+    let std_from = standard_formants(from);
+    let scale = (0..3).map(|i| src[i] / std_from[i]).sum::<f32>() / 3.0;
+    let tgt: Vec<f32> = standard_formants(to).iter().map(|f| f * scale).collect();
+    // 対応の点（目標の周波数, 素材の周波数）。両端は 0 とナイキスト
+    let nyq = sample_rate / 2.0;
+    let mut pts = vec![(0.0f32, 0.0f32)];
+    for i in 0..3 {
+        if tgt[i] > pts.last().unwrap().0 && src[i] > pts.last().unwrap().1 && tgt[i] < nyq && src[i] < nyq {
+            pts.push((tgt[i], src[i]));
+        }
+    }
+    pts.push((nyq, nyq));
+    // 素材の周波数 → 目標の周波数（区分的に一次）
+    let to_tgt = |f: f32| {
+        let i = pts.windows(2).position(|w| f <= w[1].1).unwrap_or(pts.len() - 2);
+        let ((t0, s0), (t1, s1)) = (pts[i], pts[i + 1]);
+        t0 + (f - s0) / (s1 - s0).max(1e-6) * (t1 - t0)
+    };
+    let bin_hz = nyq / (bins - 1) as f32;
+    let env_nyq = env_rate / 2.0;
+    // 包絡の値（周波数 Hz を、間引いた音の包絡の点に直して一次補間）
+    let env_at = |env: &[f32], hz: f32| {
+        let p = (hz / env_nyq * (env.len() - 1) as f32).clamp(0.0, (env.len() - 1) as f32);
+        let (i0, g) = (p.floor() as usize, p.fract());
+        env[i0] + (env[(i0 + 1).min(env.len() - 1)] - env[i0]) * g
+    };
+    let mut out = vec![0.0f32; x.len() + MORPH_FFT];
+    let mut wsum = vec![0.0f32; x.len() + MORPH_FFT];
+    let (mut re, mut im) = (vec![0.0f32; bins], vec![0.0f32; bins]);
+    for (k, env) in envs.iter().enumerate() {
+        st.forward(x, k, &mut re, &mut im);
+        if let Some((a, env)) = env {
+            // 極を動かした包絡（目標）
+            let target = lpc::envelope(&shift_poles(a, env_rate, &to_tgt), env.len());
+            for b in 0..bins {
+                let hz = b as f32 * bin_hz;
+                if hz >= env_nyq {
+                    continue;
+                }
+                // 目標の包絡 ÷ 元の包絡 の大きさを掛ける。包絡はパワーなので平方根。上のほうはなめらかに 1 に戻す
+                let gain = (env_at(&target, hz) / env_at(env, hz).max(1e-12)).sqrt().clamp(MORPH_GAIN_MIN, MORPH_GAIN_MAX);
+                let blend = ((env_nyq - hz) / (env_nyq - MORPH_TOP_HZ)).clamp(0.0, 1.0);
+                let g = 1.0 + (gain - 1.0) * blend;
+                re[b] *= g;
+                im[b] *= g;
+            }
+        }
+        st.inverse_add(&re, &im, k, &mut out, Some(&mut wsum));
+    }
+    out.truncate(x.len());
+    for (v, w) in out.iter_mut().zip(&wsum) {
+        if *w > 1e-6 {
+            *v /= w;
+        }
+    }
+    // 大きさを素材にそろえる
+    let rms = |v: &[f32]| (v.iter().map(|&s| s as f64 * s as f64).sum::<f64>() / v.len().max(1) as f64).sqrt() as f32;
+    let g = rms(x) / rms(&out).max(1e-9);
+    out.iter_mut().for_each(|v| *v *= g);
+    out
+}
+
+/// 試し: 素材の母音（`from`）から、あいうえおの 5 つを作って並べる（間に 0.2 秒の無音）。声帯の音は素材のまま、響きだけを動かす
+pub fn morph_demo(x: &[f32], sample_rate: f32, from: Vowel) -> Vec<f32> {
     let gap = vec![0.0f32; (0.2 * sample_rate) as usize];
     let mut out = Vec::new();
-    for semis in [0.0f32, 4.0, 7.0] {
-        out.extend(synth_vowel(&m, m.f0 * 2f32.powf(semis / 12.0), 1.0));
+    for to in VOWELS {
+        out.extend(if to == from { x.to_vec() } else { morph_vowel(x, sample_rate, from, to) });
         out.extend_from_slice(&gap);
     }
     out
@@ -254,6 +482,19 @@ mod tests {
         // 大きさは素材とそろう
         let rms = (y.iter().map(|&v| v * v).sum::<f32>() / y.len() as f32).sqrt();
         assert!((rms / m.rms - 1.0).abs() < 0.2, "rms {rms} vs {}", m.rms);
+    }
+
+    /// 標準の「あ」のフォルマントの合成の母音から「い」を作ると、フォルマントが「い」の位置に近づくこと
+    #[test]
+    fn morphs_a_to_i() {
+        let sr = 44100.0;
+        let x = vowel(sr, 140.0, 0.8, &[(800.0, 80.0), (1200.0, 90.0), (2500.0, 120.0)]);
+        let y = morph_vowel(&x, sr, Vowel::A, Vowel::I);
+        let got = formants_of(&y, sr);
+        assert!(got.len() >= 2, "got {got:?}");
+        // F1 は下がり（800 → 300 付近）、F2 は上がる（1200 → 2300 付近）
+        assert!(got[0] < 500.0, "F1 {got:?}");
+        assert!(got.iter().any(|&f| (f - 2300.0).abs() < 350.0), "F2 {got:?}");
     }
 
     #[test]
