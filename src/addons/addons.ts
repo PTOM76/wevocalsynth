@@ -1,4 +1,5 @@
 import type { MessageKey } from '../i18n/i18n'
+import { app } from '../appConfig'
 
 /**
  * 追加機能（アドオン）。使いたい人だけが導入し、導入後はオフラインでも使える（docs/EXTRACTOR.md）。
@@ -8,7 +9,7 @@ import type { MessageKey } from '../i18n/i18n'
  */
 
 /** 保存先の名前。vite.config.ts の Service Worker の設定と一致させる */
-export const ADDON_CACHE = 'wevocalsynth-addons'
+export const ADDON_CACHE = app.cacheName('addons')
 
 export interface AddonFile {
   path: string

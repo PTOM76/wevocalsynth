@@ -1,8 +1,10 @@
+import { app } from '../appConfig'
+
 /**
  * 抽出のあとにアプリが落ちたかを、次の起動で知るための印（localStorage）。
  * 抽出の前に付け、結果を反映して少し経ったら外す。起動時に残っていれば、抽出の前後で落ちた（iOS のメモリ不足など）
  */
-const KEY = 'wevocalsynth.extractGuard'
+const KEY = app.key('extractGuard')
 /** 結果を反映してから印を外すまで（ミリ秒）。反映の直後の解析や自動保存の間に落ちることがあるため */
 const SETTLE_MS = 10_000
 

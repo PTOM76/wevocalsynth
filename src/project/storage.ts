@@ -1,6 +1,7 @@
 import { idbClear } from './idb'
 import { ORIGINAL_PREFIX } from '../audio/originalStore'
 import { ADDON_CACHE } from '../addons/addons'
+import { app } from '../appConfig'
 
 /**
  * ブラウザ内に保存しているデータの確認と削除（設定の「データ」）。
@@ -11,7 +12,7 @@ import { ADDON_CACHE } from '../addons/addons'
  */
 
 /** localStorage のうち、このアプリが使う項目の接頭辞 */
-const LOCAL_PREFIX = 'wevocalsynth.'
+const LOCAL_PREFIX = app.key('')
 
 /** 使用量と上限（バイト）。ブラウザが対応していなければ null */
 export async function storageUsage(): Promise<{ usage: number; quota: number } | null> {

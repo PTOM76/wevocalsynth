@@ -10,6 +10,7 @@ import TrackLanes from './TrackLanes'
 import TrackTabs from './TrackTabs'
 import { useT } from '../../i18n/i18n'
 import type { PickMods } from './useTrackDrag'
+import { app } from '../../appConfig'
 
 interface Props {
   tracks: Track[]
@@ -36,7 +37,7 @@ interface Props {
 }
 
 /** 折りたたみの状態を覚えておくキー（1: 広げる / 2: 折りたたむ。usePersistentNumber は 0 を覚えられない） */
-const KEY = 'wevocalsynth.tracksCollapsed'
+const KEY = app.key('tracksCollapsed')
 
 /**
  * トラックの欄（2本以上のときだけ出す）。広げると波形付きの一覧、折りたたむとタブになる。

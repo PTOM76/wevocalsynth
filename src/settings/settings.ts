@@ -16,6 +16,7 @@ export type ThemeSetting = 'system' | 'light' | 'dark'
 export type CtrlSAction = 'project' | 'export'
 
 import type { WheelZoom } from 'wevocal-lib/react'
+import { app } from '../appConfig'
 export type { WheelZoom }
 
 /** ピッチ解析で声とみなす判定の厳しさ。ゆるいほど、かすれた声も拾うが、雑音も拾いやすい */
@@ -237,7 +238,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fastMath: true,
 }
 const DEFAULTS = DEFAULT_SETTINGS
-const STORAGE_KEY = 'wevocalsynth.settings'
+const STORAGE_KEY = app.key('settings')
 
 /** localStorage から読む。使えない環境（プライベートモードなど）や壊れた値では既定値を使う */
 function load(): Settings {

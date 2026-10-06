@@ -1,7 +1,8 @@
 // このアプリの IndexedDB。画面（メインスレッド）と自動保存の Worker の両方から使う
 import { createIdb } from 'pevenmui/web'
+import { app } from '../appConfig'
 
-const db = createIdb('wevocalsynth')
+const db = createIdb(app.id)
 
 export const idbGet = db.get
 export const idbPut = db.put

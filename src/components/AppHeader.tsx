@@ -2,6 +2,7 @@ import { faRotateLeft, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import { AppHeader as PevenAppHeader, HeaderIcon, type MenuGroup } from 'pevenmui'
 import AppIcon from './AppIcon'
 import { useT } from '../i18n/i18n'
+import { app } from '../appConfig'
 
 interface Props {
   menus: MenuGroup[]
@@ -20,7 +21,7 @@ export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRed
   const t = useT()
   return (
     <PevenAppHeader
-      title={projectName ? (dirty ? '* ' : '') + projectName : 'WeVocalSynth'}
+      title={projectName ? (dirty ? '* ' : '') + projectName : app.name}
       icon={<AppIcon size={16} />}
       menus={menus}
       actions={(mobile) => (

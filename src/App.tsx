@@ -53,6 +53,7 @@ import { i18n, LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
 import { setFastMath, setParallel } from './dsp/engine'
 import { checkForUpdate, promptUpdate } from 'pevenmui/pwa'
+import { app } from './appConfig'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 /** 選択範囲なし（描画のたびに新しい空配列を作らない） */
@@ -128,7 +129,7 @@ export default function App() {
   const toggleRepeat = () => ed.setRepeat(!ed.repeat)
   // 波形の表示範囲はツールバーと波形の両方から操作するため、ここで持つ
   const viewCtl = useWaveformView(ed.duration, player.livePosition, player.playing, settings.followPlayhead, ed.tracks.activeId, settings.wheelZoom)
-  const [pitchPercent, setPitchPercent] = usePersistentNumber('wevocalsynth.pitchPercent', 40)
+  const [pitchPercent, setPitchPercent] = usePersistentNumber(app.key('pitchPercent'), 40)
   const { view } = viewCtl
   // 止まっているときに再生位置を動かしたら（矢印キーなど）、画面の外なら見える位置まで表示範囲を動かす
   const { reveal } = viewCtl
@@ -624,7 +625,7 @@ export default function App() {
               { key: 'volume', label: t('volume.title'), content: <InspectorFlatContext.Provider value>{volumePanel}</InspectorFlatContext.Provider> },
             ]}
             collapsible={settings.mobileUi === 'new'}
-            storageKey="wevocalsynth.mobilePanelPinned"
+            storageKey={app.key('mobilePanelPinned')}
             openLabel={t('mobilePanel.open')}
             view={viewTools}
             playBar={
@@ -647,7 +648,7 @@ export default function App() {
           />
         ) : (
           <DesktopLayout
-            storageKey="wevocalsynth.inspectorWidth"
+            storageKey={app.key('inspectorWidth')}
             toolbar={
               <Toolbar
                 playing={player.playing}
