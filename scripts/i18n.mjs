@@ -15,6 +15,7 @@ function usage() {
   rm <key>...                  全言語から消す
   mv <old> <new>               キーの名前を変え、--src の中の '<old>' も書き換える
   check                        言語ごとのキーの欠けと、--src で見つからないキーを表示する
+  fmt [--check]                キーを先頭の分類ごとにまとめ、全言語を ${BASE} と同じ並びにする（--check は書き換えずに確かめる）
 
   --dir  訳文のフォルダー（既定 src/i18n。例 analyzer/app/lang）
   --src  キーを探すフォルダー（既定は --dir の親）
@@ -26,7 +27,8 @@ function parseArgs(argv) {
   const pos = []
   const opt = {}
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i].startsWith('--')) opt[argv[i].slice(2)] = argv[++i]
+    // 値のないオプション（--check など）は true にする
+    if (argv[i].startsWith('--')) opt[argv[i].slice(2)] = argv[i + 1] === undefined || argv[i + 1].startsWith('--') ? true : argv[++i]
     else pos.push(argv[i])
   }
   return { pos, opt }
@@ -90,15 +92,30 @@ class LangFile {
   keyAt(i) {
     return JSON.parse(this.lines[i].trim().replace(/,$/, '').replace(/^("(?:[^"\\]|\\.)*"):.*$/, '$1'))
   }
-  save() {
+  // order の並びで書き直す（分類の間に空行）。order にないキーは同じ分類の最後に置く
+  reorder(groups) {
+    const rest = Object.keys(this.data).filter((k) => !groups.some((g) => g.includes(k)))
+    const blocks = groups.map((g) => {
+      const prefix = g[0].split('.')[0]
+      return [...g.filter((k) => k in this.data), ...rest.filter((k) => k.split('.')[0] === prefix)]
+    })
+    const orphan = rest.filter((k) => !groups.some((g) => g[0].split('.')[0] === k.split('.')[0]))
+    if (orphan.length) blocks.push(orphan)
+    const tail = this.lines.at(-1) === '' ? [''] : []
+    this.lines = ['{', ...blocks.filter((b) => b.length).flatMap((b, i) => [...(i ? [''] : []), ...b.map((k) => this.line(k, this.data[k]))]), '}', ...tail]
+  }
+  // カンマを整えた本文（最後のキーだけカンマを付けない）
+  text() {
     const entries = this.entryIndexes()
-    // 最後のキーだけカンマを付けない
     for (const i of entries) if (!this.lines[i].endsWith(',')) this.lines[i] += ','
     const last = entries.at(-1)
     this.lines[last] = this.lines[last].replace(/,$/, '')
     const text = this.lines.join('\n')
     JSON.parse(text)
-    fs.writeFileSync(this.file, text)
+    return text
+  }
+  save() {
+    fs.writeFileSync(this.file, this.text())
   }
 }
 
@@ -220,6 +237,29 @@ function main() {
       if (unused.length) console.log(`ソースに見つからない（動的なキーの可能性あり）${unused.length} 件:\n  ${unused.join('\n  ')}`)
       console.log(bad ? `言語の間の不一致: ${bad} 件` : `言語の間の不一致なし（${keys.length} キー、${Object.keys(langs).length} 言語）`)
       process.exitCode = bad ? 1 : 0
+      break
+    }
+    case 'fmt': {
+      // 分類（キーの最初の「.」まで）ごとに、${BASE} で最初に出てくる順にまとめる
+      const groups = new Map()
+      for (const k of Object.keys(base.data)) {
+        const prefix = k.split('.')[0]
+        if (!groups.has(prefix)) groups.set(prefix, [])
+        groups.get(prefix).push(k)
+      }
+      const checkOnly = opt.check === true
+      let changed = 0
+      for (const f of Object.values(langs)) {
+        const before = fs.readFileSync(f.file, 'utf8')
+        f.reorder([...groups.values()])
+        const after = f.text()
+        if (before === after) continue
+        changed++
+        if (!checkOnly) fs.writeFileSync(f.file, after)
+        console.log(`${checkOnly ? '整っていない' : '整形した'}: ${path.basename(f.file)}`)
+      }
+      if (!changed) console.log('整っている')
+      process.exitCode = changed && checkOnly ? 1 : 0
       break
     }
     default:
