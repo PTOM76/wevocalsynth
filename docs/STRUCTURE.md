@@ -166,10 +166,17 @@ src/dsp/
   parallel.ts  長い音を区間に分けて並列に加工する（試験的）
   worker.ts  wasm の DSP エンジンをメインスレッド外で実行する Worker
 
+src/effects/
+  index.ts  エフェクトの表と、表の順に掛ける関数（書き出し、再生）
+  types.ts  エフェクトの型。トラックに掛けるもの（EQ、フェーダー）は、どれもこの形で表（index.ts）に登録する
+
 src/effects/eq/
   eq.ts  トラックのグラフィック EQ の計算（再生と書き出しに掛ける）
   EqDialog.tsx  トラックのグラフィック EQ のダイアログ
   EqGraph.tsx  グラフィック EQ のグラフ（なぞって値を描く）
+
+src/effects/fader/
+  fader.ts  フェーダー（音量、パン、位相の反転）。書き出しの計算と、再生のノード
 
 src/hooks/
   editActions.ts  音声を書き換える操作（加工の適用、テンポの伸縮、区間の伸縮、サンプラー、曲線の書き込み）

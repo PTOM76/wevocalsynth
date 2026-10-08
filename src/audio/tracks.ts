@@ -1,5 +1,7 @@
 // トラックの形と、保存する設定（フェーダー、鳴らし方、EQ）の変換
 import { isFlatEq, parseEq, type TrackEq } from '../effects/eq/eq'
+import type { TrackFader } from '../effects/fader/fader'
+export { DEFAULT_FADER, isNeutralFader, faderGain, type TrackFader } from '../effects/fader/fader'
 import type { Clip } from './types'
 import type { MoraMark } from './kanaCut'
 
@@ -26,25 +28,6 @@ export interface TrackMix {
 
 export const DEFAULT_MIX: TrackMix = { mute: false, solo: false }
 
-/**
- * トラックの音量・パン（フェーダー）。音声は書き換えず、再生と書き出しの両方に常に掛ける（適用ボタンは無い）。
- * 元に戻す履歴には入れないが、プロジェクトファイルと自動保存には保存する
- */
-export interface TrackFader {
-  /** 音量（dB） */
-  db: number
-  /** パン（-1 = 左 … 0 = 中央 … 1 = 右） */
-  pan: number
-  /** 位相（極性）を反転する（波形の上下を逆にする。ほかのトラックとの打ち消し合いを直す・確かめるとき） */
-  invert?: boolean
-}
-
-export const DEFAULT_FADER: TrackFader = { db: 0, pan: 0 }
-
-export const isNeutralFader = (f: TrackFader) => f.db === 0 && f.pan === 0 && !f.invert
-
-/** フェーダーの音量の倍率（位相の反転は負の倍率として掛ける） */
-export const faderGain = (f: TrackFader) => 10 ** (f.db / 20) * (f.invert ? -1 : 1)
 
 /**
  * トラックごとの、音声以外の状態（フェーダー・鳴らし方・重ねる表示）。プロジェクトファイルと自動保存に保存する。

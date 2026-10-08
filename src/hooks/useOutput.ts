@@ -1,8 +1,7 @@
 // プロジェクトの保存と、音声の書き出し
 import { finishClip, type FinishOptions } from '../audio/finish'
 import type { Clip, Range } from '../audio/types'
-import { applyFader } from '../audio/edit'
-import { applyEq } from '../effects/eq/eq'
+import { renderEffects } from '../effects'
 import { sliceRanges } from '../audio/multiRange'
 import { mixClips } from '../audio/mix'
 import { isAudible } from '../audio/tracks'
@@ -72,8 +71,8 @@ export function useOutput(d: Deps) {
     // トラックの EQ とフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
     const render = async (c: Clip, id: string) => {
       const part = s.selectionOnly && d.selections.length ? sliceRanges(c, d.selections) : c
-      const f = tracks.faderOf(id)
-      return applyFader(await applyEq(part, tracks.eqOf(id)), f.db, f.pan, f.invert)
+      // トラックのエフェクト（EQ → フェーダー。effects/ の表の順）
+      return renderEffects(part, { eq: tracks.eqOf(id), fader: tracks.faderOf(id) })
     }
     // ミックス: 再生と同じく、ミュート・ソロに従って鳴るトラックだけを混ぜる（サンプルレートは選んでいるトラックに合わせる）
     const audible = history.tracks.filter((tr) => isAudible(tr.id, tracks.mix, history.tracks))

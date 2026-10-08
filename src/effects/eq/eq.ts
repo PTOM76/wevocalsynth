@@ -1,5 +1,6 @@
 // トラックのグラフィック EQ の計算（再生と書き出しに掛ける）
 import type { Clip } from '../../audio/types'
+import type { Effect } from '../types'
 
 /**
  * トラックのグラフィック EQ。フェーダーと同じく音声は書き換えず、再生と書き出しの両方に常に掛ける。
@@ -159,4 +160,15 @@ export function disconnectLiveEq(n: LiveEq) {
   n.input.disconnect()
   for (const b of n.bands) b.disconnect()
   n.output.disconnect()
+}
+
+/** グラフィック EQ のエフェクト */
+export const eqEffect: Effect<TrackEq> = {
+  initial: DEFAULT_EQ,
+  isNeutral: isFlatEq,
+  render: applyEq,
+  live: (ctx, eq) => {
+    const n = createLiveEq(ctx, eq)
+    return { input: n.input, output: n.output, update: (v) => updateLiveEq(n, v), dispose: () => disconnectLiveEq(n) }
+  },
 }

@@ -1,8 +1,10 @@
 // 再生（全トラックのミックス、ループ、音量メーター、フェーダーと EQ）
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from './types'
-import { DEFAULT_FADER, faderGain, type TrackFader } from './tracks'
-import { createLiveEq, DEFAULT_EQ, disconnectLiveEq, updateLiveEq, type LiveEq, type TrackEq } from '../effects/eq/eq'
+import type { TrackFader } from '../effects/fader/fader'
+import { makePanner } from '../effects/fader/fader'
+import type { TrackEq } from '../effects/eq/eq'
+import { createLiveEffects, DEFAULT_EFFECTS, type EffectValues, type LiveEffects } from '../effects'
 import { clipDuration } from './types'
 import { startContext, suspendContext } from 'wevocal-lib'
 
@@ -28,31 +30,6 @@ export function releasePlayers() {
 const NO_TRACKS: PlayTrack[] = []
 const NO_FADERS: Record<string, TrackFader> = {}
 const NO_EQS: Record<string, TrackEq> = {}
-
-/** パンの処理。モノラルも左右同じ音のステレオにしてから掛ける（適用の panRange・書き出しの applyFader と同じ計算になるように） */
-function makePanner(ctx: AudioContext) {
-  const p = ctx.createStereoPanner()
-  p.channelCount = 2
-  p.channelCountMode = 'explicit'
-  p.channelInterpretation = 'speakers'
-  return p
-}
-
-/**
- * フェーダー（音量・パン）の値を、つないだノードに入れる。再生中に動かしたときは途切れないよう少しだけならし、
- * 再生を始めるとき（`immediate`）はそのまま入れる（出だしの音量がずれないように）
- */
-function setFaderNodes(n: { gain: GainNode; pan: StereoPannerNode }, f: TrackFader, immediate = false) {
-  // 位相の反転は負の倍率として掛ける（書き出しの applyFader と同じ）
-  if (immediate) {
-    n.gain.gain.value = faderGain(f)
-    n.pan.pan.value = f.pan
-    return
-  }
-  const t = n.gain.context.currentTime
-  n.gain.gain.setTargetAtTime(faderGain(f), t, 0.01)
-  n.pan.pan.setTargetAtTime(f.pan, t, 0.01)
-}
 
 /** レベルメーター用の AnalyserNode を作る（時間波形を読むだけなので小さくてよい） */
 function makeAnalyser(ctx: AudioContext) {
@@ -99,14 +76,12 @@ export function usePlayer(
   gainCurveRef.current = gainCurve
   /** 音量の曲線を掛けるノード（再生のたびに作る） */
   const curveNodeRef = useRef<GainNode | null>(null)
-  const fadersRef = useRef(faders)
-  fadersRef.current = faders
-  /** トラックごとのフェーダーのノード（再生のたびに作る。動かしたらここへ値を入れる） */
-  const faderNodes = useRef(new Map<string, { gain: GainNode; pan: StereoPannerNode }>())
-  const eqsRef = useRef(eqs)
-  eqsRef.current = eqs
-  /** トラックごとの EQ のノード（再生のたびに作る） */
-  const eqNodes = useRef(new Map<string, LiveEq>())
+  // トラックごとのエフェクト（EQ、フェーダー）の値
+  const valuesOf = (trackId: string): EffectValues => ({ eq: eqs[trackId] ?? DEFAULT_EFFECTS.eq, fader: faders[trackId] ?? DEFAULT_EFFECTS.fader })
+  const valuesOfRef = useRef(valuesOf)
+  valuesOfRef.current = valuesOf
+  /** トラックごとのエフェクトのノード（再生のたびに作る。値を変えたらここへ入れる） */
+  const effectNodes = useRef(new Map<string, LiveEffects>())
   /** トラックごとの「鳴らす / 鳴らさない」（音量 1 / 0）。ミュート・ソロを切り替えたらここを変える */
   const muteNodes = useRef(new Map<string, GainNode>())
   const ctxRef = useRef<AudioContext | null>(null)
@@ -156,9 +131,8 @@ export function usePlayer(
     for (const n of nodesRef.current) n.disconnect()
     nodesRef.current = []
     analysersRef.current.clear()
-    faderNodes.current.clear()
-    for (const n of eqNodes.current.values()) disconnectLiveEq(n)
-    eqNodes.current.clear()
+    for (const n of effectNodes.current.values()) n.dispose()
+    effectNodes.current.clear()
     muteNodes.current.clear()
     const ctx = ctxRef.current
     if (suspend && ctx) suspendContext(ctx, id)
@@ -286,30 +260,26 @@ export function usePlayer(
       const meter = makeAnalyser(ctx)
       made.push(meter)
       analysersRef.current.set(id, meter)
-      // トラックの EQ（フェーダーの前に挟む）
-      const eqOf = (trackId: string) => {
-        const n = createLiveEq(ctx, eqsRef.current[trackId] ?? DEFAULT_EQ)
-        eqNodes.current.set(trackId, n)
+      // トラックのエフェクト（EQ → フェーダー。effects/ の表の順）
+      const effectsOf = (trackId: string) => {
+        const n = createLiveEffects(ctx, valuesOfRef.current(trackId))
+        effectNodes.current.set(trackId, n)
         return n
       }
-      // 適用前の音量・パン（範囲だけ） → トラックの EQ → トラックのフェーダー（全体） → メーター → 全体の出口
+      // 適用前の音量・パン（範囲だけ） → トラックのエフェクト（EQ、フェーダー） → メーター → 全体の出口
       const panner = makePanner(ctx)
       made.push(panner)
       const curveNode = ctx.createGain()
       made.push(curveNode)
       curveNodeRef.current = curveNode
       panRef.current = panner
-      const fader = { gain: ctx.createGain(), pan: makePanner(ctx) }
-      made.push(fader.gain, fader.pan)
-      setFaderNodes(fader, fadersRef.current[id] ?? DEFAULT_FADER, true)
-      faderNodes.current.set(id, fader)
-      const trackEq = eqOf(id)
+      const trackEffects = effectsOf(id)
       const mute = ctx.createGain()
       made.push(mute)
       mute.gain.value = muted ? 0 : 1
       muteNodes.current.set(id, mute)
-      src.connect(gain).connect(panner).connect(curveNode).connect(trackEq.input)
-      trackEq.output.connect(fader.gain).connect(fader.pan).connect(mute).connect(meter).connect(master)
+      src.connect(gain).connect(panner).connect(curveNode).connect(trackEffects.input)
+      trackEffects.output.connect(mute).connect(meter).connect(master)
       src.onended = () => {
         // ループ中は範囲の先頭から鳴らし直す（音量の予約なども作り直すため、音源ごと作り直す）
         const l = loopRef.current
@@ -335,17 +305,13 @@ export function usePlayer(
           const m = makeAnalyser(ctx)
           made.push(m)
           analysersRef.current.set(o.id, m)
-          const f = { gain: ctx.createGain(), pan: makePanner(ctx) }
-          made.push(f.gain, f.pan)
-          setFaderNodes(f, fadersRef.current[o.id] ?? DEFAULT_FADER, true)
-          faderNodes.current.set(o.id, f)
           const mute = ctx.createGain()
           made.push(mute)
           mute.gain.value = o.audible ? 1 : 0
           muteNodes.current.set(o.id, mute)
-          const q = eqOf(o.id)
-          e.connect(q.input)
-          q.output.connect(f.gain).connect(f.pan).connect(mute).connect(m).connect(master)
+          const fx = effectsOf(o.id)
+          e.connect(fx.input)
+          fx.output.connect(mute).connect(m).connect(master)
           e.start(at, start, Math.min(end, clipDuration(o.clip)) - start)
           return e
         })
@@ -368,15 +334,10 @@ export function usePlayer(
     scheduleCurve()
   }, [gainCurve, scheduleCurve])
 
-  // 再生中にフェーダーを動かしたら、すぐ反映する
+  // 再生中にエフェクト（フェーダー、EQ）を変えたら、すぐ反映する
   useEffect(() => {
-    for (const [trackId, n] of faderNodes.current) setFaderNodes(n, faders[trackId] ?? DEFAULT_FADER)
-  }, [faders])
-
-  // 再生中に EQ を変えたら、すぐ反映する
-  useEffect(() => {
-    for (const [trackId, n] of eqNodes.current) updateLiveEq(n, eqs[trackId] ?? DEFAULT_EQ)
-  }, [eqs])
+    for (const [trackId, n] of effectNodes.current) n.update(valuesOfRef.current(trackId))
+  }, [faders, eqs])
 
   // 再生中に適用前の音量が変わったら、すぐ反映する
   const gainKey = liveGain ? `${liveGain.db}:${liveGain.pan}:${liveGain.ranges.map((r) => `${r.start}-${r.end}`).join(',')}` : ''
