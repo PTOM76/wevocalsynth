@@ -925,7 +925,7 @@
   "kanaCut.failed": "처리할 수 없습니다: {message}",
   "kanaCut.empty": "가사를 인식하지 못했습니다",
   "kanaCut.exportMenu": "한 음씩 내보내기 (ZIP)",
-  "kanaCut.clearMenu": "읽기 레인 지우기",
+  "kanaCut.clearMenu": "읽기 레인 삭제",
   "kanaCut.utauMenu": "가창 합성 음원으로 내보내기 (oto.ini 포함, ZIP)",
   "kanaCut.lineUpMenu": "오십음 순서로 트랙에 나열",
   "kanaCut.lineUpTrack": "{name} (오십음)"

@@ -27,6 +27,7 @@ const PAGES = [
 	{ name: 'tracks', title: 'トラック', desc: '複数の音声を重ねるトラックの操作。', sections: ['トラック'] },
 	{ name: 'extract', title: 'ボーカル抽出', desc: '曲から声を取り出す機能。', sections: ['ボーカル抽出'] },
 	{ name: 'create', title: '音声の作成と MIDI', desc: '音声の作成、録音と、MIDI に並べる機能。', sections: ['音声の作成', '録音', 'MIDI に並べる'] },
+	{ name: 'kana', title: '一音ずつ切り出す', desc: '歌声を一音ずつの範囲に分けて書き出す機能。', sections: ['一音ずつ切り出す'] },
 	{ name: 'tempo', title: 'テンポとマーカー', desc: 'テンポ（BPM）、拍の線、マーカーの使い方。', sections: ['テンポ（BPM）と拍の線', 'マーカー'] },
 	{ name: 'save', title: '保存と書き出し', desc: '操作履歴、保存、音声と動画の書き出し。', sections: ['操作履歴', '保存と書き出し'] },
 	{ name: 'experimental', title: '試験的機能', desc: '開発中の機能の使い方。', sections: ['試験的機能'] },

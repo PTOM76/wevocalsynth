@@ -925,7 +925,7 @@
   "kanaCut.failed": "処理できませんでした: {message}",
   "kanaCut.empty": "歌詞を認識できませんでした",
   "kanaCut.exportMenu": "一音ずつ書き出す（ZIP）",
-  "kanaCut.clearMenu": "読みの帯を消す",
+  "kanaCut.clearMenu": "読みの帯を削除",
   "kanaCut.utauMenu": "歌声合成の音源として書き出す（oto.ini 付き、ZIP）",
   "kanaCut.lineUpMenu": "五十音順にトラックへ並べる",
   "kanaCut.lineUpTrack": "{name}（五十音）"

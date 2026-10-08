@@ -925,7 +925,7 @@
   "kanaCut.failed": "無法處理：{message}",
   "kanaCut.empty": "未能辨識歌詞",
   "kanaCut.exportMenu": "逐音匯出（ZIP）",
-  "kanaCut.clearMenu": "清除讀音軌",
+  "kanaCut.clearMenu": "刪除讀音軌",
   "kanaCut.utauMenu": "匯出為歌聲合成音源（含 oto.ini，ZIP）",
   "kanaCut.lineUpMenu": "按五十音順序排列到音軌",
   "kanaCut.lineUpTrack": "{name}（五十音）"
