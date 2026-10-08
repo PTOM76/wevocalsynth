@@ -8,7 +8,6 @@ import type { VolumeAction } from '../components/VolumePanel'
 import { t } from '../i18n/i18n'
 
 interface Deps {
-  /** 編集中のクリップ */
   edited: Clip | null
   /** 選択範囲（複数可、空なら未選択） */
   selections: Range[]

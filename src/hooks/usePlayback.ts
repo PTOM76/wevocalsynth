@@ -42,7 +42,6 @@ export function usePlayback(main: Player, preview: Player, loop: Loop, curve: { 
       if (main.playing) main.pause()
       else void main.play(main.position >= duration - 1e-3 ? 0 : main.position)
     },
-    /** `t` から再生する */
     playFrom: (t: number) => {
       only('main')
       void main.play(t)

@@ -92,7 +92,6 @@ export interface MenuActions {
   synth: () => void
   /** 選択範囲を MIDI の音符に並べる */
   sampler: () => void
-  /** プロジェクト名を変える */
   showShortcuts: () => void
   showSettings: () => void
   showHistory: () => void
@@ -150,6 +149,5 @@ export interface MenuActions {
   seekMarker: (dir: -1 | 1) => void
   /** 新しい版を確認する（ヘルプ） */
   checkUpdate: () => void
-  /** ライセンス情報を出す */
   showLicenses: () => void
 }
