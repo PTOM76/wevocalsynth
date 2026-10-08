@@ -24,3 +24,4 @@ AI のエージェント向けの決まり。[docs/CODING.md](docs/CODING.md) �
 - ダイアログを足すときは `src/hooks/useDialogs.ts` の `DialogId` に名前を足し、描画は `src/components/AppDialogs.tsx` に置く。開くのは `dialogs.opener('名前')`
 - メニューの項目は `src/hooks/menus/`（メニューバーは menuBar.ts、右クリックは context.ts、両方に出るものは shared.ts）。App から渡す値の型は actions.ts
 - 音声を書き換える操作（適用、伸縮、曲線の書き込み）は `src/hooks/editActions.ts`、ショートカットは `src/hooks/useEditorKeys.ts`、起動時の処理は `src/hooks/useStartup.ts`。useEditor はそれらを束ねる
+- 文字の大きさは数字で書かず `pevenFont('base')`（xs 10、sm 11、md 12、base 13、lg 14、xl 16。PevenMUI の寸法）。選択肢の表などの定数は `src/constants/`
