@@ -6,7 +6,7 @@ import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, Button, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, useShortcuts, DesktopLayout, MobileLayout } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, DesktopLayout, MobileLayout } from 'pevenmui'
 import LevelMeter from './components/LevelMeter'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -14,7 +14,7 @@ import { useDialogs } from './hooks/useDialogs'
 import { useSelectionExport } from './hooks/useSelectionExport'
 import AppDialogs from './components/AppDialogs'
 import { useAppMenus } from './hooks/useAppMenus'
-import { useCommands } from './commands'
+import { useCommandKeys, useCommands } from './commands'
 import { useWaveformView, ZOOM_STEP } from 'wevocal-lib/react'
 import AppHeader from './components/AppHeader'
 import { EmptyState } from './components/EmptyState'
@@ -133,21 +133,14 @@ export default function App() {
 
   const selectionExport = useSelectionExport(ed)
   const { dragSelectionFile, saveSelectionToFolder } = selectionExport
-  // 切り出しと加工でよく使う操作のキー（既定はなし。設定で割り当てる。ほかの操作は useEditor）
-  useShortcuts(ed.keymap, {
-    playSelection: selection ? playback.playSelection : undefined,
-    toggleLoop: edited ? toggleRepeat : undefined,
-    apply: edited && !busy ? () => void ed.apply() : undefined,
-    toNewTrack: selection ? () => ed.tracks.fromSelection(ed.selections, false) : undefined,
-    saveToFolder: selection && canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
-    selectSounds: edited ? dialogs.opener('soundSelect') : undefined,
-  })
   // 操作（コマンド）。メニュー、右クリックは id で参照する（src/commands/、並びは commands/menus.ts）
   const commands = useCommands(
     { ed, dialogs, settings, update: updateSettings, view: { ctl: viewCtl, center, waveScale, setWaveScale }, trackArea, selectionExport },
     ed.keymap,
   )
   const { menus, mobileMenus, context } = useAppMenus(commands)
+  // キーボードショートカット（キーの割り当てにある操作は、どれもコマンドで処理する）
+  useCommandKeys(commands, ed.keymap)
 
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
   const panelsDisabled = !editing || !edited

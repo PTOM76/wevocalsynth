@@ -42,6 +42,8 @@ export interface Command {
   /** オンとオフの操作なら、今オンか */
   checked?: (c: CommandContext) => boolean
   run: (c: CommandContext) => void
+  /** 押せないときはキーを受け取らない（ブラウザやほかの部品に任せる）。省くと、キーはいつも受け取り、押せないときは何もしない */
+  keyOnlyWhenEnabled?: boolean
 }
 
 /** コマンドの集まりを定義する（型を保ったまま返す） */

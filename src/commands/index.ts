@@ -1,8 +1,8 @@
 // コマンドの一覧と、メニューの項目を作る関数
-import type { MenuEntry } from 'pevenmui'
+import { useShortcuts, type MenuEntry } from 'pevenmui'
 import { useRef } from 'react'
 import { useT } from '../i18n/i18n'
-import { keyLabelOf, type ActionId, type Keymap } from '../settings/keymap'
+import { ACTIONS, keyLabelOf, type ActionId, type Keymap } from '../settings/keymap'
 import { editCommands } from './edit'
 import { fileCommands } from './file'
 import { helpCommands } from './help'
@@ -16,6 +16,9 @@ import { viewCommands } from './view'
 export const COMMANDS = { ...fileCommands, ...editCommands, ...viewCommands, ...playCommands, ...trackCommands, ...toolCommands, ...helpCommands }
 
 export type CommandId = keyof typeof COMMANDS
+
+// キーを割り当てられる操作は、どれもコマンドにする（足し忘れると型エラー）
+COMMANDS satisfies Record<ActionId, Command>
 export type { Command, CommandContext }
 
 /**
@@ -49,3 +52,18 @@ export function useCommands(ctx: CommandContext, keymap: Keymap) {
 }
 
 export type Commands = ReturnType<typeof useCommands>
+
+/**
+ * キーの割り当てにある操作を、コマンドで処理する（App で 1 回呼ぶ）。
+ * keyOnlyWhenEnabled のコマンドは押せるときだけキーを受け取り、それ以外はいつも受け取って、押せなければ何もしない
+ */
+export function useCommandKeys(commands: Commands, keymap: Keymap) {
+  const handlers = Object.fromEntries(
+    ACTIONS.map(({ id }) => {
+      const cmd = COMMANDS[id] as Command
+      const take = !cmd.keyOnlyWhenEnabled || commands.enabled(id)
+      return [id, take ? () => commands.run(id) : undefined]
+    }),
+  ) as Record<ActionId, (() => void) | undefined>
+  useShortcuts(keymap, handlers)
+}

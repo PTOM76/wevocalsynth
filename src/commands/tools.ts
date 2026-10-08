@@ -5,6 +5,15 @@ import { defineCommands, ready, selected, type CommandContext } from './types'
 
 /** ピッチの道具は、ピッチを表示して解析が済んでから */
 export const pitchReady = (c: CommandContext) => ready(c) && c.ed.showPitch && !!c.ed.pitch
+/** ピッチの帯の曲線を動かせるか */
+const curveReady = (c: CommandContext) => c.ed.showPitch && c.ed.editing && c.ed.pitchTools.ready && !c.ed.busy
+/** ピッチを上げ下げできるか（曲線か、加工の欄のピッチ） */
+const canNudge = (c: CommandContext) => c.ed.editing && !c.ed.busy
+/** 曲線を動かせるなら曲線を `curve` 半音、そうでなければ加工の欄のピッチを `param` 半音（-24〜24） */
+function nudgePitch(c: CommandContext, curve: number, param: number) {
+  if (curveReady(c)) return c.ed.pitchTools.shift(curve)
+  c.ed.setParams((p) => ({ ...p, semitones: Math.max(-24, Math.min(24, Math.round((p.semitones + param) * 100) / 100)) }))
+}
 // ピッチの強制表示と非表示は、選択範囲があるときだけ
 const voicingReady = (c: CommandContext) => selected(c) && pitchReady(c)
 
@@ -22,8 +31,11 @@ export const toolCommands = defineCommands({
   record: { label: 'record.menu', enabled: (c) => !c.ed.busy && canRecord(), run: (c) => c.dialogs.open('record') },
 
   // ピッチの道具（右クリックでは、ピッチの帯のときだけ）
-  pitchUp: { label: 'context.pitchUp', enabled: pitchReady, run: (c) => c.ed.pitchTools.shift(1) },
-  pitchDown: { label: 'context.pitchDown', enabled: pitchReady, run: (c) => c.ed.pitchTools.shift(-1) },
+  // ↑↓: ピッチの帯で曲線を編集できるときは曲線（1 半音、Shift で 0.1 半音）、それ以外は加工の欄のピッチ（1 半音、Shift で 12 半音）
+  pitchUp: { label: 'context.pitchUp', enabled: canNudge, keyOnlyWhenEnabled: true, run: (c) => nudgePitch(c, 1, 1) },
+  pitchDown: { label: 'context.pitchDown', enabled: canNudge, keyOnlyWhenEnabled: true, run: (c) => nudgePitch(c, -1, -1) },
+  pitchUpAlt: { label: 'key.pitchUpAlt', enabled: canNudge, keyOnlyWhenEnabled: true, run: (c) => nudgePitch(c, 0.1, 12) },
+  pitchDownAlt: { label: 'key.pitchDownAlt', enabled: canNudge, keyOnlyWhenEnabled: true, run: (c) => nudgePitch(c, -0.1, -12) },
   flatten: {
     label: 'context.flatten',
     enabled: pitchReady,

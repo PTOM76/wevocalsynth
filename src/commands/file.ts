@@ -12,7 +12,7 @@ export const fileCommands = defineCommands({
   exportRange: { label: (c, t) => t(c.ed.selection ? 'context.exportSelection' : 'menu.export'), enabled: ready, run: (c) => c.ed.openExport() },
   // 追加機能「変換」を導入しているときだけ
   exportVideo: { label: 'menu.exportVideo', visible: (c) => c.ed.video.available, enabled: ready, run: (c) => void c.ed.video.openDialog() },
-  saveToFolder: { label: 'folder.save', visible: () => canSaveToFolder(), enabled: selected, run: (c) => void c.selectionExport.saveSelectionToFolder() },
+  saveToFolder: { label: 'folder.save', visible: () => canSaveToFolder(), enabled: selected, keyOnlyWhenEnabled: true, run: (c) => void c.selectionExport.saveSelectionToFolder() },
   saveManyToFolder: {
     label: (c, t) => t('folder.saveMany', { n: c.ed.selections.length }),
     visible: (c) => canSaveToFolder() && c.ed.selections.length > 1,

@@ -492,11 +492,8 @@ export function useEditor() {
   const tempoSegs = useMemo(() => tempoSegments(projectTempo, markers.markers), [projectTempo, markers.markers])
   const { seekBy, seekEdge } = useSeek({ shown, duration, showBeatGrid: settings.showBeatGrid, segments: tempoSegs, getPosition: player.livePosition, seek: player.seek })
 
-  // ショートカットと、フォーカスしている帯に効く切り取りなど（useEditorKeys.ts）
-  const { keymap, clip } = useEditorKeys({
-    settings, edited, editing, busy, pitch, pitchTarget, pitchTools, showPitch, focusLane, cmd, selections, setSelections, setParams,
-    player, playback, history, picker, saveProjectFile, openExport, selectAll, clearSelection, addMarker, seekMarker, seekBy, seekEdge, setToast,
-  })
+  // キーの割り当てと、フォーカスしている帯に効く切り取りなど（useEditorKeys.ts。キーの処理はコマンド）
+  const { keymap, clip } = useEditorKeys({ settings, edited, editing, pitch, pitchTarget, focusLane, cmd, selections, player, setToast })
 
   return {
     keymap,
@@ -513,7 +510,7 @@ export function useEditor() {
     // 加工パラメータ
     params, setParams, autoMode, rangeNote, modes,
     // 再生
-    player, preview, loop, playback, repeat, setRepeat, seekEdge,
+    player, preview, loop, playback, repeat, setRepeat, seekEdge, seekBy,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
     showPitch, setShowPitch, showSpec, setShowSpec: requestShowSpec, analyzerInstalled, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, applyTrackEq, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
