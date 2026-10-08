@@ -392,6 +392,7 @@ export default function App() {
           busy={busy}
           onUndo={ed.history.undo}
           onRedo={ed.history.redo}
+          keymap={ed.keymap}
           projectName={ed.fileName}
           dirty={ed.dirty}
         />
@@ -476,14 +477,16 @@ export default function App() {
                 onLoop={toggleRepeat}
                 meter={settings.showMeters && <LevelMeter source={player.masterAnalysers} rows={2} width={80} height={9} label={t('meter.master')} />}
                 viewTools={viewTools}
-                canEdit={editing && !busy}
-                hasClipboard={ed.clip.hasClipboard}
-                canTrim={ed.clip.canTrim}
-                onCut={ed.clip.cut}
-                onCopy={ed.clip.copy}
-                onPaste={ed.clip.paste}
-                onTrim={ed.clip.trim}
-                onClearSelection={ed.clearSelection}
+                keymap={ed.keymap}
+                // 原音を表示しているときは、選択の解除のほかは押せない
+                edit={{
+                  cut: editing && commands.enabled('cut'),
+                  copy: editing && commands.enabled('copy'),
+                  paste: editing && commands.enabled('paste'),
+                  trim: editing && commands.enabled('trim'),
+                  clearSelection: commands.enabled('clearSelection'),
+                }}
+                onCommand={commands.run}
               />
             }
             editor={editor}

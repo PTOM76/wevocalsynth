@@ -9,6 +9,20 @@ import { useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import LiveTime from './LiveTime'
 import { stableMemo } from './stableMemo'
+import { withKey } from '../commands'
+import type { Keymap } from '../settings/keymap'
+import type { MessageKey } from '../i18n/i18n'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+
+/** ツールバーの編集のボタン（コマンドの id、名前、アイコン） */
+const EDIT_BUTTONS = [
+  ['cut', 'edit.cut', faScissors],
+  ['copy', 'edit.copy', faCopy],
+  ['paste', 'edit.paste', faPaste],
+  ['trim', 'edit.trim', faCropSimple],
+  ['clearSelection', 'edit.clearSelection', faXmark],
+] as const satisfies readonly (readonly [string, MessageKey, IconDefinition])[]
+type EditButton = (typeof EDIT_BUTTONS)[number][0]
 
 interface Props {
   playing: boolean
@@ -30,16 +44,11 @@ interface Props {
   meter?: ReactNode
   /** 表示ツール（拡大縮小・表示の切替・ピッチ描画） */
   viewTools: ReactNode
-  /** 編集（切り取り・コピー・貼り付け・選択範囲のみ残す・選択解除） */
-  canEdit: boolean
-  hasClipboard: boolean
-  /** 選択範囲のみ残すを使えるか（音声だけの操作なので、ピッチの帯にフォーカスしているときは使えない） */
-  canTrim: boolean
-  onCut: () => void
-  onCopy: () => void
-  onPaste: () => void
-  onTrim: () => void
-  onClearSelection: () => void
+  /** キーの割り当て（ツールチップに表記する） */
+  keymap: Keymap
+  /** 編集のボタン（切り取りなど）が押せるか。押したら onCommand で、そのコマンドを実行する */
+  edit: Record<EditButton, boolean>
+  onCommand: (id: EditButton) => void
 }
 
 /** PC 用のツールバー（高さ 40px）。再生操作・再生位置、編集（切り取りなど）、波形の表示ツールを1行に並べる */
@@ -55,7 +64,7 @@ function Toolbar(p: Props) {
       sx={{ height: 40, px: 1, alignItems: 'center', borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
     >
       <Stack direction="row" sx={{ alignItems: 'center' }}>
-        <Tooltip title={`${t('play.playPause')} (Space)`}>
+        <Tooltip title={withKey(t('play.playPause'), p.keymap, 'playPause')}>
           <span>
             <IconButton aria-label={t('play.playPause')} color="primary" size="small" disabled={p.disabled} onClick={p.onTogglePlay}>
               <FontAwesomeIcon icon={p.playing ? faPause : faPlay} />
@@ -72,11 +81,9 @@ function Toolbar(p: Props) {
       </Stack>
       {/* 編集と表示ツールは、入りきらなければ後ろから ▼ の中に入れる（再生まわりは常に出す） */}
       <OverflowRow>
-        <SmallButton title={`${t('edit.cut')} (Ctrl+X)`} label={t('edit.cut')} icon={faScissors} disabled={!p.canEdit || !p.hasSelection} onClick={p.onCut} />
-        <SmallButton title={`${t('edit.copy')} (Ctrl+C)`} label={t('edit.copy')} icon={faCopy} disabled={!p.canEdit || !p.hasSelection} onClick={p.onCopy} />
-        <SmallButton title={`${t('edit.paste')} (Ctrl+V)`} label={t('edit.paste')} icon={faPaste} disabled={!p.canEdit || !p.hasClipboard} onClick={p.onPaste} />
-        <SmallButton title={t('edit.trim')} label={t('edit.trim')} icon={faCropSimple} disabled={!p.canEdit || !p.hasSelection || !p.canTrim} onClick={p.onTrim} />
-        <SmallButton title={`${t('edit.clearSelection')} (Esc)`} label={t('edit.clearSelection')} icon={faXmark} disabled={!p.hasSelection} onClick={p.onClearSelection} />
+        {EDIT_BUTTONS.map(([id, label, icon]) => (
+          <SmallButton key={id} title={withKey(t(label), p.keymap, id)} label={t(label)} icon={icon} disabled={!p.edit[id]} onClick={() => p.onCommand(id)} />
+        ))}
         <ToolbarDivider gap />
         {p.viewTools}
       </OverflowRow>

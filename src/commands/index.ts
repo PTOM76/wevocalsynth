@@ -21,6 +21,12 @@ export type CommandId = keyof typeof COMMANDS
 COMMANDS satisfies Record<ActionId, Command>
 export type { Command, CommandContext }
 
+/** ツールチップの文字。キーを割り当てていれば「名前 (キー)」 */
+export function withKey(label: string, keymap: Keymap, id: ActionId) {
+  const key = keyLabelOf(keymap, id)
+  return key ? `${label} (${key})` : label
+}
+
 /**
  * コマンドを使う（App で 1 回呼ぶ）。今の状態は ref に持ち、実行や判定のときに最新を読む。
  * `item(id)` はメニューの項目を作る（名前、キーの表記、押せるか、チェック）。表示しないコマンドは null
