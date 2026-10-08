@@ -33,7 +33,7 @@ export const debugAudio = defineItems('debugAudio', {
   realtimeAlign: check(true, { label: 'settings.realtimeAlign', help: 'settings.realtimeAlignHelp' }),
   // 継ぎ目（範囲の差し戻し、貼り付け、切り取り）のクロスフェード長（ms）。聴き比べて既定を決めるため開発者向けに置く
   spliceFadeMs: choice<number>(5, { label: 'settings.spliceFade', help: 'settings.spliceFadeHelp', values: [5, 10, 20], format: (ms) => `${ms} ms` }),
-  // 止めている間は AudioContext を一時停止する（iOS で音が出ないときの切り分け用。audio/audioContext.ts）
+  // 止めている間は AudioContext を一時停止する（iOS で音が出ないときの切り分け用。wevocal-lib の web/src/playback.ts）
   suspendWhenStopped: check(true, { label: 'settings.suspendWhenStopped', help: 'settings.suspendWhenStoppedHelp' }),
   // iOS のオーディオセッションを playback にする（消音スイッチでも鳴る）
   playbackSession: check(true, { label: 'settings.playbackSession', help: 'settings.playbackSessionHelp' }),

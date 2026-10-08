@@ -57,7 +57,7 @@ export const keys = defineItems('keys', {
 
 /** 「ファイル」 */
 export const file = defineItems('file', {
-  // 開くフォルダーと保存するフォルダーを用途ごとに覚える（Chrome、Edge。project/fileAccess.ts）
+  // 開くフォルダーと保存するフォルダーを用途ごとに覚える（Chrome、Edge。pevenmui の src/web/fileAccess.ts）
   rememberFolder: check(true, { label: 'settings.rememberFolder', help: 'settings.rememberFolderHelp' }),
   // 保存先の画面で最初に開くフォルダー
   startFolder: choice<StartFolder>('downloads', {

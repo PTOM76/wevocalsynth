@@ -19,7 +19,7 @@ interface Deps {
 }
 
 /**
- * 和音を 2 つの声に分ける（試験的機能。設定の開発者向けで表示する。dsp/src/voices.rs）。
+ * 和音を 2 つの声に分ける（試験的機能。設定の開発者向けで表示する。dsp/src/voices/）。
  * 選択範囲があれば、その範囲だけを分ける。A のトラックは範囲の外を元のまま残し、B のトラックは範囲の外を無音にする（足すと元の音になる）
  */
 export function useVoiceSplit(d: Deps) {
