@@ -279,6 +279,11 @@
   "settings.eqBands": "EQ 頻段數（新音軌）",
   "settings.addonFolder": "將附加功能儲存到所選資料夾",
   "settings.addonFolderHelp": "將模型等附加功能儲存到所選資料夾，而不是瀏覽器的儲存空間（Chrome、Edge）。僅適用於之後安裝的附加功能，已安裝的仍可使用",
+  "settings.tempoChange": "偵測速度變化",
+  "settings.tempoChangeHelp": "自動分析時檢查速度是否在中途變化。偵測到變化時，會詢問是否採用",
+  "settings.tempoChangeOff": "不偵測",
+  "settings.tempoChangeLow": "保守",
+  "settings.tempoChangeNormal": "標準",
 
   "export.title": "匯出音訊檔",
   "export.run": "匯出",
@@ -891,5 +896,10 @@
   "eq.range": "範圍",
 
   "addonFolder.allow": "允許存取",
-  "addonFolder.permission": "需要存取附加功能的儲存資料夾"
+  "addonFolder.permission": "需要存取附加功能的儲存資料夾",
+
+  "tempoChange.title": "偵測到速度變化",
+  "tempoChange.message": "速度可能在以下位置發生變化。採用後將放置速度標記。選擇一列可移動到該位置",
+  "tempoChange.adopt": "採用",
+  "tempoChange.keep": "保持固定速度"
 }

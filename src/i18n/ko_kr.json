@@ -279,6 +279,11 @@
   "settings.eqBands": "EQ 밴드 수(새 트랙)",
   "settings.addonFolder": "추가 기능을 선택한 폴더에 저장",
   "settings.addonFolderHelp": "모델 등 추가 기능을 브라우저의 저장 영역이 아닌 선택한 폴더에 저장합니다(Chrome, Edge). 앞으로 설치하는 것이 대상이며, 설치된 것은 그대로 사용할 수 있습니다",
+  "settings.tempoChange": "템포 변화 감지",
+  "settings.tempoChangeHelp": "자동 분석 시 도중에 템포가 바뀌는지 확인합니다. 변화가 감지되면 적용할지 묻습니다",
+  "settings.tempoChangeOff": "감지 안 함",
+  "settings.tempoChangeLow": "보수적",
+  "settings.tempoChangeNormal": "보통",
 
   "export.title": "오디오 파일 내보내기",
   "export.run": "내보내기",
@@ -891,5 +896,10 @@
   "eq.range": "범위",
 
   "addonFolder.allow": "접근 허용",
-  "addonFolder.permission": "추가 기능 저장 폴더에 대한 접근이 필요합니다"
+  "addonFolder.permission": "추가 기능 저장 폴더에 대한 접근이 필요합니다",
+
+  "tempoChange.title": "템포 변화가 감지되었습니다",
+  "tempoChange.message": "다음 위치에서 템포가 바뀌었을 수 있습니다. 적용하면 템포 마커가 배치됩니다. 행을 선택하면 그 위치로 이동합니다",
+  "tempoChange.adopt": "적용",
+  "tempoChange.keep": "일정한 템포 유지"
 }

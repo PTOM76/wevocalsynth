@@ -21,6 +21,7 @@ import ShortcutsDialog from './ShortcutsDialog'
 import SilenceDialog from './SilenceDialog'
 import SoundSelectDialog from './SoundSelectDialog'
 import SynthDialog from './SynthDialog'
+import TempoChangeDialog from './TempoChangeDialog'
 import VideoExportDialog from './VideoExportDialog'
 
 interface Props {
@@ -131,6 +132,22 @@ export default function AppDialogs({ ed, dialogs, pitchDialog, setPitchDialog, s
     onApply={() => void ed.applyTrackEq()}
     busy={busy}
     onClose={dialogs.closer('eq')}
+  />
+  <TempoChangeDialog
+    open={dialogs.isOpen('tempoChange') && !!ed.tempo.changes}
+    sections={ed.tempo.changes ?? []}
+    onSeek={player.seek}
+    onAdopt={() => {
+      const [first, ...rest] = ed.tempo.changes ?? []
+      if (!first) return
+      const beatsPerBar = ed.projectTempo.beatsPerBar
+      ed.setProjectTempo({ bpm: first.bpm, beatOffset: first.offset })
+      ed.markers.addTempos(rest.map((s) => ({ time: s.time, tempo: { bpm: s.bpm, beatsPerBar } })))
+    }}
+    onClose={() => {
+      ed.tempo.clearChanges()
+      dialogs.close('tempoChange')
+    }}
   />
   <AboutDialog open={dialogs.isOpen('about')} onClose={dialogs.closer('about')} />
   <ShortcutsDialog keymap={ed.keymap} open={dialogs.isOpen('shortcuts')} onClose={dialogs.closer('shortcuts')} wheelZoom={settings.wheelZoom} />

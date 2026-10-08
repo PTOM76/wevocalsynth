@@ -259,6 +259,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
     tempo: (
       <Group title={t('settings.groupTempo')}>
         {S('autoTempo')}
+        {S('tempoChange')}
         {S('defaultBpm')}
         {S('showBeatGrid')}
         {S('tempoStretch')}

@@ -57,6 +57,16 @@ export const pitch = defineItems('pitch', {
 export const tempo = defineItems('tempo', {
   // ファイルを開いたときにテンポを自動解析し、BPM と 1 拍目の位置を入れる
   autoTempo: check(true, { label: 'settings.autoTempo', help: 'settings.autoTempoHelp' }),
+  // 自動解析で、途中でテンポが変わるかも調べる感度（変わっていたらダイアログで尋ねる。audio/tempoChange.ts）
+  tempoChange: choice<'off' | 'low' | 'normal'>('low', {
+    label: 'settings.tempoChange',
+    help: 'settings.tempoChangeHelp',
+    options: [
+      ['off', 'settings.tempoChangeOff'],
+      ['low', 'settings.tempoChangeLow'],
+      ['normal', 'settings.tempoChangeNormal'],
+    ],
+  }),
   // テンポを自動解析しないとき（設定で切ったときなど）の BPM
   defaultBpm: number(120, { label: 'settings.defaultBpm', help: 'settings.defaultBpmHelp', min: 20, max: 300, step: 1, unit: 'BPM', round: (v) => Math.round(v * 100) / 100 }),
   // 拍の目安線を波形に表示する

@@ -99,6 +99,11 @@ export default function App() {
   // 大きめのスマホを横向きにすると幅が md を超えるので、横向きのスマホもスマホの配置にする
   const mobile = useMediaQuery(`${theme.breakpoints.down('md').replace('@media ', '')}, ${LANDSCAPE_PHONE}`)
   const dialogs = useDialogs()
+  // 自動解析でテンポの変化を見つけたら、採用するか尋ねる
+  const tempoChanges = ed.tempo.changes
+  useEffect(() => {
+    if (tempoChanges) dialogs.open('tempoChange')
+  }, [tempoChanges, dialogs])
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null)
   // 目盛りの上で開いたとき（その位置と、そこにあるマーカー）。閉じるアニメーション中に中身が変わらないよう、閉じても残す
   const [rulerAt, setRulerAt] = useState<{ time: number; markerId: string | null } | null>(null)

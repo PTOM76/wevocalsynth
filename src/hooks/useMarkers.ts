@@ -25,6 +25,22 @@ export function useMarkers() {
         while (list.some((m) => m.name === `M${n}`)) n++
         return sorted([...list, { id: crypto.randomUUID(), time, name: `M${n}` }])
       }),
+    /** テンポを持つマーカーをまとめて足す（自動解析で見つけたテンポの変化）。同じ位置にあればそのマーカーにテンポを持たせる */
+    addTempos: (list: { time: number; tempo: NonNullable<Marker['tempo']> }[]) =>
+      setMarkers((cur) => {
+        let next = cur
+        for (const { time, tempo } of list) {
+          const same = next.find((m) => Math.abs(m.time - time) < SAME_SEC)
+          if (same) {
+            next = next.map((m) => (m === same ? { ...m, tempo } : m))
+            continue
+          }
+          let n = next.length + 1
+          while (next.some((m) => m.name === `M${n}`)) n++
+          next = [...next, { id: crypto.randomUUID(), time, name: `M${n}`, tempo }]
+        }
+        return sorted(next)
+      }),
     remove: (id: string) => setMarkers((list) => list.filter((m) => m.id !== id)),
     /** `id` のマーカーを `time` へ動かす（ドラッグ）。ほかのマーカーと同じ位置でも重ねてよい */
     move: (id: string, time: number) => setMarkers((list) => sorted(list.map((m) => (m.id === id ? { ...m, time } : m)))),
