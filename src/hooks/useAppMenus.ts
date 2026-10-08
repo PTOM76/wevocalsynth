@@ -2,7 +2,8 @@ import type { MenuEntry, MenuGroup } from 'pevenmui'
 import { keyLabelOf, type ActionId, type Keymap } from '../settings/keymap'
 import { useT } from '../i18n/i18n'
 import { openExternal, USER_GUIDE_URL } from '../links'
-import type { WheelZoom } from '../settings/settings'
+import { useAppSettings } from '../settings/settings'
+import { useToggleItem } from '../settings/items/toggle'
 
 interface Actions {
   /** キーの割り当て（メニューの右に出すキー） */
@@ -96,8 +97,6 @@ interface Actions {
   showSettings: () => void
   showHistory: () => void
   showAbout: () => void
-  /** Ctrl+S をどちらに割り当てているか（メニューの表記用） */
-  ctrlS: 'project' | 'export'
   // ---- 再生 ----
   playing: boolean
   togglePlay: () => void
@@ -107,28 +106,16 @@ interface Actions {
   repeat: boolean
   // ---- 表示 ----
   canZoomIn: boolean
-  /** ホイールだけで拡大縮小する設定か（メニューのショートカット表記を変える） */
-  wheelZoom: WheelZoom
   zoomed: boolean
   zoomIn: () => void
   zoomOut: () => void
   showAll: () => void
   /** 選択範囲に合わせて拡大する */
   zoomSelection: () => void
-  follow: boolean
-  toggleFollow: () => void
-  showNotes: boolean
-  toggleNotes: () => void
-  showPitchLine: boolean
-  overlayPitch: boolean
-  minimap: boolean
-  toggleMinimap: () => void
-  toggleOverlayPitch: () => void
   /** 波形の縦の拡大率 */
   waveScale: number
   stepWaveScale: (dir: 1 | -1) => void
   resetWaveScale: () => void
-  togglePitchLine: () => void
   // ---- トラック（選んでいるトラックに効く） ----
   trackCount: number
   /** 選んでいるトラックのミュート・ソロ・位相反転 */
@@ -168,6 +155,9 @@ interface Actions {
 export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: MenuGroup[]; context: MenuEntry[] } {
   const key = (id: ActionId) => keyLabelOf(a.keymap, id)
   const t = useT()
+  // 設定から読むもの（App を通さない）と、設定の切り替えの項目
+  const { settings: s } = useAppSettings()
+  const toggle = useToggleItem()
   const noClip = !a.hasClip || a.busy
   const noSel = noClip || !a.hasSelection
   // ピッチの強制表示・非表示は、ピッチを表示して解析が済んでから
@@ -307,12 +297,12 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
         { label: t('menu.formant'), checked: a.showFormant, disabled: !a.hasClip, onClick: a.toggleFormant },
         { divider: true },
         // ピッチの線と音符は、どちらか一方は残す
-        { label: t('menu.pitchLine'), checked: a.showPitchLine || !a.showNotes, disabled: !a.hasClip || !a.showPitch || !a.showNotes, onClick: a.togglePitchLine },
-        { label: t('menu.notes'), checked: a.showNotes, disabled: !a.hasClip || !a.showPitch || (a.showNotes && !a.showPitchLine), onClick: a.toggleNotes },
-        { label: t('menu.overlayPitch'), checked: a.overlayPitch, disabled: !a.hasClip || !a.showPitch, onClick: a.toggleOverlayPitch },
-        { label: t('menu.minimap'), checked: a.minimap, disabled: !a.hasClip, onClick: a.toggleMinimap },
+        toggle('showPitchLine', { checked: s.showPitchLine || !s.showNotes, disabled: !a.hasClip || !a.showPitch || !s.showNotes }),
+        toggle('showNotes', { disabled: !a.hasClip || !a.showPitch || (s.showNotes && !s.showPitchLine) }),
+        toggle('overlayPitch', { disabled: !a.hasClip || !a.showPitch }),
+        toggle('minimap', { disabled: !a.hasClip }),
         { divider: true },
-        { label: t('wave.zoomIn'), shortcut: a.wheelZoom === 'wheel' ? 'Wheel' : 'Ctrl+Wheel', disabled: !a.hasClip || !a.canZoomIn, onClick: a.zoomIn },
+        { label: t('wave.zoomIn'), shortcut: s.wheelZoom === 'wheel' ? 'Wheel' : 'Ctrl+Wheel', disabled: !a.hasClip || !a.canZoomIn, onClick: a.zoomIn },
         { label: t('wave.zoomOut'), disabled: !a.hasClip || !a.zoomed, onClick: a.zoomOut },
         { label: t('wave.showAll'), disabled: !a.hasClip || !a.zoomed, onClick: a.showAll },
         { label: t('wave.zoomSelection'), disabled: noSel, onClick: a.zoomSelection },
@@ -325,7 +315,7 @@ export function useAppMenus(a: Actions): { menus: MenuGroup[]; mobileMenus: Menu
             { label: t('wave.vZoomReset'), disabled: a.waveScale === 1, onClick: a.resetWaveScale },
           ],
         },
-        { label: t('wave.follow'), checked: a.follow, onClick: a.toggleFollow },
+        toggle('followPlayhead'),
       ],
     },
     {

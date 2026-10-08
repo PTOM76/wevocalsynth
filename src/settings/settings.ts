@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { createContext, createElement, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import type { F0Params } from '../dsp/engine'
 import { DEFAULT_SETTINGS, type Settings } from './items'
 
@@ -64,4 +64,24 @@ export function useSettings() {
     })
   }, [])
   return { settings, update }
+}
+
+/** useSettings() の戻り値 */
+export type SettingsStore = ReturnType<typeof useSettings>
+
+/** 設定を、部品とフックから直接読むための Context */
+export const SettingsContext = createContext<SettingsStore | null>(null)
+
+/** 設定を持ち、内側の部品とフックに渡す（main.tsx で App を包む） */
+export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { settings, update } = useSettings()
+  const store = useMemo(() => ({ settings, update }), [settings, update])
+  return createElement(SettingsContext.Provider, { value: store }, children)
+}
+
+/** App の設定を読む（SettingsProvider の中だけで使える） */
+export function useAppSettings(): SettingsStore {
+  const store = useContext(SettingsContext)
+  if (!store) throw new Error('useAppSettings は SettingsProvider の中で使う')
+  return store
 }

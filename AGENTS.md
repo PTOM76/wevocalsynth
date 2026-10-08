@@ -16,3 +16,5 @@ AI のエージェント向けの決まり。[docs/CODING.md](docs/CODING.md) �
 - 設定は `src/settings/items/` の分類のファイルに 1 行で定義する（`check`、`choice`、`number`、`value`）。型、既定値、検索の対象はそこから作られる
 - 設定画面に出すときは `SettingsPages.tsx` の分類に `{S('名前')}` を足す。表示や押せるかが状況で変わる項目は `value` で定義し、画面は自前で作る
 - 画面に出さない値（メニューの切り替え、覚えておく値）は `page` が null の集まり（`view`、`stored`）に置く
+- 部品とフックは `useAppSettings()` で設定を直接読む。App から props で渡さない
+- 表示メニューのオンとオフは `useToggleItem()` の `toggle('名前', { disabled })` で作る（名前は定義の label）

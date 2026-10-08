@@ -11,6 +11,7 @@ import { clearOffloaded } from './audio/originalStore'
 import { setPeaksOnBuild } from 'wevocal-lib'
 import { markActivity } from './debug/debugStats'
 import { app } from './appConfig'
+import { SettingsProvider } from './settings/settings'
 
 preventPageZoom()
 // 波形の表を作ったことを、画面が止まったときの原因探しに残す
@@ -21,7 +22,15 @@ setPeaksOnBuild(() => markActivity('peaks build'))
 void Promise.all([pendingCleanJob(), checkCleanBoot(), clearOffloaded()]).then(([job]) =>
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <PevenProvider app={app}>{job ? <CleanExtractScreen job={job} /> : <App />}</PevenProvider>
+      <PevenProvider app={app}>
+        {job ? (
+          <CleanExtractScreen job={job} />
+        ) : (
+          <SettingsProvider>
+            <App />
+          </SettingsProvider>
+        )}
+      </PevenProvider>
     </StrictMode>,
   ),
 )

@@ -44,7 +44,7 @@ import ExportDialog from './components/ExportDialog'
 import VideoExportDialog from './components/VideoExportDialog'
 import AboutDialog from './components/AboutDialog'
 import HistoryDialog from './components/HistoryDialog'
-import { useSettings } from './settings/settings'
+import { useAppSettings } from './settings/settings'
 import SettingsDialog from './settings/SettingsDialog'
 import DebugOverlay from './debug/DebugOverlay'
 import UpdatePrompt from './components/UpdatePrompt'
@@ -63,7 +63,7 @@ const disabledSx =(disabled: boolean) => (disabled ? { opacity: 0.5, pointerEven
 
 export default function App() {
   countRender('App')
-  const { settings, update: updateSettings } = useSettings()
+  const { settings, update: updateSettings } = useAppSettings()
   // Ctrl+Shift+D でデバッグ表示を切り替える
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -224,24 +224,18 @@ export default function App() {
     showHistory: () => setHistoryOpen(true),
     showAbout: () => setAboutOpen(true),
     showLicenses: () => setLicensesOpen(true),
-    ctrlS: settings.ctrlS,
     playing: player.playing,
     togglePlay: playback.togglePlay,
     stop: playback.stop,
     seekEdge: ed.seekEdge,
     repeat: ed.repeat,
     canZoomIn: viewCtl.canZoomIn,
-    wheelZoom: settings.wheelZoom,
     zoomed: viewCtl.zoomed,
     zoomIn: () => viewCtl.zoomAround(ZOOM_STEP, selection ? (selection.start + selection.end) / 2 : center),
     zoomOut: () => viewCtl.zoomAround(1 / ZOOM_STEP, center),
     showAll: viewCtl.showAll,
     zoomSelection: () => selection && viewCtl.setRange(selection.start - (selection.end - selection.start) * 0.05, (selection.end - selection.start) * 1.1),
     pitchTool: { shift: ed.pitchTools.shift, flatten: () => ed.pitchTools.edit((tg, f0, k0, k1) => flattenPitch(tg, f0, k0, k1, settings.flattenStrength)), snap: () => setPitchDialog('snap'), vibrato: () => setPitchDialog('vibrato'), midi: () => setPitchDialog('midi') },
-    follow: settings.followPlayhead,
-    toggleFollow: () => updateSettings({ followPlayhead: !settings.followPlayhead }),
-    showNotes: settings.showNotes,
-    toggleNotes: () => updateSettings({ showNotes: !settings.showNotes }),
     hasMarkers: ed.markers.markers.length > 0,
     hasCurrentMarker: !!ed.markers.current(player.position),
     addMarker: ed.addMarker,
@@ -256,12 +250,6 @@ export default function App() {
     waveScale,
     stepWaveScale,
     resetWaveScale: () => setWaveScale(1),
-    showPitchLine: settings.showPitchLine,
-    togglePitchLine: () => updateSettings({ showPitchLine: !settings.showPitchLine }),
-    overlayPitch: settings.overlayPitch,
-    toggleOverlayPitch: () => updateSettings({ overlayPitch: !settings.overlayPitch }),
-    minimap: settings.minimap,
-    toggleMinimap: () => updateSettings({ minimap: !settings.minimap }),
     trackCount: ed.tracks.tracks.length,
     activeMute: activeSettings.mix.mute,
     activeSolo: activeSettings.mix.solo,
@@ -419,7 +407,6 @@ export default function App() {
       // ループ再生中は範囲内ならループの中で移る（範囲外は通常の移動）
       onSeek={onWaveSeek}
       onSelectionsChange={onWaveSelections}
-      liveSelections={settings.liveSelection}
       onStretchRange={onWaveStretch}
       onRetime={onWaveRetime}
       markers={ed.markers.markers}
@@ -431,11 +418,6 @@ export default function App() {
       viewCtl={viewCtl}
       pitch={ed.pitch}
       showPitch={ed.showPitch}
-      showNotes={settings.showNotes}
-      showPitchLine={settings.showPitchLine || !settings.showNotes}
-      overlayPitch={settings.overlayPitch}
-      minimap={settings.minimap}
-      minimapPlayhead={settings.minimapPlayhead}
       touchHandles={mobile && settings.mobileUi === 'new'}
       touchPan={mobile && settings.mobileUi === 'new' && settings.touchSelect === 'longPress'}
       target={ed.pitchTarget.target?.clip === shown ? ed.pitchTarget.target.hz : null}

@@ -42,16 +42,16 @@ export const display = defineItems('display', {
   language: value<LangSetting>('auto', { label: 'settings.language' }),
 })
 
-/** 表示メニューとツールバーで切り替えるもの（設定画面には出さない） */
+/** 表示メニューとツールバーで切り替えるもの（設定画面には出さない。label はメニューの名前で、useToggleItem が使う） */
 export const view = defineItems(null, {
   // ピッチ帯に音符ブロック（音ごとの半音の高さ）を表示する
-  showNotes: value(false),
+  showNotes: value(false, { label: 'menu.notes' }),
   // ピッチ帯にピッチの線を表示する（音符ブロックとどちらかは表示する）
-  showPitchLine: value(true),
+  showPitchLine: value(true, { label: 'menu.pitchLine' }),
   // ピッチを波形の帯に重ねる（オーバーパネル）
-  overlayPitch: value(false),
+  overlayPitch: value(false, { label: 'menu.overlayPitch' }),
   // 波形の下にミニマップを表示する（オフなら従来のスクロールバー）
-  minimap: value(true),
+  minimap: value(true, { label: 'menu.minimap' }),
   // 再生中、再生位置が画面の外に出たら表示範囲を追従させる（ツールバーのボタンで切り替える）
-  followPlayhead: value(true),
+  followPlayhead: value(true, { label: 'wave.follow' }),
 })

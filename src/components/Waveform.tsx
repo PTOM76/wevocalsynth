@@ -39,6 +39,7 @@ import {
 import { computePeaks } from 'wevocal-lib'
 import { useLang, useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
+import { useAppSettings } from '../settings/settings'
 
 export { hzToMidi } from './waveform/draw'
 
@@ -68,8 +69,6 @@ interface Props {
   onSeek: (t: number) => void
   /** ドラッグで範囲を選ぶ。Ctrl/⌘ を押しながらなら既存の範囲に追加する */
   onSelectionsChange: (rs: Range[]) => void
-  /** ドラッグ中も `onSelectionsChange` を呼ぶか（偽なら離したときだけ。軽い） */
-  liveSelections?: boolean
   /** Shift+右端ドラッグで、範囲 `range` を長さ `duration`（秒）に伸縮する */
   onStretchRange: (range: Range, duration: number) => void
   /** 音符ブロックの移動・伸縮: 区間ごとに長さを変える */
@@ -89,20 +88,10 @@ interface Props {
   /** F0（Hz、`F0_HOP_SEC` 間隔、無声は 0）。解析中は null */
   pitch: Float32Array | null
   showPitch: boolean
-  /** ピッチ帯に音符ブロックを出す */
-  showNotes?: boolean
-  /** ピッチの線を出す */
-  showPitchLine?: boolean
   /** 選択範囲の両端に指でつかむつまみを出す（スマホの新しい画面） */
   touchHandles?: boolean
   /** 指でなぞるとスクロール、長押しで範囲選択（オフならなぞって範囲選択） */
   touchPan?: boolean
-  /** ピッチを波形の帯に重ねる（オーバーパネル。波形とピッチの両方を出しているとき） */
-  overlayPitch?: boolean
-  /** スクロールバーの代わりにミニマップを表示する */
-  minimap?: boolean
-  /** ミニマップに再生位置の線を表示する */
-  minimapPlayhead?: boolean
   /** 描いた目標ピッチ（`pitch` と同じ長さ、0 は未編集） */
   target: Float32Array | null
   penMode: boolean
@@ -158,6 +147,10 @@ export default memo(Waveform)
 function Waveform(props: Props) {
   countRender('Waveform')
   const { clip, position, playing, livePosition, pitch, showPitch, target, penMode, spectrogram, showSpectrogram, beatGrid } = props
+  // 表示の設定は App を通さずに読む
+  const { settings } = useAppSettings()
+  // ピッチの線と音符は、どちらか一方は表示する
+  const pitchLine = settings.showPitchLine || !settings.showNotes
   // ドラッグ中の選択範囲は、ここだけで持って描き、離したときに `onSelectionsChange` で渡す
   // （動かすたびに渡すと、画面全体（App）が描き直されて重かった）
   const [draftSelections, setDraftSelections] = useState<Range[] | null>(null)
@@ -165,7 +158,7 @@ function Waveform(props: Props) {
   const selections = draftSelections ?? props.selections
   const changeSelections = (rs: Range[]) => {
     // ドラッグ中も渡す設定なら、そのまま渡す（ステータスバーの数値なども動くが、画面全体が描き直されるので重い）
-    if (props.liveSelections) return props.onSelectionsChange(rs)
+    if (settings.liveSelection) return props.onSelectionsChange(rs)
     draftRef.current = rs
     setDraftSelections(rs)
   }
@@ -248,7 +241,7 @@ function Waveform(props: Props) {
   const showWave = props.showWave
   const showGain = props.showGain
   const showFormant = props.showFormant
-  const overlay = !!props.overlayPitch && showWave && showPitch
+  const overlay = settings.overlayPitch && showWave && showPitch
   const { waveH, specH, pitchH, gainH, formantH, height } = laneHeights(
     size.height,
     { wave: showWave, spec: showSpectrogram, pitch: showPitch && !overlay, gain: showGain, formant: showFormant },
@@ -286,14 +279,14 @@ function Waveform(props: Props) {
     }
     // スペクトログラムは波形を置き換えず、自分の帯に描く
     if (showSpectrogram) drawSpectrogram(c, spectrogram, specLayer)
-    if (showPitch) drawPitchLane(c, pitch, range, target, props.showNotes, props.showPitchLine ?? true)
+    if (showPitch) drawPitchLane(c, pitch, range, target, settings.showNotes, pitchLine)
     if (showGain) drawCurveLane(c, gainTop(c), gainH, GAIN_SCALE, props.gainCurve, CURVE_HOP_SEC)
     if (showFormant) drawCurveLane(c, formantTop(c), formantH, FORMANT_SCALE, props.formantCurve, CURVE_HOP_SEC)
     if (beatGrid) drawBeatGrid(c, beatGrid, height)
     // 帯が2本以上あるときだけ、どれにフォーカスしているかを示す
     if ([showWave, showSpectrogram, showPitch, showGain, showFormant].filter(Boolean).length > 1) drawLaneFocus(c, props.focusLane)
     // 選択範囲は上に重ねた Canvas に描く（範囲をドラッグしている間、波形などを描き直さないため）
-  }, [waveScale, showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, colors, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, props.showNotes, props.showPitchLine, pitch, range, target, drawVersion, pitchY, pitchLaneH, overlay])
+  }, [waveScale, showWave, showGain, props.gainCurve, gainH, showFormant, props.formantCurve, formantH, props.focusLane, beatGrid, lang, peaks, ghostPeaks, width, height, waveH, specH, pitchH, view, colors, pal, dark, font, showSpectrogram, spectrogram, specLayer, showPitch, settings.showNotes, pitchLine, pitch, range, target, drawVersion, pitchY, pitchLaneH, overlay])
 
   // 選択範囲と再生位置の線（上に重ねた Canvas。再生中は毎フレーム、範囲のドラッグ中は動かすたびに、こちらだけを描き直す）
   useEffect(() => {
@@ -425,7 +418,7 @@ function Waveform(props: Props) {
   const grab = usePitchGrab(
     canvasRef,
     props.grabMode,
-    { enabled: showPitch, top: pitchY, height: pitchLaneH, range, notes: !!props.showNotes, line: props.showPitchLine ?? true },
+    { enabled: showPitch, top: pitchY, height: pitchLaneH, range, notes: !!settings.showNotes, line: pitchLine },
     pitch,
     target,
     selections,
@@ -678,8 +671,8 @@ function Waveform(props: Props) {
       </Box>
       {/* 表示範囲の横スクロールバー */}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1 }}>
-        {props.minimap ? (
-          <Minimap clip={clip} colors={colors} duration={duration} view={view} selections={props.selections} scrollTo={scrollTo} label={t('wave.scroll')} position={position} playing={!!playing} livePosition={livePosition} showPlayhead={props.minimapPlayhead ?? true} />
+        {settings.minimap ? (
+          <Minimap clip={clip} colors={colors} duration={duration} view={view} selections={props.selections} scrollTo={scrollTo} label={t('wave.scroll')} position={position} playing={!!playing} livePosition={livePosition} showPlayhead={settings.minimapPlayhead} />
         ) : (
         <Slider
           size="small"
