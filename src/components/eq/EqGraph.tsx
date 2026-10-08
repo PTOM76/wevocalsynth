@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import { Box, useTheme } from '@mui/material'
-import { pevenFont } from 'pevenmui'
+import { Box } from '@mui/material'
+import { pevenFont, usePalette } from 'pevenmui'
 import { eqFreqs, eqRange, type TrackEq } from '../../audio/eq'
 import { useT } from '../../i18n/i18n'
 
@@ -17,7 +17,8 @@ const fmtHz = (f: number) => (f >= 1000 ? `${f / 1000}k` : `${f}`)
  */
 export default function EqGraph(p: { eq: TrackEq; onChange: (gains: number[]) => void }) {
   const t = useT()
-  const pal = useTheme().palette
+  // SVG は CSS 変数を使えないので、今の配色（ライト、ダーク）の値を使う
+  const { pal } = usePalette()
   const ref = useRef<SVGSVGElement>(null)
   const drag = useRef<{ band: number; db: number; fine: boolean; startY: number; startDb: number } | null>(null)
   const [hover, setHover] = useState<number | null>(null)
@@ -115,20 +116,9 @@ export default function EqGraph(p: { eq: TrackEq; onChange: (gains: number[]) =>
             </text>
           </g>
         ))}
-        {gains.map((g, i) => (
-          <rect
-            key={i}
-            x={xOf(i) - ((W - PAD_X * 2) / n) * 0.3}
-            width={((W - PAD_X * 2) / n) * 0.6}
-            y={Math.min(yOf(g), yOf(0))}
-            height={Math.abs(yOf(g) - yOf(0))}
-            fill={hover === i ? pal.primary.light : pal.primary.main}
-            opacity={muted ? 0.25 : 0.45}
-          />
-        ))}
         <polyline points={line} fill="none" stroke={muted ? pal.text.disabled : pal.primary.main} strokeWidth={2} strokeLinejoin="round" />
         {gains.map((g, i) => (
-          <circle key={i} cx={xOf(i)} cy={yOf(g)} r={n > 10 ? 2.5 : 4} fill={muted ? pal.text.disabled : pal.primary.main} />
+          <circle key={i} cx={xOf(i)} cy={yOf(g)} r={(n > 10 ? 2.5 : 4) * (hover === i ? 1.6 : 1)} fill={muted ? pal.text.disabled : pal.primary.main} />
         ))}
       </svg>
       <Box sx={{ position: 'relative', height: 16, fontSize: pevenFont('xs'), color: 'text.secondary' }}>
