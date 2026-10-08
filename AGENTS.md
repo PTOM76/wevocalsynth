@@ -6,7 +6,6 @@ AI のエージェント向けの決まり。[docs/CODING.md](docs/CODING.md) �
 
 - どこに何があるかは `npm run map`（各ファイルの 1 行目の説明の一覧）。フォルダーを渡すと絞れる（`npm run map -- src/hooks`）
 - ファイルを足したら 1 行目に説明を書き、`npm run map -- --write` で docs/STRUCTURE.md を更新する
-- ファイルを直したら、近くのコメントがまだ中身と合っているかを確かめる（消した項目の説明、移したファイルのパスが残りやすい）
 
 ## 訳文
 
