@@ -1,5 +1,5 @@
 // トラックの形と、保存する設定（フェーダー、鳴らし方、EQ）の変換
-import { isFlatEq, parseEq, type TrackEq } from './eq'
+import { isFlatEq, parseEq, type TrackEq } from '../effects/eq/eq'
 import type { Clip } from './types'
 import type { MoraMark } from './kanaCut'
 

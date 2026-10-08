@@ -5,7 +5,7 @@ import type { View } from '../waveform/draw'
 import { ContextMenu, useStableFn } from 'pevenmui'
 import TrackPanel from './TrackPanel'
 import RenameDialog from './RenameDialog'
-import { isFlatEq } from '../../audio/eq'
+import { isFlatEq } from '../../effects/eq/eq'
 import { multiTrackMenuEntries, trackMenuEntries } from './trackMenu'
 import type { PickMods } from './useTrackDrag'
 

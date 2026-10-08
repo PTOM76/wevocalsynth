@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from './types'
 import { DEFAULT_FADER, faderGain, type TrackFader } from './tracks'
-import { createLiveEq, DEFAULT_EQ, disconnectLiveEq, updateLiveEq, type LiveEq, type TrackEq } from './eq'
+import { createLiveEq, DEFAULT_EQ, disconnectLiveEq, updateLiveEq, type LiveEq, type TrackEq } from '../effects/eq/eq'
 import { clipDuration } from './types'
 import { startContext, suspendContext } from 'wevocal-lib'
 

@@ -1,7 +1,7 @@
 // トラックのグラフィック EQ のダイアログ
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch, ToggleButton, Tooltip, ToggleButtonGroup, Typography } from '@mui/material'
 import { pevenFont } from 'pevenmui'
-import { eqRange, flatEq, isFlatEq, resizeEq, setEqRange, type EqBands, type EqRange, type TrackEq } from '../../audio/eq'
+import { eqRange, flatEq, isFlatEq, resizeEq, setEqRange, type EqBands, type EqRange, type TrackEq } from './eq'
 import { useT } from '../../i18n/i18n'
 import EqGraph from './EqGraph'
 

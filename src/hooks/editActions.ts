@@ -1,7 +1,7 @@
 // 音声を書き換える操作（加工の適用、テンポの伸縮、区間の伸縮、サンプラー、曲線の書き込み）
 import type { Dispatch, SetStateAction } from 'react'
 import { applyFormantCurve, applyGainCurve, applyPitchCurve, spliceProcessed } from '../audio/edit'
-import { applyEq, flatEq, isFlatEq } from '../audio/eq'
+import { applyEq, flatEq, isFlatEq } from '../effects/eq/eq'
 import { applyEditToRanges, sliceRanges } from '../audio/multiRange'
 import { restoreClip } from '../audio/originalStore'
 import { placeOnNotes } from '../audio/sampler'

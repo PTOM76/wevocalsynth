@@ -2,7 +2,7 @@
 import { finishClip, type FinishOptions } from '../audio/finish'
 import type { Clip, Range } from '../audio/types'
 import { applyFader } from '../audio/edit'
-import { applyEq } from '../audio/eq'
+import { applyEq } from '../effects/eq/eq'
 import { sliceRanges } from '../audio/multiRange'
 import { mixClips } from '../audio/mix'
 import { isAudible } from '../audio/tracks'

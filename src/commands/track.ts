@@ -1,5 +1,5 @@
 // トラックのコマンド（選んでいるトラックに効く）
-import { isFlatEq } from '../audio/eq'
+import { isFlatEq } from '../effects/eq/eq'
 import { defineCommands, ready, type CommandContext } from './types'
 
 const active = (c: CommandContext) => c.ed.tracks.settingsOf(c.ed.tracks.activeId)

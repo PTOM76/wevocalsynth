@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react'
 import { Box } from '@mui/material'
 import { pevenFont, usePalette } from 'pevenmui'
-import { eqFreqs, eqRange, type TrackEq } from '../../audio/eq'
+import { eqFreqs, eqRange, type TrackEq } from './eq'
 import { useT } from '../../i18n/i18n'
 
 const W = 600

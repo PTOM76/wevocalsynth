@@ -1,5 +1,5 @@
 // トラックのグラフィック EQ の計算（再生と書き出しに掛ける）
-import type { Clip } from './types'
+import type { Clip } from '../../audio/types'
 
 /**
  * トラックのグラフィック EQ。フェーダーと同じく音声は書き換えず、再生と書き出しの両方に常に掛ける。

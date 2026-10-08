@@ -49,8 +49,9 @@ src/addons/
 src/audio/
   detectMode.ts  音声がボーカルか楽器かを判定し、モードごとの既定の処理方式を決める
   edit.ts  音声の編集の計算（範囲への加工、切り取りと挿入、音量、フェード、反転、曲線の書き込み）
-  eq.ts  トラックのグラフィック EQ の計算（再生と書き出しに掛ける）
   finish.ts  書き出しの仕上げ（ノーマライズと両端のフェード）
+  kanaCut.ts  歌から一音（あ、い、う…）ずつ切り出す。文字化と読みは追加機能「歌詞の文字化」、境目は追加機能「解析」が行う（memo/kana-cut.md）
+  kanaOut.ts  一音ずつ切り出したものの出し方（五十音順のトラック、UTAU の音源）。memo/kana-voice.md の 3.5
   midi.ts  標準 MIDI ファイル（.mid、形式 0 / 1）の読み込み。ピッチに当てはめるための音符（高さと、秒単位の始まり・終わり）だけを取り出す。
   mix.ts  トラックを足し合わせて 1 つにする（統合と書き出し）
   multiRange.ts  複数の選択範囲の整理、切り出し、範囲ごとの加工
@@ -64,6 +65,7 @@ src/audio/
   synth.ts  音を 0 から作る（声の母音、楽器の波形）
   tempoChange.ts  （説明なし）
   tempoMap.ts  テンポが途中で変わる曲のための、区間ごとのテンポと拍の位置
+  timeMap.ts  編集の前の時刻を、編集の後の時刻に写す（読みの帯などの位置を、音声の編集に追従させる）
   tracks.ts  トラックの形と、保存する設定（フェーダー、鳴らし方、EQ）の変換
   types.ts  音声（Clip）の型と長さ、時間の表記の変換
   useLivePosition.ts  再生中の位置を、部品の中だけで決まった間隔で読む
@@ -98,12 +100,14 @@ src/components/
   EmptyState.tsx  何も開いていないときの画面（開く、最近使用したファイル、音声の作成、録音）
   ExportDialog.tsx  音声の書き出しのダイアログ
   HistoryDialog.tsx  編集の履歴のダイアログ（押した段へ戻る）
+  KanaCutDialog.tsx  （説明なし）
   LevelMeter.tsx  音量メーター（wevocal-lib の部品にテーマの色を渡す）
   LiveTime.tsx  再生中の時間の表示（部品の中だけで更新する）
   MarkerTempoDialog.tsx  マーカーからのテンポを決めるダイアログ
   MidiDialog.tsx  MIDI に合わせてピッチの曲線を作るダイアログ
   MobileEditBar.tsx  スマホで範囲を選んだときの編集のボタンの列
   MobilePlayBar.tsx  スマホの下の再生バー
+  MoraLane.tsx  （説明なし）
   PitchControl.tsx  ピッチの変更量のスライダーと入力欄
   PitchToolDialogs.tsx  ピッチの一括操作のダイアログ（音程に揃える、ビブラート）
   PitchToolHost.tsx  ピッチの一括操作のダイアログを開く場所
@@ -126,10 +130,6 @@ src/components/
   videoPrefs.ts  動画の書き出しで覚えておく選択（既定値）
   VolumePanel.tsx  音量の欄（トラックのフェーダーと、範囲の音量の編集）
   Waveform.tsx  波形と帯（スペクトログラム、ピッチ、音量、フォルマント）の Canvas と、その上の操作
-
-src/components/eq/
-  EqDialog.tsx  トラックのグラフィック EQ のダイアログ
-  EqGraph.tsx  グラフィック EQ のグラフ（なぞって値を描く）
 
 src/components/inspector/
   Inspector.tsx  インスペクタ（右の欄）の部品（折りたたむ欄、行、数値の入力）
@@ -166,6 +166,11 @@ src/dsp/
   parallel.ts  長い音を区間に分けて並列に加工する（試験的）
   worker.ts  wasm の DSP エンジンをメインスレッド外で実行する Worker
 
+src/effects/eq/
+  eq.ts  トラックのグラフィック EQ の計算（再生と書き出しに掛ける）
+  EqDialog.tsx  トラックのグラフィック EQ のダイアログ
+  EqGraph.tsx  グラフィック EQ のグラフ（なぞって値を描く）
+
 src/hooks/
   editActions.ts  音声を書き換える操作（加工の適用、テンポの伸縮、区間の伸縮、サンプラー、曲線の書き込み）
   useAppMenus.ts  メニューバーと右クリックメニューを、並び（commands/menus.ts）とコマンドから作る
@@ -173,8 +178,9 @@ src/hooks/
   useClipAnalysis.ts  表示しているときだけ音声を解析して結果を持つ（ピッチ、スペクトログラム）
   useClipCommands.ts  音声の編集の操作（切り取り、コピー、貼り付け、削除、無音の挿入、音量、パンなど）
   useDialogs.ts  ダイアログの開閉と、開くときに渡す値
+  useDocument.ts  開いている文書（プロジェクト）: 名前、テンポ、マーカー、トラックと元に戻す、未保存の印、保存先、タイトル（memo/document.md）
   useEditor.ts  （説明なし）
-  useEditorKeys.ts  キーボードショートカットと、フォーカスしている帯に効く切り取りなど
+  useEditorKeys.ts  キーの割り当てと、フォーカスしている帯（波形かピッチ）に効く切り取りなど。キーの処理はコマンド（src/commands/）
   useFormantCurve.ts  フォルマントの帯に描いた曲線と、その試聴
   useHistory.ts  元に戻す、やり直す（差分で持ち、メモリの上限で古い段を捨てる）
   useLaneCurve.ts  帯に描く曲線（音量、フォルマント）の値
