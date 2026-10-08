@@ -27,10 +27,6 @@ import VideoExportDialog from './VideoExportDialog'
 interface Props {
   ed: ReturnType<typeof useEditor>
   dialogs: Dialogs
-  pitchDialog: PitchDialogKind
-  setPitchDialog: (k: PitchDialogKind) => void
-  /** 設定を開いたまま、もう一度「設定」を押したら増やす（別の窓の設定画面を手前に出す） */
-  settingsFocus: number
   /** 今の位置のテンポ */
   bpm: number
   seg: ReturnType<typeof segmentAt>
@@ -38,7 +34,7 @@ interface Props {
 }
 
 /** App が開くダイアログをまとめて置く（開閉は useDialogs） */
-export default function AppDialogs({ ed, dialogs, pitchDialog, setPitchDialog, settingsFocus, bpm, seg, selectionExport }: Props) {
+export default function AppDialogs({ ed, dialogs, bpm, seg, selectionExport }: Props) {
   const { settings, update: updateSettings } = useAppSettings()
   const { edited, selection, busy, player } = ed
   // 録音したトラックの名前の番号（録音 1、録音 2…）
@@ -80,8 +76,8 @@ export default function AppDialogs({ ed, dialogs, pitchDialog, setPitchDialog, s
     />
   )}
   <PitchToolHost
-    open={pitchDialog}
-    onClose={() => setPitchDialog(null)}
+    open={dialogs.arg<PitchDialogKind>('pitchTool')}
+    onClose={dialogs.closer('pitchTool')}
     hasSelection={!!selection}
     selectionStart={selection ? selection.start : null}
     bpm={bpm}
@@ -153,7 +149,7 @@ export default function AppDialogs({ ed, dialogs, pitchDialog, setPitchDialog, s
   <ShortcutsDialog keymap={ed.keymap} open={dialogs.isOpen('shortcuts')} onClose={dialogs.closer('shortcuts')} wheelZoom={settings.wheelZoom} />
   <SettingsDialog
     open={dialogs.isOpen('settings')}
-    focusSignal={settingsFocus}
+    focusSignal={dialogs.openCount('settings')}
     onClose={dialogs.closer('settings')}
     settings={settings}
     onChange={updateSettings}

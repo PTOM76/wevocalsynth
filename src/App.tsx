@@ -31,7 +31,6 @@ import SelectionField from './components/SelectionField'
 import TempoField from './components/TempoField'
 import EditPanel from './components/EditPanel'
 import VolumePanel from './components/VolumePanel'
-import type { PitchDialogKind } from './components/PitchToolHost'
 import { canRecord } from 'wevocal-lib'
 import { flattenPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
@@ -100,6 +99,8 @@ export default function App() {
   // 大きめのスマホを横向きにすると幅が md を超えるので、横向きのスマホもスマホの配置にする
   const mobile = useMediaQuery(`${theme.breakpoints.down('md').replace('@media ', '')}, ${LANDSCAPE_PHONE}`)
   const dialogs = useDialogs()
+  // マーカーのダイアログを、その id を渡して開く
+  const openMarker = (id: 'renameMarker' | 'markerTempo', markerId: string | null | undefined) => markerId && dialogs.open(id, markerId)
   // 自動解析でテンポの変化を見つけたら、採用するか尋ねる
   const tempoChanges = ed.tempo.changes
   useEffect(() => {
@@ -108,18 +109,12 @@ export default function App() {
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null)
   // 目盛りの上で開いたとき（その位置と、そこにあるマーカー）。閉じるアニメーション中に中身が変わらないよう、閉じても残す
   const [rulerAt, setRulerAt] = useState<{ time: number; markerId: string | null } | null>(null)
-  // 設定を開いたまま、もう一度「設定」を押したら、別の窓で開いている設定画面を手前に出す
-  const [settingsFocus, setSettingsFocus] = useState(0)
-  const [renamingMarker, setRenamingMarker] = useState<string | null>(null)
-  // テンポを変えるマーカー（テンポが途中で変わる曲）
-  const [tempoMarker, setTempoMarker] = useState<string | null>(null)
   // 再生位置の入力を始める合図（目盛りの右クリックメニューから。増やすたびに始まる）
   const [timeEditRequest, setTimeEditRequest] = useState(0)
   // 波形の縦の拡大率（1〜64 倍、2 倍ずつ）。小さい音を見やすくする
   const [waveScale, setWaveScale] = useState(1)
   const stepWaveScale = useStableFn((dir: 1 | -1) => setWaveScale((s) => Math.min(64, Math.max(1, dir > 0 ? s * 2 : s / 2))))
   const [renamingProject, setRenamingProject] = useState(false)
-  const [pitchDialog, setPitchDialog] = useState<PitchDialogKind>(null)
   const { shown, edited, editing, selection, player, playback, loop, busy } = ed
   // 左上のループは通常再生の繰り返しの切り替え（加工欄のループはリアルタイム試聴）
   const toggleRepeat = () => ed.setRepeat(!ed.repeat)
@@ -197,10 +192,7 @@ export default function App() {
     synth: dialogs.opener('synth'),
     sampler: dialogs.opener('sampler'),
     showShortcuts: dialogs.opener('shortcuts'),
-    showSettings: () => {
-      dialogs.open('settings')
-      setSettingsFocus((n) => n + 1)
-    },
+    showSettings: dialogs.opener('settings'),
     showAbout: dialogs.opener('about'),
     showLicenses: dialogs.opener('licenses'),
     playing: player.playing,
@@ -214,12 +206,12 @@ export default function App() {
     zoomOut: () => viewCtl.zoomAround(1 / ZOOM_STEP, center),
     showAll: viewCtl.showAll,
     zoomSelection: () => selection && viewCtl.setRange(selection.start - (selection.end - selection.start) * 0.05, (selection.end - selection.start) * 1.1),
-    pitchTool: { shift: ed.pitchTools.shift, flatten: () => ed.pitchTools.edit((tg, f0, k0, k1) => flattenPitch(tg, f0, k0, k1, settings.flattenStrength)), snap: () => setPitchDialog('snap'), vibrato: () => setPitchDialog('vibrato'), midi: () => setPitchDialog('midi') },
+    pitchTool: { shift: ed.pitchTools.shift, flatten: () => ed.pitchTools.edit((tg, f0, k0, k1) => flattenPitch(tg, f0, k0, k1, settings.flattenStrength)), snap: () => dialogs.open('pitchTool', 'snap'), vibrato: () => dialogs.open('pitchTool', 'vibrato'), midi: () => dialogs.open('pitchTool', 'midi') },
     hasMarkers: ed.markers.markers.length > 0,
     hasCurrentMarker: !!ed.markers.current(player.position),
     addMarker: ed.addMarker,
-    renameMarker: () => setRenamingMarker(ed.markers.current(player.livePosition())?.id ?? null),
-    markerTempo: () => setTempoMarker(ed.markers.current(player.livePosition())?.id ?? null),
+    renameMarker: () => openMarker('renameMarker', ed.markers.current(player.livePosition())?.id),
+    markerTempo: () => openMarker('markerTempo', ed.markers.current(player.livePosition())?.id),
     removeMarker: () => {
       const m = ed.markers.current(player.livePosition())
       if (m) ed.markers.remove(m.id)
@@ -321,8 +313,8 @@ export default function App() {
           },
         },
         { label: t('marker.add'), onClick: () => ed.markers.add(rulerAt.time) },
-        { label: t('marker.rename'), disabled: !rulerAt.markerId, onClick: () => setRenamingMarker(rulerAt.markerId) },
-        { label: t('marker.tempo'), disabled: !rulerAt.markerId, onClick: () => setTempoMarker(rulerAt.markerId) },
+        { label: t('marker.rename'), disabled: !rulerAt.markerId, onClick: () => openMarker('renameMarker', rulerAt.markerId) },
+        { label: t('marker.tempo'), disabled: !rulerAt.markerId, onClick: () => openMarker('markerTempo', rulerAt.markerId) },
         { label: t('marker.remove'), disabled: !rulerAt.markerId, onClick: () => rulerAt.markerId && ed.markers.remove(rulerAt.markerId) },
       ]
     : []
@@ -347,7 +339,7 @@ export default function App() {
       markers={ed.markers.markers}
       waveScale={waveScale}
       onWaveScale={stepWaveScale}
-      onRenameMarker={setRenamingMarker}
+      onRenameMarker={(id) => openMarker('renameMarker', id)}
       onMoveMarker={onMoveMarker}
       onContextMenu={onWaveContext}
       viewCtl={viewCtl}
@@ -438,9 +430,9 @@ export default function App() {
       curvePreviewBusy={ed.pitchTools.preview.busy}
       onCurvePreview={() => void ed.pitchTools.preview.toggle()}
       onFlatten={() => ed.pitchTools.edit((tg, f0, k0, k1) => flattenPitch(tg, f0, k0, k1, settings.flattenStrength))}
-      onSnap={() => setPitchDialog('snap')}
-      onVibrato={() => setPitchDialog('vibrato')}
-      onMidi={() => setPitchDialog('midi')}
+      onSnap={() => dialogs.open('pitchTool', 'snap')}
+      onVibrato={() => dialogs.open('pitchTool', 'vibrato')}
+      onMidi={() => dialogs.open('pitchTool', 'midi')}
     />
   )
 
@@ -635,25 +627,25 @@ export default function App() {
         onRename={ed.setProjectName}
       />
       <RenameDialog
-        name={ed.markers.markers.find((m) => m.id === renamingMarker)?.name ?? null}
+        name={ed.markers.markers.find((m) => m.id === dialogs.arg<string>('renameMarker'))?.name ?? null}
         title={t('marker.rename')}
-        onClose={() => setRenamingMarker(null)}
-        onRename={(name) => renamingMarker && ed.markers.rename(renamingMarker, name)}
+        onClose={dialogs.closer('renameMarker')}
+        onRename={(name) => { const id = dialogs.arg<string>('renameMarker'); if (id) ed.markers.rename(id, name) }}
       />
       {(() => {
-        const m = ed.markers.markers.find((x) => x.id === tempoMarker) ?? null
+        const m = ed.markers.markers.find((x) => x.id === dialogs.arg<string>('markerTempo')) ?? null
         // 初期値は、マーカーの直前のテンポ
         const before = m ? segmentAt(ed.tempoSegs, m.time - 1e-6) : undefined
         return (
           <MarkerTempoDialog
             marker={m}
             current={{ bpm: before?.bpm ?? baseBpm, beatsPerBar: before?.beatsPerBar ?? ed.projectTempo.beatsPerBar }}
-            onClose={() => setTempoMarker(null)}
+            onClose={dialogs.closer('markerTempo')}
             onChange={(tempo) => m && ed.markers.setTempo(m.id, tempo)}
           />
         )
       })()}
-      <AppDialogs ed={ed} dialogs={dialogs} pitchDialog={pitchDialog} setPitchDialog={setPitchDialog} settingsFocus={settingsFocus} bpm={bpm} seg={seg} selectionExport={selectionExport} />
+      <AppDialogs ed={ed} dialogs={dialogs} bpm={bpm} seg={seg} selectionExport={selectionExport} />
       {settings.showDebug && <DebugOverlay />}
       <UpdatePrompt devUpdates={settings.devUpdates} />
       {ed.addonDialog}
