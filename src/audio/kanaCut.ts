@@ -19,8 +19,6 @@ export interface MoraMark {
   sure: boolean
 }
 
-/** Whisper の区間の端はずれやすいので、前後をこれだけ広げて境目を探す（秒） */
-const MARGIN_SEC = 0.3
 /** 書き出すときの前後の余白（秒） */
 const PAD_SEC = 0.02
 /** 書き出すときの端のフェード（秒） */
@@ -48,22 +46,10 @@ export async function transcribeRange(clip: Clip, start: number, end: number, o:
   return segments.map((s) => ({ ...s, start: s.start + start, end: s.end + start }))
 }
 
-/** 区間ごとの読みを一音ずつに分け、境目を求める。`onProgress` は 0〜1 */
+/** 区間ごとの読みを一音ずつに分け、境目を求める（追加機能「解析」の findMoraeInLyrics）。`onProgress` は 0〜1 */
 export async function findMorae(clip: Clip, segments: LyricsSegment[], onProgress?: (p: number) => void, signal?: AbortSignal): Promise<MoraMark[]> {
   const analyzer = await loadAddon<typeof Analyzer>('analyzer')
-  const out: MoraMark[] = []
-  for (const [i, s] of segments.entries()) {
-    signal?.throwIfAborted()
-    const morae = analyzer.splitMora(s.reading ?? '')
-    if (!morae.length) continue
-    // 前の区間の終わりより前には広げない（同じ音を 2 回数えないため）
-    const from = Math.max(0, s.start - MARGIN_SEC, out.length ? out[out.length - 1].end : 0)
-    const to = s.end + MARGIN_SEC
-    const found = await analyzer.segmentMorae(slice(clip, from, to), morae, { signal })
-    for (const m of found) out.push({ start: m.start + from, end: m.end + from, mora: m.mora, sure: m.sure })
-    onProgress?.((i + 1) / segments.length)
-  }
-  return out
+  return analyzer.findMoraeInLyrics(clip, segments, { onProgress, signal })
 }
 
 /** 一音を切り出す（前後に余白を付け、端をフェードする） */
