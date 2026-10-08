@@ -1,6 +1,7 @@
 import { finishClip, type FinishOptions } from '../audio/finish'
 import type { Clip, Range } from '../audio/types'
 import { applyFader } from '../audio/edit'
+import { applyEq } from '../audio/eq'
 import { sliceRanges } from '../audio/multiRange'
 import { mixClips } from '../audio/mix'
 import { isAudible, toStoredSettings } from '../audio/tracks'
@@ -83,17 +84,17 @@ export function useOutput(d: Deps) {
    * 選択範囲のみなら、どのトラックも同じ時間を切り出す（複数の範囲はつなげる）。仕上げ（ノーマライズ、フェード）も掛ける
    */
   const renderClip = async (edited: Clip, s: { selectionOnly: boolean; mix: boolean }) => {
-    // トラックのフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
-    const render = (c: Clip, id: string) => {
+    // トラックの EQ とフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
+    const render = async (c: Clip, id: string) => {
       const part = s.selectionOnly && d.selections.length ? sliceRanges(c, d.selections) : c
       const f = tracks.faderOf(id)
-      return applyFader(part, f.db, f.pan, f.invert)
+      return applyFader(await applyEq(part, tracks.eqOf(id)), f.db, f.pan, f.invert)
     }
     // ミックス: 再生と同じく、ミュート・ソロに従って鳴るトラックだけを混ぜる（サンプルレートは選んでいるトラックに合わせる）
     const audible = history.tracks.filter((tr) => isAudible(tr.id, tracks.mix, history.tracks))
-    let clip = render(edited, history.activeId)
+    let clip = await render(edited, history.activeId)
     if (s.mix && history.tracks.length > 1 && audible.length) {
-      const parts = audible.map((tr) => render(tr.clip, tr.id))
+      const parts = await Promise.all(audible.map((tr) => render(tr.clip, tr.id)))
       clip = await mixClips(parts, edited.sampleRate, Math.max(...parts.map((c) => c.channels.length)))
     }
     return finishClip(clip, d.finish)
