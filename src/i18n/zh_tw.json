@@ -284,6 +284,7 @@
   "settings.tempoChangeOff": "不偵測",
   "settings.tempoChangeLow": "保守",
   "settings.tempoChangeNormal": "標準",
+  "settings.groupAddonLyrics": "歌詞轉寫",
 
   "export.title": "匯出音訊檔",
   "export.run": "匯出",
@@ -682,6 +683,7 @@
   "addon.modelStems6": "6 軌分離模型（也分離吉他和鋼琴，Demucs 6s）",
   "addon.demucs4": "樂器分離模型（4 軌，Demucs）",
   "addon.demucs6": "樂器分離模型（6 軌，Demucs 6s）",
+  "addon.lyrics": "歌詞轉寫（Whisper）",
 
   "extract.vocalsMenu": "擷取人聲",
   "extract.accompanimentMenu": "僅保留伴奏",

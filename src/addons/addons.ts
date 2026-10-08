@@ -22,6 +22,8 @@ export const ADDONS: AddonInfo<MessageKey>[] = [
   { id: 'demucs-6', name: 'addon.demucs6', shortName: 'addon.modelStems6', requires: ['vocal-extractor'] },
   // 解析（analyzer/ の WeVocalAnalyzer）。今はスペクトログラムの表示に使う（src/audio/spectrogram.ts）
   { id: 'analyzer', name: 'addon.analyzer' },
+  // 歌詞の文字化（analyzer/ の src/lyrics.ts。Analyzer と同じもの。一音ずつの切り出しに使う予定。memo/kana-cut.md）
+  { id: 'analyzer-lyrics', name: 'addon.lyrics' },
   // 変換（converter/ の WeVocalConverter）。今は動画の書き出しに使う（src/audio/video.ts）
   { id: 'converter', name: 'addon.converter' },
 ]

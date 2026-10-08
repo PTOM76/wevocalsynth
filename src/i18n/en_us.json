@@ -284,6 +284,7 @@
   "settings.tempoChangeOff": "Off",
   "settings.tempoChangeLow": "Conservative",
   "settings.tempoChangeNormal": "Normal",
+  "settings.groupAddonLyrics": "Lyrics transcription",
 
   "export.title": "Export audio",
   "export.run": "Export",
@@ -682,6 +683,7 @@
   "addon.modelStems6": "6-stem model (also guitar and piano, Demucs 6s)",
   "addon.demucs4": "Instrument separation model (4 stems, Demucs)",
   "addon.demucs6": "Instrument separation model (6 stems, Demucs 6s)",
+  "addon.lyrics": "Lyrics transcription (Whisper)",
 
   "extract.vocalsMenu": "Extract vocals",
   "extract.accompanimentMenu": "Keep accompaniment only",

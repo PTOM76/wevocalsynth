@@ -284,6 +284,7 @@
   "settings.tempoChangeOff": "検出しない",
   "settings.tempoChangeLow": "控えめ",
   "settings.tempoChangeNormal": "標準",
+  "settings.groupAddonLyrics": "歌詞の文字化",
 
   "export.title": "音声ファイルを書き出す",
   "export.run": "書き出す",
@@ -682,6 +683,7 @@
   "addon.modelStems6": "6 つに分けるモデル（ギターとピアノも分ける、Demucs 6s）",
   "addon.demucs4": "楽器ごとに分けるモデル（4 つ、Demucs）",
   "addon.demucs6": "楽器ごとに分けるモデル（6 つ、Demucs 6s）",
+  "addon.lyrics": "歌詞の文字化（Whisper）",
 
   "extract.vocalsMenu": "ボーカルを抽出",
   "extract.accompanimentMenu": "伴奏のみ残す",

@@ -284,6 +284,7 @@
   "settings.tempoChangeOff": "감지 안 함",
   "settings.tempoChangeLow": "보수적",
   "settings.tempoChangeNormal": "보통",
+  "settings.groupAddonLyrics": "가사 받아쓰기",
 
   "export.title": "오디오 파일 내보내기",
   "export.run": "내보내기",
@@ -682,6 +683,7 @@
   "addon.modelStems6": "6개로 분리하는 모델 (기타와 피아노도 분리, Demucs 6s)",
   "addon.demucs4": "악기별 분리 모델 (4개, Demucs)",
   "addon.demucs6": "악기별 분리 모델 (6개, Demucs 6s)",
+  "addon.lyrics": "가사 받아쓰기 (Whisper)",
 
   "extract.vocalsMenu": "보컬 추출",
   "extract.accompanimentMenu": "반주만 남기기",
