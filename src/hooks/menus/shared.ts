@@ -5,6 +5,7 @@ import type { ActionId } from '../../settings/keymap'
 import type { Settings } from '../../settings/settings'
 import type { BoolKey } from '../../settings/items/toggle'
 import type { MenuActions } from './actions'
+import type { Commands } from '../../commands'
 
 /** メニューを作る関数に渡すもの */
 export interface MenuCtx {
@@ -13,6 +14,8 @@ export interface MenuCtx {
   /** 操作に割り当てたキーの表記 */
   key: (id: ActionId) => string | undefined
   s: Settings
+  /** コマンドからメニューの項目を作る（src/commands/） */
+  item: Commands['item']
   toggle: (key: BoolKey, rest?: { checked?: boolean; disabled?: boolean; shortcut?: string }) => MenuEntry
   noClip: boolean
   noSel: boolean
@@ -33,21 +36,21 @@ export const toNewTrack = ({ a, t, noSel }: MenuCtx): MenuEntry => ({
 
 /** 編集メニューの中ほど（切り取りから選択の解除まで） */
 export function editEntries(c: MenuCtx): MenuEntry[] {
-  const { a, t, key, noClip, noSel } = c
+  const { item } = c
   return [
-    { label: t('edit.cut'), shortcut: key('cut'), disabled: noSel, onClick: a.cut },
-    { label: t('edit.copy'), shortcut: key('copy'), disabled: noSel, onClick: a.copy },
-    { label: t('edit.paste'), shortcut: key('paste'), disabled: noClip || !a.hasClipboard, onClick: a.paste },
-    { label: t('edit.delete'), shortcut: key('remove'), disabled: noSel, onClick: a.remove },
-    { label: t('edit.trim'), shortcut: key('trim'), disabled: noSel || !a.canTrim, onClick: a.trim },
-    { label: t('edit.reverse'), disabled: noClip, onClick: a.reverse },
-    { label: t('silence.menu'), disabled: noClip, onClick: a.insertSilence },
-    { label: t('repeat.menu'), disabled: noSel, onClick: a.repeatSelection },
+    item('cut'),
+    item('copy'),
+    item('paste'),
+    item('remove'),
+    item('trim'),
+    item('reverse'),
+    item('insertSilence'),
+    item('repeatSelection'),
     toNewTrack(c),
     { divider: true },
-    { label: t('edit.selectAll'), shortcut: key('selectAll'), disabled: noClip, onClick: a.selectAll },
-    { label: t('soundSelect.menu'), shortcut: key('selectSounds'), disabled: noClip, onClick: a.selectSounds },
-    { label: t('edit.clearSelection'), shortcut: key('clearSelection'), disabled: noSel, onClick: a.clearSelection },
+    item('selectAll'),
+    item('selectSounds'),
+    item('clearSelection'),
   ]
 }
 

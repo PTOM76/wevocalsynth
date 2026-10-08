@@ -5,7 +5,7 @@ import { editEntries, recentEntries, toolsEntries, volumeMenu, type MenuCtx } fr
 
 /** メニューバー（スマホでは ⋮ のメニュー一覧） */
 export function menuBar(c: MenuCtx): MenuGroup[] {
-  const { a, t, key, s, toggle, noClip, noSel } = c
+  const { a, t, key, s, item, toggle, noClip, noSel } = c
   return [
     {
       label: t('menu.file'),
@@ -27,9 +27,9 @@ export function menuBar(c: MenuCtx): MenuGroup[] {
       label: t('menu.edit'),
       accessKey: 'E',
       entries: [
-        { label: t('common.undo'), shortcut: key('undo'), disabled: !a.canUndo || a.busy, onClick: a.undo },
-        { label: t('common.redo'), shortcut: key('redo'), disabled: !a.canRedo || a.busy, onClick: a.redo },
-        { label: t('history.menu'), disabled: noClip, onClick: a.showHistory },
+        item('undo'),
+        item('redo'),
+        item('history'),
         { divider: true },
         ...editEntries(c),
         { divider: true },

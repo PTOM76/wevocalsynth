@@ -4,34 +4,34 @@ import { extractEntries, toNewTrack, volumeMenu, type MenuCtx } from './shared'
 
 /** 波形の右クリック。上の段は 10 個前後にし、まとまりはサブメニューにする（docs/DECISIONS.md の「メニューの構成」） */
 export function contextMenu(c: MenuCtx): MenuEntry[] {
-  const { a, t, key, noClip, noSel, noPitch, noVoicing } = c
+  const { a, t, key, item, noClip, noSel, noPitch, noVoicing } = c
   return [
     { label: t('play.playSelection'), shortcut: key('playSelection'), disabled: noSel, onClick: a.playSelection },
     { label: t('play.repeat'), shortcut: key('toggleLoop'), disabled: noClip, onClick: a.toggleLoop },
     { divider: true },
-    { label: t('edit.cut'), shortcut: key('cut'), disabled: noSel, onClick: a.cut },
-    { label: t('edit.copy'), shortcut: key('copy'), disabled: noSel, onClick: a.copy },
-    { label: t('edit.paste'), shortcut: key('paste'), disabled: noClip || !a.hasClipboard, onClick: a.paste },
-    { label: t('edit.delete'), shortcut: key('remove'), disabled: noSel, onClick: a.remove },
+    item('cut'),
+    item('copy'),
+    item('paste'),
+    item('remove'),
     { divider: true },
     {
       label: t('context.select'),
       disabled: noClip,
       submenu: [
-        { label: t('edit.selectAll'), shortcut: key('selectAll'), onClick: a.selectAll },
-        { label: t('soundSelect.menu'), shortcut: key('selectSounds'), onClick: a.selectSounds },
+        item('selectAll'),
+        item('selectSounds'),
         { label: t('wave.zoomSelection'), disabled: !a.hasSelection, onClick: a.zoomSelection },
-        { label: t('edit.clearSelection'), shortcut: key('clearSelection'), disabled: !a.hasSelection, onClick: a.clearSelection },
+        item('clearSelection'),
       ],
     },
     {
       label: t('context.edit'),
       disabled: noClip,
       submenu: [
-        { label: t('edit.trim'), shortcut: key('trim'), disabled: !a.hasSelection || !a.canTrim, onClick: a.trim },
-        { label: t('edit.reverse'), onClick: a.reverse },
-        { label: t('silence.menu'), onClick: a.insertSilence },
-        { label: t('repeat.menu'), disabled: !a.hasSelection, onClick: a.repeatSelection },
+        item('trim'),
+        item('reverse'),
+        item('insertSilence'),
+        item('repeatSelection'),
       ],
     },
     volumeMenu(c),

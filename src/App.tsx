@@ -15,6 +15,7 @@ import { useDialogs } from './hooks/useDialogs'
 import { useSelectionExport } from './hooks/useSelectionExport'
 import AppDialogs from './components/AppDialogs'
 import { useAppMenus } from './hooks/useAppMenus'
+import { useCommands } from './commands'
 import { useWaveformView, ZOOM_STEP } from 'wevocal-lib/react'
 import AppHeader from './components/AppHeader'
 import { EmptyState } from './components/EmptyState'
@@ -148,14 +149,12 @@ export default function App() {
     saveToFolder: selection && canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
     selectSounds: edited ? dialogs.opener('soundSelect') : undefined,
   })
+  // 操作（コマンド）。メニューは id で参照する（src/commands/）
+  const commands = useCommands({ ed, dialogs, noClip: !edited || busy, noSel: !edited || busy || !selection }, ed.keymap)
   const { menus, mobileMenus, context } = useAppMenus({
     keymap: ed.keymap,
     hasClip: !!edited,
     hasSelection: !!selection,
-    hasClipboard: ed.clip.hasClipboard,
-    canTrim: ed.clip.canTrim,
-    canUndo: ed.history.canUndo,
-    canRedo: ed.history.canRedo,
     busy,
     showSpectrogram: ed.showSpec,
     showPitch: ed.showPitch,
@@ -166,18 +165,6 @@ export default function App() {
     openExport: () => ed.openExport(),
     openVideoExport: () => void ed.video.openDialog(),
     videoAvailable: ed.video.available,
-    undo: ed.history.undo,
-    redo: ed.history.redo,
-    // 切り取り・コピー・貼り付けは、フォーカスしている帯（波形なら音声、ピッチなら曲線）に効く
-    cut: ed.clip.cut,
-    copy: ed.clip.copy,
-    paste: ed.clip.paste,
-    remove: ed.clip.remove,
-    trim: ed.clip.trim,
-    reverse: ed.cmd.reverse,
-    clearSelection: ed.clearSelection,
-    selectAll: ed.selectAll,
-    selectSounds: dialogs.opener('soundSelect'),
     playSelection: playback.playSelection,
     toggleLoop: toggleRepeat,
     toggleSpectrogram: () => ed.setShowSpec(!ed.showSpec),
@@ -201,8 +188,6 @@ export default function App() {
     hasOriginal: !!ed.tracks.tracks.find((tr) => tr.id === ed.tracks.activeId && tr.original !== tr.clip),
     trackFromOriginal: () => ed.tracks.fromOriginal(),
     addEmptyTrack: ed.tracks.addEmpty,
-    insertSilence: dialogs.opener('silence'),
-    repeatSelection: dialogs.opener('repeat'),
     saveToFolder: canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
     saveManyToFolder: canSaveToFolder() && ed.selections.length > 1 ? () => void saveSelectionsToFolder() : undefined,
     selectionCount: ed.selections.length,
@@ -216,7 +201,6 @@ export default function App() {
       dialogs.open('settings')
       setSettingsFocus((n) => n + 1)
     },
-    showHistory: dialogs.opener('history'),
     showAbout: dialogs.opener('about'),
     showLicenses: dialogs.opener('licenses'),
     playing: player.playing,
@@ -269,7 +253,8 @@ export default function App() {
         const text = { found: l.updateAvailable, latest: l.updateLatest, unsupported: l.updateUnsupported, failed: l.updateFailed }[r.kind]
         ed.setToast({ severity: r.kind === 'failed' ? 'error' : 'info', message: text })
       }),
-  })
+  }, commands)
+
 
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
   const panelsDisabled = !editing || !edited

@@ -8,11 +8,6 @@ export interface MenuActions {
   keymap: Keymap
   hasClip: boolean
   hasSelection: boolean
-  hasClipboard: boolean
-  /** 選択範囲のみ残すを使えるか（ピッチの帯にフォーカスしているときは使えない） */
-  canTrim: boolean
-  canUndo: boolean
-  canRedo: boolean
   busy: boolean
   showSpectrogram: boolean
   showPitch: boolean
@@ -31,20 +26,6 @@ export interface MenuActions {
   /** 選択範囲が 2 つ以上のとき、別々のファイルにして保存する */
   saveManyToFolder?: () => void
   selectionCount: number
-  undo: () => void
-  redo: () => void
-  cut: () => void
-  /** 選択範囲を取り除く（クリップボードに入れない） */
-  remove: () => void
-  copy: () => void
-  paste: () => void
-  trim: () => void
-  /** 選択範囲（なければ全体）を逆再生にする */
-  reverse: () => void
-  clearSelection: () => void
-  selectAll: () => void
-  /** 無音で区切って選択（ダイアログを出す） */
-  selectSounds: () => void
   playSelection: () => void
   toggleLoop: () => void
   toggleSpectrogram: () => void
@@ -79,10 +60,6 @@ export interface MenuActions {
   hasOriginal: boolean
   trackFromOriginal: () => void
   addEmptyTrack: () => void
-  /** 無音の挿入（長さを決めるダイアログを開く） */
-  insertSilence: () => void
-  /** 選択範囲を繰り返す（回数を決めるダイアログを開く） */
-  repeatSelection: () => void
   /** 選択範囲を同じ位置のまま新しいトラックへ（`move` なら元は無音に） */
   selectionToTrack: (move: boolean) => void
   addTrack: () => void
@@ -94,7 +71,6 @@ export interface MenuActions {
   sampler: () => void
   showShortcuts: () => void
   showSettings: () => void
-  showHistory: () => void
   showAbout: () => void
   // ---- 再生 ----
   playing: boolean

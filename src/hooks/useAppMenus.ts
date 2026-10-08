@@ -6,6 +6,7 @@ import { useAppSettings } from '../settings/settings'
 import { useToggleItem } from '../settings/items/toggle'
 import type { MenuActions } from './menus/actions'
 import type { MenuCtx } from './menus/shared'
+import type { Commands } from '../commands'
 import { menuBar } from './menus/menuBar'
 import { contextMenu } from './menus/context'
 
@@ -15,14 +16,14 @@ export type { MenuActions }
  * メニューバー（スマホではメニュー一覧）と、波形の右クリックメニューの中身。
  * 項目は menus/ にある（menuBar.ts、context.ts、共通の部分は shared.ts）
  */
-export function useAppMenus(a: MenuActions): { menus: MenuGroup[]; mobileMenus: MenuGroup[]; context: MenuEntry[] } {
+export function useAppMenus(a: MenuActions, commands: Commands): { menus: MenuGroup[]; mobileMenus: MenuGroup[]; context: MenuEntry[] } {
   const t = useT()
   // 設定から読むもの（App を通さない）と、設定の切り替えの項目
   const { settings: s } = useAppSettings()
   const toggle = useToggleItem()
   const noClip = !a.hasClip || a.busy
   const noSel = noClip || !a.hasSelection
-  const c: MenuCtx = { a, t, key: (id: ActionId) => keyLabelOf(a.keymap, id), s, toggle, noClip, noSel, noVoicing: noSel || !a.pitchReady, noPitch: noClip || !a.pitchReady }
+  const c: MenuCtx = { a, t, item: commands.item, key: (id: ActionId) => keyLabelOf(a.keymap, id), s, toggle, noClip, noSel, noVoicing: noSel || !a.pitchReady, noPitch: noClip || !a.pitchReady }
   const menus = menuBar(c)
   // スマホの ⋮ は PC のメニューバーと同じまとまりにし、段階で開く（PevenMUI の DrillMenu。スマホから使えない操作をなくす）。
   // キーボードがないので、ショートカット一覧だけは出さない
