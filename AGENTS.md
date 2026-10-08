@@ -18,3 +18,8 @@ AI のエージェント向けの決まり。[docs/CODING.md](docs/CODING.md) �
 - 画面に出さない値（メニューの切り替え、覚えておく値）は `page` が null の集まり（`view`、`stored`）に置く
 - 部品とフックは `useAppSettings()` で設定を直接読む。App から props で渡さない
 - 表示メニューのオンとオフは `useToggleItem()` の `toggle('名前', { disabled })` で作る（名前は定義の label）
+
+## 画面
+
+- ダイアログを足すときは `src/hooks/useDialogs.ts` の `DialogId` に名前を足し、描画は `src/components/AppDialogs.tsx` に置く。開くのは `dialogs.opener('名前')`
+- メニューの項目は `src/hooks/menus/`（メニューバーは menuBar.ts、右クリックは context.ts、両方に出るものは shared.ts）。App から渡す値の型は actions.ts

@@ -1,19 +1,18 @@
 import MobileEditBar from './components/MobileEditBar'
-import { finishClip } from './audio/finish'
-import { canSaveToFolder, chooseSaveFolder, saveToFolder, savedFolderName } from 'pevenmui/web'
-import { sliceRanges } from './audio/multiRange'
-import { encodeWav } from 'wevocal-lib'
-import RepeatDialog from './components/RepeatDialog'
+import { canSaveToFolder } from 'pevenmui/web'
 import MarkerTempoDialog from './components/MarkerTempoDialog'
 import { segmentAt } from './audio/tempoMap'
 import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, Button, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, LicensesDialog, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, useShortcuts, DesktopLayout, MobileLayout } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, useShortcuts, DesktopLayout, MobileLayout } from 'pevenmui'
 import LevelMeter from './components/LevelMeter'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
+import { useDialogs } from './hooks/useDialogs'
+import { useSelectionExport } from './hooks/useSelectionExport'
+import AppDialogs from './components/AppDialogs'
 import { useAppMenus } from './hooks/useAppMenus'
 import { useWaveformView, ZOOM_STEP } from 'wevocal-lib/react'
 import AppHeader from './components/AppHeader'
@@ -30,25 +29,13 @@ import SelectionField from './components/SelectionField'
 import TempoField from './components/TempoField'
 import EditPanel from './components/EditPanel'
 import VolumePanel from './components/VolumePanel'
-import PitchToolHost, { type PitchDialogKind } from './components/PitchToolHost'
-import SynthDialog from './components/SynthDialog'
-import SamplerDialog from './components/SamplerDialog'
-import RecordDialog from './components/RecordDialog'
+import type { PitchDialogKind } from './components/PitchToolHost'
 import { canRecord } from 'wevocal-lib'
-import SilenceDialog from './components/SilenceDialog'
-import SoundSelectDialog from './components/SoundSelectDialog'
 import { flattenPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
-import ShortcutsDialog from './components/ShortcutsDialog'
-import ExportDialog from './components/ExportDialog'
-import VideoExportDialog from './components/VideoExportDialog'
-import AboutDialog from './components/AboutDialog'
-import HistoryDialog from './components/HistoryDialog'
 import { useAppSettings } from './settings/settings'
-import SettingsDialog from './settings/SettingsDialog'
 import DebugOverlay from './debug/DebugOverlay'
 import UpdatePrompt from './components/UpdatePrompt'
-import { licenseEntries } from './licenses'
 import { countRender } from './debug/debugStats'
 import { i18n, LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
@@ -97,27 +84,15 @@ export default function App() {
   const theme = useTheme()
   // 大きめのスマホを横向きにすると幅が md を超えるので、横向きのスマホもスマホの配置にする
   const mobile = useMediaQuery(`${theme.breakpoints.down('md').replace('@media ', '')}, ${LANDSCAPE_PHONE}`)
+  const dialogs = useDialogs()
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null)
   // 目盛りの上で開いたとき（その位置と、そこにあるマーカー）。閉じるアニメーション中に中身が変わらないよう、閉じても残す
   const [rulerAt, setRulerAt] = useState<{ time: number; markerId: string | null } | null>(null)
-  const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   // 設定を開いたまま、もう一度「設定」を押したら、別の窓で開いている設定画面を手前に出す
   const [settingsFocus, setSettingsFocus] = useState(0)
-  const [aboutOpen, setAboutOpen] = useState(false)
-  const [licensesOpen, setLicensesOpen] = useState(false)
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const [synthOpen, setSynthOpen] = useState(false)
-  const [samplerOpen, setSamplerOpen] = useState(false)
   const [renamingMarker, setRenamingMarker] = useState<string | null>(null)
   // テンポを変えるマーカー（テンポが途中で変わる曲）
   const [tempoMarker, setTempoMarker] = useState<string | null>(null)
-  const [silenceOpen, setSilenceOpen] = useState(false)
-  const [recordOpen, setRecordOpen] = useState(false)
-  // 録音したトラックの名前の番号（録音 1、録音 2…）
-  const recordCount = useRef(0)
-  const [repeatOpen, setRepeatOpen] = useState(false)
-  const [soundSelectOpen, setSoundSelectOpen] = useState(false)
   // 再生位置の入力を始める合図（目盛りの右クリックメニューから。増やすたびに始まる）
   const [timeEditRequest, setTimeEditRequest] = useState(0)
   // 波形の縦の拡大率（1〜64 倍、2 倍ずつ）。小さい音を見やすくする
@@ -152,7 +127,7 @@ export default function App() {
     apply: edited && !busy ? () => void ed.apply() : undefined,
     toNewTrack: selection ? () => ed.tracks.fromSelection(ed.selections, false) : undefined,
     saveToFolder: selection && canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
-    selectSounds: edited ? () => setSoundSelectOpen(true) : undefined,
+    selectSounds: edited ? dialogs.opener('soundSelect') : undefined,
   })
   const { menus, mobileMenus, context } = useAppMenus({
     keymap: ed.keymap,
@@ -183,7 +158,7 @@ export default function App() {
     reverse: ed.cmd.reverse,
     clearSelection: ed.clearSelection,
     selectAll: ed.selectAll,
-    selectSounds: () => setSoundSelectOpen(true),
+    selectSounds: dialogs.opener('soundSelect'),
     playSelection: playback.playSelection,
     toggleLoop: toggleRepeat,
     toggleSpectrogram: () => ed.setShowSpec(!ed.showSpec),
@@ -206,24 +181,24 @@ export default function App() {
     hasOriginal: !!ed.tracks.tracks.find((tr) => tr.id === ed.tracks.activeId && tr.original !== tr.clip),
     trackFromOriginal: () => ed.tracks.fromOriginal(),
     addEmptyTrack: ed.tracks.addEmpty,
-    insertSilence: () => setSilenceOpen(true),
-    repeatSelection: () => setRepeatOpen(true),
+    insertSilence: dialogs.opener('silence'),
+    repeatSelection: dialogs.opener('repeat'),
     saveToFolder: canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
     saveManyToFolder: canSaveToFolder() && ed.selections.length > 1 ? () => void saveSelectionsToFolder() : undefined,
     selectionCount: ed.selections.length,
     selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),
     addTrack: () => ed.addPicker.open(),
-    record: canRecord() ? () => setRecordOpen(true) : undefined,
-    synth: () => setSynthOpen(true),
-    sampler: () => setSamplerOpen(true),
-    showShortcuts: () => setShortcutsOpen(true),
+    record: canRecord() ? dialogs.opener('record') : undefined,
+    synth: dialogs.opener('synth'),
+    sampler: dialogs.opener('sampler'),
+    showShortcuts: dialogs.opener('shortcuts'),
     showSettings: () => {
-      setSettingsOpen(true)
+      dialogs.open('settings')
       setSettingsFocus((n) => n + 1)
     },
-    showHistory: () => setHistoryOpen(true),
-    showAbout: () => setAboutOpen(true),
-    showLicenses: () => setLicensesOpen(true),
+    showHistory: dialogs.opener('history'),
+    showAbout: dialogs.opener('about'),
+    showLicenses: dialogs.opener('licenses'),
     playing: player.playing,
     togglePlay: playback.togglePlay,
     stop: playback.stop,
@@ -284,55 +259,8 @@ export default function App() {
   const bpm = seg?.bpm || baseBpm
   const hasCurve = !!ed.pitchTarget.target && ed.pitchTarget.target.hz.some((v) => v > 0)
   const totalDuration = ed.editRanges.reduce((s, r) => s + r.end - r.start, 0)
-  // 選択範囲を外へドラッグして書き出すときの WAV（選んでいるトラックの加工後。名前は「書き出し名_開始ms.wav」。: は DownloadURL の区切りなので除く）
-  const dragSelectionFile = useStableFn(() => {
-    if (!edited || !selection) return null
-    const name = `${ed.exportName.replace(/[:\\/]/g, '_')}_${Math.round(selection.start * 1000)}ms.wav`
-    return { name, blob: encodeWav(finishClip(sliceRanges(edited, [selection]), finishOpts)) }
-  })
-  // 書き出しの仕上げ（ノーマライズ、両端のフェード）。フォルダーへの保存と外へのドラッグにもかける
-  const finishOpts = { normalize: settings.exportNormalize, fadeMs: settings.exportFadeMs }
-  // フォルダーへの保存に失敗したら、理由を出す（黙って何も起きないと原因が分からない）
-  const folderFailed = (e: unknown) => ed.setToast({ severity: 'error', message: t('folder.failed', { error: String(e) }) })
-  // 選択範囲を決めたフォルダーへ保存する（初回はフォルダーを選ぶ。名前は「書き出し名_連番.wav」）
-  const saveSelectionToFolder = useStableFn(async () => {
-    if (!edited || !selection) return
-    const r = await saveToFolder('export', ed.exportName, '.wav', encodeWav(finishClip(sliceRanges(edited, [selection]), finishOpts))).catch((e) => (folderFailed(e), null))
-    if (r) ed.setToast({ severity: 'success', message: t('folder.saved', { name: r.name, folder: r.folder }) })
-  })
-  // すべての選択範囲を、時間の順に 1 つずつ別のファイルにして保存する（「無音で区切って選択」のあとなど）
-  const saveSelectionsToFolder = useStableFn(async () => {
-    if (!edited || ed.selections.length < 2) return
-    let last: { folder: string; name: string } | null = null
-    let count = 0
-    for (const r of [...ed.selections].sort((a, b) => a.start - b.start)) {
-      const saved = await saveToFolder('export', ed.exportName, '.wav', encodeWav(finishClip(sliceRanges(edited, [r]), finishOpts))).catch((e) => (folderFailed(e), null))
-      if (!saved) break
-      last = saved
-      count++
-    }
-    if (last) ed.setToast({ severity: 'success', message: t('folder.savedMany', { n: count, folder: last.folder }) })
-  })
-  // 無音で区切って選んだら、件数と次の操作（新しいトラックへ、別々にフォルダーへ保存）を通知に出す
-  const onSoundsSelected = (rs: Range[]) => {
-    if (!editing) return
-    ed.setSelections(rs)
-    if (!rs.length) return
-    ed.setToast({
-      severity: 'info',
-      message: t('soundSelect.selected', { n: rs.length }),
-      actions: [
-        { label: t('track.copySelection'), onClick: () => ed.tracks.fromSelection(rs, false) },
-        ...(canSaveToFolder() && rs.length > 1 ? [{ label: t('folder.saveManyShort'), onClick: () => void saveSelectionsToFolder() }] : []),
-      ],
-    })
-  }
-  // 書き出しの保存先フォルダー（Chrome・Edge。編集ソフトのように、ダイアログでフォルダーとファイル名を決める）。開くたびに覚えている名前を読む
-  const exportToFolder = canSaveToFolder()
-  const [exportFolder, setExportFolder] = useState<string | null>(null)
-  useEffect(() => {
-    if (exportToFolder && (ed.exportOpen || ed.video.open)) void savedFolderName('export').then(setExportFolder)
-  }, [exportToFolder, ed.exportOpen, ed.video.open])
+  const selectionExport = useSelectionExport(ed)
+  const { dragSelectionFile, saveSelectionToFolder, saveSelectionsToFolder } = selectionExport
   const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
 
   const tempoField = (fontSize?: number) => (
@@ -442,7 +370,7 @@ export default function App() {
       onFocusLane={onWaveFocus}
     />
   ) : (
-    <EmptyState onOpen={ed.picker.open} onSynth={() => setSynthOpen(true)} onRecord={canRecord() ? () => setRecordOpen(true) : undefined} recent={ed.recent} />
+    <EmptyState onOpen={ed.picker.open} onSynth={dialogs.opener('synth')} onRecord={canRecord() ? dialogs.opener('record') : undefined} recent={ed.recent} />
   )
   // トラックが2本以上あるときだけ、波形の上にトラックの欄を出す（広げると波形付きの一覧、折りたたむとタブ）
   const editor = (
@@ -718,93 +646,7 @@ export default function App() {
           />
         )
       })()}
-      {edited && (
-        <ExportDialog
-          open={ed.exportOpen}
-          onClose={() => ed.setExportOpen(false)}
-          baseName={ed.exportName}
-          sourceRate={edited.sampleRate}
-          sourceChannels={edited.channels.length}
-          hasSelection={!!selection}
-          trackCount={ed.tracks.tracks.length}
-          busy={busy}
-          progress={ed.progress}
-          onExport={ed.exportFile}
-          activeOnly={ed.exportActiveOnly}
-          finish={finishOpts}
-          onFinishChange={(f) => updateSettings({ exportNormalize: f.normalize, exportFadeMs: f.fadeMs })}
-          folder={exportToFolder ? { name: exportFolder, choose: (win) => void chooseSaveFolder('export', win ?? window).then((n) => n && setExportFolder(n), folderFailed) } : undefined}
-        />
-      )}
-      {edited && (
-        <VideoExportDialog
-          open={ed.video.open}
-          onClose={() => ed.video.setOpen(false)}
-          baseName={ed.exportName}
-          hasSelection={!!selection}
-          trackCount={ed.tracks.tracks.length}
-          busy={busy}
-          progress={ed.progress}
-          previewClip={edited}
-          prefs={settings.exportVideo}
-          onPrefsChange={(exportVideo) => updateSettings({ exportVideo })}
-          onExport={(s, win) => void ed.video.exportVideo(s, win)}
-          folder={exportToFolder ? { name: exportFolder, choose: (win) => void chooseSaveFolder('export', win ?? window).then((n) => n && setExportFolder(n), folderFailed) } : undefined}
-        />
-      )}
-      <PitchToolHost
-        open={pitchDialog}
-        onClose={() => setPitchDialog(null)}
-        hasSelection={!!selection}
-        selectionStart={selection ? selection.start : null}
-        bpm={bpm}
-        beatOffset={seg?.offset ?? ed.projectTempo.beatOffset}
-        pitchTools={ed.pitchTools}
-      />
-      <SynthDialog open={synthOpen} bpm={bpm} onClose={() => setSynthOpen(false)} onCreate={ed.addSynth} />
-      <RepeatDialog open={repeatOpen} onClose={() => setRepeatOpen(false)} onRepeat={ed.cmd.repeat} />
-      <RecordDialog
-        open={recordOpen}
-        input={{ deviceId: settings.inputDevice, echoCancellation: settings.recordEchoCancellation, noiseSuppression: settings.recordNoiseSuppression, autoGainControl: settings.recordAutoGain }}
-        onDevice={(id) => updateSettings({ inputDevice: id })}
-        onClose={() => setRecordOpen(false)}
-        onUse={(clip) => ed.addSynth(clip, t('record.trackName', { n: ++recordCount.current }))}
-      />
-      <SilenceDialog
-        open={silenceOpen}
-        bpm={bpm}
-        beatsPerBar={seg?.beatsPerBar ?? ed.projectTempo.beatsPerBar}
-        defaultSec={selection ? selection.end - selection.start : null}
-        onClose={() => setSilenceOpen(false)}
-        // 選択範囲があればその頭に、なければ再生位置に入れる
-        onInsert={(sec) => ed.cmd.insertSilence(selection ? selection.start : player.livePosition(), sec)}
-      />
-      <SoundSelectDialog open={soundSelectOpen} clip={edited} onClose={() => setSoundSelectOpen(false)} onSelect={onSoundsSelected} />
-      <SamplerDialog
-        open={samplerOpen}
-        bpm={bpm}
-        baseNote={ed.rangeNote == null ? null : Math.round(ed.rangeNote)}
-        onClose={() => setSamplerOpen(false)}
-        onRun={(o) => void ed.placeOnMidi(o)}
-      />
-      <HistoryDialog
-        open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        labels={ed.history.labels}
-        done={ed.history.done}
-        onJump={(n) => !busy && ed.history.jumpTo(n)}
-      />
-      <LicensesDialog open={licensesOpen} onClose={() => setLicensesOpen(false)} title={t('menu.licenses')} intro={t('licenses.intro')} entries={licenseEntries()} />
-      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
-      <ShortcutsDialog keymap={ed.keymap} open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} wheelZoom={settings.wheelZoom} />
-      <SettingsDialog
-        open={settingsOpen}
-        focusSignal={settingsFocus}
-        onClose={() => setSettingsOpen(false)}
-        settings={settings}
-        onChange={updateSettings}
-        project={ed.fileName ? { name: ed.fileName, tempo: ed.projectTempo, onRename: ed.setProjectName, onTempoChange: ed.setProjectTempo, onBpmInput: ed.changeTempo } : null}
-      />
+      <AppDialogs ed={ed} dialogs={dialogs} pitchDialog={pitchDialog} setPitchDialog={setPitchDialog} settingsFocus={settingsFocus} bpm={bpm} seg={seg} selectionExport={selectionExport} />
       {settings.showDebug && <DebugOverlay />}
       <UpdatePrompt devUpdates={settings.devUpdates} />
       {ed.addonDialog}
