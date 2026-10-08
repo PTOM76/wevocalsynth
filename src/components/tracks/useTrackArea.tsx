@@ -67,7 +67,7 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
     mergeAll: () => void tr.mergeAll(),
     toggleMute: tr.toggleMute,
     toggleSolo: tr.toggleSolo,
-    inverted: (id: string) => !!tr.faders[id]?.invert,
+    inverted: (id: string) => !!tr.faderOf(id).invert,
     toggleInvert: tr.toggleInvert,
     eqOn: (id: string) => !isFlatEq(tr.eqOf(id)),
     // EQ のダイアログは選んでいるトラックを編集するので、選んでから開く
@@ -89,10 +89,10 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
 
   // 位相の反転か EQ を使っているトラック（「⋯」に色を付ける）
   const marked = useMemo(
-    () => new Set(tr.tracks.filter((x) => tr.faders[x.id]?.invert || !isFlatEq(tr.eqOf(x.id))).map((x) => x.id)) as ReadonlySet<string>,
-    // eqOf は eqs だけで決まる
+    () => new Set(tr.tracks.filter((x) => tr.faderOf(x.id).invert || !isFlatEq(tr.eqOf(x.id))).map((x) => x.id)) as ReadonlySet<string>,
+    // faderOf と eqOf は effects だけで決まる
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tr.tracks, tr.faders, tr.eqs],
+    [tr.tracks, tr.effects],
   )
 
   // トラックの欄に渡す関数は作り直さない（トラックの欄は memo してあり、関係ない操作では描き直さない）

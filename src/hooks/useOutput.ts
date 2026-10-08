@@ -72,7 +72,7 @@ export function useOutput(d: Deps) {
     const render = async (c: Clip, id: string) => {
       const part = s.selectionOnly && d.selections.length ? sliceRanges(c, d.selections) : c
       // トラックのエフェクト（EQ → フェーダー。effects/ の表の順）
-      return renderEffects(part, { eq: tracks.eqOf(id), fader: tracks.faderOf(id) })
+      return renderEffects(part, tracks.effectsOf(id))
     }
     // ミックス: 再生と同じく、ミュート・ソロに従って鳴るトラックだけを混ぜる（サンプルレートは選んでいるトラックに合わせる）
     const audible = history.tracks.filter((tr) => isAudible(tr.id, tracks.mix, history.tracks))

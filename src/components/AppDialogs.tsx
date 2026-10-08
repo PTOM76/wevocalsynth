@@ -133,7 +133,7 @@ export default function AppDialogs({ ed, dialogs, bpm, seg, selectionExport }: P
   <EqDialog
     open={dialogs.isOpen('eq')}
     trackName={ed.tracks.tracks.find((tr) => tr.id === ed.tracks.activeId)?.name ?? ''}
-    eq={ed.tracks.eqs[ed.tracks.activeId] ?? flatEq(settings.eqBands)}
+    eq={ed.tracks.effects[ed.tracks.activeId]?.eq ?? flatEq(settings.eqBands)}
     onChange={(eq) => ed.tracks.setEq(ed.tracks.activeId, eq)}
     playing={player.playing}
     onTogglePlay={ed.playback.togglePlay}

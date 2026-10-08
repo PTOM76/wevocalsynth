@@ -1,9 +1,7 @@
 // 再生（全トラックのミックス、ループ、音量メーター、フェーダーと EQ）
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from './types'
-import type { TrackFader } from '../effects/fader/fader'
 import { makePanner } from '../effects/fader/fader'
-import type { TrackEq } from '../effects/eq/eq'
 import { createLiveEffects, DEFAULT_EFFECTS, type EffectValues, type LiveEffects } from '../effects'
 import { clipDuration } from './types'
 import { startContext, suspendContext } from 'wevocal-lib'
@@ -28,8 +26,7 @@ export function releasePlayers() {
 }
 
 const NO_TRACKS: PlayTrack[] = []
-const NO_FADERS: Record<string, TrackFader> = {}
-const NO_EQS: Record<string, TrackEq> = {}
+const NO_EFFECTS: Record<string, Partial<EffectValues>> = {}
 
 /** レベルメーター用の AnalyserNode を作る（時間波形を読むだけなので小さくてよい） */
 function makeAnalyser(ctx: AudioContext) {
@@ -61,15 +58,15 @@ export function usePlayer(
     others?: PlayTrack[]
     muted?: boolean
     liveGain?: LiveGain | null
-    faders?: Record<string, TrackFader>
-    eqs?: Record<string, TrackEq>
+    /** トラックごとの、変えたエフェクトの値（無いものは既定の値） */
+    effects?: Record<string, Partial<EffectValues>>
     /** 音量の帯に描いた曲線（dB、`hopSec` 間隔）。再生にすぐ反映する（`clip` の音だけに効く） */
     gainCurve?: { db: Float32Array; hopSec: number } | null
     /** 繰り返す範囲（ループ再生）。範囲の中から再生したら終わりで先頭へ戻り、範囲の外から再生したら終わりまで鳴らしてから先頭へ戻る */
     loop?: Range | null
   } = {},
 ) {
-  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null, faders = NO_FADERS, eqs = NO_EQS, gainCurve = null, loop = null } = opts
+  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null, effects = NO_EFFECTS, gainCurve = null, loop = null } = opts
   const loopRef = useRef(loop)
   loopRef.current = loop
   const gainCurveRef = useRef(gainCurve)
@@ -77,7 +74,7 @@ export function usePlayer(
   /** 音量の曲線を掛けるノード（再生のたびに作る） */
   const curveNodeRef = useRef<GainNode | null>(null)
   // トラックごとのエフェクト（EQ、フェーダー）の値
-  const valuesOf = (trackId: string): EffectValues => ({ eq: eqs[trackId] ?? DEFAULT_EFFECTS.eq, fader: faders[trackId] ?? DEFAULT_EFFECTS.fader })
+  const valuesOf = (trackId: string): EffectValues => ({ ...DEFAULT_EFFECTS, ...effects[trackId] })
   const valuesOfRef = useRef(valuesOf)
   valuesOfRef.current = valuesOf
   /** トラックごとのエフェクトのノード（再生のたびに作る。値を変えたらここへ入れる） */
@@ -337,7 +334,7 @@ export function usePlayer(
   // 再生中にエフェクト（フェーダー、EQ）を変えたら、すぐ反映する
   useEffect(() => {
     for (const [trackId, n] of effectNodes.current) n.update(valuesOfRef.current(trackId))
-  }, [faders, eqs])
+  }, [effects])
 
   // 再生中に適用前の音量が変わったら、すぐ反映する
   const gainKey = liveGain ? `${liveGain.db}:${liveGain.pan}:${liveGain.ranges.map((r) => `${r.start}-${r.end}`).join(',')}` : ''

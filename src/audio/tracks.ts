@@ -1,6 +1,6 @@
 // トラックの形と、保存する設定（フェーダー、鳴らし方、EQ）の変換
 import { isFlatEq, parseEq, type TrackEq } from '../effects/eq/eq'
-import type { TrackFader } from '../effects/fader/fader'
+import type { EffectValues } from '../effects'
 export { DEFAULT_FADER, isNeutralFader, faderGain, type TrackFader } from '../effects/fader/fader'
 import type { Clip } from './types'
 import type { MoraMark } from './kanaCut'
@@ -34,9 +34,7 @@ export const DEFAULT_MIX: TrackMix = { mute: false, solo: false }
  * 項目を足すときは、ここと `StoredTrackSettings`・`toStoredSettings`・`fromStoredSettings` だけを直す
  * （保存・読み込み・開き直したときの復元は、どれもこの変換を通す）
  */
-export interface TrackSettings {
-  fader: TrackFader
-  eq: TrackEq
+export interface TrackSettings extends EffectValues {
   mix: TrackMix
   /** 大きな波形の後ろに重ねて表示する */
   overlay: boolean

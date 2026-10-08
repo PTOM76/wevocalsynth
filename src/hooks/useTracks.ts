@@ -3,8 +3,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { clipDuration, type Clip, type Range } from '../audio/types'
 import { mapRanges, normalizeRanges } from '../audio/multiRange'
 import { silenceRange } from '../audio/edit'
-import { DEFAULT_FADER, DEFAULT_MIX, isAudible, makeTrack, type Track, type TrackFader, type TrackMix, type TrackSettings } from '../audio/tracks'
-import { DEFAULT_EQ, type TrackEq } from '../effects/eq/eq'
+import { DEFAULT_MIX, isAudible, makeTrack, type Track, type TrackMix, type TrackSettings } from '../audio/tracks'
+import type { TrackFader } from '../effects/fader/fader'
+import type { TrackEq } from '../effects/eq/eq'
+import { DEFAULT_EFFECTS, type EffectValues } from '../effects'
 import { mixClips } from '../audio/mix'
 import type { useHistory } from './useHistory'
 import { t } from '../i18n/i18n'
@@ -19,11 +21,12 @@ const NO_MORAE: MoraMark[] = []
 export function useTracks(history: ReturnType<typeof useHistory>) {
   const { tracks, activeId } = history
   const [mix, setMix] = useState<Record<string, TrackMix>>({})
-  // フェーダー（音量・パン）。再生と書き出しに常に掛ける
-  const [faders, setFaders] = useState<Record<string, TrackFader>>({})
-  const faderOf = (id: string) => faders[id] ?? DEFAULT_FADER
-  const [eqs, setEqs] = useState<Record<string, TrackEq>>({})
-  const eqOf = (id: string) => eqs[id] ?? DEFAULT_EQ
+  // トラックのエフェクト（EQ、フェーダー。effects/）。変えたものだけを持ち、読むときは既定の値で埋める。再生と書き出しに常に掛ける
+  const [effects, setEffects] = useState<Record<string, Partial<EffectValues>>>({})
+  const effectsOf = (id: string): EffectValues => ({ ...DEFAULT_EFFECTS, ...effects[id] })
+  const setEffect = <K extends keyof EffectValues>(id: string, key: K, v: EffectValues[K]) => setEffects((e) => ({ ...e, [id]: { ...e[id], [key]: v } }))
+  const faderOf = (id: string) => effectsOf(id).fader
+  const eqOf = (id: string) => effectsOf(id).eq
   // 大きな波形の後ろに重ねるトラック（見え方の切り替えなので履歴に入れない。既定は重ねない）
   const [overlay, setOverlay] = useState<ReadonlySet<string>>(new Set())
   const active = tracks.find((tr) => tr.id === activeId) ?? null
@@ -34,7 +37,7 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
   useEffect(() => {
     if (!onlyId) return
     setMix((m) => (m[onlyId]?.mute || m[onlyId]?.solo ? { ...m, [onlyId]: DEFAULT_MIX } : m))
-    setFaders((f) => (f[onlyId]?.invert ? { ...f, [onlyId]: { ...f[onlyId], invert: false } } : f))
+    setEffects((e) => (e[onlyId]?.fader?.invert ? { ...e, [onlyId]: { ...e[onlyId], fader: { ...e[onlyId].fader!, invert: false } } } : e))
   }, [onlyId])
 
   /**
@@ -170,13 +173,13 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
 
   const moraeOf = (id: string) => tracks.find((tr) => tr.id === id)?.morae ?? NO_MORAE
   /** トラック `id` の、音声以外の状態（保存するもの）をまとめて取り出す */
-  const settingsOf = (id: string): TrackSettings => ({ fader: faderOf(id), eq: eqOf(id), mix: mix[id] ?? DEFAULT_MIX, overlay: overlay.has(id), morae: moraeOf(id) })
+  const settingsOf = (id: string): TrackSettings => ({ ...effectsOf(id), mix: mix[id] ?? DEFAULT_MIX, overlay: overlay.has(id), morae: moraeOf(id) })
   /** 全トラックの `settingsOf`（自動保存などが、変わったかを1つの値で見られるように） */
   const settings = useMemo(
     () => Object.fromEntries(tracks.map((tr) => [tr.id, settingsOf(tr.id)])) as Record<string, TrackSettings>,
     // settingsOf はこの4つと tracks だけで決まる（一音ずつの範囲はトラックが持つ）
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tracks, faders, eqs, mix, overlay],
+    [tracks, effects, mix, overlay],
   )
 
   const setTrackMix = (id: string, patch: Partial<TrackMix>) => setMix((m) => ({ ...m, [id]: { ...(m[id] ?? DEFAULT_MIX), ...patch } }))
@@ -207,7 +210,7 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     toggleMute: (id: string) => setTrackMix(id, { mute: !(mix[id]?.mute ?? false) }),
     toggleSolo: (id: string) => setTrackMix(id, { solo: !(mix[id]?.solo ?? false) }),
     /** 位相（極性）の反転を切り替える（フェーダーの一部として、再生と書き出しに掛かる） */
-    toggleInvert: (id: string) => setFaders((f) => ({ ...f, [id]: { ...(f[id] ?? DEFAULT_FADER), invert: !f[id]?.invert } })),
+    toggleInvert: (id: string) => setEffect(id, 'fader', { ...faderOf(id), invert: !faderOf(id).invert }),
     overlay,
     ghosts,
     toggleOverlay: (id: string) =>
@@ -216,12 +219,13 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
         if (!n.delete(id)) n.add(id)
         return n
       }),
-    faders,
+    /** トラックごとの、変えたエフェクトの値（再生に渡す） */
+    effects,
+    effectsOf,
     faderOf,
-    setFader: (id: string, patch: Partial<TrackFader>) => setFaders((f) => ({ ...f, [id]: { ...(f[id] ?? DEFAULT_FADER), ...patch } })),
-    eqs,
+    setFader: (id: string, patch: Partial<TrackFader>) => setEffects((e) => ({ ...e, [id]: { ...e[id], fader: { ...(e[id]?.fader ?? DEFAULT_EFFECTS.fader), ...patch } } })),
     eqOf,
-    setEq: (id: string, eq: TrackEq) => setEqs((e) => ({ ...e, [id]: eq })),
+    setEq: (id: string, eq: TrackEq) => setEffect(id, 'eq', eq),
     /** トラック `id` の一音ずつの範囲（トラックが持ち、音声の編集と履歴に合わせて変わる） */
     moraeOf,
     setMorae: history.setMorae,
@@ -230,8 +234,7 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     /** ファイルを開き直したときに、トラックごとの状態を `initial`（保存した値。トラック id ごと）にする。無いトラックは既定値 */
     restoreSettings: (initial: Record<string, TrackSettings> = {}) => {
       const entries = Object.entries(initial)
-      setFaders(Object.fromEntries(entries.map(([id, s]) => [id, s.fader])))
-      setEqs(Object.fromEntries(entries.map(([id, s]) => [id, s.eq])))
+      setEffects(Object.fromEntries(entries.map(([id, s]) => [id, { eq: s.eq, fader: s.fader }])))
       setMix(Object.fromEntries(entries.map(([id, s]) => [id, s.mix])))
       setOverlay(new Set(entries.filter(([, s]) => s.overlay).map(([id]) => id)))
       for (const [id, s] of entries) if (s.morae.length) history.setMorae(id, s.morae)
