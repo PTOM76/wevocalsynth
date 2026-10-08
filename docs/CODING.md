@@ -73,6 +73,7 @@ edited.channels[0][i] *= gain
 | --- | --- |
 | キーは `領域.名前`（例: `process.pitch`、`toast.applied`） | 同じ画面の文言が並び、探しやすい |
 | 新しい文言は `src/i18n/` のすべての言語（ja_jp、en_us、ko_kr、zh_cn、zh_tw）に追加する | ja_jp にあるキーがほかの言語に欠けていると型エラーになり、ビルドが止まる |
+| 訳文は JSON を直接開かず `node scripts/i18n.mjs`（get、list、add、set、rm、mv、check）で扱う。ほかのアプリは `--dir analyzer/app/lang` のように指定する | JSON は 5 言語で 220 KB あり、開くと読む量が多い。道具は空行と並びを保って書き換える |
 | 値の差し込みは `{name}` で書く（`t('toast.loadFailed', { file, error })`） | 言語によって語順が違うため、文字列を連結しない |
 | 言語で描き直す Canvas は `useLang()` を依存に入れる | Canvas は React の再描画では描き直されない |
 

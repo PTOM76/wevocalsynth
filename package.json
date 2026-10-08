@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "build:addons": "node scripts/build-addons.mjs",
     "build:addons:dev": "node scripts/build-addons.mjs public",
-    "docs:shots": "node scripts/screenshots/run.mjs"
+    "docs:shots": "node scripts/screenshots/run.mjs",
+    "i18n": "node scripts/i18n.mjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
