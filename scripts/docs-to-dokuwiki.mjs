@@ -1,5 +1,5 @@
 // 使い方の wiki を作る
-// 1. docs/MANUAL.md を見出しごとに分けて docs/wiki/<ページ>.md を作り直し、EXTRA のページも写す（start.md だけは手で書く）
+// 1. docs/MANUAL.md を見出しごとに分けて docs/wiki/<ページ>.md を作り直し、EXTRA のページとサイドバー（sidebar.md）も作る（start.md だけは手で書く）
 // 2. docs/wiki/*.md を DokuWiki 記法へ変換して dist/dokuwiki/ に書き出す
 // 使い方: node scripts/docs-to-dokuwiki.mjs [名前空間]
 //   名前空間を省くと、ページを wiki の直下に置き、リンクも [[pitch]] のようにページ名だけにする（WeVocalSynth だけの wiki のため）
@@ -104,6 +104,18 @@ for (const [file, name] of Object.entries(EXTRA)) {
 	const md = readFileSync(file, 'utf8').replace(/\r\n/g, '\n').replace(/^関連: .*\n+/m, '').replace(/src="images\//g, 'src="../images/');
 	writeFileSync(join(SRC, `${name}.md`), md);
 }
+// サイドバー（DokuWiki の既定のテンプレートは sidebar のページを横に表示する）。PAGES と EXTRA から作り、ページを足しても直さずに済むようにする
+writeFileSync(
+	join(SRC, 'sidebar.md'),
+	[
+		'**[WeVocalSynth](start.md)**',
+		'',
+		...PAGES.map((p) => `- [${p.title}](${p.name}.md)`),
+		'',
+		...Object.entries(EXTRA).map(([file, name]) => `- [${readFileSync(file, 'utf8').match(/^# (.+)$/m)?.[1] ?? name}](${name}.md)`),
+		'',
+	].join('\n'),
+);
 const pageId = (name) => (NS ? `${NS}:${name}` : name);
 const sources = readdirSync(SRC).filter((f) => f.endsWith('.md')).map((f) => `${SRC}/${f}`);
 const pageName = (file) => basename(file, '.md').toLowerCase();
