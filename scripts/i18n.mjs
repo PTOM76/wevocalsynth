@@ -11,6 +11,8 @@ function usage() {
 
   get <key>...                 各言語の訳を表示する
   list [prefix]                先頭が一致するキーと ${BASE} の訳を表示する（--lang en で言語を変える）
+  find <text>                  訳文かキーに <text> を含むものを探し、キーと ${BASE} の訳を表示する（大文字小文字は区別しない。--lang で探す言語を絞る）
+  where <key>...               キーを使っているソースの場所（ファイル:行）を表示する
   add <key> ja=… en=… …        全言語に足す（同じ分類の最後）。省いた言語には en を入れ、警告を表示する
   set <key> ja=… en=… …        指定した言語の訳を変える
   rm <key>...                  全言語から消す
@@ -199,6 +201,35 @@ function main() {
         for (const [l, f] of Object.entries(langs)) console.log(`  ${l}: ${f.data[key] ?? '(なし)'}`)
       }
       break
+    case 'find': {
+      const q = args.join(' ').toLowerCase()
+      if (!q) throw new Error('探す文字列を指定する')
+      const only = opt.lang ? Object.keys(parseValues([`${opt.lang}=`], langs))[0] : null
+      let n = 0
+      for (const key of Object.keys(base.data)) {
+        // 一致した言語（キーの名前で一致したら key）
+        const hits = Object.entries(langs).filter(([l, f]) => (!only || l === only) && String(f.data[key] ?? '').toLowerCase().includes(q)).map(([l]) => l)
+        if (!only && key.toLowerCase().includes(q)) hits.unshift('key')
+        if (!hits.length) continue
+        n++
+        console.log(`${key}\t${base.data[key]}${hits.includes(BASE) || hits.includes('key') ? '' : `\t（${hits.join(', ')} で一致）`}`)
+      }
+      if (!n) console.log('見つからない')
+      break
+    }
+    case 'where': {
+      const files = sourceFiles(src)
+      for (const key of args) {
+        const re = new RegExp(`(['"\`])${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\1`)
+        const found = []
+        for (const p of files) {
+          fs.readFileSync(p, 'utf8').split('\n').forEach((line, i) => re.test(line) && found.push(`${p.replaceAll('\\', '/')}:${i + 1}`))
+        }
+        console.log(`${key}${found.length ? '' : '\t見つからない（キーを組み立てて使っている可能性あり）'}`)
+        for (const f of found) console.log(`  ${f}`)
+      }
+      break
+    }
     case 'list': {
       const f = opt.lang ? langs[Object.keys(parseValues([`${opt.lang}=`], langs))[0]] : base
       for (const [k, v] of Object.entries(f.data)) if (!args[0] || k.startsWith(args[0])) console.log(`${k}\t${v}`)
