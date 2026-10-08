@@ -363,7 +363,7 @@ export function useEditor() {
   )
 
   // 加工の適用、テンポの伸縮、曲線の書き込みなど（editActions.ts）
-  const { apply, changeTempo, stretchRange, retime, placeOnMidi, kanaDemo, applyCurve, applyGain, applyFormant } = editActions({
+  const { apply, changeTempo, stretchRange, retime, placeOnMidi, kanaDemo, applyCurve, applyGain, applyFormant, applyTrackEq } = editActions({
     task, history, tracks, edited, shown, editRanges, multi, preview, params, setParams, commit, selections, setSelections,
     setToast, projectTempo, setProjectTempo, settings, pitch, pitchTarget, gainCurve, formantCurve,
   })
@@ -515,7 +515,7 @@ export function useEditor() {
     // 再生
     player, preview, loop, playback, repeat, setRepeat, seekEdge,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
-    showPitch, setShowPitch, showSpec, setShowSpec: requestShowSpec, analyzerInstalled, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
+    showPitch, setShowPitch, showSpec, setShowSpec: requestShowSpec, analyzerInstalled, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, applyTrackEq, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
     cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, splitLeadStems: vocal.splitLeadStems, splitInstrumentStems: vocal.splitInstrumentStems, splitVoices, kanaDemo, addonDialog: addons.dialog, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty, exportFile, exportOpen, openExport, video, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,

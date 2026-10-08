@@ -128,6 +128,8 @@ export default function AppDialogs({ ed, dialogs, pitchDialog, setPitchDialog, s
     onChange={(eq) => ed.tracks.setEq(ed.tracks.activeId, eq)}
     playing={player.playing}
     onTogglePlay={ed.playback.togglePlay}
+    onApply={() => void ed.applyTrackEq()}
+    busy={busy}
     onClose={dialogs.closer('eq')}
   />
   <AboutDialog open={dialogs.isOpen('about')} onClose={dialogs.closer('about')} />

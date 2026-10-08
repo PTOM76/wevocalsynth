@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Box, useTheme } from '@mui/material'
 import { pevenFont } from 'pevenmui'
-import { EQ_MAX_DB, eqFreqs, type TrackEq } from '../../audio/eq'
+import { eqFreqs, eqRange, type TrackEq } from '../../audio/eq'
 import { useT } from '../../i18n/i18n'
 
 const W = 600
@@ -10,7 +10,6 @@ const PAD_X = 16
 const PAD_Y = 12
 
 const fmtHz = (f: number) => (f >= 1000 ? `${f / 1000}k` : `${f}`)
-const round = (db: number) => Math.round(Math.max(-EQ_MAX_DB, Math.min(EQ_MAX_DB, db)) * 10) / 10
 
 /**
  * グラフィック EQ のグラフ。なぞると通った帯の値がその高さになる（速く動かして飛ばした帯は間を直線で埋める）。
@@ -23,9 +22,11 @@ export default function EqGraph(p: { eq: TrackEq; onChange: (gains: number[]) =>
   const drag = useRef<{ band: number; db: number; fine: boolean; startY: number; startDb: number } | null>(null)
   const [hover, setHover] = useState<number | null>(null)
   const n = p.eq.bands
+  const max = eqRange(p.eq)
+  const round = (db: number) => Math.round(Math.max(-max, Math.min(max, db)) * 10) / 10
   const freqs = eqFreqs(n)
   const xOf = (i: number) => PAD_X + ((W - PAD_X * 2) * (i + 0.5)) / n
-  const yOf = (db: number) => H / 2 - (db / EQ_MAX_DB) * (H / 2 - PAD_Y)
+  const yOf = (db: number) => H / 2 - (db / max) * (H / 2 - PAD_Y)
   const gains = p.eq.gains
 
   /** 画面の位置を、帯の番号と dB にする */
@@ -34,7 +35,7 @@ export default function EqGraph(p: { eq: TrackEq; onChange: (gains: number[]) =>
     const x = ((e.clientX - r.left) / r.width) * W
     const y = ((e.clientY - r.top) / r.height) * H
     const band = Math.max(0, Math.min(n - 1, Math.floor(((x - PAD_X) / (W - PAD_X * 2)) * n)))
-    return { band, db: round(((H / 2 - y) / (H / 2 - PAD_Y)) * EQ_MAX_DB), y }
+    return { band, db: round(((H / 2 - y) / (H / 2 - PAD_Y)) * max), y }
   }
 
   const paint = (from: { band: number; db: number }, to: { band: number; db: number }, smooth: boolean) => {
@@ -67,7 +68,7 @@ export default function EqGraph(p: { eq: TrackEq; onChange: (gains: number[]) =>
     if (d.fine) {
       // 押した帯だけを、動かした量の 1/4 で動かす
       const g = [...gains]
-      g[d.band] = round(d.startDb + ((d.startY - a.y) / (H / 2 - PAD_Y)) * EQ_MAX_DB * 0.25)
+      g[d.band] = round(d.startDb + ((d.startY - a.y) / (H / 2 - PAD_Y)) * max * 0.25)
       p.onChange(g)
       return
     }
@@ -106,7 +107,7 @@ export default function EqGraph(p: { eq: TrackEq; onChange: (gains: number[]) =>
         onDoubleClick={onDouble}
       >
         <rect x={0} y={0} width={W} height={H} fill={pal.action.hover} rx={4} />
-        {[-12, -6, 0, 6, 12].map((db) => (
+        {[-1, -0.5, 0, 0.5, 1].map((r) => r * max).map((db) => (
           <g key={db}>
             <line x1={PAD_X} x2={W - PAD_X} y1={yOf(db)} y2={yOf(db)} stroke={pal.divider} strokeWidth={db === 0 ? 1.5 : 1} />
             <text x={2} y={yOf(db) + 4} fontSize={10} fill={pal.text.secondary}>

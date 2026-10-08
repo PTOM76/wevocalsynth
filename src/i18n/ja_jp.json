@@ -906,6 +906,10 @@
   "eq.help": "グラフをなぞると曲線を描けます。Shift を押しながらドラッグすると 1 つのバンドを細かく動かし、Alt を押しながらなぞると周りとなじませます。ダブルクリックで 0 dB に戻ります。再生と書き出しに反映されます。",
   "eq.play": "再生",
   "eq.pause": "一時停止",
+  "eq.apply": "適用",
+  "eq.applyHelp": "EQ をトラックの音声に書き込み、EQ を平らに戻します",
+  "eq.historyLabel": "EQ",
+  "eq.range": "上限",
 
   "addonFolder.current": "保存先: {name}",
   "addonFolder.none": "フォルダーを選んでいません",

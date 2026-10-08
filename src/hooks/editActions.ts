@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { applyFormantCurve, applyGainCurve, applyPitchCurve, spliceProcessed } from '../audio/edit'
+import { applyEq, flatEq, isFlatEq } from '../audio/eq'
 import { applyEditToRanges, sliceRanges } from '../audio/multiRange'
 import { restoreClip } from '../audio/originalStore'
 import { placeOnNotes } from '../audio/sampler'
@@ -194,5 +195,17 @@ const applyFormant = () =>
     formantCurve.clear()
   })
 
-  return { apply, changeTempo, stretchRange, retime, placeOnMidi, kanaDemo, applyCurve, applyGain, applyFormant }
+/** 選んでいるトラックの EQ を音声に書き込み、履歴に積む。書き込んだら EQ は平らに戻す（二重に掛からないように） */
+const applyTrackEq = () =>
+  task.run(t('task.processing'), async (signal) => {
+    const eq = tracks.eqOf(tracks.activeId)
+    if (!edited || isFlatEq(eq)) return
+    const clip = await applyEq(edited, eq)
+    if (signal.aborted) return
+    commit(clip, t('eq.historyLabel'))
+    tracks.setEq(tracks.activeId, { ...flatEq(eq.bands), on: eq.on, range: eq.range })
+    setToast({ severity: 'success', message: t('toast.applied') })
+  })
+
+  return { apply, changeTempo, stretchRange, retime, placeOnMidi, kanaDemo, applyCurve, applyGain, applyFormant, applyTrackEq }
 }

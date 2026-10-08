@@ -1,11 +1,11 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch, ToggleButton, Tooltip, ToggleButtonGroup, Typography } from '@mui/material'
 import { pevenFont } from 'pevenmui'
-import { flatEq, resizeEq, type EqBands, type TrackEq } from '../../audio/eq'
+import { eqRange, flatEq, isFlatEq, resizeEq, setEqRange, type EqBands, type EqRange, type TrackEq } from '../../audio/eq'
 import { useT } from '../../i18n/i18n'
 import EqGraph from './EqGraph'
 
 /**
- * トラックのグラフィック EQ。変えた値はすぐ再生に反映され、書き出しにも掛かる（適用ボタンは無い）。
+ * トラックのグラフィック EQ。変えた値はすぐ再生に反映され、書き出しにも掛かる。適用するとトラックの音声に書き込む。
  * 開いたまま再生できるように、再生の切り替えも置く
  */
 export default function EqDialog(p: {
@@ -15,6 +15,9 @@ export default function EqDialog(p: {
   onChange: (eq: TrackEq) => void
   playing: boolean
   onTogglePlay: () => void
+  /** EQ をトラックの音声に書き込む（書き込んだら EQ は平らに戻る） */
+  onApply: () => void
+  busy: boolean
   onClose: () => void
 }) {
   const t = useT()
@@ -36,7 +39,14 @@ export default function EqDialog(p: {
               {t('eq.bandsN', { n: 31 })}
             </ToggleButton>
           </ToggleButtonGroup>
-          <Button size="small" onClick={() => p.onChange({ ...flatEq(eq.bands), on: eq.on })}>
+          <ToggleButtonGroup size="small" exclusive value={eqRange(eq)} onChange={(_, v: EqRange | null) => v && p.onChange(setEqRange(eq, v))} aria-label={t('eq.range')}>
+            {([12, 24] as const).map((r) => (
+              <ToggleButton key={r} value={r} sx={{ fontSize: pevenFont('sm'), py: 0.25 }}>
+                ±{r} dB
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+          <Button size="small" onClick={() => p.onChange({ ...flatEq(eq.bands), on: eq.on, range: eq.range })}>
             {t('eq.flat')}
           </Button>
         </Box>
@@ -47,6 +57,13 @@ export default function EqDialog(p: {
         <Button size="small" onClick={p.onTogglePlay} sx={{ mr: 'auto' }}>
           {p.playing ? t('eq.pause') : t('eq.play')}
         </Button>
+        <Tooltip title={t('eq.applyHelp')}>
+          <span>
+            <Button size="small" disabled={p.busy || isFlatEq(eq)} onClick={p.onApply}>
+              {t('eq.apply')}
+            </Button>
+          </span>
+        </Tooltip>
         <Button size="small" onClick={p.onClose}>
           {t('common.close')}
         </Button>

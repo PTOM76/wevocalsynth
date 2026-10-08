@@ -11,12 +11,19 @@ export interface TrackEq {
   gains: number[]
   /** オフにすると値を残したまま通さない */
   on: boolean
+  /** 帯の値の上限（±dB）。無ければ 12 */
+  range?: EqRange
 }
+
+export type EqRange = 12 | 24
 
 export type EqBands = 10 | 31
 
-/** 帯の値の範囲（±dB） */
-export const EQ_MAX_DB = 12
+/** 帯の値の上限（±dB）。既定は 12 で、24 に広げられる */
+export const eqRange = (eq: TrackEq): EqRange => eq.range ?? 12
+
+/** 上限を変える。狭めたときは、はみ出した値を収める */
+export const setEqRange = (eq: TrackEq, range: EqRange): TrackEq => ({ ...eq, range, gains: eq.gains.map((g) => Math.max(-range, Math.min(range, g))) })
 
 /** 帯ごとの中心の周波数（10 帯は 1 オクターブごと、31 帯は 1/3 オクターブごと。ISO の中心周波数） */
 const FREQS: Record<EqBands, readonly number[]> = {
@@ -39,8 +46,6 @@ export const DEFAULT_EQ: TrackEq = flatEq()
 /** 通しても音が変わらない（オフか、全部の帯が 0 dB） */
 export const isFlatEq = (eq: TrackEq) => !eq.on || eq.gains.every((g) => g === 0)
 
-const clampDb = (db: number) => Math.max(-EQ_MAX_DB, Math.min(EQ_MAX_DB, db))
-
 /** 帯の数を変える。今の値を周波数（対数）で直線補間して、描いた形を保つ */
 export function resizeEq(eq: TrackEq, bands: EqBands): TrackEq {
   if (eq.bands === bands) return eq
@@ -61,7 +66,8 @@ export function parseEq(v: unknown): TrackEq {
   const e = v as Partial<TrackEq> | undefined
   const bands = e?.bands === 31 ? 31 : 10
   if (!e || !Array.isArray(e.gains) || e.gains.length !== bands) return flatEq(bands)
-  return { bands, gains: e.gains.map((g) => clampDb(Number(g) || 0)), on: e.on !== false }
+  const range: EqRange = e.range === 24 ? 24 : 12
+  return { bands, gains: e.gains.map((g) => Math.max(-range, Math.min(range, Number(g) || 0))), on: e.on !== false, ...(range === 24 ? { range } : {}) }
 }
 
 /** EQ の帯のノードを直列につなぐ。平らな帯は省く。全部平らなら入口と出口は同じノード */

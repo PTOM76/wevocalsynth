@@ -906,6 +906,10 @@
   "eq.help": "在圖上拖曳即可繪製曲線。按住 Shift 拖曳可微調單一頻段，按住 Alt 拖曳可與相鄰頻段平滑過渡，按兩下可將頻段恢復為 0 dB。會套用於播放與匯出。",
   "eq.play": "播放",
   "eq.pause": "暫停",
+  "eq.apply": "套用",
+  "eq.applyHelp": "將 EQ 寫入音軌音訊，並將 EQ 恢復為平直",
+  "eq.historyLabel": "EQ",
+  "eq.range": "範圍",
 
   "addonFolder.current": "儲存位置：{name}",
   "addonFolder.none": "尚未選擇資料夾",

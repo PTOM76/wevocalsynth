@@ -906,6 +906,10 @@
   "eq.help": "Drag across the graph to draw a curve. Shift-drag fine-tunes one band, Alt-drag smooths bands with their neighbors, and double-click resets a band to 0 dB. Applies to playback and export.",
   "eq.play": "Play",
   "eq.pause": "Pause",
+  "eq.apply": "Apply",
+  "eq.applyHelp": "Write the EQ into the track audio and reset the EQ to flat",
+  "eq.historyLabel": "EQ",
+  "eq.range": "Range",
 
   "addonFolder.current": "Folder: {name}",
   "addonFolder.none": "No folder chosen",
