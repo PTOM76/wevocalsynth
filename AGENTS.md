@@ -8,6 +8,7 @@ AI のエージェント向けの決まり。[docs/CODING.md](docs/CODING.md) �
   - 探す: `list settings.`、`get menu.minimap`
   - 足す: `add <key> ja=… en=… ko=… zh_cn=… zh_tw=…`（同じ分類の最後に入る）
   - 変える、消す、名前を変える: `set`、`rm`、`mv`（`mv` はソースの参照も書き換える）
+  - 比べる: `diff`（git と比較して変更・追加・削除されたキーを表示。`--lang ja` で絞る、`--cached` でステージを見る）
   - 終わったら `fmt`（分類ごとにまとめ、全言語を ja_jp と同じ並びにする）と `check`
 - Analyzer、Converter、Extractor は `--dir analyzer/app/lang` のように指定する
 

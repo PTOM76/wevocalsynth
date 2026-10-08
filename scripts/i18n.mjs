@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // 訳文の JSON をキー単位で読み書きする道具（JSON を直接開かずに済ませるため）。使い方は usage() を参照
+import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -14,11 +15,15 @@ function usage() {
   set <key> ja=… en=… …        指定した言語の訳を変える
   rm <key>...                  全言語から消す
   mv <old> <new>               キーの名前を変え、--src の中の '<old>' も書き換える
+  diff [ref1] [ref2]           git と比較して変更されたキーを表示する（既定は HEAD と作業ツリー）
   check                        言語ごとのキーの欠けと、--src で見つからないキーを表示する
   fmt [--check]                キーを先頭の分類ごとにまとめ、全言語を ${BASE} と同じ並びにする（--check は書き換えずに確かめる）
 
-  --dir  訳文のフォルダー（既定 src/i18n。例 analyzer/app/lang）
-  --src  キーを探すフォルダー（既定は --dir の親）
+  --dir     訳文のフォルダー（既定 src/i18n。例 analyzer/app/lang）
+  --src     キーを探すフォルダー（既定は --dir の親）
+  --lang    指定した言語のみ表示する（diff や list）
+  --cached  HEAD とインデックス（ステージ）を比べる（diff）
+  --compact キー名のみ表示する（diff）
   言語は ja、en、ko、zh_cn、zh_tw のように、ファイル名の先頭で指定できる`)
 }
 
@@ -154,6 +159,30 @@ function sourceFiles(root) {
   return out
 }
 
+// git リポジトリのルートを探す
+function repoRoot(dir) {
+  try {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: dir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
+  } catch {
+    throw new Error('git リポジトリが見つからない')
+  }
+}
+
+// git からファイルの内容を読む（ファイルがなければ null）
+function readGit(ref, file, root) {
+  const rel = path.relative(root, file).replace(/\\/g, '/')
+  const target = ref ? `${ref}:${rel}` : `:${rel}`
+  try {
+    return execFileSync('git', ['show', target], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+  } catch {
+    return null
+  }
+}
+
 function main() {
   const { pos, opt } = parseArgs(process.argv.slice(2))
   const [cmd, ...args] = pos
@@ -260,6 +289,114 @@ function main() {
       }
       if (!changed) console.log('整っている')
       process.exitCode = changed && checkOnly ? 1 : 0
+      break
+    }
+    case 'diff': {
+      const root = repoRoot(dir)
+      const isCached = opt.cached === true || opt.staged === true
+      const fromRef = args[0] ?? 'HEAD'
+      const toRef = args[1] ?? (isCached ? '' : null)
+
+      const targetLang = opt.lang ? Object.keys(parseValues([`${opt.lang}=`], langs))[0] : null
+      const oldLangs = {}
+      const newLangs = {}
+
+      for (const [name, f] of Object.entries(langs)) {
+        const oldText = readGit(fromRef, f.file, root)
+        try {
+          oldLangs[name] = oldText ? JSON.parse(oldText) : {}
+        } catch (e) {
+          throw new Error(`${fromRef}:${path.basename(f.file)} の JSON が壊れている: ${e.message}`)
+        }
+
+        let newText
+        if (toRef !== null) {
+          newText = readGit(toRef, f.file, root)
+        } else {
+          newText = fs.existsSync(f.file) ? fs.readFileSync(f.file, 'utf8') : null
+        }
+        try {
+          newLangs[name] = newText ? JSON.parse(newText) : {}
+        } catch (e) {
+          throw new Error(`${toRef ?? '作業ツリー'}:${path.basename(f.file)} の JSON が壊れている: ${e.message}`)
+        }
+      }
+
+      // 出現順を保ちつつすべてのキーを集める（base の新データ、旧データ、その他の順）
+      const allKeys = new Set([
+        ...Object.keys(newLangs[BASE] ?? {}),
+        ...Object.keys(oldLangs[BASE] ?? {}),
+        ...Object.values(newLangs).flatMap((d) => Object.keys(d)),
+        ...Object.values(oldLangs).flatMap((d) => Object.keys(d)),
+      ])
+
+      const langNames = targetLang ? [targetLang] : Object.keys(langs)
+      let addedCount = 0
+      let changedCount = 0
+      let removedCount = 0
+
+      for (const k of allKeys) {
+        const added = []
+        const removed = []
+        const changed = []
+
+        for (const l of langNames) {
+          const hasOld = k in oldLangs[l]
+          const hasNew = k in newLangs[l]
+          if (!hasOld && hasNew) added.push(l)
+          else if (hasOld && !hasNew) removed.push(l)
+          else if (hasOld && hasNew && oldLangs[l][k] !== newLangs[l][k]) changed.push(l)
+        }
+
+        if (!added.length && !removed.length && !changed.length) continue
+
+        let mark = '~'
+        if (added.length && !removed.length && !changed.length) {
+          mark = '+'
+          addedCount++
+        } else if (removed.length && !added.length && !changed.length) {
+          mark = '-'
+          removedCount++
+        } else {
+          changedCount++
+        }
+
+        if (opt.compact) {
+          console.log(`${mark} ${k}`)
+          continue
+        }
+
+        if (targetLang) {
+          if (mark === '+') console.log(`+ ${k}: ${newLangs[targetLang][k]}`)
+          else if (mark === '-') console.log(`- ${k}: ${oldLangs[targetLang][k]}`)
+          else {
+            const o = oldLangs[targetLang][k]
+            const n = newLangs[targetLang][k]
+            if (o === undefined) console.log(`+ ${k}: ${n}`)
+            else if (n === undefined) console.log(`- ${k}: ${o}`)
+            else console.log(`~ ${k}: ${o} → ${n}`)
+          }
+          continue
+        }
+
+        console.log(`${mark} ${k}`)
+        if (mark === '+') {
+          for (const l of added) console.log(`  ${l}: ${newLangs[l][k]}`)
+        } else if (mark === '-') {
+          for (const l of removed) console.log(`  ${l}: ${oldLangs[l][k]}`)
+        } else {
+          for (const l of changed) console.log(`  ${l}: ${oldLangs[l][k]} → ${newLangs[l][k]}`)
+          for (const l of added) console.log(`  + ${l}: ${newLangs[l][k]}`)
+          for (const l of removed) console.log(`  - ${l}: ${oldLangs[l][k]}`)
+        }
+      }
+
+      const total = addedCount + changedCount + removedCount
+      if (!total) {
+        console.log('差分なし')
+      } else {
+        console.log(`\n差分: 追加 ${addedCount} 件、変更 ${changedCount} 件、削除 ${removedCount} 件`)
+      }
       break
     }
     default:
