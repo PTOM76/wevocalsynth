@@ -4,6 +4,7 @@ import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { fadeRange, gainRange, insertAt, normalizeRange, panRange, reverseRange, silenceRange } from '../audio/edit'
 import { mapRanges, normalizeRanges, removeRanges, sliceRanges } from '../audio/multiRange'
+import { insertMap, keepMap, removeMap, type TimeMap } from '../audio/timeMap'
 import type { VolumeAction } from '../components/VolumePanel'
 import { t } from '../i18n/i18n'
 
@@ -17,7 +18,8 @@ interface Deps {
   /** 今の再生位置（貼り付け先）。再生中も正しい位置を返す */
   getPosition: () => number
   seek: (t: number) => void
-  commit: (clip: Clip, label: string) => void
+  /** `map` は編集の前の時刻を後の時刻に写すもの（読みの帯を追従させる。長さが変わらない編集では省く） */
+  commit: (clip: Clip, label: string, map?: TimeMap) => void
   notify: (message: string) => void
   /** 貼り付け・無音の挿入のあと、再生位置を入れた範囲の終わりへ移す */
   seekAfterInsert: boolean
@@ -41,14 +43,14 @@ export function useClipCommands(d: Deps) {
   const cut = () => {
     if (!edited || !hasSel) return
     setClipboard(sliceRanges(edited, selections))
-    d.commit(removeRanges(edited, selections), t('edit.cut'))
+    d.commit(removeRanges(edited, selections), t('edit.cut'), removeMap(selections))
     d.seek(normalizeRanges(selections)[0].start)
     d.setSelections([])
   }
   /** 選択範囲を取り除く（切り取りと違い、クリップボードには入れない。Delete キー） */
   const remove = () => {
     if (!edited || !hasSel) return
-    d.commit(removeRanges(edited, selections), t('edit.delete'))
+    d.commit(removeRanges(edited, selections), t('edit.delete'), removeMap(selections))
     d.seek(normalizeRanges(selections)[0].start)
     d.setSelections([])
   }
@@ -60,13 +62,13 @@ export function useClipCommands(d: Deps) {
       return
     }
     const at = d.getPosition()
-    d.commit(insertAt(edited, clipboard, at), t('history.paste'))
+    d.commit(insertAt(edited, clipboard, at), t('history.paste'), insertMap(at, clipDuration(clipboard)))
     d.setSelections([{ start: at, end: at + clipDuration(clipboard) }])
     if (d.seekAfterInsert) d.seek(at + clipDuration(clipboard))
   }
   const trim = () => {
     if (!edited || !hasSel) return
-    d.commit(sliceRanges(edited, selections), t('edit.trim'))
+    d.commit(sliceRanges(edited, selections), t('edit.trim'), keepMap(selections))
     d.seek(0)
     d.setSelections([])
   }
@@ -107,7 +109,7 @@ export function useClipCommands(d: Deps) {
     if (!edited || !(sec > 0)) return
     const n = Math.round(sec * edited.sampleRate)
     const silent = { sampleRate: edited.sampleRate, channels: edited.channels.map(() => new Float32Array(n)) }
-    d.commit(insertAt(edited, silent, at), t('silence.title'))
+    d.commit(insertAt(edited, silent, at), t('silence.title'), insertMap(at, sec))
     d.setSelections([{ start: at, end: at + sec }])
     if (d.seekAfterInsert) d.seek(at + sec)
   }
@@ -123,8 +125,8 @@ export function useClipCommands(d: Deps) {
       for (let i = 0; i < count - 1; i++) out.set(c, i * n)
       return out
     }) }
-    d.commit(insertAt(edited, copies, r.end), t('repeat.history', { n: count }))
     const len = n / edited.sampleRate
+    d.commit(insertAt(edited, copies, r.end), t('repeat.history', { n: count }), insertMap(r.end, len * (count - 1)))
     d.setSelections([{ start: r.start, end: r.start + len * count }])
   }
 

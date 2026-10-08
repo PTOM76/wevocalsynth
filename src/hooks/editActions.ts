@@ -10,6 +10,7 @@ import type { EditParams } from '../components/EditPanel'
 import type { SamplerOptions } from '../components/SamplerDialog'
 import { kanaVowelDemo, processAudio } from '../dsp/engine'
 import { t } from '../i18n/i18n'
+import { stretchMap, type TimeMap } from '../audio/timeMap'
 import type { ProjectTempo } from '../project/projectFile'
 import type { Settings } from '../settings/settings'
 import type { Toast } from './useEditor'
@@ -49,7 +50,8 @@ export interface EditContext {
   params: EditParams
   setParams: Dispatch<SetStateAction<EditParams>>
   /** 加工した音声を履歴に積む */
-  commit: (clip: Clip, label: string) => void
+  /** `map` は編集の前の時刻を後の時刻に写すもの（読みの帯を追従させる） */
+  commit: (clip: Clip, label: string, map?: TimeMap) => void
   selections: Range[]
   setSelections: (rs: Range[]) => void
   setToast: (toast: Toast | null) => void
@@ -76,7 +78,11 @@ const apply = () =>
       : await applyEditToRanges(edited, editRanges, params, setProgress)
     // 中断されていたら結果を使わない（ほかの処理も同じ）
     if (signal.aborted) return
-    commit(result.clip, applyLabel(params))
+    // 範囲ごとの前後の長さから、時刻の写し方を作る（範囲の数が合わなければ、全体の比で写す）
+    const before = [...editRanges].sort((a, b) => a.start - b.start)
+    const after = [...result.ranges].sort((a, b) => a.start - b.start)
+    const map = before.length === after.length ? stretchMap(before.map((r, i) => ({ ...r, dur: after[i].end - after[i].start }))) : undefined
+    commit(result.clip, applyLabel(params), map)
     setSelections(selections.length ? result.ranges : [])
     setParams((p) => ({ ...p, ...NEUTRAL }))
     setToast({ severity: 'success', message: t('toast.applied') })
@@ -119,7 +125,7 @@ const stretchRange = (r: Range, dur: number) =>
     const opts = { ...params, ...NEUTRAL, stretch: dur / (r.end - r.start) }
     const result = await applyEditToRanges(edited, [r], opts, setProgress)
     if (signal.aborted) return
-    commit(result.clip, t('history.stretch', { ratio: opts.stretch.toFixed(2) }))
+    commit(result.clip, t('history.stretch', { ratio: opts.stretch.toFixed(2) }), stretchMap([{ start: r.start, end: r.end, dur }]))
     setSelections(result.ranges)
   })
 
@@ -134,7 +140,7 @@ const retime = (parts: { start: number; end: number; dur: number }[]) =>
       clip = (await applyEditToRanges(clip, [p], opts, (v) => setProgress((i + v) / list.length))).clip
       if (signal.aborted) return
     }
-    if (list.length) commit(clip, t('history.retime'))
+    if (list.length) commit(clip, t('history.retime'), stretchMap(list))
   })
 
 /** 選択範囲（なければ全体）を素材にして MIDI の音符に並べ、新しいトラックにする */

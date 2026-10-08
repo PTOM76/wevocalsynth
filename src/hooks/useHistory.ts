@@ -2,7 +2,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { reportMemory } from '../debug/debugStats'
 import type { Clip } from '../audio/types'
+import type { MoraMark } from '../audio/kanaCut'
 import type { Track } from '../audio/tracks'
+import { clipDuration } from '../audio/types'
+import { mapMorae, scaleMap, type TimeMap } from '../audio/timeMap'
 
 /**
  * 1段ぶんの差分。今のクリップの [start, start + len) を `segment` に置き換えると、隣の段のクリップになる。
@@ -67,10 +70,10 @@ function applyPatch(clip: Clip, p: Patch): Clip {
 
 /**
  * 履歴の1段と、その段で行った操作の名前（一覧に出す）。
- * - patch: トラック `trackId` の音声の差分
+ * - patch: トラック `trackId` の音声の差分と、当てたあとの一音ずつの範囲（`morae`）
  * - tracks: トラックの追加・削除。この段を当てると、トラックの一覧が `tracks` になる（音声は参照だけなので軽い）
  */
-type Step = { label: string } & ({ kind: 'patch'; trackId: string; patch: Patch } | { kind: 'tracks'; tracks: Track[]; activeId: string })
+type Step = { label: string } & ({ kind: 'patch'; trackId: string; patch: Patch; morae?: MoraMark[] } | { kind: 'tracks'; tracks: Track[]; activeId: string })
 
 const stepBytes = (s: Step) => (s.kind === 'patch' ? patchBytes(s.patch) : 0)
 
@@ -95,9 +98,9 @@ function applyStep(h: History, s: Step): { tracks: Track[]; activeId: string; in
   if (!track) return null
   const clip = applyPatch(track.clip, s.patch)
   return {
-    tracks: h.tracks.map((t) => (t.id === s.trackId ? { ...t, clip } : t)),
+    tracks: h.tracks.map((t) => (t.id === s.trackId ? { ...t, clip, morae: s.morae } : t)),
     activeId: s.trackId,
-    inverse: { kind: 'patch', label: s.label, trackId: s.trackId, patch: diff(clip, track.clip).forward },
+    inverse: { kind: 'patch', label: s.label, trackId: s.trackId, patch: diff(clip, track.clip).forward, morae: track.morae },
   }
 }
 
@@ -157,17 +160,21 @@ export function useHistory(limits: HistoryLimits, keepOriginal = true) {
   // デバッグ表示: 履歴が持っている音声データの量
   useEffect(() => reportMemory('history', [...history.past, ...history.future].reduce((s, p) => s + stepBytes(p), 0)), [history])
 
-  /** 選んでいるトラックの新しいクリップを、操作の名前 `label` を付けて履歴に積む */
-  const commit = useCallback((clip: Clip, label: string) => {
+  /**
+   * 選んでいるトラックの新しいクリップを、操作の名前 `label` を付けて履歴に積む。
+   * `map` は編集の前の時刻を後の時刻に写すもの（一音ずつの範囲を追従させる。省くと、長さが同じならそのまま、違えば全体の比で写す）
+   */
+  const commit = useCallback((clip: Clip, label: string, map?: TimeMap) => {
     setHistory((h) => {
       const track = h.tracks.find((t) => t.id === h.activeId)
       if (!track) return h
       const { backward } = diff(track.clip, clip)
-      const step: Step = { kind: 'patch', label, trackId: track.id, patch: backward }
+      const step: Step = { kind: 'patch', label, trackId: track.id, patch: backward, morae: track.morae }
+      const morae = track.morae?.length ? mapMorae(track.morae, map ?? scaleMap(clipDuration(track.clip), clipDuration(clip))) : track.morae
       return {
         ...h,
         past: trim([...h.past, step], [], limitsRef.current),
-        tracks: h.tracks.map((t) => (t.id === track.id ? { ...t, clip } : t)),
+        tracks: h.tracks.map((t) => (t.id === track.id ? { ...t, clip, morae } : t)),
         future: [],
       }
     })
@@ -183,6 +190,9 @@ export function useHistory(limits: HistoryLimits, keepOriginal = true) {
 
   /** 履歴を捨てて `tracks` から始め直す（ファイルを開いたとき） */
   const reset = useCallback((tracks: Track[], activeId = tracks[0]?.id ?? '') => setHistory({ past: [], tracks, activeId, future: [] }), [])
+
+  /** トラック `id` の一音ずつの範囲を変える（読みの帯の直し。履歴には積まない） */
+  const setMorae = useCallback((id: string, morae: MoraMark[]) => setHistory((h) => ({ ...h, tracks: h.tracks.map((t) => (t.id === id ? { ...t, morae } : t)) })), [])
 
   /** 編集するトラックを選ぶ（履歴には積まない） */
   const select = useCallback((id: string) => setHistory((h) => (h.tracks.some((t) => t.id === id) ? { ...h, activeId: id } : h)), [])
@@ -217,6 +227,7 @@ export function useHistory(limits: HistoryLimits, keepOriginal = true) {
     jumpTo,
     commit,
     setTracks,
+    setMorae,
     select,
     reset,
     undo,

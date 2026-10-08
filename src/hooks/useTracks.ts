@@ -26,8 +26,6 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
   const eqOf = (id: string) => eqs[id] ?? DEFAULT_EQ
   // 大きな波形の後ろに重ねるトラック（見え方の切り替えなので履歴に入れない。既定は重ねない）
   const [overlay, setOverlay] = useState<ReadonlySet<string>>(new Set())
-  // 一音ずつ切り出した範囲（読みの帯）。トラックの音声に結びつくので、トラックごとに持つ
-  const [morae, setMoraeState] = useState<Record<string, MoraMark[]>>({})
   const active = tracks.find((tr) => tr.id === activeId) ?? null
 
   // トラックが1本になったら、ミュート・ソロ・位相反転を解除する。トラックの欄（M・S・I のボタン）は2本以上のときしか出ないので、
@@ -170,14 +168,15 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
   /** 複数選んだトラックを統合する */
   const mergeMany = (ids: string[]) => merge(ids, t('track.mergeSelected'))
 
+  const moraeOf = (id: string) => tracks.find((tr) => tr.id === id)?.morae ?? NO_MORAE
   /** トラック `id` の、音声以外の状態（保存するもの）をまとめて取り出す */
-  const settingsOf = (id: string): TrackSettings => ({ fader: faderOf(id), eq: eqOf(id), mix: mix[id] ?? DEFAULT_MIX, overlay: overlay.has(id), morae: morae[id] ?? NO_MORAE })
+  const settingsOf = (id: string): TrackSettings => ({ fader: faderOf(id), eq: eqOf(id), mix: mix[id] ?? DEFAULT_MIX, overlay: overlay.has(id), morae: moraeOf(id) })
   /** 全トラックの `settingsOf`（自動保存などが、変わったかを1つの値で見られるように） */
   const settings = useMemo(
     () => Object.fromEntries(tracks.map((tr) => [tr.id, settingsOf(tr.id)])) as Record<string, TrackSettings>,
-    // settingsOf はこの5つと tracks だけで決まる
+    // settingsOf はこの4つと tracks だけで決まる（一音ずつの範囲はトラックが持つ）
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tracks, faders, eqs, mix, overlay, morae],
+    [tracks, faders, eqs, mix, overlay],
   )
 
   const setTrackMix = (id: string, patch: Partial<TrackMix>) => setMix((m) => ({ ...m, [id]: { ...(m[id] ?? DEFAULT_MIX), ...patch } }))
@@ -223,9 +222,9 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     eqs,
     eqOf,
     setEq: (id: string, eq: TrackEq) => setEqs((e) => ({ ...e, [id]: eq })),
-    /** トラック `id` の一音ずつの範囲 */
-    moraeOf: (id: string) => morae[id] ?? NO_MORAE,
-    setMorae: (id: string, list: MoraMark[]) => setMoraeState((m) => ({ ...m, [id]: list })),
+    /** トラック `id` の一音ずつの範囲（トラックが持ち、音声の編集と履歴に合わせて変わる） */
+    moraeOf,
+    setMorae: history.setMorae,
     settingsOf,
     settings,
     /** ファイルを開き直したときに、トラックごとの状態を `initial`（保存した値。トラック id ごと）にする。無いトラックは既定値 */
@@ -235,7 +234,7 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
       setEqs(Object.fromEntries(entries.map(([id, s]) => [id, s.eq])))
       setMix(Object.fromEntries(entries.map(([id, s]) => [id, s.mix])))
       setOverlay(new Set(entries.filter(([, s]) => s.overlay).map(([id]) => id)))
-      setMoraeState(Object.fromEntries(entries.map(([id, s]) => [id, s.morae])))
+      for (const [id, s] of entries) if (s.morae.length) history.setMorae(id, s.morae)
     },
   }
 }
