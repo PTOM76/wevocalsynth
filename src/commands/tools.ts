@@ -2,7 +2,9 @@
 import { canRecord } from 'wevocal-lib'
 import { downloadBlob } from 'pevenmui/web'
 import { exportMorae } from '../audio/kanaCut'
+import { exportUtau, lineUp } from '../audio/kanaOut'
 import { flattenPitch } from '../audio/pitchTools'
+import { t } from '../i18n/i18n'
 import { defineCommands, ready, selected, type CommandContext } from './types'
 
 /** ピッチの道具は、ピッチを表示して解析が済んでから */
@@ -42,6 +44,26 @@ export const toolCommands = defineCommands({
     run: (c) => {
       const clip = c.ed.edited
       if (clip) void exportMorae(clip, moraeOf(c)).then((zip) => downloadBlob(zip, `${c.ed.baseName}_kana.zip`))
+    },
+  },
+  // 音ごとに 1 つを五十音順に並べた新しいトラック（範囲はそのトラックの読みの帯に付ける）
+  lineUpMorae: {
+    label: 'kanaCut.lineUpMenu',
+    enabled: hasMorae,
+    run: (c) => {
+      const clip = c.ed.edited
+      if (!clip) return
+      const out = lineUp(clip, moraeOf(c))
+      const id = c.ed.tracks.addClip(out.clip, t('kanaCut.lineUpTrack', { name: c.ed.baseName }))
+      c.ed.tracks.setMorae(id, out.morae)
+    },
+  },
+  exportUtau: {
+    label: 'kanaCut.utauMenu',
+    enabled: hasMorae,
+    run: (c) => {
+      const clip = c.ed.edited
+      if (clip) void exportUtau(clip, moraeOf(c), c.ed.baseName).then((zip) => downloadBlob(zip, `${c.ed.baseName}_voicebank.zip`))
     },
   },
   clearMorae: { label: 'kanaCut.clearMenu', enabled: hasMorae, run: (c) => c.ed.tracks.setMorae(c.ed.tracks.activeId, []) },

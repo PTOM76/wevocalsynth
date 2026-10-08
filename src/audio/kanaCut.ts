@@ -66,22 +66,27 @@ export async function findMorae(clip: Clip, segments: LyricsSegment[], onProgres
   return out
 }
 
+/** 一音を切り出す（前後に余白を付け、端をフェードする） */
+export function sliceMora(clip: Clip, m: MoraMark): Clip {
+  const c = slice(clip, m.start - PAD_SEC, m.end + PAD_SEC)
+  const fade = Math.min(Math.round(FADE_SEC * clip.sampleRate), Math.floor((c.channels[0]?.length ?? 0) / 2))
+  for (const ch of c.channels) {
+    for (let i = 0; i < fade; i++) {
+      const g = i / fade
+      ch[i] *= g
+      ch[ch.length - 1 - i] *= g
+    }
+  }
+  return c
+}
+
 /** 一音ずつの WAV をまとめた ZIP。同じ音が何度も出たら あ.wav、あ_2.wav… とする */
 export async function exportMorae(clip: Clip, morae: MoraMark[]): Promise<Blob> {
   const count = new Map<string, number>()
   const entries = morae.map((m) => {
     const n = (count.get(m.mora) ?? 0) + 1
     count.set(m.mora, n)
-    const c = slice(clip, m.start - PAD_SEC, m.end + PAD_SEC)
-    const fade = Math.min(Math.round(FADE_SEC * clip.sampleRate), Math.floor((c.channels[0]?.length ?? 0) / 2))
-    for (const ch of c.channels) {
-      for (let i = 0; i < fade; i++) {
-        const g = i / fade
-        ch[i] *= g
-        ch[ch.length - 1 - i] *= g
-      }
-    }
-    return { name: n === 1 ? `${m.mora}.wav` : `${m.mora}_${n}.wav`, data: encodeWav(c) }
+    return { name: n === 1 ? `${m.mora}.wav` : `${m.mora}_${n}.wav`, data: encodeWav(sliceMora(clip, m)) }
   })
   return createZip(entries)
 }

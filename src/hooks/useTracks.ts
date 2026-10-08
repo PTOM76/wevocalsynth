@@ -100,7 +100,12 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
   }
 
   /** 音声を新しいトラックとして足す（ファイルの追加） */
-  const addClip = (clip: Clip, name: string) => insertAfter([makeTrack(name, clip)], t('track.add'))
+  /** `clip` を新しいトラックとして足す。足したトラックの id を返す */
+  const addClip = (clip: Clip, name: string) => {
+    const tr = makeTrack(name, clip)
+    insertAfter([tr], t('track.add'))
+    return tr.id
+  }
 
   /**
    * トラック `id`（既定は選んでいるもの）を、`parts`（ボーカル・伴奏など）のトラックに置き換える。

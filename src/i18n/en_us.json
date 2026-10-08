@@ -925,5 +925,8 @@
   "kanaCut.failed": "Could not process: {message}",
   "kanaCut.empty": "No lyrics were recognized",
   "kanaCut.exportMenu": "Export single sounds (ZIP)",
-  "kanaCut.clearMenu": "Clear the reading lane"
+  "kanaCut.clearMenu": "Clear the reading lane",
+  "kanaCut.utauMenu": "Export as a singing voicebank (with oto.ini, ZIP)",
+  "kanaCut.lineUpMenu": "Line up in kana order on a new track",
+  "kanaCut.lineUpTrack": "{name} (kana)"
 }
