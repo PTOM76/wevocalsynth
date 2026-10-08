@@ -4,6 +4,7 @@ import { faMagnet } from '@fortawesome/free-solid-svg-icons'
 import { describePitch } from '../audio/notes'
 import { COMPACT_SLIDER_SX, NumberInput, PropRow, useDoubleClickReset } from './inspector/Inspector'
 import { useT } from '../i18n/i18n'
+import { pevenFont } from 'pevenmui'
 
 interface Props {
   /** ピッチ変更量（半音、小数可） */
@@ -42,7 +43,7 @@ export default function PitchControl({ semitones, onChange, currentMidi }: Props
         <NumberInput value={semitones} onChange={onChange} min={-24} max={24} step={0.01} unit={t('process.semitoneUnit')} ariaLabel={t('process.pitchAria')} />
       </PropRow>
       <PropRow>
-        <Typography sx={{ flex: 1, fontSize: 12, color: 'text.secondary' }} noWrap>
+        <Typography sx={{ flex: 1, fontSize: pevenFont('md'), color: 'text.secondary' }} noWrap>
           {currentMidi === undefined
             ? t('process.noteAnalyzing')
             : currentMidi === null || target === null

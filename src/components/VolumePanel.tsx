@@ -7,6 +7,8 @@ import { countRender } from '../debug/debugStats'
 import { panLabel } from '../hooks/useClipCommands'
 import type { TrackFader } from '../audio/tracks'
 import { stableMemo } from './stableMemo'
+import { pevenFont } from 'pevenmui'
+import { SMALL_BUTTON_SX } from '../constants/ui'
 
 export type VolumeAction = 'fadeIn' | 'fadeOut' | 'normalize' | 'silence'
 
@@ -34,11 +36,10 @@ const ACTIONS: { action: VolumeAction; label: MessageKey; tooltip?: MessageKey }
   { action: 'silence', label: 'volume.silence' },
 ]
 
-const SMALL_BUTTON_SX = { minWidth: 0, height: 26, px: 1, fontSize: 12 } as const
 
 /** 段の見出し（「トラック」「選択範囲」） */
 function Heading({ children }: { children: string }) {
-  return <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.5 }}>{children}</Typography>
+  return <Typography sx={{ fontSize: pevenFont('sm'), color: 'text.secondary', mt: 0.5 }}>{children}</Typography>
 }
 
 /** 音量（dB）とパンの2行。トラックのフェーダーと、選択範囲の適用前の値で同じ形を使う */

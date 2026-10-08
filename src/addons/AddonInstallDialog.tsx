@@ -3,6 +3,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgre
 import { ADDONS, addonSize, fetchManifest, installedManifest, withRequires, type AddonManifest } from './addons'
 import { cancelDownload, installAll, isDownloading, useDownload } from './downloads'
 import { useT } from '../i18n/i18n'
+import { pevenFont } from 'pevenmui'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 
@@ -110,22 +111,22 @@ export function useAddonInstall() {
 
   const dialog = (
     <Dialog open={!!state && !state.hidden} onClose={() => (busy ? hide() : close(false))} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t(state?.updating ? 'addon.updateTitle' : 'addon.installTitle')}</DialogTitle>
+      <DialogTitle sx={{ fontSize: pevenFont('xl'), py: 1.5 }}>{t(state?.updating ? 'addon.updateTitle' : 'addon.installTitle')}</DialogTitle>
       <DialogContent dividers>
-        <Typography sx={{ fontSize: 14 }}>{t(state?.updating ? 'addon.updateText' : 'addon.installText', { name: state ? name(mainId) : '' })}</Typography>
-        {extra.length > 0 && <Typography sx={{ fontSize: 13, mt: 1 }}>{t(state?.updating ? 'addon.updateWith' : 'addon.installWith', { names: extra.join('、') })}</Typography>}
-        <Typography sx={{ fontSize: 13, mt: 1 }}>
+        <Typography sx={{ fontSize: pevenFont('lg') }}>{t(state?.updating ? 'addon.updateText' : 'addon.installText', { name: state ? name(mainId) : '' })}</Typography>
+        {extra.length > 0 && <Typography sx={{ fontSize: pevenFont('base'), mt: 1 }}>{t(state?.updating ? 'addon.updateWith' : 'addon.installWith', { names: extra.join('、') })}</Typography>}
+        <Typography sx={{ fontSize: pevenFont('base'), mt: 1 }}>
           {state?.manifests ? t('addon.downloadSize', { size: mb(size) }) : !state?.error && t('addon.checking')}
         </Typography>
-        <Typography className="selectable" sx={{ fontSize: 12, color: 'text.secondary', mt: 1 }}>{t('addon.installHelp')}</Typography>
+        <Typography className="selectable" sx={{ fontSize: pevenFont('md'), color: 'text.secondary', mt: 1 }}>{t('addon.installHelp')}</Typography>
         {busy && (
           <>
             <LinearProgress variant="determinate" value={progress * 100} sx={{ mt: 2 }} />
-            <Typography sx={{ fontSize: 12, mt: 0.5 }}>{t('addon.downloading', { percent: Math.round(progress * 100) })}</Typography>
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.5 }}>{t('addon.background')}</Typography>
+            <Typography sx={{ fontSize: pevenFont('md'), mt: 0.5 }}>{t('addon.downloading', { percent: Math.round(progress * 100) })}</Typography>
+            <Typography sx={{ fontSize: pevenFont('md'), color: 'text.secondary', mt: 0.5 }}>{t('addon.background')}</Typography>
           </>
         )}
-        {state?.error && <Typography className="selectable" sx={{ fontSize: 12, color: 'error.main', mt: 1.5 }}>{state.error}</Typography>}
+        {state?.error && <Typography className="selectable" sx={{ fontSize: pevenFont('md'), color: 'error.main', mt: 1.5 }}>{state.error}</Typography>}
       </DialogContent>
       <DialogActions>
         {busy ? (

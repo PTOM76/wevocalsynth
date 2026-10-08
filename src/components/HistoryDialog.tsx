@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogTitle, List, ListItemButton, ListItemText, Typography } from '@mui/material'
 import { useT } from '../i18n/i18n'
+import { pevenFont } from 'pevenmui'
 
 interface Props {
   open: boolean
@@ -20,7 +21,7 @@ export default function HistoryDialog(p: Props) {
   const rows = [t('history.opened'), ...p.labels]
   return (
     <Dialog open={p.open} onClose={p.onClose} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('history.title')}</DialogTitle>
+      <DialogTitle sx={{ fontSize: pevenFont('xl'), py: 1.5 }}>{t('history.title')}</DialogTitle>
       <DialogContent dividers sx={{ p: 0 }}>
         <List dense>
           {rows.map((label, i) => (
@@ -28,9 +29,9 @@ export default function HistoryDialog(p: Props) {
               <ListItemText
                 primary={label}
                 // やり直せる操作（今より後ろ）は薄く出す
-                slotProps={{ primary: { sx: { fontSize: 13, color: i > p.done ? 'text.disabled' : 'text.primary' } } }}
+                slotProps={{ primary: { sx: { fontSize: pevenFont('base'), color: i > p.done ? 'text.disabled' : 'text.primary' } } }}
               />
-              {i === p.done && <Typography sx={{ fontSize: 11, color: 'primary.main' }}>{t('history.current')}</Typography>}
+              {i === p.done && <Typography sx={{ fontSize: pevenFont('sm'), color: 'primary.main' }}>{t('history.current')}</Typography>}
             </ListItemButton>
           ))}
         </List>

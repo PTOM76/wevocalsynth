@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
 import { useT } from '../../i18n/i18n'
+import { pevenFont } from 'pevenmui'
 
 /** 名前の変更（トラック・プロジェクト）。`name` が null なら閉じている。`title` を省くとトラックの名前の変更 */
 export default function RenameDialog(p: { name: string | null; title?: string; onClose: () => void; onRename: (name: string) => void }) {
@@ -15,7 +16,7 @@ export default function RenameDialog(p: { name: string | null; title?: string; o
   }
   return (
     <Dialog open={p.name !== null} onClose={p.onClose} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{p.title ?? t('track.rename')}</DialogTitle>
+      <DialogTitle sx={{ fontSize: pevenFont('xl'), py: 1.5 }}>{p.title ?? t('track.rename')}</DialogTitle>
       <DialogContent>
         <TextField
           autoFocus

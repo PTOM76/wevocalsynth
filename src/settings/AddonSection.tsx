@@ -12,7 +12,7 @@ import {
 } from '../addons/addons'
 import { useAddonInstall } from '../addons/AddonInstallDialog'
 import { useT } from '../i18n/i18n'
-import { useConfirm, useHighlighter } from 'pevenmui'
+import { useConfirm, useHighlighter, pevenFont } from 'pevenmui'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 
@@ -42,7 +42,7 @@ export default function AddonSection({ ids }: { ids: string[] }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(refresh, [ids.join()])
 
-  if (!addonsSupported()) return <Typography sx={{ gridColumn: '1 / -1', fontSize: 13 }}>{t('addon.unsupported')}</Typography>
+  if (!addonsSupported()) return <Typography sx={{ gridColumn: '1 / -1', fontSize: pevenFont('base') }}>{t('addon.unsupported')}</Typography>
 
   const describe = (s: Status | undefined) => {
     if (!s) return t('addon.checking')
@@ -73,8 +73,8 @@ export default function AddonSection({ ids }: { ids: string[] }) {
         return (
           <Box key={a.id} sx={{ gridColumn: '1 / -1', width: '100cqi', maxWidth: '100cqi', display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: 13, ...hit(t(a.shortName ?? a.name)) }}>{t(a.shortName ?? a.name)}</Typography>
-              <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary' }}>{describe(s)}</Typography>
+              <Typography sx={{ fontSize: pevenFont('base'), ...hit(t(a.shortName ?? a.name)) }}>{t(a.shortName ?? a.name)}</Typography>
+              <Typography className="selectable" sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>{describe(s)}</Typography>
             </Box>
             {(!s?.installed || updatable) && (
               <Button size="small" variant="outlined" disabled={!s?.latest} onClick={() => void install(a)} sx={{ flexShrink: 0 }}>
@@ -89,7 +89,7 @@ export default function AddonSection({ ids }: { ids: string[] }) {
           </Box>
         )
       })}
-      {message && <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: 12, color: 'primary.main' }}>{message}</Typography>}
+      {message && <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: pevenFont('md'), color: 'primary.main' }}>{message}</Typography>}
       {dialog}
       {confirmDialog}
     </>

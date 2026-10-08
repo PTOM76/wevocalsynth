@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@mui/material'
-import { ContextMenu, type MenuEntry } from 'pevenmui'
+import { ContextMenu, type MenuEntry, pevenFont } from 'pevenmui'
 import RenameDialog from './tracks/RenameDialog'
 import type { EditParams } from './EditPanel'
 import { useT } from '../i18n/i18n'
@@ -37,7 +37,7 @@ export default function PresetMenu(p: { params: EditParams; presets: Preset[]; o
           const r = e.currentTarget.getBoundingClientRect()
           setMenuAt({ x: r.left, y: r.bottom })
         }}
-        sx={{ minWidth: 0, height: 24, px: 1, fontSize: 12 }}
+        sx={{ minWidth: 0, height: 24, px: 1, fontSize: pevenFont('md') }}
       >
         {t('preset.button')}
       </Button>

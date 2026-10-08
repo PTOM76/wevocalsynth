@@ -3,7 +3,7 @@ import { Box, ButtonBase, Tooltip, Typography } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackFader, type TrackMix } from '../../audio/tracks'
 import { computePeaks } from 'wevocal-lib'
 import { prepareCanvas, type View } from '../waveform/draw'
-import { canvasPixelRatio, usePalette } from 'pevenmui'
+import { canvasPixelRatio, usePalette, pevenFont } from 'pevenmui'
 import LevelMeter from '../LevelMeter'
 import { useT } from '../../i18n/i18n'
 import { pickMods, useTrackDrag, type PickMods } from './useTrackDrag'
@@ -52,7 +52,7 @@ export function TrackMenuButton(p: { title: string; onOpen: (x: number, y: numbe
           const r = e.currentTarget.getBoundingClientRect()
           p.onOpen(r.left, r.bottom)
         }}
-        sx={{ width: 24, height: 24, borderRadius: 0.5, color: 'text.secondary', fontSize: 14, lineHeight: 1 }}
+        sx={{ width: 24, height: 24, borderRadius: 0.5, color: 'text.secondary', fontSize: pevenFont('lg'), lineHeight: 1 }}
       >
         ⋯
       </ButtonBase>
@@ -78,7 +78,7 @@ export function MixToggle(p: { label: string; title: string; on: boolean; color:
           width: 18,
           height: 18,
           flexShrink: 0,
-          fontSize: 10,
+          fontSize: pevenFont('xs'),
           fontWeight: 700,
           borderRadius: 0.5,
           bgcolor: p.on ? p.color : 'action.hover',
@@ -180,7 +180,7 @@ export default function TrackLanes(p: Props) {
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 {/* 長い名前は省略して出すので、カーソルを合わせたら全部出す */}
                 <Tooltip title={tr.name} enterDelay={400} placement="top-start">
-                  <Typography sx={{ fontSize: 12, lineHeight: 1.3, fontWeight: selected ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <Typography sx={{ fontSize: pevenFont('md'), lineHeight: 1.3, fontWeight: selected ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {tr.name}
                   </Typography>
                 </Tooltip>

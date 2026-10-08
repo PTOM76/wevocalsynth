@@ -3,6 +3,7 @@ import { Box, ButtonBase, InputBase, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { useNumberDraft } from '../../hooks/useNumberDraft'
+import { pevenFont } from 'pevenmui'
 
 /**
  * インスペクタ（右パネル）の部品。DAW や Unity のインスペクタのように、
@@ -20,7 +21,7 @@ export function InspectorSection(p: { title: string; extra?: ReactNode; children
   if (flat)
     return (
       <Stack spacing={1} sx={{ px: 0.25, py: 0.5 }}>
-        {p.extra && <Typography sx={{ fontSize: 11, color: 'text.secondary', textAlign: 'right' }}>{p.extra}</Typography>}
+        {p.extra && <Typography sx={{ fontSize: pevenFont('sm'), color: 'text.secondary', textAlign: 'right' }}>{p.extra}</Typography>}
         {p.children}
       </Stack>
     )
@@ -31,13 +32,13 @@ export function InspectorSection(p: { title: string; extra?: ReactNode; children
         aria-expanded={open}
         sx={{ width: '100%', height: 28, px: 1, gap: 0.75, justifyContent: 'flex-start', bgcolor: 'action.hover' }}
       >
-        <Box component="span" sx={{ fontSize: 10, width: 10, color: 'text.secondary' }}>
+        <Box component="span" sx={{ fontSize: pevenFont('xs'), width: 10, color: 'text.secondary' }}>
           <FontAwesomeIcon icon={open ? faChevronDown : faChevronRight} />
         </Box>
-        <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{p.title}</Typography>
+        <Typography sx={{ fontSize: pevenFont('md'), fontWeight: 600 }}>{p.title}</Typography>
         <Box sx={{ flexGrow: 1 }} />
         {p.extra && (
-          <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary' }}>
+          <Typography component="span" sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>
             {p.extra}
           </Typography>
         )}
@@ -51,7 +52,7 @@ export function InspectorSection(p: { title: string; extra?: ReactNode; children
 export function PropRow(p: { label?: string; children: ReactNode }) {
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: 26 }}>
-      <Typography sx={{ width: 84, flexShrink: 0, fontSize: 12, color: 'text.secondary' }} noWrap>
+      <Typography sx={{ width: 84, flexShrink: 0, fontSize: pevenFont('md'), color: 'text.secondary' }} noWrap>
         {p.label ?? ''}
       </Typography>
       <Stack direction="row" spacing={1} sx={{ flex: 1, minWidth: 0, alignItems: 'center' }}>
@@ -98,13 +99,13 @@ export function NumberInput(p: {
         inputProps={{ min: p.min, max: p.max, step: p.step, 'aria-label': p.ariaLabel }}
         sx={{
           flex: 1,
-          fontSize: 12,
+          fontSize: pevenFont('md'),
           '& input': { p: 0, textAlign: 'right', MozAppearance: 'textfield' },
           // 数値欄の上下の矢印（スピンボタン）は幅を取り、小数が見切れるため出さない
           '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': { WebkitAppearance: 'none', m: 0 },
         }}
       />
-      {p.unit && <Typography sx={{ fontSize: 11, color: 'text.secondary', ml: 0.5 }}>{p.unit}</Typography>}
+      {p.unit && <Typography sx={{ fontSize: pevenFont('sm'), color: 'text.secondary', ml: 0.5 }}>{p.unit}</Typography>}
     </Stack>
   )
 }

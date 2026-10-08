@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faCopy, faEllipsis, faHeadphones, faLayerGroup, faPaste, faScissors, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { useT } from '../i18n/i18n'
+import { pevenFont } from 'pevenmui'
 
 interface Props {
   playSelection: () => void
@@ -30,7 +31,7 @@ export default function MobileEditBar(p: Props) {
       sx={{ flexDirection: 'column', gap: 0.25, minWidth: 56, height: 44, px: 0.5, borderRadius: 1, color: 'text.primary', opacity: disabled ? 0.4 : 1 }}
     >
       <FontAwesomeIcon icon={icon} fontSize={15} />
-      <Typography sx={{ fontSize: 10, lineHeight: 1, whiteSpace: 'nowrap' }}>{label}</Typography>
+      <Typography sx={{ fontSize: pevenFont('xs'), lineHeight: 1, whiteSpace: 'nowrap' }}>{label}</Typography>
     </ButtonBase>
   )
   return (

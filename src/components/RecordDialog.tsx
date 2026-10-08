@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, MenuItem, Select, Typography } from '@mui/material'
 import { listInputDevices, openInput, startRecording, type Clip, type InputDevice, type InputOptions, type Recording } from 'wevocal-lib'
 import { useT } from '../i18n/i18n'
+import { pevenFont } from 'pevenmui'
 
 interface Props {
   open: boolean
@@ -81,19 +82,19 @@ export default function RecordDialog(p: Props) {
   if (p.input.deviceId && !devices.some((d) => d.id === p.input.deviceId)) options.push([p.input.deviceId, t('record.missing')])
   return (
     <Dialog open={p.open} onClose={p.onClose} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('record.title')}</DialogTitle>
+      <DialogTitle sx={{ fontSize: pevenFont('xl'), py: 1.5 }}>{t('record.title')}</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1 }}>
-          <Select size="small" value={p.input.deviceId} displayEmpty disabled={!!rec} onChange={(e) => p.onDevice(e.target.value)} aria-label={t('record.input')} sx={{ fontSize: 13 }}>
+          <Select size="small" value={p.input.deviceId} displayEmpty disabled={!!rec} onChange={(e) => p.onDevice(e.target.value)} aria-label={t('record.input')} sx={{ fontSize: pevenFont('base') }}>
             {options.map(([id, label]) => (
-              <MenuItem key={id} value={id} sx={{ fontSize: 13 }}>
+              <MenuItem key={id} value={id} sx={{ fontSize: pevenFont('base') }}>
                 {label}
               </MenuItem>
             ))}
           </Select>
           <LinearProgress variant="determinate" value={Math.min(100, level * 100)} color={level > 0.98 ? 'error' : 'primary'} aria-label={t('record.level')} sx={{ height: 8, borderRadius: 1 }} />
           <Typography sx={{ fontFamily: 'monospace', fontSize: 20, textAlign: 'center' }}>{time(clip ? clip.channels[0].length / clip.sampleRate : sec)}</Typography>
-          {error && <Typography className="selectable" sx={{ fontSize: 12, color: 'error.main' }}>{error}</Typography>}
+          {error && <Typography className="selectable" sx={{ fontSize: pevenFont('md'), color: 'error.main' }}>{error}</Typography>}
         </Box>
       </DialogContent>
       <DialogActions>

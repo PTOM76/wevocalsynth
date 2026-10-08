@@ -3,6 +3,7 @@ import { Box, Button, ButtonBase, CircularProgress, Popover, Stack, Tooltip, Typ
 import type { TempoCandidate } from '../dsp/engine'
 import { NumberInput } from './inspector/Inspector'
 import { useT } from '../i18n/i18n'
+import { pevenFont } from 'pevenmui'
 
 /** タップの間隔がこれより空いたら、測り直しにする（ミリ秒） */
 const TAP_RESET_MS = 2000
@@ -63,7 +64,7 @@ export default function TempoField(p: Props) {
         anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
         transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Stack spacing={1.25} sx={{ p: 1.5, width: 260, fontSize: 13 }}>
+        <Stack spacing={1.25} sx={{ p: 1.5, width: 260, fontSize: pevenFont('base') }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <NumberInput value={round2(p.bpm)} onChange={(v) => (p.onInput ?? p.onChange)(v)} min={20} max={400} step={0.01} unit="BPM" width={110} ariaLabel="BPM" />
             <Button size="small" onClick={() => p.onChange(round2(p.bpm * 2))}>
@@ -81,19 +82,19 @@ export default function TempoField(p: Props) {
           </Tooltip>
           <Box>
             <Stack direction="row" sx={{ alignItems: 'center', mb: 0.5 }}>
-              <Typography sx={{ fontSize: 12, color: 'text.secondary', flex: 1 }}>{t('tempo.candidates')}</Typography>
-              <Button size="small" disabled={p.analyzing || p.disabled} onClick={p.onAnalyze} sx={{ fontSize: 12, minWidth: 0 }}>
+              <Typography sx={{ fontSize: pevenFont('md'), color: 'text.secondary', flex: 1 }}>{t('tempo.candidates')}</Typography>
+              <Button size="small" disabled={p.analyzing || p.disabled} onClick={p.onAnalyze} sx={{ fontSize: pevenFont('md'), minWidth: 0 }}>
                 {p.analyzing ? t('common.analyzing') : t('tempo.analyze')}
               </Button>
             </Stack>
-            {p.candidates.length === 0 && <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>—</Typography>}
+            {p.candidates.length === 0 && <Typography sx={{ fontSize: pevenFont('md'), color: 'text.secondary' }}>—</Typography>}
             {p.candidates.map((c) => (
               <ButtonBase
                 key={c.bpm}
                 onClick={() => p.onChange(c.bpm, c.offset)}
                 sx={{ display: 'flex', width: '100%', gap: 1, px: 0.5, py: 0.25, borderRadius: 0.5, '&:hover': { bgcolor: 'action.hover' } }}
               >
-                <Typography sx={{ fontSize: 13, width: 64, textAlign: 'right', fontWeight: Math.abs(c.bpm - p.bpm) < 0.05 ? 700 : 400 }}>
+                <Typography sx={{ fontSize: pevenFont('base'), width: 64, textAlign: 'right', fontWeight: Math.abs(c.bpm - p.bpm) < 0.05 ? 700 : 400 }}>
                   {c.bpm.toFixed(1)}
                 </Typography>
                 {/* 強さの棒 */}

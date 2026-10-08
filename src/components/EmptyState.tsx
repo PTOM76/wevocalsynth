@@ -1,4 +1,4 @@
-import { vw } from 'pevenmui'
+import { vw, pevenFont } from 'pevenmui'
 import { useState } from 'react'
 import { Box, Button, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -66,7 +66,7 @@ export function EmptyState({
             </Button>
           ))}
           {names.length > RECENT_SHOWN && (
-            <Button size="small" variant="text" onClick={() => setShowAll((v) => !v)} sx={{ fontSize: 12 }}>
+            <Button size="small" variant="text" onClick={() => setShowAll((v) => !v)} sx={{ fontSize: pevenFont('md') }}>
               {t(showAll ? 'empty.showLess' : 'empty.showMore', { n: names.length - RECENT_SHOWN })}
             </Button>
           )}

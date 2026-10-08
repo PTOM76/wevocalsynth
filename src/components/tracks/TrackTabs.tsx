@@ -2,7 +2,7 @@ import { Box, Tab, Tabs, Tooltip } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackFader, type TrackMix } from '../../audio/tracks'
 import { MixToggle, TrackMenuButton } from './TrackLanes'
 import { useT } from '../../i18n/i18n'
-import { usePalette } from 'pevenmui'
+import { usePalette, pevenFont } from 'pevenmui'
 import LevelMeter from '../LevelMeter'
 import { pickMods, useTrackDrag, type PickMods } from './useTrackDrag'
 
@@ -87,7 +87,7 @@ export default function TrackTabs(p: Props) {
                 minHeight: 34,
                 py: 0.5,
                 px: 1.5,
-                fontSize: 12,
+                fontSize: pevenFont('md'),
                 textTransform: 'none',
                 bgcolor: p.picked.has(tr.id) && tr.id !== p.activeId ? 'action.selected' : undefined,
                 opacity: drag.dragId === tr.id ? 0.5 : 1,

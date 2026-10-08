@@ -15,7 +15,7 @@ import { Box, Checkbox, FormControlLabel,
   ToggleButtonGroup,
   Typography,
 } from '@mui/material'
-import { enterToSubmit, WindowDialog } from 'pevenmui'
+import { enterToSubmit, WindowDialog, pevenFont } from 'pevenmui'
 import { EXPORT_EXT, MP3_SAMPLE_RATES, OPUS_SAMPLE_RATE, canEncodeOpus, type ExportFormat, type WavFormat } from 'wevocal-lib'
 import { useT } from '../i18n/i18n'
 
@@ -235,7 +235,7 @@ export default function ExportDialog(p: Props) {
             <FormControlLabel
               sx={{ flex: 1, m: 0 }}
               control={<Checkbox size="small" checked={p.finish.normalize} onChange={(e) => p.onFinishChange({ ...p.finish, normalize: e.target.checked })} />}
-              label={<Typography sx={{ fontSize: 13 }}>{t('volume.normalize')}</Typography>}
+              label={<Typography sx={{ fontSize: pevenFont('base') }}>{t('volume.normalize')}</Typography>}
             />
             <Box sx={{ width: 150 }}>
               <Choice

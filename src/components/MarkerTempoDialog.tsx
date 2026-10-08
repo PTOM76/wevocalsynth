@@ -3,6 +3,7 @@ import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typogra
 import { NumberInput } from './inspector/Inspector'
 import type { Marker } from '../project/projectFile'
 import { useT } from '../i18n/i18n'
+import { pevenFont } from 'pevenmui'
 
 /**
  * マーカーに「ここからのテンポ」を持たせる（テンポが途中で変わる曲）。`marker` が null なら閉じている。
@@ -32,12 +33,12 @@ export default function MarkerTempoDialog(p: {
   const ok = () => bpm > 0 && done({ bpm, beatsPerBar: Math.max(1, Math.round(beatsPerBar)) })
   return (
     <Dialog open={!!marker} onClose={p.onClose} fullWidth maxWidth="xs" onKeyDown={(e) => e.key === 'Enter' && ok()}>
-      <DialogTitle sx={{ fontSize: 16, py: 1.5 }}>{t('markerTempo.title', { name: marker?.name ?? '' })}</DialogTitle>
+      <DialogTitle sx={{ fontSize: pevenFont('xl'), py: 1.5 }}>{t('markerTempo.title', { name: marker?.name ?? '' })}</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'auto auto', alignItems: 'center', justifyContent: 'start', columnGap: 2, rowGap: 1, mt: 1 }}>
-          <Typography sx={{ fontSize: 13 }}>BPM</Typography>
+          <Typography sx={{ fontSize: pevenFont('base') }}>BPM</Typography>
           <NumberInput value={bpm} onChange={setBpm} min={20} max={400} step={0.01} unit="BPM" width={110} ariaLabel="BPM" />
-          <Typography sx={{ fontSize: 13 }}>{t('settings.beatsPerBar')}</Typography>
+          <Typography sx={{ fontSize: pevenFont('base') }}>{t('settings.beatsPerBar')}</Typography>
           <NumberInput value={beatsPerBar} onChange={(v) => setBeatsPerBar(Math.round(v))} min={1} max={16} step={1} width={110} ariaLabel={t('settings.beatsPerBar')} />
         </Box>
       </DialogContent>

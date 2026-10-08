@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Box, Button, DialogActions, DialogContent, FormControlLabel, MenuItem, Radio, RadioGroup, Select, Typography } from '@mui/material'
-import { enterToSubmit, WindowDialog } from 'pevenmui'
+import { enterToSubmit, WindowDialog, pevenFont } from 'pevenmui'
 import { parseMidi, type MidiFile } from '../audio/midi'
 import type { FitMode, SamplerNote } from '../audio/sampler'
 import { noteName } from '../audio/notes'
@@ -27,7 +27,7 @@ const FITS: [FitMode, 'sampler.fitStretch' | 'sampler.fitLoop' | 'sampler.fitCut
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-      <Typography sx={{ fontSize: 13, width: 72, flexShrink: 0 }}>{label}</Typography>
+      <Typography sx={{ fontSize: pevenFont('base'), width: 72, flexShrink: 0 }}>{label}</Typography>
       {children}
     </Box>
   )
@@ -96,7 +96,7 @@ export default function SamplerDialog(p: {
           <Button size="small" variant="outlined" onClick={() => input.current?.click()}>
             {t('midi.choose')}
           </Button>
-          <Typography className="selectable" sx={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <Typography className="selectable" sx={{ fontSize: pevenFont('md'), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {file ? file.name : t('midi.none')}
           </Typography>
           <input
@@ -112,16 +112,16 @@ export default function SamplerDialog(p: {
           />
         </Box>
         {error && (
-          <Typography className="selectable" sx={{ fontSize: 12, color: 'error.main' }}>
+          <Typography className="selectable" sx={{ fontSize: pevenFont('md'), color: 'error.main' }}>
             {error}
           </Typography>
         )}
         {file && (
           <>
             <Row label={t('midi.track')}>
-              <Select size="small" fullWidth value={track} onChange={(e) => setTrack(Number(e.target.value))} sx={{ fontSize: 13, '& .MuiSelect-select': { py: 0.5 } }}>
+              <Select size="small" fullWidth value={track} onChange={(e) => setTrack(Number(e.target.value))} sx={{ fontSize: pevenFont('base'), '& .MuiSelect-select': { py: 0.5 } }}>
                 {file.midi.tracks.map((tr, i) => (
-                  <MenuItem key={i} value={i} sx={{ fontSize: 13 }}>
+                  <MenuItem key={i} value={i} sx={{ fontSize: pevenFont('base') }}>
                     {t('midi.trackItem', { name: tr.name, count: tr.notes.length })}
                   </MenuItem>
                 ))}
@@ -131,8 +131,8 @@ export default function SamplerDialog(p: {
               <NumberInput value={offset} onChange={setOffset} min={0} max={3600} step={0.01} unit={t('vibrato.secondUnit')} width={110} ariaLabel={t('midi.offset')} />
             </Row>
             <RadioGroup value={tempo} onChange={(e) => setTempo(e.target.value as 'midi' | 'project')}>
-              <FormControlLabel value="midi" control={<Radio size="small" />} label={t('midi.tempoMidi', { bpm: file.midi.bpm })} slotProps={{ typography: { sx: { fontSize: 13 } } }} />
-              <FormControlLabel value="project" control={<Radio size="small" />} label={t('midi.tempoProject', { bpm: p.bpm })} slotProps={{ typography: { sx: { fontSize: 13 } } }} />
+              <FormControlLabel value="midi" control={<Radio size="small" />} label={t('midi.tempoMidi', { bpm: file.midi.bpm })} slotProps={{ typography: { sx: { fontSize: pevenFont('base') } } }} />
+              <FormControlLabel value="project" control={<Radio size="small" />} label={t('midi.tempoProject', { bpm: p.bpm })} slotProps={{ typography: { sx: { fontSize: pevenFont('base') } } }} />
             </RadioGroup>
             <SliderRow label={t('midi.transpose')} value={transpose} onChange={(v) => setTranspose(Math.round(v))} min={-24} max={24} step={1} unit={t('process.semitoneUnit')} />
           </>
@@ -142,26 +142,26 @@ export default function SamplerDialog(p: {
             size="small"
             value={baseNote}
             onChange={(e) => setBase(Number(e.target.value))}
-            sx={{ fontSize: 13, minWidth: 90, '& .MuiSelect-select': { py: 0.5 } }}
+            sx={{ fontSize: pevenFont('base'), minWidth: 90, '& .MuiSelect-select': { py: 0.5 } }}
             MenuProps={{ slotProps: { paper: { sx: { maxHeight: 300 } } } }}
           >
             {NOTES.map((m) => (
-              <MenuItem key={m} value={m} sx={{ fontSize: 13 }}>
+              <MenuItem key={m} value={m} sx={{ fontSize: pevenFont('base') }}>
                 {noteName(m)}
               </MenuItem>
             ))}
           </Select>
         </Row>
         <Row label={t('sampler.fit')}>
-          <Select size="small" value={fit} onChange={(e) => setFit(e.target.value as FitMode)} sx={{ fontSize: 13, minWidth: 120, '& .MuiSelect-select': { py: 0.5 } }}>
+          <Select size="small" value={fit} onChange={(e) => setFit(e.target.value as FitMode)} sx={{ fontSize: pevenFont('base'), minWidth: 120, '& .MuiSelect-select': { py: 0.5 } }}>
             {FITS.map(([v, label]) => (
-              <MenuItem key={v} value={v} sx={{ fontSize: 13 }}>
+              <MenuItem key={v} value={v} sx={{ fontSize: pevenFont('base') }}>
                 {t(label)}
               </MenuItem>
             ))}
           </Select>
         </Row>
-        <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{t('sampler.hint')}</Typography>
+        <Typography sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>{t('sampler.hint')}</Typography>
       </DialogContent>
       <DialogActions>
         <Button size="small" onClick={p.onClose}>

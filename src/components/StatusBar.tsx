@@ -4,7 +4,7 @@ import { useT } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import type { ReactNode } from 'react'
 import SelectionField from './SelectionField'
-import { JobGauge, StatusBar as Bar, StatusButton, StatusItem, StatusSpacer } from 'pevenmui'
+import { JobGauge, StatusBar as Bar, StatusButton, StatusItem, StatusSpacer, pevenFont } from 'pevenmui'
 import type { JobKind } from '../progress/jobs'
 import { stableMemo } from './stableMemo'
 
@@ -75,7 +75,7 @@ function StatusBar(p: Props) {
           value={p.source}
           disabled={!p.clip}
           onChange={(_, v: Source | null) => v && p.onSourceChange(v)}
-          sx={{ height: 20, mx: 1, '& .MuiToggleButton-root': { py: 0, px: 1, fontSize: 11 } }}
+          sx={{ height: 20, mx: 1, '& .MuiToggleButton-root': { py: 0, px: 1, fontSize: pevenFont('sm') } }}
         >
           <ToggleButton value="edited">{t('clip.edited')}</ToggleButton>
           <ToggleButton value="original">{t('clip.original')}</ToggleButton>

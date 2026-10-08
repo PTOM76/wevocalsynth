@@ -6,6 +6,7 @@ import type { Range } from '../audio/types'
 import { formatTime } from '../audio/types'
 import { useT } from '../i18n/i18n'
 import { useNumberDraft } from '../hooks/useNumberDraft'
+import { pevenFont } from 'pevenmui'
 
 interface Props {
   duration: number
@@ -77,7 +78,7 @@ export default function SelectionField(p: Props) {
               setTimeout(() => URL.revokeObjectURL(url), 60_000)
             }}
             // つかみやすいよう、アイコンだけでなく「WAV」の文字も付けて幅を取る
-            sx={{ px: 1, mx: 0.25, height: '100%', display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'grab', color: 'text.secondary', border: 1, borderColor: 'divider', borderRadius: 1, fontSize: 11, '&:hover': { bgcolor: 'action.hover', color: 'text.primary' } }}
+            sx={{ px: 1, mx: 0.25, height: '100%', display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'grab', color: 'text.secondary', border: 1, borderColor: 'divider', borderRadius: 1, fontSize: pevenFont('sm'), '&:hover': { bgcolor: 'action.hover', color: 'text.primary' } }}
           >
             <FontAwesomeIcon icon={faFileExport} fontSize={12} />
             WAV

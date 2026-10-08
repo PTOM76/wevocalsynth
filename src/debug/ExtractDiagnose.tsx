@@ -3,6 +3,7 @@ import { Box, Button, Typography } from '@mui/material'
 import { useT } from '../i18n/i18n'
 import type { ExtractOptions } from '../audio/vocalExtract'
 import { diagnoseExtract } from './diagnoseExtract'
+import { pevenFont } from 'pevenmui'
 
 /** 設定の開発者向け「ボーカル抽出の診断」。結果は選んでコピーできる（不具合の報告に貼る） */
 export default function ExtractDiagnose({ options }: { options: ExtractOptions }) {
@@ -25,8 +26,8 @@ export default function ExtractDiagnose({ options }: { options: ExtractOptions }
     <Box sx={{ gridColumn: '1 / -1', contain: 'inline-size', display: 'flex', flexDirection: 'column', gap: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontSize: 13 }}>{t('settings.extractDiagnose')}</Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{t('settings.extractDiagnoseHelp')}</Typography>
+          <Typography sx={{ fontSize: pevenFont('base') }}>{t('settings.extractDiagnose')}</Typography>
+          <Typography sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>{t('settings.extractDiagnoseHelp')}</Typography>
         </Box>
         <Button size="small" variant="outlined" disabled={running} onClick={() => void run()}>
           {t(running ? 'settings.extractDiagnoseRunning' : 'settings.extractDiagnoseRun')}

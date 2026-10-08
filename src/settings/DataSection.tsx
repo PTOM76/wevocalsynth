@@ -10,7 +10,7 @@ import {
 } from '../project/storage'
 import { clearAddons, installedAddonsSize } from '../addons/addons'
 import { useT, type MessageKey } from '../i18n/i18n'
-import { useConfirm, useHighlighter } from 'pevenmui'
+import { useConfirm, useHighlighter, pevenFont } from 'pevenmui'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 
@@ -42,8 +42,8 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const row = (label: MessageKey, help: MessageKey, button: React.ReactNode, vars?: Record<string, string>) => (
     <Box sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%', display: 'flex', alignItems: 'center', gap: 1.5 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontSize: 13, ...hit(t(label), t(help, vars)) }}>{t(label)}</Typography>
-        <Typography className="selectable" sx={{ fontSize: 11, color: 'text.secondary' }}>{t(help, vars)}</Typography>
+        <Typography sx={{ fontSize: pevenFont('base'), ...hit(t(label), t(help, vars)) }}>{t(label)}</Typography>
+        <Typography className="selectable" sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>{t(help, vars)}</Typography>
       </Box>
       {button}
     </Box>
@@ -56,7 +56,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <Typography sx={{ gridColumn: '1 / -1', fontSize: 13 }}>
+      <Typography sx={{ gridColumn: '1 / -1', fontSize: pevenFont('base') }}>
         {usage ? t('data.usage', { usage: mb(usage.usage), quota: mb(usage.quota) }) : t('data.usageUnknown')}
       </Typography>
       {row(
@@ -121,7 +121,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
           {t('data.persistButton')}
         </Button>,
       )}
-      {message && <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: 12, color: 'primary.main' }}>{message}</Typography>}
+      {message && <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: pevenFont('md'), color: 'primary.main' }}>{message}</Typography>}
       {dialog}
     </>
   )

@@ -26,6 +26,8 @@ import { COMPACT_SLIDER_SX, InspectorSection, NumberInput, PropRow, useDoubleCli
 import { useT, type MessageKey } from '../i18n/i18n'
 import { countRender } from '../debug/debugStats'
 import { stableMemo } from './stableMemo'
+import { pevenFont } from 'pevenmui'
+import { SMALL_BUTTON_SX } from '../constants/ui'
 
 export interface EditParams {
   semitones: number
@@ -75,8 +77,6 @@ const MODE_HINT: Record<Mode, MessageKey> = {
 const STRETCH_PRESETS = [0.5, 1, 2, 4]
 const round2 = (v: number) => Math.round(v * 100) / 100
 
-/** インスペクタの小さなボタン（デスクトップアプリのボタンに近い大きさ） */
-const SMALL_BUTTON_SX = { minWidth: 0, height: 26, px: 1, fontSize: 12 } as const
 
 /** インスペクタの「加工」。モード・ピッチ・長さ・フォルマントの行と、試聴・適用 */
 function EditPanel(p: Props) {
@@ -113,7 +113,7 @@ function EditPanel(p: Props) {
           value={mode}
           aria-label={t('process.mode')}
           onChange={(_, v: Mode | null) => v && set(p.modes[v])}
-          sx={{ '& .MuiToggleButton-root': { height: 24, fontSize: 12, py: 0 } }}
+          sx={{ '& .MuiToggleButton-root': { height: 24, fontSize: pevenFont('md'), py: 0 } }}
         >
           {(['vocal', 'instrument'] as const).map((m) => (
             <Tooltip key={m} title={t(MODE_HINT[m])}>
@@ -164,7 +164,7 @@ function EditPanel(p: Props) {
       </PropRow>
 
       {/* フォルマントは「保持」と「高さ」の2行をまとめ、何の設定かを見出しで示す */}
-      <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'text.secondary', pt: 0.5 }}>{t('process.formantGroup')}</Typography>
+      <Typography sx={{ fontSize: pevenFont('md'), fontWeight: 600, color: 'text.secondary', pt: 0.5 }}>{t('process.formantGroup')}</Typography>
       <PropRow label={t('process.formantKeep')}>
         <Switch size="small" checked={preserveFormant} onChange={(e) => set({ preserveFormant: e.target.checked })} slotProps={{ input: { 'aria-label': t('process.formant') } }} />
       </PropRow>
@@ -197,11 +197,11 @@ function EditPanel(p: Props) {
         />
       </PropRow>
 
-      <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+      <Typography sx={{ fontSize: pevenFont('md'), color: 'text.secondary' }}>
         {t(p.hasSelection ? 'common.selection' : 'common.whole')}: {formatTime(p.targetDuration)} → <b>{formatTime(p.targetDuration * stretch)}</b>
       </Typography>
       {(p.preview === 'tooLong' || p.preview === 'multi') && !unchanged && (
-        <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+        <Typography sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>
           {t(p.preview === 'tooLong' ? 'play.previewMax' : 'play.previewSingle')}
         </Typography>
       )}

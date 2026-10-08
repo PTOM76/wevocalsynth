@@ -5,6 +5,7 @@ import type { MidiFitOptions } from '../audio/pitchTools'
 import { NumberInput } from './inspector/Inspector'
 import { SliderRow, ToolDialog, type DialogProps } from './PitchToolDialogs'
 import { useT } from '../i18n/i18n'
+import { pevenFont } from 'pevenmui'
 
 /** MIDI の時刻をどう合わせるか（midi: MIDI のテンポのまま / project: 設定の BPM に合わせる） */
 type TempoMode = 'midi' | 'project'
@@ -58,7 +59,7 @@ export function MidiDialog(p: DialogProps<MidiFitOptions> & { bpm: number; defau
         <Button size="small" variant="outlined" onClick={() => input.current?.click()}>
           {t('midi.choose')}
         </Button>
-        <Typography className="selectable" sx={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <Typography className="selectable" sx={{ fontSize: pevenFont('md'), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {file ? file.name : t('midi.none')}
         </Typography>
         <input
@@ -74,35 +75,35 @@ export function MidiDialog(p: DialogProps<MidiFitOptions> & { bpm: number; defau
         />
       </Box>
       {error && (
-        <Typography className="selectable" sx={{ fontSize: 12, color: 'error.main' }}>
+        <Typography className="selectable" sx={{ fontSize: pevenFont('md'), color: 'error.main' }}>
           {error}
         </Typography>
       )}
       {file && (
         <>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography sx={{ fontSize: 13, width: 72, flexShrink: 0 }}>{t('midi.track')}</Typography>
-            <Select size="small" fullWidth value={track} onChange={(e) => setTrack(Number(e.target.value))} sx={{ fontSize: 13, '& .MuiSelect-select': { py: 0.5 } }}>
+            <Typography sx={{ fontSize: pevenFont('base'), width: 72, flexShrink: 0 }}>{t('midi.track')}</Typography>
+            <Select size="small" fullWidth value={track} onChange={(e) => setTrack(Number(e.target.value))} sx={{ fontSize: pevenFont('base'), '& .MuiSelect-select': { py: 0.5 } }}>
               {file.midi.tracks.map((tr, i) => (
-                <MenuItem key={i} value={i} sx={{ fontSize: 13 }}>
+                <MenuItem key={i} value={i} sx={{ fontSize: pevenFont('base') }}>
                   {t('midi.trackItem', { name: tr.name, count: tr.notes.length })}
                 </MenuItem>
               ))}
             </Select>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography sx={{ fontSize: 13, width: 72, flexShrink: 0 }}>{t('midi.offset')}</Typography>
+            <Typography sx={{ fontSize: pevenFont('base'), width: 72, flexShrink: 0 }}>{t('midi.offset')}</Typography>
             <NumberInput value={offset ?? p.defaultOffset} onChange={setOffset} min={0} max={3600} step={0.01} unit={t('vibrato.secondUnit')} width={110} ariaLabel={t('midi.offset')} />
           </Box>
           <RadioGroup value={tempo} onChange={(e) => setTempo(e.target.value as TempoMode)}>
-            <FormControlLabel value="midi" control={<Radio size="small" />} label={t('midi.tempoMidi', { bpm: file.midi.bpm })} slotProps={{ typography: { sx: { fontSize: 13 } } }} />
-            <FormControlLabel value="project" control={<Radio size="small" />} label={t('midi.tempoProject', { bpm: p.bpm })} slotProps={{ typography: { sx: { fontSize: 13 } } }} />
+            <FormControlLabel value="midi" control={<Radio size="small" />} label={t('midi.tempoMidi', { bpm: file.midi.bpm })} slotProps={{ typography: { sx: { fontSize: pevenFont('base') } } }} />
+            <FormControlLabel value="project" control={<Radio size="small" />} label={t('midi.tempoProject', { bpm: p.bpm })} slotProps={{ typography: { sx: { fontSize: pevenFont('base') } } }} />
           </RadioGroup>
           <SliderRow label={t('midi.transpose')} value={transpose} onChange={(v) => setTranspose(Math.round(v))} min={-24} max={24} step={1} unit={t('process.semitoneUnit')} />
           <FormControlLabel
             control={<Checkbox size="small" checked={keepShape} onChange={(e) => setKeepShape(e.target.checked)} />}
             label={t('snap.keepShape')}
-            slotProps={{ typography: { sx: { fontSize: 13 } } }}
+            slotProps={{ typography: { sx: { fontSize: pevenFont('base') } } }}
           />
           <SliderRow label={t('snap.strength')} value={Math.round(strength * 100)} onChange={(v) => setStrength(v / 100)} min={0} max={100} step={1} unit="%" />
         </>

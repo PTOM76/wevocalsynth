@@ -12,7 +12,7 @@ import {
   Select,
   Typography,
 } from '@mui/material'
-import { enterToSubmit, WindowDialog } from 'pevenmui'
+import { enterToSubmit, WindowDialog, pevenFont } from 'pevenmui'
 import type { Clip } from '../audio/types'
 import { startContext } from 'wevocal-lib'
 import { parseMidi, type MidiFile } from '../audio/midi'
@@ -41,7 +41,7 @@ const NOTES = Array.from({ length: 49 }, (_, i) => 36 + i)
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-      <Typography sx={{ fontSize: 13, width: 72, flexShrink: 0 }}>{label}</Typography>
+      <Typography sx={{ fontSize: pevenFont('base'), width: 72, flexShrink: 0 }}>{label}</Typography>
       {children}
     </Box>
   )
@@ -175,9 +175,9 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
     >
       <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Row label={t('synth.timbre')}>
-          <Select size="small" fullWidth value={timbre} onChange={(e) => setTimbre(e.target.value)} sx={{ fontSize: 13, '& .MuiSelect-select': { py: 0.5 } }}>
+          <Select size="small" fullWidth value={timbre} onChange={(e) => setTimbre(e.target.value)} sx={{ fontSize: pevenFont('base'), '& .MuiSelect-select': { py: 0.5 } }}>
             {TIMBRES.map((x) => (
-              <MenuItem key={x.value} value={x.value} sx={{ fontSize: 13 }}>
+              <MenuItem key={x.value} value={x.value} sx={{ fontSize: pevenFont('base') }}>
                 {t(x.label)}
               </MenuItem>
             ))}
@@ -188,8 +188,8 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
         )}
         <SliderRow label={t('synth.volume')} value={volume} onChange={setVolume} min={-30} max={0} step={0.5} unit="dB" />
         <RadioGroup value={source} onChange={(e) => setSource(e.target.value as 'single' | 'midi')}>
-          <FormControlLabel value="single" control={<Radio size="small" />} label={t('synth.single')} slotProps={{ typography: { sx: { fontSize: 13 } } }} />
-          <FormControlLabel value="midi" control={<Radio size="small" />} label={t('synth.midi')} slotProps={{ typography: { sx: { fontSize: 13 } } }} />
+          <FormControlLabel value="single" control={<Radio size="small" />} label={t('synth.single')} slotProps={{ typography: { sx: { fontSize: pevenFont('base') } } }} />
+          <FormControlLabel value="midi" control={<Radio size="small" />} label={t('synth.midi')} slotProps={{ typography: { sx: { fontSize: pevenFont('base') } } }} />
         </RadioGroup>
         {source === 'single' ? (
           <>
@@ -198,11 +198,11 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
                 size="small"
                 value={note}
                 onChange={(e) => setNote(Number(e.target.value))}
-                sx={{ fontSize: 13, minWidth: 90, '& .MuiSelect-select': { py: 0.5 } }}
+                sx={{ fontSize: pevenFont('base'), minWidth: 90, '& .MuiSelect-select': { py: 0.5 } }}
                 MenuProps={{ slotProps: { paper: { sx: { maxHeight: 300 } } } }}
               >
                 {NOTES.map((m) => (
-                  <MenuItem key={m} value={m} sx={{ fontSize: 13 }}>
+                  <MenuItem key={m} value={m} sx={{ fontSize: pevenFont('base') }}>
                     {noteName(m)}
                   </MenuItem>
                 ))}
@@ -218,7 +218,7 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
               <Button size="small" variant="outlined" onClick={() => input.current?.click()}>
                 {t('midi.choose')}
               </Button>
-              <Typography className="selectable" sx={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <Typography className="selectable" sx={{ fontSize: pevenFont('md'), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {midi ? midi.name : t('midi.none')}
               </Typography>
               <input
@@ -236,9 +236,9 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
             {midi && (
               <>
                 <Row label={t('midi.track')}>
-                  <Select size="small" fullWidth value={track} onChange={(e) => setTrack(Number(e.target.value))} sx={{ fontSize: 13, '& .MuiSelect-select': { py: 0.5 } }}>
+                  <Select size="small" fullWidth value={track} onChange={(e) => setTrack(Number(e.target.value))} sx={{ fontSize: pevenFont('base'), '& .MuiSelect-select': { py: 0.5 } }}>
                     {midi.file.tracks.map((tr, i) => (
-                      <MenuItem key={i} value={i} sx={{ fontSize: 13 }}>
+                      <MenuItem key={i} value={i} sx={{ fontSize: pevenFont('base') }}>
                         {t('midi.trackItem', { name: tr.name, count: tr.notes.length })}
                       </MenuItem>
                     ))}
@@ -247,7 +247,7 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
                 <FormControlLabel
                   control={<Checkbox size="small" checked={matchBpm} onChange={(e) => setMatchBpm(e.target.checked)} />}
                   label={t('midi.tempoProject', { bpm: p.bpm })}
-                  slotProps={{ typography: { sx: { fontSize: 13 } } }}
+                  slotProps={{ typography: { sx: { fontSize: pevenFont('base') } } }}
                 />
               </>
             )}
@@ -256,7 +256,7 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
         <FormControlLabel
           control={<Checkbox size="small" checked={vibrato} onChange={(e) => setVibrato(e.target.checked)} />}
           label={t('vibrato.title')}
-          slotProps={{ typography: { sx: { fontSize: 13 } } }}
+          slotProps={{ typography: { sx: { fontSize: pevenFont('base') } } }}
         />
         {vibrato && (
           <>
@@ -265,11 +265,11 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
           </>
         )}
         {error && (
-          <Typography className="selectable" sx={{ fontSize: 12, color: 'error.main' }}>
+          <Typography className="selectable" sx={{ fontSize: pevenFont('md'), color: 'error.main' }}>
             {error}
           </Typography>
         )}
-        <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{t('synth.hint')}</Typography>
+        <Typography sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>{t('synth.hint')}</Typography>
       </DialogContent>
       <DialogActions>
         <Button

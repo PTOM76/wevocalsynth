@@ -3,7 +3,7 @@ import { TextField, Typography } from '@mui/material'
 import { NumberInput } from '../components/inspector/Inspector'
 import type { ProjectTempo } from '../project/projectFile'
 import { useT } from '../i18n/i18n'
-import { Group, Row } from 'pevenmui'
+import { Group, Row, pevenFont } from 'pevenmui'
 
 /** 設定の「プロジェクト」に渡す、今のプロジェクトの値と変更の関数。ファイルを開いていなければ null */
 export interface ProjectSettings {
@@ -23,7 +23,7 @@ export default function ProjectSection({ project }: { project: ProjectSettings |
   const t = useT()
   const [name, setName] = useState(project?.name ?? '')
   useEffect(() => setName(project?.name ?? ''), [project?.name])
-  if (!project) return <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>{t('settings.projectEmpty')}</Typography>
+  if (!project) return <Typography sx={{ fontSize: pevenFont('base'), color: 'text.secondary' }}>{t('settings.projectEmpty')}</Typography>
   const commitName = () => {
     if (name.trim() && name.trim() !== project.name) project.onRename(name)
     else setName(project.name)

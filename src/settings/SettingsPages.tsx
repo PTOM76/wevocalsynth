@@ -17,7 +17,7 @@ import type { Algorithm } from '../dsp/engine'
 import { i18n, t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
 import { Box, Button, Typography } from '@mui/material'
-import { Check, Choice, Group, Row, type WindowMode } from 'pevenmui'
+import { Check, Choice, Group, Row, type WindowMode, pevenFont } from 'pevenmui'
 
 /** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
 const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
@@ -166,7 +166,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         <Group title={t('settings.groupAddons')}>
           {/* 追加機能の一覧（AddonSection）と同じく、説明は左、ボタンは右 */}
           <Box sx={{ gridColumn: '1 / -1', width: '100cqi', maxWidth: '100cqi', display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography sx={{ flex: 1, minWidth: 0, fontSize: 13 }}>{t('settings.addonsMoved')}</Typography>
+            <Typography sx={{ flex: 1, minWidth: 0, fontSize: pevenFont('base') }}>{t('settings.addonsMoved')}</Typography>
             <Button size="small" variant="outlined" onClick={() => go('addons')} sx={{ flexShrink: 0 }}>
               {t('settings.openAddons')}
             </Button>

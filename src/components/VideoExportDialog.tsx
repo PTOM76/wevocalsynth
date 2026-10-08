@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Box, Button, Checkbox, DialogActions, DialogContent, FormControlLabel, LinearProgress, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
-import { enterToSubmit, WindowDialog } from 'pevenmui'
+import { enterToSubmit, WindowDialog, pevenFont } from 'pevenmui'
 import { canEncodeVideo, renderPreview, VIDEO_EXT, type VideoContainer } from '../audio/video'
 import type { Clip } from '../audio/types'
 import { useT } from '../i18n/i18n'
@@ -40,7 +40,7 @@ function ColorField(p: { label: string; value: string; onChange: (v: string) => 
   return (
     <Box component="label" sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
       <input type="color" value={p.value} onChange={(e) => p.onChange(e.target.value)} style={{ width: 32, height: 24, padding: 0, border: 'none', background: 'none' }} />
-      <Typography sx={{ fontSize: 13 }}>{p.label}</Typography>
+      <Typography sx={{ fontSize: pevenFont('base') }}>{p.label}</Typography>
     </Box>
   )
 }
@@ -179,7 +179,7 @@ export default function VideoExportDialog(p: Props) {
             <FormControlLabel
               sx={{ m: 0 }}
               control={<Checkbox size="small" checked={!!pr.gradient} onChange={(e) => setPr({ gradient: e.target.checked })} />}
-              label={<Typography sx={{ fontSize: 13 }}>{t('video.gradient')}</Typography>}
+              label={<Typography sx={{ fontSize: pevenFont('base') }}>{t('video.gradient')}</Typography>}
             />
           )}
           <Stack direction="row" spacing={1}>
@@ -260,7 +260,7 @@ export default function VideoExportDialog(p: Props) {
           <FormControlLabel
             sx={{ m: 0 }}
             control={<Checkbox size="small" checked={pr.title} onChange={(e) => setPr({ title: e.target.checked })} />}
-            label={<Typography sx={{ fontSize: 13 }}>{t('video.showTitle')}</Typography>}
+            label={<Typography sx={{ fontSize: pevenFont('base') }}>{t('video.showTitle')}</Typography>}
           />
           {p.busy && <LinearProgress variant="determinate" value={p.progress * 100} />}
         </Stack>
