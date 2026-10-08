@@ -22,7 +22,7 @@ interface DirHandle {
 type DirWindow = Window & { showDirectoryPicker?: (o?: { id?: string; mode?: 'readwrite' }) => Promise<DirHandle> }
 
 /** この環境でフォルダーを選べるか */
-export const addonFolderSupported = () => typeof window !== 'undefined' && !!(window as DirWindow).showDirectoryPicker
+export const addonFolderSupported = (win: Window = window) => typeof win !== 'undefined' && !!(win as DirWindow).showDirectoryPicker
 
 /** 設定がオンか（App が設定から入れる） */
 let enabled = false
@@ -33,17 +33,22 @@ export function setAddonFolderEnabled(on: boolean) {
 /** 選んだフォルダー（なければ null） */
 export const savedAddonFolder = async () => ((await idbGet(KEY).catch(() => null)) as DirHandle | null) ?? null
 
-/** フォルダーを選んで残す。選んだフォルダーの名前を返す（やめたら null） */
-export async function chooseAddonFolder(): Promise<string | null> {
-  const pick = (window as DirWindow).showDirectoryPicker
+/**
+ * フォルダーを選んで残す。選んだフォルダーの名前を返す（やめたら null。それ以外の失敗は投げる。黙って何も起きないと原因が分からないため）。
+ * `win` は操作した窓（設定を別の窓で開いているときは、そこから選ぶ画面を出す。ほかの窓から出すとブラウザに断られる）
+ */
+export async function chooseAddonFolder(win: Window = window): Promise<string | null> {
+  const pick = (win as DirWindow).showDirectoryPicker
   if (!pick) return null
+  let dir: DirHandle
   try {
-    const dir = await pick.call(window, { id: 'wevocal-addons', mode: 'readwrite' })
-    await idbPut(KEY, dir)
-    return dir.name
-  } catch {
-    return null
+    dir = await pick.call(win, { id: 'wevocal-addons', mode: 'readwrite' })
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') return null
+    throw e
   }
+  await idbPut(KEY, dir)
+  return dir.name
 }
 
 /** 選んだフォルダーを忘れる（中のファイルは消さない） */

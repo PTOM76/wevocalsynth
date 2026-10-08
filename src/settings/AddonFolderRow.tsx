@@ -10,32 +10,39 @@ export default function AddonFolderRow() {
   const t = useT()
   const [name, setName] = useState<string | null>(null)
   const [permission, setPermission] = useState<PermissionState | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const refresh = async () => {
     setName((await savedAddonFolder())?.name ?? null)
     setPermission(await addonFolderPermission())
   }
   useEffect(() => void refresh(), [])
-  const choose = async () => {
-    if (await chooseAddonFolder()) notifyAddonsChanged()
+  // 押したボタンの窓（設定を別の窓で開いているときは、その窓から選ぶ画面や許可の確認を出す）
+  const winOf = (e: React.MouseEvent) => e.currentTarget.ownerDocument.defaultView ?? window
+  const run = async (fn: () => Promise<unknown>) => {
+    setError(null)
+    try {
+      if (await fn()) notifyAddonsChanged()
+    } catch (e) {
+      setError(String(e))
+    }
     await refresh()
   }
-  const allow = async () => {
-    if (await requestAddonFolderPermission()) notifyAddonsChanged()
-    await refresh()
-  }
+  const choose = (e: React.MouseEvent) => void run(() => chooseAddonFolder(winOf(e)))
+  const allow = () => void run(requestAddonFolderPermission)
   return (
-    <Box sx={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 1, pl: 4 }}>
+    <Box sx={{ gridColumn: '1 / -1', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, pl: 4 }}>
       <Typography sx={{ flex: 1, minWidth: 0, fontSize: pevenFont('base') }} noWrap>
         {name ? t('addonFolder.current', { name }) : t('addonFolder.none')}
       </Typography>
       {name && permission !== 'granted' && (
-        <Button size="small" variant="contained" onClick={() => void allow()}>
+        <Button size="small" variant="contained" onClick={allow}>
           {t('addonFolder.allow')}
         </Button>
       )}
-      <Button size="small" variant="outlined" onClick={() => void choose()} sx={{ flexShrink: 0 }}>
+      <Button size="small" variant="outlined" onClick={choose} sx={{ flexShrink: 0 }}>
         {t('addonFolder.choose')}
       </Button>
+      {error && <Typography sx={{ width: '100%', color: 'error.main', fontSize: pevenFont('sm') }}>{error}</Typography>}
     </Box>
   )
 }
