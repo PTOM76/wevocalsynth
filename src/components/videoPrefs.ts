@@ -19,6 +19,8 @@ export interface VideoExportPrefs {
   gradient: boolean
   /** 音量波形の棒の数（細かさ） */
   bars: 32 | 64 | 128 | 256 | 512
+  /** 音量波形の棒の間の隙間の割合 */
+  gap: 0.05 | 0.2 | 0.4 | 0.6
 }
 
 export const DEFAULT_VIDEO_PREFS: VideoExportPrefs = {
@@ -33,6 +35,7 @@ export const DEFAULT_VIDEO_PREFS: VideoExportPrefs = {
   title: false,
   gradient: false,
   bars: 64,
+  gap: 0.2,
 }
 
 /** 選んだものから動画の見た目を作る（書き出しとプレビューで同じものを使う）。`title` は空なら曲名を入れない */
@@ -42,7 +45,7 @@ export function videoLook(pr: VideoExportPrefs, image: ImageBitmap | null, title
     width,
     height,
     background: { color: pr.bg, image, fit: pr.fit },
-    wave: { style: pr.style, color: pr.wave, playedColor: pr.played, position: pr.position, height: 0.25, gradient: pr.gradient, bars: pr.bars ?? 64 },
+    wave: { style: pr.style, color: pr.wave, playedColor: pr.played, position: pr.position, height: 0.25, gradient: pr.gradient, bars: pr.bars ?? 64, gap: pr.gap ?? 0.2 },
     title: pr.title ? title : '',
     titleColor: '#ffffff',
   }

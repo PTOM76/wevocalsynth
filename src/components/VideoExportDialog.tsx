@@ -176,6 +176,19 @@ export default function VideoExportDialog(p: Props) {
             />
           )}
           {pr.style === 'bars' && (
+            <Choice
+              label={t('video.gap')}
+              value={pr.gap ?? 0.2}
+              onChange={(gap) => setPr({ gap })}
+              options={[
+                [0.05, t('video.gapNarrow')],
+                [0.2, t('video.gapNormal')],
+                [0.4, t('video.gapWide')],
+                [0.6, t('video.gapWider')],
+              ]}
+            />
+          )}
+          {pr.style === 'bars' && (
             <FormControlLabel
               sx={{ m: 0 }}
               control={<Checkbox size="small" checked={!!pr.gradient} onChange={(e) => setPr({ gradient: e.target.checked })} />}

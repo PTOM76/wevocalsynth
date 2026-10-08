@@ -895,6 +895,11 @@
   "video.preview": "プレビュー",
   "video.bars256": "とても細かい（256）",
   "video.bars512": "最も細かい（512）",
+  "video.gap": "線の間隔",
+  "video.gapNarrow": "狭い",
+  "video.gapNormal": "標準",
+  "video.gapWide": "広い",
+  "video.gapWider": "とても広い",
 
   "eq.title": "EQ（{name}）",
   "eq.menu": "EQ…",

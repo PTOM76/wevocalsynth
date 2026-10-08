@@ -895,6 +895,11 @@
   "video.preview": "預覽",
   "video.bars256": "很細（256）",
   "video.bars512": "最細（512）",
+  "video.gap": "線間距",
+  "video.gapNarrow": "窄",
+  "video.gapNormal": "標準",
+  "video.gapWide": "寬",
+  "video.gapWider": "很寬",
 
   "eq.title": "EQ（{name}）",
   "eq.menu": "EQ…",

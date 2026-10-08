@@ -895,6 +895,11 @@
   "video.preview": "미리보기",
   "video.bars256": "매우 세밀하게(256)",
   "video.bars512": "가장 세밀하게(512)",
+  "video.gap": "선 간격",
+  "video.gapNarrow": "좁게",
+  "video.gapNormal": "표준",
+  "video.gapWide": "넓게",
+  "video.gapWider": "아주 넓게",
 
   "eq.title": "EQ ({name})",
   "eq.menu": "EQ…",
