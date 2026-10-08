@@ -156,6 +156,7 @@ export function useEditor() {
     id: history.activeId,
     others: tracks.others,
     faders: tracks.faders,
+    eqs: tracks.eqs,
     muted: tracks.activeMuted,
     liveGain: (gainDb || pan) && editRangesForGain.length ? { ranges: editRangesForGain, db: gainDb, pan } : null,
     gainCurve: editing && gainCurve.curve?.clip === edited ? { db: gainCurve.curve.values, hopSec: CURVE_HOP_SEC } : null,

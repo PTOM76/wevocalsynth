@@ -32,7 +32,7 @@ const Q: Record<EqBands, number> = { 10: 1.41, 31: 4.32 }
 
 export const eqFreqs = (bands: EqBands) => FREQS[bands]
 
-export const flatEq = (bands: EqBands = 10): TrackEq => ({ bands, gains: new Array(bands).fill(0), on: true })
+export const flatEq = (bands: EqBands = 10): TrackEq => ({ bands, gains: Array.from({ length: bands }, () => 0), on: true })
 
 export const DEFAULT_EQ: TrackEq = flatEq()
 
@@ -100,4 +100,56 @@ export async function applyEq(clip: Clip, eq: TrackEq): Promise<Clip> {
   src.start()
   const out = await ctx.startRendering()
   return { ...clip, channels: clip.channels.map((_, i) => out.getChannelData(i)) }
+}
+
+/**
+ * 再生中の EQ のノード。平らなトラックは帯を作らない（入口と出口を直につなぐ）。
+ * 一度帯を作ったら、0 dB に戻しても再生が止まるまでは残し、値は gain だけを変える（組み直すと途切れるため）
+ */
+export interface LiveEq {
+  input: GainNode
+  output: GainNode
+  bands: BiquadFilterNode[]
+}
+
+const liveGains = (eq: TrackEq) => (eq.on ? eq.gains : eq.gains.map(() => 0))
+
+function connectBands(n: LiveEq, eq: TrackEq) {
+  const ctx = n.input.context
+  n.bands = (isFlatEq(eq) ? [] : FREQS[eq.bands]).map((f, i) => {
+    const b = ctx.createBiquadFilter()
+    b.type = 'peaking'
+    b.frequency.value = Math.min(f, ctx.sampleRate / 2 - 1)
+    b.Q.value = Q[eq.bands]
+    b.gain.value = liveGains(eq)[i]
+    return b
+  })
+  let last: AudioNode = n.input
+  for (const b of n.bands) last = last.connect(b)
+  last.connect(n.output)
+}
+
+export function createLiveEq(ctx: BaseAudioContext, eq: TrackEq): LiveEq {
+  const n: LiveEq = { input: ctx.createGain(), output: ctx.createGain(), bands: [] }
+  connectBands(n, eq)
+  return n
+}
+
+/** 再生中に値を変える。帯がまだ無いときと、帯の数が変わったときだけ組み直す */
+export function updateLiveEq(n: LiveEq, eq: TrackEq) {
+  if (!n.bands.length && isFlatEq(eq)) return
+  if (n.bands.length !== eq.bands) {
+    n.input.disconnect()
+    for (const b of n.bands) b.disconnect()
+    connectBands(n, eq)
+    return
+  }
+  const t = n.input.context.currentTime
+  for (const [i, g] of liveGains(eq).entries()) n.bands[i].gain.setTargetAtTime(g, t, 0.01)
+}
+
+export function disconnectLiveEq(n: LiveEq) {
+  n.input.disconnect()
+  for (const b of n.bands) b.disconnect()
+  n.output.disconnect()
 }

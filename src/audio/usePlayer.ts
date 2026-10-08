@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from './types'
 import { DEFAULT_FADER, faderGain, type TrackFader } from './tracks'
+import { createLiveEq, DEFAULT_EQ, disconnectLiveEq, updateLiveEq, type LiveEq, type TrackEq } from './eq'
 import { clipDuration } from './types'
 import { startContext, suspendContext } from 'wevocal-lib'
 
@@ -25,6 +26,7 @@ export function releasePlayers() {
 
 const NO_TRACKS: PlayTrack[] = []
 const NO_FADERS: Record<string, TrackFader> = {}
+const NO_EQS: Record<string, TrackEq> = {}
 
 /** パンの処理。モノラルも左右同じ音のステレオにしてから掛ける（適用の panRange・書き出しの applyFader と同じ計算になるように） */
 function makePanner(ctx: AudioContext) {
@@ -82,13 +84,14 @@ export function usePlayer(
     muted?: boolean
     liveGain?: LiveGain | null
     faders?: Record<string, TrackFader>
+    eqs?: Record<string, TrackEq>
     /** 音量の帯に描いた曲線（dB、`hopSec` 間隔）。再生にすぐ反映する（`clip` の音だけに効く） */
     gainCurve?: { db: Float32Array; hopSec: number } | null
     /** 繰り返す範囲（ループ再生）。範囲の中から再生したら終わりで先頭へ戻り、範囲の外から再生したら終わりまで鳴らしてから先頭へ戻る */
     loop?: Range | null
   } = {},
 ) {
-  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null, faders = NO_FADERS, gainCurve = null, loop = null } = opts
+  const { id = 'main', others = NO_TRACKS, muted = false, liveGain = null, faders = NO_FADERS, eqs = NO_EQS, gainCurve = null, loop = null } = opts
   const loopRef = useRef(loop)
   loopRef.current = loop
   const gainCurveRef = useRef(gainCurve)
@@ -99,6 +102,10 @@ export function usePlayer(
   fadersRef.current = faders
   /** トラックごとのフェーダーのノード（再生のたびに作る。動かしたらここへ値を入れる） */
   const faderNodes = useRef(new Map<string, { gain: GainNode; pan: StereoPannerNode }>())
+  const eqsRef = useRef(eqs)
+  eqsRef.current = eqs
+  /** トラックごとの EQ のノード（再生のたびに作る） */
+  const eqNodes = useRef(new Map<string, LiveEq>())
   /** トラックごとの「鳴らす / 鳴らさない」（音量 1 / 0）。ミュート・ソロを切り替えたらここを変える */
   const muteNodes = useRef(new Map<string, GainNode>())
   const ctxRef = useRef<AudioContext | null>(null)
@@ -149,6 +156,8 @@ export function usePlayer(
     nodesRef.current = []
     analysersRef.current.clear()
     faderNodes.current.clear()
+    for (const n of eqNodes.current.values()) disconnectLiveEq(n)
+    eqNodes.current.clear()
     muteNodes.current.clear()
     const ctx = ctxRef.current
     if (suspend && ctx) suspendContext(ctx, id)
@@ -276,7 +285,13 @@ export function usePlayer(
       const meter = makeAnalyser(ctx)
       made.push(meter)
       analysersRef.current.set(id, meter)
-      // 適用前の音量・パン（範囲だけ） → トラックのフェーダー（全体） → メーター → 全体の出口
+      // トラックの EQ（フェーダーの前に挟む）
+      const eqOf = (trackId: string) => {
+        const n = createLiveEq(ctx, eqsRef.current[trackId] ?? DEFAULT_EQ)
+        eqNodes.current.set(trackId, n)
+        return n
+      }
+      // 適用前の音量・パン（範囲だけ） → トラックの EQ → トラックのフェーダー（全体） → メーター → 全体の出口
       const panner = makePanner(ctx)
       made.push(panner)
       const curveNode = ctx.createGain()
@@ -287,11 +302,13 @@ export function usePlayer(
       made.push(fader.gain, fader.pan)
       setFaderNodes(fader, fadersRef.current[id] ?? DEFAULT_FADER, true)
       faderNodes.current.set(id, fader)
+      const trackEq = eqOf(id)
       const mute = ctx.createGain()
       made.push(mute)
       mute.gain.value = muted ? 0 : 1
       muteNodes.current.set(id, mute)
-      src.connect(gain).connect(panner).connect(curveNode).connect(fader.gain).connect(fader.pan).connect(mute).connect(meter).connect(master)
+      src.connect(gain).connect(panner).connect(curveNode).connect(trackEq.input)
+      trackEq.output.connect(fader.gain).connect(fader.pan).connect(mute).connect(meter).connect(master)
       src.onended = () => {
         // ループ中は範囲の先頭から鳴らし直す（音量の予約なども作り直すため、音源ごと作り直す）
         const l = loopRef.current
@@ -325,7 +342,9 @@ export function usePlayer(
           made.push(mute)
           mute.gain.value = o.audible ? 1 : 0
           muteNodes.current.set(o.id, mute)
-          e.connect(f.gain).connect(f.pan).connect(mute).connect(m).connect(master)
+          const q = eqOf(o.id)
+          e.connect(q.input)
+          q.output.connect(f.gain).connect(f.pan).connect(mute).connect(m).connect(master)
           e.start(at, start, Math.min(end, clipDuration(o.clip)) - start)
           return e
         })
@@ -352,6 +371,11 @@ export function usePlayer(
   useEffect(() => {
     for (const [trackId, n] of faderNodes.current) setFaderNodes(n, faders[trackId] ?? DEFAULT_FADER)
   }, [faders])
+
+  // 再生中に EQ を変えたら、すぐ反映する
+  useEffect(() => {
+    for (const [trackId, n] of eqNodes.current) updateLiveEq(n, eqs[trackId] ?? DEFAULT_EQ)
+  }, [eqs])
 
   // 再生中に適用前の音量が変わったら、すぐ反映する
   const gainKey = liveGain ? `${liveGain.db}:${liveGain.pan}:${liveGain.ranges.map((r) => `${r.start}-${r.end}`).join(',')}` : ''
