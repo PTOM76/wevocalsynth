@@ -1,3 +1,4 @@
+import { isFlatEq, parseEq, type TrackEq } from './eq'
 import type { Clip } from './types'
 
 /**
@@ -48,6 +49,7 @@ export const faderGain = (f: TrackFader) => 10 ** (f.db / 20) * (f.invert ? -1 :
  */
 export interface TrackSettings {
   fader: TrackFader
+  eq: TrackEq
   mix: TrackMix
   /** 大きな波形の後ろに重ねて表示する */
   overlay: boolean
@@ -61,21 +63,23 @@ export interface StoredTrackSettings {
   volume?: number
   pan?: number
   invert?: boolean
+  eq?: TrackEq
   mute?: boolean
   solo?: boolean
   overlay?: boolean
 }
 
 /** `StoredTrackSettings` の項目名（保存したものから、この項目だけを取り出すのに使う） */
-const STORED_KEYS = ['volume', 'pan', 'invert', 'mute', 'solo', 'overlay'] as const satisfies readonly (keyof StoredTrackSettings)[]
+const STORED_KEYS = ['volume', 'pan', 'invert', 'eq', 'mute', 'solo', 'overlay'] as const satisfies readonly (keyof StoredTrackSettings)[]
 
 export function toStoredSettings(s: TrackSettings): StoredTrackSettings {
-  return { volume: s.fader.db, pan: s.fader.pan, invert: s.fader.invert, mute: s.mix.mute, solo: s.mix.solo, overlay: s.overlay }
+  return { volume: s.fader.db, pan: s.fader.pan, invert: s.fader.invert, eq: isFlatEq(s.eq) && s.eq.on && s.eq.bands === 10 ? undefined : s.eq, mute: s.mix.mute, solo: s.mix.solo, overlay: s.overlay }
 }
 
 export function fromStoredSettings(s: StoredTrackSettings | undefined): TrackSettings {
   return {
     fader: { db: s?.volume ?? 0, pan: s?.pan ?? 0, invert: !!s?.invert },
+    eq: parseEq(s?.eq),
     mix: { mute: !!s?.mute, solo: !!s?.solo },
     overlay: !!s?.overlay,
   }
