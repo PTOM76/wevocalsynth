@@ -1,3 +1,4 @@
+// 設定の項目の定義（処理、ピッチ解析、テンポ、ボーカル抽出）
 import type { Algorithm } from '../../dsp/engine'
 import type { F0Voicing, InitialMode, StemModel, VocalModel } from '../settings'
 import { MEMORY_MB } from '../../constants/ui'

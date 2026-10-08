@@ -1,3 +1,4 @@
+// 曲の途中でテンポが変わる所を探す（自動解析で見つけたら、テンポのマーカーの候補にする）
 import type { Clip } from './types'
 import { analyzeTempo, type TempoCandidate } from '../dsp/engine'
 

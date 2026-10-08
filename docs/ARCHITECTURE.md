@@ -14,9 +14,23 @@ WeVocalSynth は、React の画面、Web Worker 上の Rust（WebAssembly）の 
 | 保存したデータは壊さない | 設定のキー、.wvsp、IndexedDB と localStorage の名前を変えない。変えるなら古い形を読み替える |
 | 失敗は黙らない | 利用者の操作の失敗は、通知か画面で理由を見せる。握りつぶすのは片付けだけ |
 
+## 登録する表
+足すものの多くは、1 か所の表に登録すれば、ほかの場所（画面、メニュー、保存など）にも反映される。
+
+| 足すもの | 登録する場所 | 表から作られるもの |
+| --- | --- | --- |
+| 設定 | `src/settings/items/` の分類のファイル（`check`、`choice`、`number`、`value`） | 設定の型と既定値、設定画面の行（`S('名前')`）、設定の検索 |
+| 操作 | `src/commands/` の分類のファイル（名前、押せるか、チェック、表示するか、実行）と、並び（`commands/menus.ts`） | メニューバー、右クリック、スマホのメニュー、ツールバーのボタン |
+| キーの割り当て | `src/settings/keymap.ts` の ACTIONS（どれもコマンドにする） | ショートカット、設定の「キーとマウス」、ツールチップのキーの表記 |
+| トラックのエフェクト | `src/effects/` のフォルダーと `effects/index.ts` の表（掛ける順） | 再生のノード、書き出し、トラックの状態 |
+| ダイアログ | `src/hooks/useDialogs.ts` の DialogId と、`src/components/AppDialogs.tsx` の描画 | 開閉と、開くときに渡す値 |
+| 文書の項目 | `src/hooks/useDocument.ts` の `project()` と `autosaveState` | プロジェクトファイルの保存、自動保存、メモリが足りないときの抽出 |
+| 訳文 | `npm run i18n -- add`（5 言語に同じ位置で足す） | 画面の文字 |
+| DSP の処理 | `dsp/src/ffi.rs` と `src/dsp/worker.ts` の OPS | Worker へのリクエストの型 |
+
 ## なぜ状態管理ライブラリを使わないか
 - 状態は「編集中のクリップと履歴」「選択範囲」「加工パラメータ」「表示の切り替え」程度で、画面も1つしかない
-- 状態と操作は `useEditor` 1か所に集まっていて、props で渡すだけで足りる
+- 開いている文書（名前、テンポ、マーカー、トラック、元に戻す、未保存の印）は `useDocument`、編集の状態は `useEditor` に集まっている。メニューやキーはコマンドの表から、設定は Context から読むので、props で渡すものも少ない
 - 音声データ（数十MB になる `Float32Array`）をストアに入れると、シリアライズや差分検出の仕組みと相性が悪い
 
 ## 技術選定

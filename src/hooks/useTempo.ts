@@ -1,3 +1,4 @@
+// テンポの自動解析（開いた直後と、BPM の表示の再解析）
 import { useRef, useState } from 'react'
 import type { Clip } from '../audio/types'
 import { analyzeTempo, isCancelled, type TempoCandidate } from '../dsp/engine'

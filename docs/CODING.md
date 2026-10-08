@@ -68,8 +68,8 @@ edited.channels[0][i] *= gain
 <Button>適用</Button>
 ```
 
-### 状態と操作は `useEditor`、画面の組み立ては `App.tsx`
-`App.tsx` にロジックを書かない。画面の並べ替え（PC とスマホ）と、処理の変更を別々に行えるようにするため。
+### 状態は `useEditor`、操作は `commands/`、画面の組み立ては `App.tsx`
+`App.tsx` にロジックを書かない。画面の並べ替え（PC とスマホ）と、処理の変更を別々に行えるようにするため。メニューやキーから行う操作は `src/commands/` にコマンドとして置き、App から値を渡さない（docs/ARCHITECTURE.md の「登録する表」）。
 
 ## 多言語化
 

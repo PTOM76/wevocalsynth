@@ -1,3 +1,4 @@
+// エディタ全体の状態と操作（文書、選択範囲、加工、再生、表示を束ねる）
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'

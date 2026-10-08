@@ -1,3 +1,4 @@
+// テンポの途中の変化を見つけたときに、マーカーを置くかを尋ねるダイアログ
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItemButton, Typography } from '@mui/material'
 import { pevenFont } from 'pevenmui'
 import type { TempoChangeSection } from '../audio/tempoChange'

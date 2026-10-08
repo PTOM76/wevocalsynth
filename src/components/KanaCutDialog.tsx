@@ -1,3 +1,4 @@
+// 一音ずつ切り出すダイアログ（文字化して読みを付け、一音ずつの範囲を求める）
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Box, Button, DialogActions, DialogContent, LinearProgress, MenuItem, Select, Stack, TextField, Typography } from '@mui/material'
 import { pevenFont, WindowDialog } from 'pevenmui'

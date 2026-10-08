@@ -1,3 +1,4 @@
+// 設定画面の分類ごとの中身（定義のある項目は S(名前) の 1 行）
 import type { ReactNode } from 'react'
 import type { Settings, VocalModel } from './settings'
 import { UpdateSection } from 'pevenmui/pwa'

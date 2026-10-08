@@ -7,7 +7,10 @@
 ```
 src/
 ├── App.tsx          画面の組み立てだけ
-├── hooks/           状態と操作（useEditor がまとめる）
+├── hooks/           状態（useEditor が編集の状態を、useDocument が開いている文書をまとめる）
+├── commands/        操作の表（メニュー、右クリック、ショートカット、ツールバーが id で参照する）と、メニューの並び（menus.ts）
+├── effects/         トラックのエフェクト（eq/、fader/）と、その表（掛ける順）
+├── constants/       画面と音声の定数（選択肢の表など）
 ├── components/      画面部品
 │   ├── waveform/    帯パネルの描画（Canvas）と表示範囲、ツールバーのボタン
 │   ├── inspector/   PC の右側のインスペクタ
@@ -17,7 +20,7 @@ src/
 ├── dsp/             Worker と wasm の橋渡し、wevocal_dsp.wasm
 ├── project/         プロジェクトファイル（.wvsp）、自動保存、メモリ不足のときの再読み込みでの抽出
 ├── addons/          追加機能の導入・保存・読み込み（docs/EXTRACTOR.md）
-├── settings/        設定と設定画面（分類ごとのページ、追加機能、データの削除、アップデートの確認）
+├── settings/        設定の定義（items/）と設定画面（分類ごとのページ、データの削除）、キーの割り当て（keymap.ts）
 ├── debug/           デバッグ表示（FPS・描画回数・メモリの内訳・DSP の時間・画面が止まった記録）
 ├── progress/        進み具合のゲージに表示する処理の種類（本体は PevenMUI）
 ├── pwa/             新しい版の確認
@@ -36,15 +39,15 @@ pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確
 <!-- map:start -->
 ```
 src/
-  App.tsx  （説明なし）
+  App.tsx  画面の組み立て（PC とスマホの配置、メニュー、ダイアログ、通知）
   appConfig.ts  アプリの定義（名前、URL、保存のキー）。Worker からも読み込める
   appInfo.ts  アプリの定義。vite.config.ts からも読み込むので、ほかのファイルを import しない（使い方は appConfig.ts の app）
   licenses.ts  「ライセンス情報」に表示する、使っている部品とモデルの一覧
   links.ts  外部へのリンク（URL は appInfo.ts）
-  main.tsx  （説明なし）
+  main.tsx  起動（設定の Provider と App。メモリが足りないときの抽出から戻ったときは、その画面）
 
 src/addons/
-  addons.ts  （説明なし）
+  addons.ts  配信している追加機能の一覧と、このアプリでの呼び名（導入と読み込みの仕組みは PevenMUI）
 
 src/audio/
   detectMode.ts  音声がボーカルか楽器かを判定し、モードごとの既定の処理方式を決める
@@ -63,7 +66,7 @@ src/audio/
   silence.ts  無音で区切って、音のある所を探す
   spectrogram.ts  スペクトログラムの計算を追加機能「解析」に頼む
   synth.ts  音を 0 から作る（声の母音、楽器の波形）
-  tempoChange.ts  （説明なし）
+  tempoChange.ts  曲の途中でテンポが変わる所を探す（自動解析で見つけたら、テンポのマーカーの候補にする）
   tempoMap.ts  テンポが途中で変わる曲のための、区間ごとのテンポと拍の位置
   timeMap.ts  編集の前の時刻を、編集の後の時刻に写す（読みの帯などの位置を、音声の編集に追従させる）
   tracks.ts  トラックの形と、保存する設定（フェーダー、鳴らし方、EQ）の変換
@@ -92,7 +95,7 @@ src/commands/
 src/components/
   AboutDialog.tsx  「このアプリについて」のダイアログ
   AlgorithmMenu.tsx  処理方式の一覧と選ぶメニュー（従来の方式と試験的な方式の表示を含む）
-  AppDialogs.tsx  （説明なし）
+  AppDialogs.tsx  App が開くダイアログをまとめて置く（開閉は useDialogs）
   AppHeader.tsx  スマホの上部バー（プロジェクト名とメニュー）
   AppIcon.tsx  アプリのアイコン（public/icon.svg）。GitHub Pages ではサブパスで配信されるため BASE_URL から組み立てる
   CleanExtractScreen.tsx  メモリが足りないときの抽出の画面（再読み込みの直後に表示する）
@@ -100,14 +103,14 @@ src/components/
   EmptyState.tsx  何も開いていないときの画面（開く、最近使用したファイル、音声の作成、録音）
   ExportDialog.tsx  音声の書き出しのダイアログ
   HistoryDialog.tsx  編集の履歴のダイアログ（押した段へ戻る）
-  KanaCutDialog.tsx  （説明なし）
+  KanaCutDialog.tsx  一音ずつ切り出すダイアログ（文字化して読みを付け、一音ずつの範囲を求める）
   LevelMeter.tsx  音量メーター（wevocal-lib の部品にテーマの色を渡す）
   LiveTime.tsx  再生中の時間の表示（部品の中だけで更新する）
   MarkerTempoDialog.tsx  マーカーからのテンポを決めるダイアログ
   MidiDialog.tsx  MIDI に合わせてピッチの曲線を作るダイアログ
   MobileEditBar.tsx  スマホで範囲を選んだときの編集のボタンの列
   MobilePlayBar.tsx  スマホの下の再生バー
-  MoraLane.tsx  （説明なし）
+  MoraLane.tsx  読みの帯（一音ずつの範囲を波形の下に並べ、端のドラッグで直す）
   PitchControl.tsx  ピッチの変更量のスライダーと入力欄
   PitchToolDialogs.tsx  ピッチの一括操作のダイアログ（音程に揃える、ビブラート）
   PitchToolHost.tsx  ピッチの一括操作のダイアログを開く場所
@@ -122,7 +125,7 @@ src/components/
   stableMemo.ts  関数の props が作り直されても描き直さない memo
   StatusBar.tsx  PC の下のステータスバー（プロジェクト名、形式、選択範囲、BPM、原音と加工後）
   SynthDialog.tsx  音を 0 から作るダイアログ
-  TempoChangeDialog.tsx  （説明なし）
+  TempoChangeDialog.tsx  テンポの途中の変化を見つけたときに、マーカーを置くかを尋ねるダイアログ
   TempoField.tsx  BPM の表示と入力（タップで測る、再解析）
   Toolbar.tsx  PC の上のツールバー（再生、編集、表示のボタン）
   UpdatePrompt.tsx  新しい版が公開されたときの通知
@@ -186,13 +189,13 @@ src/hooks/
   useClipCommands.ts  音声の編集の操作（切り取り、コピー、貼り付け、削除、無音の挿入、音量、パンなど）
   useDialogs.ts  ダイアログの開閉と、開くときに渡す値
   useDocument.ts  開いている文書（プロジェクト）: 名前、テンポ、マーカー、トラックと元に戻す、未保存の印、保存先、タイトル（memo/document.md）
-  useEditor.ts  （説明なし）
+  useEditor.ts  エディタ全体の状態と操作（文書、選択範囲、加工、再生、表示を束ねる）
   useEditorKeys.ts  キーの割り当てと、フォーカスしている帯（波形かピッチ）に効く切り取りなど。キーの処理はコマンド（src/commands/）
   useFormantCurve.ts  フォルマントの帯に描いた曲線と、その試聴
   useHistory.ts  元に戻す、やり直す（差分で持ち、メモリの上限で古い段を捨てる）
   useLaneCurve.ts  帯に描く曲線（音量、フォルマント）の値
   useLanes.ts  帯の表示と、フォーカスしている帯
-  useMarkers.ts  （説明なし）
+  useMarkers.ts  マーカー（追加、名前、テンポ、前後への移動）
   useNumberDraft.ts  数値の入力欄を、打っている途中の文字のまま扱う
   useOutput.ts  プロジェクトの保存と、音声の書き出し
   usePitchClipboard.ts  ピッチの曲線の切り取り、コピー、貼り付け
@@ -206,7 +209,7 @@ src/hooks/
   useSelectionExport.ts  選択範囲の書き出し（外へのドラッグ、フォルダーへの保存）と、書き出しの保存先フォルダー
   useStartup.ts  起動時の処理（自動保存からの復元、ファイルから起動、抽出から戻る）
   useTask.ts  時間のかかる処理を、処理中の印、進み具合、通知、中断付きで実行する
-  useTempo.ts  （説明なし）
+  useTempo.ts  テンポの自動解析（開いた直後と、BPM の表示の再解析）
   useTracks.ts  トラックの操作（追加、複製、削除、選択）と、鳴らし方（ミュート、ソロ）
   useVideoExport.ts  動画の書き出し（追加機能「変換」）
   useVocalExtract.ts  ボーカル抽出の操作（モデルの確認、実行、結果をトラックへ）
@@ -237,7 +240,7 @@ src/settings/
   ProjectSection.tsx  設定の「プロジェクト」（名前とテンポ）
   settings.ts  設定の保存と読み込み、Context
   SettingsDialog.tsx  設定のダイアログ（PevenMUI の設定画面に、分類と中身を渡す）
-  SettingsPages.tsx  （説明なし）
+  SettingsPages.tsx  設定画面の分類ごとの中身（定義のある項目は S(名前) の 1 行）
   settingsSearch.ts  設定画面の分類の並びと、検索の対象
   ShortcutSection.tsx  設定の「キーとマウス」のショートカットの割り当て
 
@@ -247,7 +250,7 @@ src/settings/items/
   display.ts  設定の項目の定義（表示と、表示メニューの切り替え）
   general.ts  設定の項目の定義（全般、編集、キーとマウス、ファイル）
   index.ts  設定の項目をまとめ、型と既定値を作る
-  process.ts  （説明なし）
+  process.ts  設定の項目の定義（処理、ピッチ解析、テンポ、ボーカル抽出）
   SettingRow.tsx  項目の定義から設定画面の 1 行を作る
   stored.ts  設定の項目の定義（画面の操作で覚えておく値）
 

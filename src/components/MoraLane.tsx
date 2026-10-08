@@ -1,3 +1,4 @@
+// 読みの帯（一音ずつの範囲を波形の下に並べ、端のドラッグで直す）
 import { useEffect, useRef, useState } from 'react'
 import { Box } from '@mui/material'
 import { canvasPixelRatio, localPoint, usePalette } from 'pevenmui'

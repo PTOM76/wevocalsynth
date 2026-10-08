@@ -1,3 +1,4 @@
+// 画面の組み立て（PC とスマホの配置、メニュー、ダイアログ、通知）
 import MobileEditBar from './components/MobileEditBar'
 import { canSaveToFolder } from 'pevenmui/web'
 import MarkerTempoDialog from './components/MarkerTempoDialog'

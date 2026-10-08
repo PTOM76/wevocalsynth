@@ -1,3 +1,4 @@
+// 起動（設定の Provider と App。メモリが足りないときの抽出から戻ったときは、その画面）
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@fontsource/roboto/400.css'

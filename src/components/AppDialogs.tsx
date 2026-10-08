@@ -1,3 +1,4 @@
+// App が開くダイアログをまとめて置く（開閉は useDialogs）
 import { useRef } from 'react'
 import { LicensesDialog } from 'pevenmui'
 import type { segmentAt } from '../audio/tempoMap'

@@ -1,3 +1,4 @@
+// マーカー（追加、名前、テンポ、前後への移動）
 import { useState } from 'react'
 import type { Marker } from '../project/projectFile'
 

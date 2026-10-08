@@ -1,3 +1,4 @@
+// 配信している追加機能の一覧と、このアプリでの呼び名（導入と読み込みの仕組みは PevenMUI）
 import type { MessageKey } from '../i18n/i18n'
 import { t } from '../i18n/i18n'
 import { createAddons, type AddonInfo, type AddonsContextValue } from 'pevenmui'
