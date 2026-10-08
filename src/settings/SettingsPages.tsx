@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
-import type { CtrlSAction, F0Voicing, InitialMode, Settings, ThemeSetting, VocalModel, WheelZoom } from './settings'
-import { NumberInput } from '../components/inspector/Inspector'
+import type { Settings, VocalModel } from './settings'
 import { UpdateSection } from 'pevenmui/pwa'
 import DataSection from './DataSection'
 import AddonSection from './AddonSection'
@@ -12,19 +11,13 @@ import { backendAllowed } from '../../extractor/src/compat'
 import { visibleAlgorithms } from '../components/AlgorithmMenu'
 import ExtractDiagnose from '../debug/ExtractDiagnose'
 import OutputDeviceRow from './OutputDeviceRow'
+import SettingRow from './items/SettingRow'
 import ShortcutSection from './ShortcutSection'
 import type { Algorithm } from '../dsp/engine'
 import { i18n, t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
-import type { PickerMode, StartFolder } from 'pevenmui/web'
 import { Box, Button, Typography } from '@mui/material'
 import { Check, Choice, Group, Row, type WindowMode } from 'pevenmui'
-
-/** 画面の大きさの選択肢（倍率） */
-const UI_SCALES = [0.9, 1, 1.1, 1.25, 1.5]
-
-/** 抽出の実行環境のメモリの上限の選択肢（MB） */
-const MEMORY_MB = [256, 512, 1024, 2048, 4096]
 
 /** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
 const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
@@ -40,9 +33,11 @@ interface PageProps {
 }
 
 /**
- * 設定画面の分類ごとの中身。項目を足したら settingsSearch.ts の検索の対象にも足す
+ * 設定画面の分類ごとの中身。定義（items/）のある項目は S('名前') の 1 行で置け、検索の対象にも自動で入る
  */
 export function settingsPages({ draft, set, onClose, t, project, go }: PageProps): Record<Category, ReactNode> {
+  // 定義（items/）から作る行
+  const S = (name: keyof Settings) => <SettingRow name={name} draft={draft} set={set} t={t} />
   // 既定の処理方式の選択肢（従来の方式は、表示する設定か、今選んでいるときだけ）
   const algorithmOptions = visibleAlgorithms(draft.showLegacyAlgorithms, [draft.vocalAlgorithm, draft.instrumentAlgorithm]).map(
     (a): [Algorithm, string] => [a.value, t(a.label)],
@@ -52,21 +47,16 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
     general: (
       <>
         <Group title={t('settings.groupStartup')}>
-          <Check
-            checked={draft.autoRestore}
-            onChange={(v) => set({ autoRestore: v })}
-            label={t('settings.autoRestore')}
-            help={t('settings.autoRestoreHelp')}
-          />
-          <Check checked={draft.confirmClose} onChange={(v) => set({ confirmClose: v })} label={t('settings.confirmClose')} help={t('settings.confirmCloseHelp')} />
+          {S('autoRestore')}
+          {S('confirmClose')}
         </Group>
         <Group title={t('settings.groupOutput')}>
           <OutputDeviceRow value={draft.outputDevice} onChange={(v) => set({ outputDevice: v })} />
         </Group>
         <Group title={t('settings.groupRecord')}>
-          <Check checked={draft.recordEchoCancellation} onChange={(v) => set({ recordEchoCancellation: v })} label={t('settings.recordEcho')} />
-          <Check checked={draft.recordNoiseSuppression} onChange={(v) => set({ recordNoiseSuppression: v })} label={t('settings.recordNoise')} />
-          <Check checked={draft.recordAutoGain} onChange={(v) => set({ recordAutoGain: v })} label={t('settings.recordAutoGain')} help={t('settings.recordHelp')} />
+          {S('recordEchoCancellation')}
+          {S('recordNoiseSuppression')}
+          {S('recordAutoGain')}
         </Group>
         <Group title={t('settings.groupUpdate')}>
           <UpdateSection />
@@ -83,147 +73,54 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
           <Row label={t('settings.instrumentAlgorithm')}>
             <Choice<Algorithm> value={draft.instrumentAlgorithm} onChange={(v) => set({ instrumentAlgorithm: v })} options={algorithmOptions} />
           </Row>
-          <Check checked={draft.showLegacyAlgorithms} onChange={(v) => set({ showLegacyAlgorithms: v })} label={t('settings.showLegacyAlgorithms')} help={t('settings.showLegacyAlgorithmsHelp')} />
+          {S('showLegacyAlgorithms')}
         </Group>
         <Group title={t('settings.groupProcess')}>
-          <Row label={t('settings.initialMode')}>
-            <Choice<InitialMode>
-              value={draft.initialMode}
-              onChange={(v) => set({ initialMode: v })}
-              options={[
-                ['auto', t('settings.auto')],
-                ['vocal', t('common.vocal')],
-                ['instrument', t('common.instrument')],
-              ]}
-            />
-          </Row>
-          <Row label={t('settings.saveMemory')} help={t('settings.saveMemoryHelp')}>
-            <Choice<Settings['saveMemory']>
-              value={draft.saveMemory}
-              onChange={(v) => set({ saveMemory: v })}
-              options={[
-                ['auto', t('settings.saveMemoryAuto')],
-                ['on', t('settings.saveMemoryOn')],
-                ['off', t('settings.saveMemoryOff')],
-              ]}
-            />
-          </Row>
+          {S('initialMode')}
+          {S('saveMemory')}
         </Group>
       </>
     ),
     edit: (
       <>
         <Group title={t('settings.groupHistory')}>
-          <Check checked={draft.keepOriginal} onChange={(v) => set({ keepOriginal: v })} label={t('settings.keepOriginal')} help={t('settings.keepOriginalHelp')} />
-          <Row label={t('settings.historyLimit')}>
-            <NumberInput value={draft.historyLimit} onChange={(v) => set({ historyLimit: Math.round(v) })} min={1} max={500} step={1} width={110} />
-          </Row>
-          <Row label={t('settings.historyMemory')}>
-            <NumberInput value={draft.historyMemoryMb} onChange={(v) => set({ historyMemoryMb: Math.round(v) })} min={64} max={4096} step={64} unit="MB" width={110} />
-          </Row>
+          {S('keepOriginal')}
+          {S('historyLimit')}
+          {S('historyMemoryMb')}
         </Group>
         <Group title={t('settings.groupInput')}>
-          <Check
-            checked={draft.sliderDoubleClickReset}
-            onChange={(v) => set({ sliderDoubleClickReset: v })}
-            label={t('settings.sliderReset')}
-          />
-          <Check checked={draft.seekAfterInsert} onChange={(v) => set({ seekAfterInsert: v })} label={t('settings.seekAfterInsert')} />
+          {S('sliderDoubleClickReset')}
+          {S('seekAfterInsert')}
         </Group>
       </>
     ),
     keys: (
       <>
         <Group title={t('settings.groupMouse')}>
-          <Row label={t('settings.wheelZoom')}>
-            <Choice<WheelZoom>
-              value={draft.wheelZoom}
-              onChange={(v) => set({ wheelZoom: v })}
-              options={[
-                ['ctrl', t('settings.wheelZoomCtrl')],
-                ['wheel', t('settings.wheelZoomWheel')],
-              ]}
-            />
-          </Row>
+          {S('wheelZoom')}
         </Group>
         <Group title={t('settings.groupShortcuts')}>
-          <Row label={t('settings.ctrlS')}>
-            <Choice<CtrlSAction>
-              value={draft.ctrlS}
-              onChange={(v) => set({ ctrlS: v })}
-              options={[
-                ['project', t('settings.ctrlSProject')],
-                ['export', t('settings.ctrlSExport')],
-              ]}
-            />
-          </Row>
+          {S('ctrlS')}
           <ShortcutSection keymap={draft.keymap} ctrlS={draft.ctrlS} onChange={(keymap) => set({ keymap })} />
         </Group>
       </>
     ),
     file: (
       <Group title={t('settings.groupFile')}>
-        <Check checked={draft.rememberFolder} onChange={(v) => set({ rememberFolder: v })} label={t('settings.rememberFolder')} help={t('settings.rememberFolderHelp')} />
-        <Row label={t('settings.startFolder')}>
-          <Choice<StartFolder>
-            value={draft.startFolder}
-            onChange={(v) => set({ startFolder: v })}
-            options={[
-              ['downloads', t('settings.folderDownloads')],
-              ['documents', t('settings.folderDocuments')],
-              ['desktop', t('settings.folderDesktop')],
-              ['music', t('settings.folderMusic')],
-            ]}
-          />
-        </Row>
-        <Check checked={draft.recentFiles} onChange={(v) => set({ recentFiles: v })} label={t('settings.recentFiles')} help={t('settings.recentFilesHelp')} />
+        {S('rememberFolder')}
+        {S('startFolder')}
+        {S('recentFiles')}
       </Group>
     ),
     display: (
       <Group title={t('settings.groupAppearance')}>
-        <Row label={t('settings.theme')}>
-          <Choice<ThemeSetting>
-            value={draft.theme}
-            onChange={(v) => set({ theme: v })}
-            options={[
-              ['system', t('settings.themeSystem')],
-              ['light', t('settings.themeLight')],
-              ['dark', t('settings.themeDark')],
-            ]}
-          />
-        </Row>
-        <Row label={t('settings.mobileUi')} help={t('settings.mobileUiHelp')}>
-          <Choice<Settings['mobileUi']>
-            value={draft.mobileUi}
-            onChange={(v) => set({ mobileUi: v })}
-            options={[
-              ['new', t('settings.mobileUiNew')],
-              ['classic', t('settings.mobileUiClassic')],
-            ]}
-          />
-        </Row>
-        {draft.mobileUi === 'new' && (
-          <Row label={t('settings.touchSelect')}>
-            <Choice<Settings['touchSelect']>
-              value={draft.touchSelect}
-              onChange={(v) => set({ touchSelect: v })}
-              options={[
-                ['drag', t('settings.touchSelectDrag')],
-                ['longPress', t('settings.touchSelectLongPress')],
-              ]}
-            />
-          </Row>
-        )}
-        <Row label={t('settings.uiScale')} help={t('settings.uiScaleHelp')}>
-          <Choice<string>
-            value={String(draft.uiScale)}
-            onChange={(v) => set({ uiScale: Number(v) })}
-            options={UI_SCALES.map((s): [string, string] => [String(s), `${Math.round(s * 100)}%`])}
-          />
-        </Row>
-        <Check checked={draft.showMeters} onChange={(v) => set({ showMeters: v })} label={t('settings.showMeters')} help={t('settings.showMetersHelp')} />
-        <Check checked={draft.minimapPlayhead} onChange={(v) => set({ minimapPlayhead: v })} label={t('menu.minimapPlayhead')} help={t('settings.minimapPlayheadHelp')} />
-        <Check checked={draft.liveSelection} onChange={(v) => set({ liveSelection: v })} label={t('settings.liveSelection')} help={t('settings.liveSelectionHelp')} />
+        {S('theme')}
+        {S('mobileUi')}
+        {draft.mobileUi === 'new' && S('touchSelect')}
+        {S('uiScale')}
+        {S('showMeters')}
+        {S('minimapPlayhead')}
+        {S('liveSelection')}
         <Row label={t('settings.language')}>
           <Choice<LangSetting>
             value={draft.language}
@@ -253,7 +150,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
               options={EXTRACT_MODELS.map((m): [VocalModel, string] => [m, t(VOCAL_MODELS[m].label)])}
             />
           </Row>
-          <Check checked={draft.vocalFreshExtract} onChange={(v) => set({ vocalFreshExtract: v })} label={t('settings.vocalFresh')} help={t('settings.vocalFreshHelp')} />
+          {S('vocalFreshExtract')}
           {/* GPU を使えないモデルでは押せなくし、理由を出す */}
           <Check
             checked={draft.vocalGpu && backendAllowed(draft.vocalModel, 'webgpu')}
@@ -262,20 +159,9 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
             label={t('settings.vocalGpu')}
             help={backendAllowed(draft.vocalModel, 'webgpu') ? t('settings.vocalGpuHelp') : t('settings.vocalGpuUnsupported')}
           />
-          <Check
-            checked={draft.vocalKeepHighBand}
-            onChange={(v) => set({ vocalKeepHighBand: v })}
-            label={t('settings.vocalKeepHighBand')}
-            help={t('settings.vocalKeepHighBandHelp')}
-          />
+          {S('vocalKeepHighBand')}
           {/* 抽出の動きを変える設定なので、診断ではなくここに置く（iPad などで抽出できないときに下げる） */}
-          <Row label={t('settings.vocalMemory')} help={t('settings.vocalMemoryHelp')}>
-            <Choice<string>
-              value={String(draft.vocalMemoryMb)}
-              onChange={(v) => set({ vocalMemoryMb: Number(v) })}
-              options={MEMORY_MB.map((mb): [string, string] => [String(mb), mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`])}
-            />
-          </Row>
+          {S('vocalMemoryMb')}
         </Group>
         <Group title={t('settings.groupAddons')}>
           {/* 追加機能の一覧（AddonSection）と同じく、説明は左、ボタンは右 */}
@@ -309,20 +195,10 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
 
     debug: (
       <Group title={t('settings.groupDebug')}>
-        <Check checked={draft.showDebug} onChange={(v) => set({ showDebug: v })} label={t('settings.showDebug')} help={t('settings.showDebugHelp')} />
-        <Check checked={draft.devUpdates} onChange={(v) => set({ devUpdates: v })} label={t('settings.devUpdates')} help={t('settings.devUpdatesHelp')} />
-        <Check checked={draft.showMaterialButton} onChange={(v) => set({ showMaterialButton: v })} label={t('settings.showMaterialButton')} help={t('settings.showMaterialButtonHelp')} />
-        <Row label={t('settings.filePicker')} help={t('settings.filePickerHelp')}>
-          <Choice<PickerMode>
-            value={draft.filePicker}
-            onChange={(v) => set({ filePicker: v })}
-            options={[
-              ['auto', t('settings.filePickerAuto')],
-              ['api', t('settings.filePickerApi')],
-              ['input', t('settings.filePickerInput')],
-            ]}
-          />
-        </Row>
+        {S('showDebug')}
+        {S('devUpdates')}
+        {S('showMaterialButton')}
+        {S('filePicker')}
         <Row label={t('settings.dialogWindow')}>
           <Choice<WindowMode | 'auto'>
             value={draft.dialogWindow}
@@ -343,80 +219,42 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
     ),
     debugAudio: (
       <Group title={t('settings.groupDebugAudio')}>
-        <Check checked={draft.fastMath} onChange={(v) => set({ fastMath: v })} label={t('settings.fastMath')} help={t('settings.fastMathHelp')} />
-        <Check checked={draft.realtimeAlign} onChange={(v) => set({ realtimeAlign: v })} label={t('settings.realtimeAlign')} help={t('settings.realtimeAlignHelp')} />
-        <Row label={t('settings.spliceFade')} help={t('settings.spliceFadeHelp')}>
-          <Choice<string>
-            value={String(draft.spliceFadeMs)}
-            onChange={(v) => set({ spliceFadeMs: Number(v) })}
-            options={['5', '10', '20'].map((ms): [string, string] => [ms, `${ms} ms`])}
-          />
-        </Row>
-        <Check checked={draft.suspendWhenStopped} onChange={(v) => set({ suspendWhenStopped: v })} label={t('settings.suspendWhenStopped')} help={t('settings.suspendWhenStoppedHelp')} />
-        <Check checked={draft.playbackSession} onChange={(v) => set({ playbackSession: v })} label={t('settings.playbackSession')} help={t('settings.playbackSessionHelp')} />
+        {S('fastMath')}
+        {S('realtimeAlign')}
+        {S('spliceFadeMs')}
+        {S('suspendWhenStopped')}
+        {S('playbackSession')}
       </Group>
     ),
     experimental: (
       <Group title={t('settings.groupExperimental')}>
-        <Check
-          checked={draft.showExperimentalAlgorithms}
-          onChange={(v) => set({ showExperimentalAlgorithms: v })}
-          label={t('settings.showExperimentalAlgorithms')}
-          help={t('settings.showExperimentalAlgorithmsHelp')}
-        />
-        <Check checked={draft.showVoiceSplit} onChange={(v) => set({ showVoiceSplit: v })} label={t('settings.showVoiceSplit')} help={t('settings.showVoiceSplitHelp')} />
-        <Check checked={draft.showKanaVoice} onChange={(v) => set({ showKanaVoice: v })} label={t('settings.showKanaVoice')} help={t('settings.showKanaVoiceHelp')} />
-        {draft.showKanaVoice && (
-          <Row label={t('settings.kanaStrength')} help={t('settings.kanaStrengthHelp')}>
-            <Choice<string> value={String(draft.kanaStrength)} onChange={(v) => set({ kanaStrength: Number(v) })} options={['50', '70', '85', '100'].map((p): [string, string] => [p, `${p}%`])} />
-          </Row>
-        )}
-        <Check checked={draft.parallelProcess} onChange={(v) => set({ parallelProcess: v })} label={t('settings.parallelProcess')} help={t('settings.parallelProcessHelp')} />
+        {S('showExperimentalAlgorithms')}
+        {S('showVoiceSplit')}
+        {S('showKanaVoice')}
+        {draft.showKanaVoice && S('kanaStrength')}
+        {S('parallelProcess')}
       </Group>
     ),
     diagnose: (
       <Group title={t('settings.groupDiagnose')}>
         <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand, memoryMb: draft.vocalMemoryMb }} />
       </Group>
-    ),    pitch: (
+    ),
+    pitch: (
       <Group title={t('settings.groupPitch')}>
-        <Row label={t('settings.f0MinHz')}>
-          <NumberInput value={draft.f0MinHz} onChange={(v) => set({ f0MinHz: Math.round(v) })} min={40} max={400} step={1} unit="Hz" width={110} />
-        </Row>
-        <Row label={t('settings.f0MaxHz')}>
-          <NumberInput value={draft.f0MaxHz} onChange={(v) => set({ f0MaxHz: Math.round(v) })} min={200} max={2000} step={10} unit="Hz" width={110} />
-        </Row>
-        <Row label={t('settings.f0Voicing')}>
-          <Choice<F0Voicing>
-            value={draft.f0Voicing}
-            onChange={(v) => set({ f0Voicing: v })}
-            options={[
-              ['strict', t('settings.f0Strict')],
-              ['normal', t('settings.f0Normal')],
-              ['loose', t('settings.f0Loose')],
-            ]}
-          />
-        </Row>
-        <Row label={t('settings.flattenStrength')} help={t('settings.flattenStrengthHelp')}>
-          <Choice<string>
-            value={String(draft.flattenStrength)}
-            onChange={(v) => set({ flattenStrength: Number(v) })}
-            options={[1, 0.75, 0.5, 0.25].map((s): [string, string] => [String(s), Math.round(s * 100) + '%'])}
-          />
-        </Row>
-        <Row label={t('settings.f0SilenceDb')}>
-          <NumberInput value={draft.f0SilenceDb} onChange={(v) => set({ f0SilenceDb: Math.round(v) })} min={-80} max={-20} step={1} unit="dB" width={110} />
-        </Row>
+        {S('f0MinHz')}
+        {S('f0MaxHz')}
+        {S('f0Voicing')}
+        {S('flattenStrength')}
+        {S('f0SilenceDb')}
       </Group>
     ),
     tempo: (
       <Group title={t('settings.groupTempo')}>
-        <Check checked={draft.autoTempo} onChange={(v) => set({ autoTempo: v })} label={t('settings.autoTempo')} help={t('settings.autoTempoHelp')} />
-        <Row label={t('settings.defaultBpm')} help={t('settings.defaultBpmHelp')}>
-          <NumberInput value={draft.defaultBpm} onChange={(v) => set({ defaultBpm: Math.round(v * 100) / 100 })} min={20} max={300} step={1} unit="BPM" width={110} />
-        </Row>
-        <Check checked={draft.showBeatGrid} onChange={(v) => set({ showBeatGrid: v })} label={t('settings.showBeatGrid')} />
-        <Check checked={draft.tempoStretch} onChange={(v) => set({ tempoStretch: v })} label={t('settings.tempoStretch')} help={t('settings.tempoStretchHelp')} />
+        {S('autoTempo')}
+        {S('defaultBpm')}
+        {S('showBeatGrid')}
+        {S('tempoStretch')}
       </Group>
     ),
   }

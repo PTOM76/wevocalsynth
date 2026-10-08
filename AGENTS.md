@@ -10,3 +10,9 @@ AI のエージェント向けの決まり。[docs/CODING.md](docs/CODING.md) �
   - 変える、消す、名前を変える: `set`、`rm`、`mv`（`mv` はソースの参照も書き換える）
   - 終わったら `check`
 - Analyzer、Converter、Extractor は `--dir analyzer/app/lang` のように指定する
+
+## 設定
+
+- 設定は `src/settings/items/` の分類のファイルに 1 行で定義する（`check`、`choice`、`number`、`value`）。型、既定値、検索の対象はそこから作られる
+- 設定画面に出すときは `SettingsPages.tsx` の分類に `{S('名前')}` を足す。表示や押せるかが状況で変わる項目は `value` で定義し、画面は自前で作る
+- 画面に出さない値（メニューの切り替え、覚えておく値）は `page` が null の集まり（`view`、`stored`）に置く

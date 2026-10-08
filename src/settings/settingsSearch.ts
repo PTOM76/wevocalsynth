@@ -2,6 +2,8 @@ import type { SettingsCategory } from 'pevenmui'
 import type { MessageKey } from '../i18n/i18n'
 import { ACTIONS } from './keymap'
 import { canPickFiles } from 'pevenmui/web'
+import { GROUPS } from './items'
+import { searchKeys } from './items/define'
 
 /** 設定画面の分類 */
 export type Category = 'project' | 'general' | 'edit' | 'keys' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'addons' | 'data' | 'debug' | 'debugAudio' | 'experimental' | 'diagnose'
@@ -26,37 +28,35 @@ const TREE: [Category, Category?][] = [
 ]
 
 /**
- * 設定の検索の対象: 分類ごとのグループ名・項目名・説明文の訳文キー。
- * SettingsDialog の各ページ（と DataSection / AddonSection）に項目を足したら、ここにも足す
+ * 設定の検索の対象のうち、定義（items/）にないもの: グループ名と、自前の画面の項目の訳文キー。
+ * 定義のある項目の名前、説明、選択肢は searchIndex() で自動で入る
  */
 const INDEX: Record<Category, MessageKey[]> = {
   project: ['settings.groupProject', 'project.name', 'settings.bpm', 'settings.beatsPerBar', 'settings.beatOffset'],
   general: [
-    'settings.groupStartup', 'settings.autoRestore', 'settings.autoRestoreHelp', 'settings.confirmClose', 'settings.confirmCloseHelp',
+    'settings.groupStartup',
     'settings.groupOutput', 'settings.outputDevice', 'settings.outputDeviceHelp',
-    'settings.groupRecord', 'settings.recordEcho', 'settings.recordNoise', 'settings.recordAutoGain', 'settings.recordHelp',
+    'settings.groupRecord',
     'settings.groupUpdate', 'update.check',
   ],
   edit: [
-    'settings.groupHistory', 'settings.keepOriginal', 'settings.keepOriginalHelp', 'settings.historyLimit', 'settings.historyMemory',
-    'settings.groupInput', 'settings.sliderReset', 'settings.seekAfterInsert',
+    'settings.groupHistory',
+    'settings.groupInput',
   ],
   keys: [
-    'settings.groupMouse', 'settings.wheelZoom', 'settings.wheelZoomCtrl', 'settings.wheelZoomWheel',
-    'settings.groupShortcuts', 'settings.ctrlS', ...ACTIONS.map((a) => a.label),
+    'settings.groupMouse',
+    'settings.groupShortcuts', ...ACTIONS.map((a) => a.label),
   ],
-  file: ['settings.groupFile', 'settings.rememberFolder', 'settings.rememberFolderHelp', 'settings.startFolder', 'settings.recentFiles', 'settings.recentFilesHelp'],
-  display: ['settings.groupAppearance', 'settings.theme', 'settings.uiScale', 'settings.uiScaleHelp', 'settings.mobileUi', 'settings.mobileUiHelp', 'settings.touchSelect', 'settings.language', 'settings.showMeters', 'settings.showMetersHelp', 'menu.minimapPlayhead', 'settings.minimapPlayheadHelp', 'settings.liveSelection', 'settings.liveSelectionHelp'],
+  file: ['settings.groupFile'],
+  display: ['settings.groupAppearance'],
   process: [
-    'settings.groupDefaultAlgorithm', 'settings.vocalAlgorithm', 'settings.instrumentAlgorithm', 'settings.showLegacyAlgorithms', 'settings.showLegacyAlgorithmsHelp',
-    'settings.groupProcess', 'settings.initialMode', 'settings.saveMemory', 'settings.saveMemoryHelp',
+    'settings.groupDefaultAlgorithm',
+    'settings.groupProcess',
   ],
-  pitch: ['settings.groupPitch', 'settings.flattenStrength', 'settings.flattenStrengthHelp', 'settings.f0MinHz', 'settings.f0MaxHz', 'settings.f0Voicing', 'settings.f0SilenceDb'],
-  tempo: [
-    'settings.groupTempo', 'settings.autoTempo', 'settings.autoTempoHelp', 'settings.defaultBpm', 'settings.defaultBpmHelp', 'settings.showBeatGrid', 'settings.tempoStretch', 'settings.tempoStretchHelp',
-  ],
+  pitch: ['settings.groupPitch'],
+  tempo: ['settings.groupTempo'],
   vocal: [
-    'settings.groupVocal', 'settings.vocalModel', 'settings.vocalFresh', 'settings.vocalFreshHelp', 'settings.vocalGpu', 'settings.vocalGpuHelp', 'settings.vocalKeepHighBand', 'settings.vocalKeepHighBandHelp', 'settings.vocalMemory', 'settings.vocalMemoryHelp',
+    'settings.groupVocal',
     'settings.groupAddons', 'settings.addonsMoved', 'settings.openAddons',
   ],
   addons: ['settings.groupAddonVocal', 'settings.groupAddonAnalyzer', 'settings.groupAddonConverter', 'addon.modelStandard', 'addon.modelLight', 'addon.modelPrecise', 'addon.modelVocalHq', 'addon.modelInstHq', 'addon.modelLead', 'addon.analyzer', 'addon.converter'],
@@ -64,16 +64,19 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupData', 'data.work', 'data.workHelp', 'data.cache', 'data.cacheHelp', 'data.addons',
     'data.settings', 'data.settingsHelp', 'data.all', 'data.persist', 'data.persistHelp',
   ],
-  debug: ['settings.groupDebug', 'settings.showDebug', 'settings.showDebugHelp', 'settings.devUpdates', 'settings.devUpdatesHelp', 'settings.showMaterialButton', 'settings.showMaterialButtonHelp', 'settings.filePicker', 'settings.filePickerHelp', 'settings.dialogWindow'],
-  debugAudio: [
-    'settings.groupDebugAudio', 'settings.fastMath', 'settings.fastMathHelp', 'settings.realtimeAlign', 'settings.realtimeAlignHelp',
-    'settings.spliceFade', 'settings.spliceFadeHelp', 'settings.suspendWhenStopped', 'settings.suspendWhenStoppedHelp', 'settings.playbackSession', 'settings.playbackSessionHelp',
-  ],
-  experimental: ['settings.groupExperimental', 'settings.showExperimentalAlgorithms', 'settings.showExperimentalAlgorithmsHelp', 'settings.showVoiceSplit', 'settings.showVoiceSplitHelp', 'settings.showKanaVoice', 'settings.showKanaVoiceHelp', 'settings.kanaStrength', 'settings.kanaStrengthHelp', 'settings.parallelProcess', 'settings.parallelProcessHelp'],
+  debug: ['settings.groupDebug'],
+  debugAudio: ['settings.groupDebugAudio'],
+  experimental: ['settings.groupExperimental'],
   diagnose: ['settings.groupDiagnose', 'settings.extractDiagnose', 'settings.extractDiagnoseHelp'],
+}
+
+/** 分類の検索の対象（手で書いたものと、定義から集めたもの） */
+function searchIndex(c: Category): MessageKey[] {
+  const fromItems = GROUPS.filter((g) => g.page === c).flatMap((g) => Object.values(g.items).flatMap(searchKeys))
+  return [...new Set([...INDEX[c], ...fromItems])]
 }
 
 /** 設定画面に渡す分類の一覧（名前と、検索の対象の訳文）。「ファイル」は File System Access API が使えるブラウザだけ出す */
 export function settingsCategories(t: (key: MessageKey) => string): SettingsCategory<Category>[] {
-  return TREE.filter(([c]) => c !== 'file' || canPickFiles()).map(([c, parent]) => ({ id: c, label: t(`settings.cat.${c}`), texts: INDEX[c].map((k) => t(k)), parent }))
+  return TREE.filter(([c]) => c !== 'file' || canPickFiles()).map(([c, parent]) => ({ id: c, label: t(`settings.cat.${c}`), texts: searchIndex(c).map((k) => t(k)), parent }))
 }
