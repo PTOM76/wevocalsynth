@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/500.css'
 import '@fontsource/roboto/700.css'
-import { PevenProvider, preventPageZoom } from 'pevenmui'
+import { AddonsContext, PevenProvider, preventPageZoom } from 'pevenmui'
 import App from './App.tsx'
 import CleanExtractScreen from './components/CleanExtractScreen'
 import { checkCleanBoot, pendingCleanJob } from './project/cleanExtract'
@@ -12,6 +12,7 @@ import { setPeaksOnBuild } from 'wevocal-lib'
 import { markActivity } from './debug/debugStats'
 import { app } from './appConfig'
 import { SettingsProvider } from './settings/settings'
+import { addonsContext } from './addons/addons'
 
 preventPageZoom()
 // 波形の表を作ったことを、画面が止まったときの原因探しに残す
@@ -26,9 +27,11 @@ void Promise.all([pendingCleanJob(), checkCleanBoot(), clearOffloaded()]).then((
         {job ? (
           <CleanExtractScreen job={job} />
         ) : (
-          <SettingsProvider>
-            <App />
-          </SettingsProvider>
+          <AddonsContext.Provider value={addonsContext}>
+            <SettingsProvider>
+              <App />
+            </SettingsProvider>
+          </AddonsContext.Provider>
         )}
       </PevenProvider>
     </StrictMode>,

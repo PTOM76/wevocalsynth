@@ -35,8 +35,7 @@ import { canRecord } from 'wevocal-lib'
 import { flattenPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
 import { useAppSettings } from './settings/settings'
-import { addonFolderPermission, requestAddonFolderPermission, setAddonFolderEnabled } from './addons/addonFolder'
-import { notifyAddonsChanged } from './addons/addons'
+import { addonFolder, notifyAddonsChanged } from './addons/addons'
 import DebugOverlay from './debug/DebugOverlay'
 import UpdatePrompt from './components/UpdatePrompt'
 import { countRender } from './debug/debugStats'
@@ -83,11 +82,11 @@ export default function App() {
   const ed = useEditor()
   // 追加機能の保存先のフォルダー（試験的）。開いたときに許可がなければ、通知から許可してもらう（Service Worker からは求められない）
   useEffect(() => {
-    setAddonFolderEnabled(settings.addonFolder)
+    addonFolder.setEnabled(settings.addonFolder)
     if (!settings.addonFolder) return
-    void addonFolderPermission().then((p) => {
+    void addonFolder.permission().then((p) => {
       if (p !== 'prompt') return
-      const allow = () => void requestAddonFolderPermission().then((ok) => ok && notifyAddonsChanged())
+      const allow = () => void addonFolder.requestPermission().then((ok) => ok && notifyAddonsChanged())
       ed.setToast({ severity: 'info', message: t('addonFolder.permission'), actions: [{ label: t('addonFolder.allow'), onClick: allow }] })
     })
     // 設定を変えたときと、開いたときだけ

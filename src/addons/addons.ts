@@ -1,45 +1,12 @@
 import type { MessageKey } from '../i18n/i18n'
+import { t } from '../i18n/i18n'
+import { createAddons, type AddonInfo, type AddonsContextValue } from 'pevenmui'
+import { idb } from '../project/idb'
 import { app } from '../appConfig'
-import { clearAddonFolder, installsToFolder, readAddonFile, removeAddonDir, writeAddonFile } from './addonFolder'
 
-/**
- * 追加機能（アドオン）。使いたい人だけが導入し、導入後はオフラインでも使える（docs/EXTRACTOR.md）。
- * - 配信: `addons/<id>/manifest.json` とファイル一式（アプリと同じ場所）
- * - 保存先: アプリ本体とは別の Cache Storage（アプリの更新では消えない）。試験的に、選んだフォルダーにも置ける（addonFolder.ts）
- * - 読み込み: Service Worker が保存先（Cache Storage、なければフォルダー）から返すので、普通に `import()` できる
- */
+/** 追加機能（アドオン）。仕組みは PevenMUI（pevenmui/src/addons/）。ここは配信している一覧と、このアプリでの呼び名 */
 
-/** 保存先の名前。vite.config.ts の Service Worker の設定と一致させる */
-export const ADDON_CACHE = app.cacheName('addons')
-
-export interface AddonFile {
-  path: string
-  /** 元の大きさ（バイト）。配信が gzip だと Content-Length は圧縮後になるので、進捗はこれで出す */
-  size: number
-  sha256: string
-}
-
-export interface AddonManifest {
-  id: string
-  version: string
-  /** `import()` するファイル（モデルだけの追加機能は null） */
-  entry: string | null
-  files: AddonFile[]
-}
-
-export interface AddonInfo {
-  id: string
-  name: MessageKey
-  /** 設定の一覧に出す短い名前（その機能の設定画面に並べるので、機能名を繰り返さない） */
-  shortName?: MessageKey
-  /** 先に導入が要る追加機能（導入するときに一緒に入れる） */
-  requires?: string[]
-  /** ほかの追加機能を使うときに一緒に入れるもの（設定の一覧には出さない。使うものがなくなったら一緒に消す） */
-  companion?: boolean
-}
-
-/** 配信している追加機能 */
-export const ADDONS: AddonInfo[] = [
+export const ADDONS: AddonInfo<MessageKey>[] = [
   { id: 'vocal-extractor', name: 'addon.vocalExtractor' },
   // ONNX Runtime の wasm。WebGPU で動かすなら gpu、CPU なら cpu を入れる（src/audio/vocalExtract.ts）
   { id: 'vocal-extractor-gpu', name: 'addon.runtimeGpu', requires: ['vocal-extractor'], companion: true },
@@ -59,188 +26,30 @@ export const ADDONS: AddonInfo[] = [
   { id: 'converter', name: 'addon.converter' },
 ]
 
-/** `id` と、その導入に要る追加機能（依存を先に並べる） */
-export function withRequires(id: string): string[] {
-  const info = ADDONS.find((a) => a.id === id)
-  return [...new Set([...(info?.requires ?? []).flatMap(withRequires), id])]
+const addons = createAddons({ appId: app.id, idb, addons: ADDONS, base: import.meta.env.BASE_URL })
+
+/** 部品とフックが使う追加機能（main.tsx の AddonsContext に入れる） */
+export const addonsContext: AddonsContextValue = {
+  addons,
+  nameOf: (id, short) => {
+    const info = ADDONS.find((a) => a.id === id)
+    return info ? t((short && info.shortName) || info.name) : id
+  },
 }
 
-/** この環境で使えるか（Cache Storage は https か localhost でしか使えない） */
-export const addonsSupported = () => typeof caches !== 'undefined'
-
-const baseUrl = (id: string) => new URL(`${import.meta.env.BASE_URL}addons/${id}/`, location.href)
-const manifestUrl = (id: string) => new URL('manifest.json', baseUrl(id)).href
-
-/** 追加機能の中のファイルの URL（導入済みなら Service Worker が保存先から返す） */
-export const addonFileUrl = (id: string, path: string) => new URL(path, baseUrl(id)).href
-
-export const addonSize = (m: AddonManifest) => m.files.reduce((s, f) => s + f.size, 0)
-
-/** 配信中のマニフェスト（HTTP キャッシュを通さず取り直す） */
-export async function fetchManifest(id: string): Promise<AddonManifest> {
-  // 導入済みだと Service Worker が保存先のマニフェストを返すので、クエリを付けて別の URL にする
-  const res = await fetch(`${manifestUrl(id)}?t=${Date.now()}`, { cache: 'no-store' })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return res.json()
-}
-
-/** 導入済みならそのマニフェスト、なければ null */
-export async function installedManifest(id: string): Promise<AddonManifest | null> {
-  if (!addonsSupported()) return null
-  const res = await (await caches.open(ADDON_CACHE)).match(manifestUrl(id))
-  if (res) return res.json()
-  // 選んだフォルダーに入れたもの（許可がなければ未導入として扱う）
-  const file = await readAddonFile(id, 'manifest.json').catch(() => null)
-  return file ? JSON.parse(await file.text()) : null
-}
-
-async function sha256(buf: ArrayBuffer) {
-  const h = await crypto.subtle.digest('SHA-256', buf)
-  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-/** `res` を最後まで読む。読んだ分（展開後のバイト数）を `onBytes` に渡す */
-async function readAll(res: Response, onBytes: (n: number) => void): Promise<ArrayBuffer> {
-  if (!res.body) return res.arrayBuffer()
-  const chunks: Uint8Array[] = []
-  let total = 0
-  const reader = res.body.getReader()
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    chunks.push(value)
-    total += value.length
-    onBytes(value.length)
-  }
-  const out = new Uint8Array(total)
-  let at = 0
-  for (const c of chunks) {
-    out.set(c, at)
-    at += c.length
-  }
-  return out.buffer
-}
-
-/**
- * `m` のファイルをすべて取得し、大きさとハッシュを確かめてから保存する。マニフェストは最後に保存する
- * （マニフェストがあれば導入済み、とみなすため）。途中で失敗・中断したら、その追加機能をすべて消す。
- * `onProgress` は 0〜1
- */
-export async function install(m: AddonManifest, onProgress: (p: number) => void, signal?: AbortSignal) {
-  // 選んだフォルダーに入れる設定なら、そちらへ書く（Cache Storage にある前の版は消す）
-  if (await installsToFolder()) return installToFolder(m, onProgress, signal)
-  const cache = await caches.open(ADDON_CACHE)
-  const base = baseUrl(m.id)
-  const total = addonSize(m) || 1
-  let loaded = 0
-  try {
-    for (const f of m.files) {
-      const url = new URL(f.path, base)
-      // 導入済みの古い版が Service Worker から返らないよう、クエリを付けて保存先と別の URL にする
-      const res = await fetch(`${url.href}?v=${encodeURIComponent(m.version)}`, { cache: 'no-store', signal })
-      if (!res.ok) throw new Error(`${f.path}: HTTP ${res.status}`)
-      const buf = await readAll(res, (n) => onProgress(Math.min(1, (loaded += n) / total)))
-      if (buf.byteLength !== f.size || (await sha256(buf)) !== f.sha256) throw new Error(`${f.path}: 内容が一致しません`)
-      const type = res.headers.get('content-type') ?? 'application/octet-stream'
-      await cache.put(url.href, new Response(buf, { headers: { 'content-type': type } }))
-    }
-    await cache.put(manifestUrl(m.id), new Response(JSON.stringify(m), { headers: { 'content-type': 'application/json' } }))
-    // 前の版にだけあったファイルを消す
-    const keep = new Set([manifestUrl(m.id), ...m.files.map((f) => new URL(f.path, base).href)])
-    for (const req of await cache.keys()) {
-      if (req.url.startsWith(base.href) && !keep.has(req.url)) await cache.delete(req)
-    }
-    changed()
-  } catch (e) {
-    await uninstall(m.id)
-    throw e
-  }
-}
-
-/** `install` の、選んだフォルダーに入れる版（試験的。addonFolder.ts） */
-async function installToFolder(m: AddonManifest, onProgress: (p: number) => void, signal?: AbortSignal) {
-  const base = baseUrl(m.id)
-  const total = addonSize(m) || 1
-  let loaded = 0
-  try {
-    await uninstall(m.id)
-    for (const f of m.files) {
-      const res = await fetch(`${new URL(f.path, base).href}?v=${encodeURIComponent(m.version)}`, { cache: 'no-store', signal })
-      if (!res.ok) throw new Error(`${f.path}: HTTP ${res.status}`)
-      const buf = await readAll(res, (n) => onProgress(Math.min(1, (loaded += n) / total)))
-      if (buf.byteLength !== f.size || (await sha256(buf)) !== f.sha256) throw new Error(`${f.path}: 内容が一致しません`)
-      await writeAddonFile(m.id, f.path, buf)
-    }
-    // マニフェストは最後に書く（あれば導入済みとみなすため）
-    await writeAddonFile(m.id, 'manifest.json', JSON.stringify(m))
-    changed()
-  } catch (e) {
-    await uninstall(m.id)
-    throw e
-  }
-}
-
-// 導入、削除のたびに知らせる（メニューに出すかを決め直すため。設定を別の窓で開いていても同じ JS の中で動く）
-const listeners = new Set<() => void>()
-const changed = () => listeners.forEach((fn) => fn())
-/** 導入済みかが変わったことを知らせる（フォルダーへのアクセスを許可したときなど） */
-export const notifyAddonsChanged = changed
-/** 追加機能を導入、削除したときに `fn` を呼ぶ。戻り値で解除する */
-export function onAddonsChanged(fn: () => void) {
-  listeners.add(fn)
-  return () => void listeners.delete(fn)
-}
-
-/** 追加機能のファイルをすべて消す */
-export async function uninstall(id: string) {
-  if (!addonsSupported()) return
-  const cache = await caches.open(ADDON_CACHE)
-  const base = baseUrl(id).href
-  for (const req of await cache.keys()) {
-    if (req.url.startsWith(base)) await cache.delete(req)
-  }
-  // 選んだフォルダーに入れたものも消す
-  await removeAddonDir(id)
-  changed()
-}
-
-/**
- * `id` を消し、それが依存していた追加機能のうち、ほかの導入済みの追加機能から使われなくなったものも消す
- * （例: モデルを全部消したら実行環境も消す）
- */
-export async function uninstallWithUnused(id: string) {
-  await uninstall(id)
-  const installed = new Set<string>()
-  for (const a of ADDONS) if (await installedManifest(a.id)) installed.add(a.id)
-  for (const dep of withRequires(id).filter((d) => d !== id)) {
-    // 一緒に入れるもの（companion）以外に、使っているものがなければ消す。そのとき一緒に入れたものも消す
-    const used = ADDONS.some((a) => installed.has(a.id) && a.id !== dep && !a.companion && withRequires(a.id).includes(dep))
-    if (used) continue
-    for (const c of ADDONS.filter((a) => a.companion && withRequires(a.id).includes(dep))) await uninstall(c.id)
-    await uninstall(dep)
-  }
-}
-
-/** 導入済みの追加機能の合計の大きさ（バイト） */
-export async function installedAddonsSize(): Promise<number> {
-  let total = 0
-  for (const a of ADDONS) {
-    const m = await installedManifest(a.id)
-    if (m) total += addonSize(m)
-  }
-  return total
-}
-
-/** 導入済みの追加機能をすべて消す（設定の「データ」） */
-export async function clearAddons() {
-  if (addonsSupported()) await caches.delete(ADDON_CACHE)
-  await clearAddonFolder()
-  changed()
-}
-
-/** 導入済みの追加機能を読み込む。モジュールの形は追加機能ごとに決める */
-export async function loadAddon<T>(id: string): Promise<T> {
-  const m = await installedManifest(id)
-  if (!m?.entry) throw new Error(`${id} は導入されていないか、読み込むファイルがありません`)
-  return import(/* @vite-ignore */ new URL(m.entry, baseUrl(id)).href)
-}
+/** 保存先の名前（Cache Storage） */
+export const ADDON_CACHE = addons.cacheName
+export const addonFolder = addons.folder
+export const {
+  withRequires,
+  installedManifest,
+  addonFileUrl,
+  fetchManifest,
+  notifyAddonsChanged,
+  onAddonsChanged,
+  uninstallWithUnused,
+  installedAddonsSize,
+  clearAddons,
+  loadAddon,
+} = addons
+export { addonSize, addonsSupported, type AddonManifest } from 'pevenmui'

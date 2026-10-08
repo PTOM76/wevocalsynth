@@ -41,15 +41,16 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 ### 作り
 | 項目 | 内容 |
 | --- | --- |
+| 仕組み | PevenMUI の `createAddons`（[pevenmui/src/addons/](../pevenmui/src/addons/)）。アプリは一覧と IndexedDB を渡し、画面の部品（確認ダイアログ、設定の一覧、保存先のフォルダー）は `AddonsContext` から読む。Analyzer なども同じものを使う |
 | マニフェスト | `addons/<id>/manifest.json` に ID・バージョン・読み込むファイル（`entry`、ファイルだけなら null）・ファイル一覧（大きさとハッシュ）を書く。確認ダイアログのダウンロード量と進捗もここから出す |
 | 一覧 | 配信している追加機能は `ADDONS`（[addons.ts](../src/addons/addons.ts)）に並べる。`requires` で依存を書く |
 | 導入 | `install` がファイルを1つずつ取得し、大きさとハッシュを確かめて保存する。マニフェストは最後に保存し、あれば導入済みとみなす。途中で失敗・中断したら、その追加機能をすべて削除する |
 | 保存先 | アプリ本体とは別の Cache Storage（`wevocalsynth-addons`）。アプリ本体のキャッシュは更新のたびに入れ替わるため分ける |
-| 読み込み | Service Worker が `addons/` へのリクエストを保存先から返す（なければネットワーク）。`loadAddon` で `import()` し、ファイルは `addonFileUrl` で参照する |
-| 確認ダイアログ | `useAddonInstall`（[AddonInstallDialog.tsx](../src/addons/AddonInstallDialog.tsx)）。機能を使う直前に `ensure(id, also)` を呼び、未導入ならダイアログを表示する。依存するものと、一緒に要るもの（`also`。抽出なら使う計算の種類の実行環境）もまとめて入れる |
-| 裏でのダウンロード | ダウンロード中にダイアログを閉じても続ける（[downloads.ts](../src/addons/downloads.ts)。同時に 1 つだけ）。進み具合はステータスバー（スマホは再生バー）に表示し、× で中止できる。終わったら、待っていた抽出などを続ける。失敗したらダイアログを表示し直してエラーを見せる |
+| 読み込み | Service Worker が `addons/` へのリクエストを保存先から返す（`pevenAddonsRoute`。[vite.ts](../pevenmui/src/vite.ts)）（なければネットワーク）。`loadAddon` で `import()` し、ファイルは `addonFileUrl` で参照する |
+| 確認ダイアログ | `useAddonInstall`。機能を使う直前に `ensure(id, also)` を呼び、未導入ならダイアログを表示する。依存するものと、一緒に要るもの（`also`。抽出なら使う計算の種類の実行環境）もまとめて入れる |
+| 裏でのダウンロード | ダウンロード中にダイアログを閉じても続ける（同時に 1 つだけ）。進み具合はステータスバー（スマホは再生バー）に表示し、× で中止できる。終わったら、待っていた抽出などを続ける。失敗したらダイアログを表示し直してエラーを見せる |
 | 一緒に入れるもの | `companion` の追加機能（実行環境の GPU 版・CPU 版）は設定の一覧に表示せず、使うもの（モデル）がなくなったら一緒に削除する |
-| 更新・削除 | その機能の設定画面に配置する（[AddonSection.tsx](../src/settings/AddonSection.tsx)）。配信中のバージョンと違えば「更新」を表示する。勝手には取得しない。削除するときは、どこからも使われなくなった依存も一緒に削除する（`uninstallWithUnused`） |
+| 更新・削除 | その機能の設定画面に配置する（`AddonSection`）。配信中のバージョンと違えば「更新」を表示する。勝手には取得しない。削除するときは、どこからも使われなくなった依存も一緒に削除する（`uninstallWithUnused`） |
 | まとめて削除 | 設定の「データ」の「追加機能」と「すべてのデータ」。「オフライン用キャッシュ」の削除では削除しない |
 | 容量 | 導入できたら「データを削除されにくくする」を申請する（断られても使用できる） |
 

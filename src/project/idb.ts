@@ -3,6 +3,8 @@ import { createIdb } from 'pevenmui/web'
 import { app } from '../appConfig'
 
 const db = createIdb(app.id)
+/** そのまま渡すとき（追加機能の保存先のフォルダーなど） */
+export const idb = db
 
 export const idbGet = db.get
 export const idbPut = db.put
