@@ -58,7 +58,13 @@ const EXT = /\.(ts|tsx|rs|mjs)$/
 
 /** `dir` の下のソースファイル（そのフォルダーのファイルを名前の順に並べてから、サブフォルダー） */
 function walk(dir) {
-  const entries = fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.name !== 'node_modules' && !e.name.startsWith('.'))
+  let entries
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.name !== 'node_modules' && !e.name.startsWith('.'))
+  } catch {
+    // 消している途中などで読めないフォルダーは飛ばす
+    return []
+  }
   const byName = (a, b) => a.name.localeCompare(b.name)
   const files = entries.filter((e) => e.isFile() && EXT.test(e.name) && !e.name.endsWith('.d.ts')).sort(byName)
   const subdirs = entries.filter((e) => e.isDirectory()).sort(byName)

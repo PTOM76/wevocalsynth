@@ -75,6 +75,18 @@ src/audio/realtime/
   granularProcessor.ts  リアルタイム試聴用の AudioWorklet。グラニュラー方式でピッチ変更・時間伸縮を行う。
   useRealtimePreview.ts  範囲をループ再生しながら、ピッチと伸縮率の変更をすぐ反映する（AudioWorklet）
 
+src/commands/
+  edit.ts  編集のコマンド（元に戻す、切り取りなど、選択、マーカー、音量）
+  file.ts  ファイルのコマンド（開く、保存、書き出し、設定）
+  help.ts  ヘルプのコマンド（ユーザーガイド、ショートカット、更新の確認など）
+  index.ts  コマンドの一覧と、メニューの項目を作る関数
+  menus.ts  メニューバーと右クリックメニューの並び（項目はコマンドの id。docs/DECISIONS.md の「メニューの構成」）
+  play.ts  再生のコマンド（再生、ループ、移動）
+  tools.ts  ツールのコマンド（ボーカル抽出、音声の作成、録音、ピッチの道具）
+  track.ts  トラックのコマンド（選んでいるトラックに効く）
+  types.ts  コマンド（操作）の型。メニュー、右クリック、ショートカット、ツールバーが id で参照する（memo/commands.md）
+  view.ts  表示のコマンド（帯の表示、拡大縮小、追従）
+
 src/components/
   AboutDialog.tsx  「このアプリについて」のダイアログ
   AlgorithmMenu.tsx  処理方式の一覧と選ぶメニュー（従来の方式と試験的な方式の表示を含む）
@@ -156,11 +168,11 @@ src/dsp/
 
 src/hooks/
   editActions.ts  音声を書き換える操作（加工の適用、テンポの伸縮、区間の伸縮、サンプラー、曲線の書き込み）
-  useAppMenus.ts  メニューバーと右クリックメニューを作る（項目は menus/）
+  useAppMenus.ts  メニューバーと右クリックメニューを、並び（commands/menus.ts）とコマンドから作る
   useAutosave.ts  作業状態の自動保存と、起動時の復元
   useClipAnalysis.ts  表示しているときだけ音声を解析して結果を持つ（ピッチ、スペクトログラム）
   useClipCommands.ts  音声の編集の操作（切り取り、コピー、貼り付け、削除、無音の挿入、音量、パンなど）
-  useDialogs.ts  （説明なし）
+  useDialogs.ts  ダイアログの開閉と、開くときに渡す値
   useEditor.ts  （説明なし）
   useEditorKeys.ts  キーボードショートカットと、フォーカスしている帯に効く切り取りなど
   useFormantCurve.ts  フォルマントの帯に描いた曲線と、その試聴
@@ -186,12 +198,6 @@ src/hooks/
   useVideoExport.ts  動画の書き出し（追加機能「変換」）
   useVocalExtract.ts  ボーカル抽出の操作（モデルの確認、実行、結果をトラックへ）
   useVoiceSplit.ts  和音を 2 つの声に分ける操作（試作）
-
-src/hooks/menus/
-  actions.ts  メニューに渡す状態と操作の型
-  context.ts  波形の右クリックメニュー
-  menuBar.ts  メニューバー（スマホでは ⋮ のメニュー一覧）
-  shared.ts  メニューバーと右クリックで共通の項目
 
 src/i18n/
   i18n.ts  多言語化（訳文の JSON をまとめて t() を出す）
@@ -231,7 +237,6 @@ src/settings/items/
   process.ts  （説明なし）
   SettingRow.tsx  項目の定義から設定画面の 1 行を作る
   stored.ts  設定の項目の定義（画面の操作で覚えておく値）
-  toggle.ts  オンとオフの設定を切り替えるメニューの項目を作る
 
 dsp/src/
   curve.rs  ピッチカーブ編集: 時間ごとに変わるピッチ比で、長さを変えずにピッチを変える。
