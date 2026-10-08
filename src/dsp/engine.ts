@@ -103,6 +103,16 @@ export function cancelDsp() {
   }
 }
 
+/** リクエストの中の音声のバッファ（Worker へ移して、コピーせずに渡す）。送る側は渡す前に slice してある */
+function transferables(req: DspRequest): ArrayBuffer[] {
+  const out: ArrayBuffer[] = []
+  for (const v of Object.values(req)) {
+    if (v instanceof Float32Array) out.push(v.buffer as ArrayBuffer)
+    else if (Array.isArray(v)) for (const c of v) if (c instanceof Float32Array) out.push(c.buffer as ArrayBuffer)
+  }
+  return [...new Set(out)]
+}
+
 /** リクエストを Worker に送り、結果（チャンネル配列）を待つ */
 function send(req: DspRequest, onProgress?: (p: number) => void, lane?: Lane): Promise<Float32Array[]> {
   return sendRaw(req, onProgress, lane) as Promise<Float32Array[]>
@@ -128,9 +138,7 @@ function sendRaw(req: DspRequest, onProgress?: (p: number) => void, toLane?: Lan
       reject,
       onProgress,
     })
-    const buffers = 'samples' in req ? [req.samples.buffer] : 'channels' in req ? req.channels.map((c) => c.buffer) : []
-    if (req.kind === 'curve') buffers.push(req.ratios.buffer)
-    getWorker(lane).postMessage(req, buffers)
+    getWorker(lane).postMessage(req, transferables(req))
   })
 }
 

@@ -40,93 +40,114 @@ interface DspExports {
   set_fast_math(on: number): void
 }
 
-/** ピッチ変更・時間伸縮のリクエスト */
-export interface ProcessRequest {
-  kind: 'process'
-  id: number
+/** 音声（チャンネルごとの配列）と、その設定 */
+interface Audio {
   channels: Float32Array[]
   sampleRate: number
-  semitones: number
-  stretch: number
-  /** 0 = WSOLA, 1 = Phase Vocoder, 2 = PSOLA, 3 = SOLA, 4 = PSOLAv2, 5 = WSOLAv2, 6 = Phase Vocoder v2, 7 = HPSS, 8 = SOLAv2, 9 = SOLAv3（Rust 側 `Algorithm::from_id` と対応） */
-  algorithm: number
-  /** ピッチ変更時にフォルマントを保持し、`formantSemitones` だけ移動する */
-  preserveFormant: boolean
-  formantSemitones: number
   /** フォルマント補正で速い対数・指数の近似を使うか（省略なら使う） */
   fastMath?: boolean
 }
 
-/** F0 解析・テンポ解析・母音の作り直しの試し（kana）のリクエスト（モノラル） */
-export interface F0Request {
-  kind: 'f0' | 'tempo' | 'kana'
-  id: number
+/** モノラルの音声（解析用） */
+interface Mono {
   samples: Float32Array
   sampleRate: number
-  /** 素材の母音（kind が kana のとき。0〜4 が あ〜お） */
-  vowel?: number
-  /** 響きを動かす強さ（kind が kana のとき。0〜1） */
-  strength?: number
-  /** F0 解析の設定（kind が f0 のとき） */
-  f0?: { minHz: number; maxHz: number; voicedLimit: number; silenceRms: number }
 }
 
-/** ピッチカーブ編集のリクエスト。`ratios[k]` は時刻 k × `hopSamples` のピッチ比 */
-export interface CurveRequest {
-  kind: 'curve'
-  id: number
-  channels: Float32Array[]
-  sampleRate: number
-  ratios: Float32Array
-  hopSamples: number
-  algorithm: number
-  preserveFormant: boolean
-  formantSemitones: number
-  fastMath?: boolean
+/** `data` を wasm のメモリにコピーして `fn` に渡し、終わったら解放する */
+function withF32<T>(dsp: DspExports, data: Float32Array, fn: (ptr: number) => T): T {
+  const ptr = dsp.alloc_f32(data.length)
+  try {
+    new Float32Array(dsp.memory.buffer, ptr, data.length).set(data)
+    return fn(ptr)
+  } finally {
+    dsp.free_f32(ptr, data.length)
+  }
 }
 
-/** フォルマントカーブ編集のリクエスト。`shifts[k]` は時刻 k × `hopSamples` のフォルマントのずらし量（半音） */
-export interface FormantCurveRequest {
-  kind: 'formant'
-  id: number
-  channels: Float32Array[]
-  sampleRate: number
-  shifts: Float32Array
-  hopSamples: number
-  fastMath?: boolean
+/** チャンネルを並べて 1 つの配列にする（wasm の planar 形式） */
+function concat(channels: Float32Array[]): Float32Array {
+  const out = new Float32Array(channels.reduce((n, c) => n + c.length, 0))
+  let at = 0
+  for (const c of channels) {
+    out.set(c, at)
+    at += c.length
+  }
+  return out
 }
 
-/** 和音を 2 つの声に分けるリクエスト（試作）。結果は A の全チャンネル、B の全チャンネルの順 */
-export interface VoicesRequest {
-  kind: 'voices'
-  id: number
-  channels: Float32Array[]
-  sampleRate: number
-  /** 0 = 高さ（A が高い方）、1 = 音量（A が大きい方）。Rust 側 `voices::SplitBy` と対応 */
-  by: number
-  fastMath?: boolean
+/** 出力（output_ptr）から `count` 個のチャンネルを読む。処理中にメモリが拡張されることがあるので、ビューは処理後に作る */
+function readPlanar(dsp: DspExports, frames: number, count: number): Float32Array[] {
+  const out = new Float32Array(dsp.memory.buffer, dsp.output_ptr(), frames * count)
+  return Array.from({ length: count }, (_, i) => out.slice(i * frames, (i + 1) * frames))
 }
 
-/** 区間に分けて並列に加工するときの区間の割り当て（試験的。結果は [start, end, ctxStart, ctxEnd] を区間の数だけ並べたもの） */
-export interface SegmentPlanRequest {
-  kind: 'segplan'
-  id: number
-  frames: number
-  sampleRate: number
+/** 出力（output_ptr）から `count` 個の値を読む */
+const readF32 = (dsp: DspExports, count: number) => new Float32Array(dsp.memory.buffer, dsp.output_ptr(), count).slice()
+
+/** 音声を wasm に渡して `fn` で加工し、`outCount` 個のチャンネルを読む（`fn` は出力のフレーム数を返す） */
+function planar(dsp: DspExports, a: Audio, fn: (input: number, frames: number, count: number) => number, outCount = a.channels.length): Float32Array[] {
+  dsp.set_fast_math(a.fastMath === false ? 0 : 1)
+  const frames = a.channels[0]?.length ?? 0
+  return withF32(dsp, concat(a.channels), (input) => readPlanar(dsp, fn(input, frames, a.channels.length), outCount))
 }
 
-/** 区間ごとに加工した音をつなぐ（試験的）。`channels` は区間の順、その中はチャンネルの順 */
-export interface StitchRequest {
-  kind: 'stitch'
-  id: number
-  channels: Float32Array[]
-  frames: number
-  channelCount: number
-  sampleRate: number
-  stretch: number
+/** モノラルの音声を wasm に渡して `fn` で解析し、結果の値を読む（`fn` は値の数を返す） */
+const mono = (dsp: DspExports, m: Mono, fn: (input: number, n: number) => number) => [withF32(dsp, m.samples, (input) => readF32(dsp, fn(input, m.samples.length)))]
+
+/**
+ * Worker でできる処理の表（名前 → wasm の呼び出し）。処理を足すときは、ffi.rs、DspExports、ここ、engine.ts の関数に足す。
+ * リクエストの型（DspRequest）は、ここの引数の型から作る
+ */
+const OPS = {
+  /** ピッチ変更・時間伸縮。algorithm は Rust 側 `Algorithm::from_id` の番号（engine.ts の ALGORITHM_ID） */
+  process: (dsp: DspExports, r: Audio & { semitones: number; stretch: number; algorithm: number; preserveFormant: boolean; formantSemitones: number }) =>
+    planar(dsp, r, (input, frames, count) =>
+      dsp.process_planar(input, frames, count, r.sampleRate, r.semitones, r.stretch, r.algorithm, r.preserveFormant ? 1 : 0, r.formantSemitones),
+    ),
+  /** ピッチカーブ編集。`ratios[k]` は時刻 k × `hopSamples` のピッチ比 */
+  curve: (dsp: DspExports, r: Audio & { ratios: Float32Array; hopSamples: number; algorithm: number; preserveFormant: boolean; formantSemitones: number }) =>
+    planar(dsp, r, (input, frames, count) =>
+      withF32(dsp, r.ratios, (ratios) =>
+        dsp.process_curve_planar(input, frames, count, r.sampleRate, ratios, r.ratios.length, r.hopSamples, r.algorithm, r.preserveFormant ? 1 : 0, r.formantSemitones),
+      ),
+    ),
+  /** フォルマントカーブ編集。`shifts[k]` は時刻 k × `hopSamples` のフォルマントのずらし量（半音） */
+  formant: (dsp: DspExports, r: Audio & { shifts: Float32Array; hopSamples: number }) =>
+    planar(dsp, r, (input, frames, count) =>
+      withF32(dsp, r.shifts, (shifts) => dsp.formant_curve_planar(input, frames, count, r.sampleRate, shifts, r.shifts.length, r.hopSamples)),
+    ),
+  /** 和音を 2 つの声に分ける（試作）。by は 0 = 高さ、1 = 音量（Rust 側 `voices::SplitBy`）。結果は A の全チャンネル、B の全チャンネルの順 */
+  voices: (dsp: DspExports, r: Audio & { by: number }) =>
+    planar(dsp, r, (input, frames, count) => dsp.split_voices_planar(input, frames, count, r.sampleRate, r.by), r.channels.length * 2),
+  /** F0 解析 */
+  f0: (dsp: DspExports, r: Mono & { f0?: { minHz: number; maxHz: number; voicedLimit: number; silenceRms: number } }) =>
+    mono(dsp, r, (input, n) =>
+      dsp.analyze_f0(input, n, r.sampleRate, r.f0?.minHz ?? 60, r.f0?.maxHz ?? 1000, r.f0?.voicedLimit ?? 0.35, r.f0?.silenceRms ?? 0.003),
+    ),
+  /** テンポ解析 */
+  tempo: (dsp: DspExports, r: Mono) => mono(dsp, r, (input, n) => dsp.analyze_tempo(input, n, r.sampleRate)),
+  /** 母音の作り直しの試し（kana）。vowel は 0〜4 が あ〜お、strength は 0〜1 */
+  kana: (dsp: DspExports, r: Mono & { vowel: number; strength: number }) => mono(dsp, r, (input, n) => dsp.kana_vowel_demo(input, n, r.sampleRate, r.vowel, r.strength)),
+  /** 区間に分けて並列に加工するときの区間の割り当て（試験的）。結果は [start, end, ctxStart, ctxEnd] を区間の数だけ並べたもの */
+  segplan: (dsp: DspExports, r: { frames: number; sampleRate: number }) => {
+    const n = dsp.segment_count(r.frames, r.sampleRate)
+    const plan = new Float64Array(n * 4)
+    for (let k = 0; k < n; k++) for (let f = 0; f < 4; f++) plan[k * 4 + f] = dsp.segment_bound(r.frames, r.sampleRate, k, f)
+    // 区間の境界は Float64 で返す（Float32 では 5 分を超える位置が丸まる）
+    return [new Float32Array(plan.buffer)]
+  },
+  /** 区間ごとに加工した音をつなぐ（試験的）。`channels` は区間の順、その中はチャンネルの順 */
+  stitch: (dsp: DspExports, r: { channels: Float32Array[]; frames: number; channelCount: number; sampleRate: number; stretch: number }) =>
+    withF32(dsp, concat(r.channels), (input) => readPlanar(dsp, dsp.stitch_planar(input, r.frames, r.channelCount, r.sampleRate, r.stretch), r.channelCount)),
 }
 
-export type DspRequest = ProcessRequest | F0Request | CurveRequest | FormantCurveRequest | VoicesRequest | SegmentPlanRequest | StitchRequest
+type Ops = typeof OPS
+/** Worker への頼みごと（kind が OPS の名前） */
+export type DspRequest = { [K in keyof Ops]: { kind: K; id: number } & Parameters<Ops[K]>[1] }[keyof Ops]
+/** `kind` の頼みごと */
+export type DspRequestOf<K extends keyof Ops> = Extract<DspRequest, { kind: K }>
+export type ProcessRequest = DspRequestOf<'process'>
 
 export type DspResponse =
   | { id: number; channels: Float32Array[] }
@@ -156,136 +177,14 @@ const ready: Promise<DspExports> = fetch(wasmUrl)
   .then((bytes) => WebAssembly.instantiate(bytes, { env: { report_progress: reportProgress } }))
   .then((r) => r.instance.exports as unknown as DspExports)
 
-function run(dsp: DspExports, req: ProcessRequest | CurveRequest | FormantCurveRequest | VoicesRequest): Float32Array[] {
-  const frames = req.channels[0]?.length ?? 0
-  const count = req.channels.length
-  const total = frames * count
-  dsp.set_fast_math(req.fastMath === false ? 0 : 1)
-  const input = dsp.alloc_f32(total)
-  try {
-    const view = new Float32Array(dsp.memory.buffer, input, total)
-    req.channels.forEach((c, i) => view.set(c, i * frames))
-    const outFrames =
-      req.kind === 'curve'
-        ? runCurve(dsp, req, input, frames, count)
-        : req.kind === 'formant'
-          ? runFormant(dsp, req, input, frames, count)
-        : req.kind === 'voices'
-          ? dsp.split_voices_planar(input, frames, count, req.sampleRate, req.by)
-        : dsp.process_planar(
-            input,
-            frames,
-            count,
-            req.sampleRate,
-            req.semitones,
-            req.stretch,
-            req.algorithm,
-            req.preserveFormant ? 1 : 0,
-            req.formantSemitones,
-          )
-    // 処理中にメモリが拡張されている可能性があるため、ビューは処理後に作り直す
-    // 和音を分けたときは、A と B の 2 組
-    const outCount = req.kind === 'voices' ? count * 2 : count
-    const out = new Float32Array(dsp.memory.buffer, dsp.output_ptr(), outFrames * outCount)
-    return Array.from({ length: outCount }, (_, i) => out.slice(i * outFrames, (i + 1) * outFrames))
-  } finally {
-    dsp.free_f32(input, total)
-  }
-}
-
-function runCurve(dsp: DspExports, req: CurveRequest, input: number, frames: number, count: number): number {
-  const n = req.ratios.length
-  const ratios = dsp.alloc_f32(n)
-  try {
-    new Float32Array(dsp.memory.buffer, ratios, n).set(req.ratios)
-    return dsp.process_curve_planar(
-      input,
-      frames,
-      count,
-      req.sampleRate,
-      ratios,
-      n,
-      req.hopSamples,
-      req.algorithm,
-      req.preserveFormant ? 1 : 0,
-      req.formantSemitones,
-    )
-  } finally {
-    dsp.free_f32(ratios, n)
-  }
-}
-
-function runFormant(dsp: DspExports, req: FormantCurveRequest, input: number, frames: number, count: number): number {
-  const n = req.shifts.length
-  const shifts = dsp.alloc_f32(n)
-  try {
-    new Float32Array(dsp.memory.buffer, shifts, n).set(req.shifts)
-    return dsp.formant_curve_planar(input, frames, count, req.sampleRate, shifts, n, req.hopSamples)
-  } finally {
-    dsp.free_f32(shifts, n)
-  }
-}
-
-/** 区間ごとに加工した音をつなぐ */
-function stitch(dsp: DspExports, req: StitchRequest): Float32Array[] {
-  const total = req.channels.reduce((n, c) => n + c.length, 0)
-  const input = dsp.alloc_f32(total)
-  try {
-    const view = new Float32Array(dsp.memory.buffer, input, total)
-    let at = 0
-    for (const c of req.channels) {
-      view.set(c, at)
-      at += c.length
-    }
-    const outFrames = dsp.stitch_planar(input, req.frames, req.channelCount, req.sampleRate, req.stretch)
-    const out = new Float32Array(dsp.memory.buffer, dsp.output_ptr(), outFrames * req.channelCount)
-    return Array.from({ length: req.channelCount }, (_, i) => out.slice(i * outFrames, (i + 1) * outFrames))
-  } finally {
-    dsp.free_f32(input, total)
-  }
-}
-
-/** F0 解析とテンポ解析（どちらも結果は f32 の並び） */
-function analyzeF0(dsp: DspExports, req: F0Request): Float32Array {
-  const n = req.samples.length
-  const input = dsp.alloc_f32(n)
-  try {
-    new Float32Array(dsp.memory.buffer, input, n).set(req.samples)
-    const p = req.f0
-    const count =
-      req.kind === 'tempo'
-        ? dsp.analyze_tempo(input, n, req.sampleRate)
-        : req.kind === 'kana'
-          ? dsp.kana_vowel_demo(input, n, req.sampleRate, req.vowel ?? 0, req.strength ?? 1)
-        : dsp.analyze_f0(input, n, req.sampleRate, p?.minHz ?? 60, p?.maxHz ?? 1000, p?.voicedLimit ?? 0.35, p?.silenceRms ?? 0.003)
-    return new Float32Array(dsp.memory.buffer, dsp.output_ptr(), count).slice()
-  } finally {
-    dsp.free_f32(input, n)
-  }
-}
-
 scope.onmessage = async (e: MessageEvent<DspRequest>) => {
   const req = e.data
   try {
     const dsp = await ready
     currentId = req.id
     lastProgress = -1
-    if (req.kind === 'segplan') {
-      const n = dsp.segment_count(req.frames, req.sampleRate)
-      const plan = new Float64Array(n * 4)
-      for (let k = 0; k < n; k++) for (let f = 0; f < 4; f++) plan[k * 4 + f] = dsp.segment_bound(req.frames, req.sampleRate, k, f)
-      // 区間の境界は Float64 で返す（Float32 では 5 分を超える位置が丸まる）
-      scope.postMessage({ id: req.id, channels: [new Float32Array(plan.buffer)] } satisfies DspResponse, [plan.buffer])
-      return
-    }
-    if (req.kind === 'stitch') {
-      const channels = stitch(dsp, req)
-      scope.postMessage({ id: req.id, channels } satisfies DspResponse, channels.map((c) => c.buffer))
-      return
-    }
-    const channels = 'samples' in req ? [analyzeF0(dsp, req)] : run(dsp, req)
-    const res: DspResponse = { id: req.id, channels }
-    scope.postMessage(res, channels.map((c) => c.buffer))
+    const channels = (OPS[req.kind] as (dsp: DspExports, r: DspRequest) => Float32Array[])(dsp, req)
+    scope.postMessage({ id: req.id, channels } satisfies DspResponse, channels.map((c) => c.buffer))
   } catch (err) {
     const res: DspResponse = { id: req.id, error: String(err) }
     scope.postMessage(res)
