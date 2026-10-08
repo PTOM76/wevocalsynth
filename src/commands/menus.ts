@@ -79,7 +79,7 @@ export const MENU_BAR: { label: MessageKey; accessKey: string; items: MenuItem[]
     ],
   },
   // 編集メニューに入れすぎないよう、加工の道具（抽出、音声の作成）は「ツール」にまとめる
-  { label: 'menu.tools', accessKey: 'T', items: [...extract, '-', 'sampler', 'synth', 'record'] },
+  { label: 'menu.tools', accessKey: 'T', items: [...extract, '-', 'sampler', 'synth', 'record', '-', 'kanaCut', 'exportMorae', 'clearMorae'] },
   { label: 'menu.help', accessKey: 'H', items: ['userGuide', 'shortcuts', '-', 'checkUpdate', 'licenses', 'about'] },
 ]
 

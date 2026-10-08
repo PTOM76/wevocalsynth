@@ -42,6 +42,7 @@ import { i18n, LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
 import { setFastMath, setParallel } from './dsp/engine'
 import { app } from './appConfig'
+import MoraLane from './components/MoraLane'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
 /** 選択範囲なし（描画のたびに新しい空配列を作らない） */
@@ -215,6 +216,7 @@ export default function App() {
   const onWaveDrawGain = useStableFn((from: CurvePoint, to: CurvePoint) => edited && shown === edited && ed.gainCurve.draw(edited, from, to))
   const onWaveDrawFormant = useStableFn((from: CurvePoint, to: CurvePoint) => edited && shown === edited && ed.formantCurve.draw(edited, from, to))
   const onWaveFocus = useStableFn(ed.setFocusLane)
+  const morae = ed.tracks.moraeOf(ed.tracks.activeId)
   const waveform = shown ? (
     <Waveform
       clip={shown}
@@ -268,6 +270,10 @@ export default function App() {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       {trackArea.panel(view)}
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{waveform}</Box>
+      {/* 読みの帯（一音ずつ切り出した範囲。加工後の音声を表示しているときだけ） */}
+      {shown && shown === ed.edited && morae.length > 0 && (
+        <MoraLane morae={morae} view={view} onChange={(list) => ed.tracks.setMorae(ed.tracks.activeId, list)} onPlay={(m) => ed.playback.playRange(m.start, m.end)} />
+      )}
     </Box>
   )
 

@@ -35,6 +35,7 @@ WeVocalSynth の作業（トラックの音声・加工のパラメータ・テ�
 | `volume`・`pan`・`invert` | フェーダー（音量 dB・パン -1〜1・位相反転） |
 | `mute`・`solo` | 鳴らし方 |
 | `overlay` | 大きな波形の後ろに重ねて表示するか |
+| `morae` | 一音ずつ切り出した範囲（読みの帯）。`{ start, end, mora, sure }` の配列で、位置は秒、`mora` は読み（ひらがな）、`sure` は境目がはっきりしているか。無ければ空（古い版はこの項目を読まない） |
 
 正確な一覧は `StoredTrackSettings`（[src/audio/tracks.ts](../src/audio/tracks.ts)）。
 

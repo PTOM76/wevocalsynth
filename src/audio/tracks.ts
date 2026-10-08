@@ -1,6 +1,7 @@
 // トラックの形と、保存する設定（フェーダー、鳴らし方、EQ）の変換
 import { isFlatEq, parseEq, type TrackEq } from './eq'
 import type { Clip } from './types'
+import type { MoraMark } from './kanaCut'
 
 /**
  * トラック。編集できるのは選んでいるトラックだけで、ほかのトラックは一緒に鳴らして聴く参照になる。
@@ -54,6 +55,8 @@ export interface TrackSettings {
   mix: TrackMix
   /** 大きな波形の後ろに重ねて表示する */
   overlay: boolean
+  /** 一音ずつ切り出した範囲（読みの帯。memo/kana-cut.md） */
+  morae: MoraMark[]
 }
 
 /**
@@ -68,13 +71,14 @@ export interface StoredTrackSettings {
   mute?: boolean
   solo?: boolean
   overlay?: boolean
+  morae?: MoraMark[]
 }
 
 /** `StoredTrackSettings` の項目名（保存したものから、この項目だけを取り出すのに使う） */
-const STORED_KEYS = ['volume', 'pan', 'invert', 'eq', 'mute', 'solo', 'overlay'] as const satisfies readonly (keyof StoredTrackSettings)[]
+const STORED_KEYS = ['volume', 'pan', 'invert', 'eq', 'mute', 'solo', 'overlay', 'morae'] as const satisfies readonly (keyof StoredTrackSettings)[]
 
 export function toStoredSettings(s: TrackSettings): StoredTrackSettings {
-  return { volume: s.fader.db, pan: s.fader.pan, invert: s.fader.invert, eq: isFlatEq(s.eq) && s.eq.on && s.eq.bands === 10 ? undefined : s.eq, mute: s.mix.mute, solo: s.mix.solo, overlay: s.overlay }
+  return { volume: s.fader.db, pan: s.fader.pan, invert: s.fader.invert, eq: isFlatEq(s.eq) && s.eq.on && s.eq.bands === 10 ? undefined : s.eq, mute: s.mix.mute, solo: s.mix.solo, overlay: s.overlay, morae: s.morae.length ? s.morae : undefined }
 }
 
 export function fromStoredSettings(s: StoredTrackSettings | undefined): TrackSettings {
@@ -83,6 +87,7 @@ export function fromStoredSettings(s: StoredTrackSettings | undefined): TrackSet
     eq: parseEq(s?.eq),
     mix: { mute: !!s?.mute, solo: !!s?.solo },
     overlay: !!s?.overlay,
+    morae: Array.isArray(s?.morae) ? s.morae : [],
   }
 }
 

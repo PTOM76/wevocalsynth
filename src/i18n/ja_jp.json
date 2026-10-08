@@ -903,5 +903,27 @@
   "tempoChange.title": "テンポの変化が検出されました",
   "tempoChange.message": "次の位置でテンポが変わっている可能性があります。採用すると、テンポのマーカーが配置されます。行を選択すると、その位置へ移動します",
   "tempoChange.adopt": "採用する",
-  "tempoChange.keep": "一定のテンポにする"
+  "tempoChange.keep": "一定のテンポにする",
+
+  "kanaCut.title": "一音ずつ切り出す",
+  "kanaCut.menu": "一音ずつ切り出す…",
+  "kanaCut.intro": "歌声を文字にして読みを付け、あ、い、う…の一音ずつの範囲を求めます。伴奏がある場合は、先にボーカルを抽出すると精度が上がります",
+  "kanaCut.target": "対象: {start}〜{end} 秒",
+  "kanaCut.model": "モデル",
+  "kanaCut.model.tiny": "軽量（約 {mb} MB）",
+  "kanaCut.model.base": "標準（約 {mb} MB）",
+  "kanaCut.model.small": "高精度（約 {mb} MB）",
+  "kanaCut.transcribe": "文字化する",
+  "kanaCut.downloading": "モデルをダウンロード中… {percent}%",
+  "kanaCut.transcribing": "文字化しています…",
+  "kanaCut.readingsHelp": "読みはひらがなで入力します。一音ずつの範囲は、この読みをもとに求めます",
+  "kanaCut.lyrics": "歌詞",
+  "kanaCut.reading": "読み",
+  "kanaCut.find": "範囲を求める",
+  "kanaCut.finding": "範囲を求めています…",
+  "kanaCut.noGpu": "この環境では WebGPU を利用できないため、文字化できません",
+  "kanaCut.failed": "処理できませんでした: {message}",
+  "kanaCut.empty": "歌詞を認識できませんでした",
+  "kanaCut.exportMenu": "一音ずつ書き出す（ZIP）",
+  "kanaCut.clearMenu": "読みの帯を消す"
 }

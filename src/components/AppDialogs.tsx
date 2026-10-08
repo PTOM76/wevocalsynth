@@ -23,6 +23,7 @@ import SoundSelectDialog from './SoundSelectDialog'
 import SynthDialog from './SynthDialog'
 import TempoChangeDialog from './TempoChangeDialog'
 import VideoExportDialog from './VideoExportDialog'
+import KanaCutDialog from './KanaCutDialog'
 
 interface Props {
   ed: ReturnType<typeof useEditor>
@@ -102,6 +103,17 @@ export default function AppDialogs({ ed, dialogs, bpm, seg, selectionExport }: P
     // 選択範囲があればその頭に、なければ再生位置に入れる
     onInsert={(sec) => ed.cmd.insertSilence(selection ? selection.start : player.livePosition(), sec)}
   />
+  {edited && (
+    <KanaCutDialog
+      open={dialogs.isOpen('kanaCut')}
+      onClose={dialogs.closer('kanaCut')}
+      clip={edited}
+      // 選択範囲があればそこだけ、なければ全体
+      range={selection ?? { start: 0, end: (edited.channels[0]?.length ?? 0) / edited.sampleRate }}
+      ensure={(id) => ed.ensureAddon(id)}
+      onDone={(morae) => ed.tracks.setMorae(ed.tracks.activeId, morae)}
+    />
+  )}
   <SoundSelectDialog open={dialogs.isOpen('soundSelect')} clip={edited} onClose={dialogs.closer('soundSelect')} onSelect={selectionExport.onSoundsSelected} />
   <SamplerDialog
     open={dialogs.isOpen('sampler')}

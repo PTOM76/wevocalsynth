@@ -903,5 +903,27 @@
   "tempoChange.title": "检测到速度变化",
   "tempoChange.message": "速度可能在以下位置发生变化。采用后将放置速度标记。选择一行可移动到该位置",
   "tempoChange.adopt": "采用",
-  "tempoChange.keep": "保持固定速度"
+  "tempoChange.keep": "保持固定速度",
+
+  "kanaCut.title": "逐音切分",
+  "kanaCut.menu": "逐音切分…",
+  "kanaCut.intro": "将歌声转写为文字并标注读音，求出あ、い、う…每个音的范围。有伴奏时，先提取人声可提高精度",
+  "kanaCut.target": "对象：{start}～{end} 秒",
+  "kanaCut.model": "模型",
+  "kanaCut.model.tiny": "轻量（约 {mb} MB）",
+  "kanaCut.model.base": "标准（约 {mb} MB）",
+  "kanaCut.model.small": "高精度（约 {mb} MB）",
+  "kanaCut.transcribe": "转写",
+  "kanaCut.downloading": "正在下载模型… {percent}%",
+  "kanaCut.transcribing": "正在转写…",
+  "kanaCut.readingsHelp": "读音请用平假名输入。每个音的范围以此读音为准",
+  "kanaCut.lyrics": "歌词",
+  "kanaCut.reading": "读音",
+  "kanaCut.find": "求出范围",
+  "kanaCut.finding": "正在求出范围…",
+  "kanaCut.noGpu": "此环境无法使用 WebGPU，因此无法转写",
+  "kanaCut.failed": "无法处理：{message}",
+  "kanaCut.empty": "未能识别歌词",
+  "kanaCut.exportMenu": "逐音导出（ZIP）",
+  "kanaCut.clearMenu": "清除读音轨"
 }

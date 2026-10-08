@@ -1,5 +1,7 @@
 // ツールのコマンド（ボーカル抽出、音声の作成、録音、ピッチの道具）
 import { canRecord } from 'wevocal-lib'
+import { downloadBlob } from 'pevenmui/web'
+import { exportMorae } from '../audio/kanaCut'
 import { flattenPitch } from '../audio/pitchTools'
 import { defineCommands, ready, selected, type CommandContext } from './types'
 
@@ -17,6 +19,10 @@ function nudgePitch(c: CommandContext, curve: number, param: number) {
 // ピッチの強制表示と非表示は、選択範囲があるときだけ
 const voicingReady = (c: CommandContext) => selected(c) && pitchReady(c)
 
+/** 選んでいるトラックの一音ずつの範囲 */
+const moraeOf = (c: CommandContext) => c.ed.tracks.moraeOf(c.ed.tracks.activeId)
+const hasMorae = (c: CommandContext) => ready(c) && moraeOf(c).length > 0
+
 export const toolCommands = defineCommands({
   extractVocals: { label: 'extract.vocalsMenu', enabled: ready, run: (c) => void c.ed.extract('vocals') },
   extractAccompaniment: { label: 'extract.accompanimentMenu', enabled: ready, run: (c) => void c.ed.extract('accompaniment') },
@@ -28,6 +34,17 @@ export const toolCommands = defineCommands({
   splitVoicesByVolume: { label: 'voices.byVolumeMenu', visible: (c) => c.settings.showVoiceSplit, enabled: ready, run: (c) => void c.ed.splitVoices('volume') },
   sampler: { label: 'sampler.menu', enabled: ready, run: (c) => c.dialogs.open('sampler') },
   synth: { label: 'synth.menu', enabled: (c) => !c.ed.busy, run: (c) => c.dialogs.open('synth') },
+  // 一音ずつ切り出す（memo/kana-cut.md）
+  kanaCut: { label: 'kanaCut.menu', enabled: ready, run: (c) => c.dialogs.open('kanaCut') },
+  exportMorae: {
+    label: 'kanaCut.exportMenu',
+    enabled: hasMorae,
+    run: (c) => {
+      const clip = c.ed.edited
+      if (clip) void exportMorae(clip, moraeOf(c)).then((zip) => downloadBlob(zip, `${c.ed.baseName}_kana.zip`))
+    },
+  },
+  clearMorae: { label: 'kanaCut.clearMenu', enabled: hasMorae, run: (c) => c.ed.tracks.setMorae(c.ed.tracks.activeId, []) },
   record: { label: 'record.menu', enabled: (c) => !c.ed.busy && canRecord(), run: (c) => c.dialogs.open('record') },
 
   // ピッチの道具（右クリックでは、ピッチの帯のときだけ）

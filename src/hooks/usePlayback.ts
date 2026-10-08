@@ -50,6 +50,11 @@ export function usePlayback(main: Player, preview: Player, loop: Loop, curve: { 
       main.pause()
       main.seek(0)
     },
+    /** `start`〜`end` 秒だけを鳴らす（読みの帯の一音を押したとき） */
+    playRange: (start: number, end: number) => {
+      only('main')
+      void main.play(start, end)
+    },
     playSelection: () => {
       if (!selection) return
       only('main')

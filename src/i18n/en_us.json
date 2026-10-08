@@ -903,5 +903,27 @@
   "tempoChange.title": "Tempo change detected",
   "tempoChange.message": "The tempo may change at the following positions. If you use them, tempo markers will be placed. Select a row to move to that position",
   "tempoChange.adopt": "Use",
-  "tempoChange.keep": "Keep constant tempo"
+  "tempoChange.keep": "Keep constant tempo",
+
+  "kanaCut.title": "Cut into single sounds",
+  "kanaCut.menu": "Cut into single sounds…",
+  "kanaCut.intro": "Transcribes the singing, adds readings, and finds the range of each single sound (a, i, u…). If there is accompaniment, extract the vocals first for better accuracy",
+  "kanaCut.target": "Range: {start}–{end} s",
+  "kanaCut.model": "Model",
+  "kanaCut.model.tiny": "Light (about {mb} MB)",
+  "kanaCut.model.base": "Standard (about {mb} MB)",
+  "kanaCut.model.small": "Precise (about {mb} MB)",
+  "kanaCut.transcribe": "Transcribe",
+  "kanaCut.downloading": "Downloading the model… {percent}%",
+  "kanaCut.transcribing": "Transcribing…",
+  "kanaCut.readingsHelp": "Enter readings in hiragana. The range of each sound is found from these readings",
+  "kanaCut.lyrics": "Lyrics",
+  "kanaCut.reading": "Reading",
+  "kanaCut.find": "Find ranges",
+  "kanaCut.finding": "Finding ranges…",
+  "kanaCut.noGpu": "WebGPU is not available in this environment, so transcription cannot run",
+  "kanaCut.failed": "Could not process: {message}",
+  "kanaCut.empty": "No lyrics were recognized",
+  "kanaCut.exportMenu": "Export single sounds (ZIP)",
+  "kanaCut.clearMenu": "Clear the reading lane"
 }
