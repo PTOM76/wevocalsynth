@@ -1,3 +1,4 @@
+// 「このアプリについて」のダイアログ
 import { Link } from '@mui/material'
 import { AboutDialog as PevenAboutDialog } from 'pevenmui'
 import AppIcon from './AppIcon'

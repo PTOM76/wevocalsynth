@@ -1,3 +1,4 @@
+// 音を 0 から作るダイアログ
 import { useEffect, useRef, useState } from 'react'
 import {
   Box,

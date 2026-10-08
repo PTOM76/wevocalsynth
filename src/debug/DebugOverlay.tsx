@@ -1,3 +1,4 @@
+// デバッグ表示（FPS、描画回数、メモリ、DSP の時間）
 import { useEffect, useRef, useState } from 'react'
 import { Box } from '@mui/material'
 import { audioContextStates, memoryUsage, recentDspJobs, recentStalls, renderCounts } from './debugStats'

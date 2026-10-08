@@ -1,3 +1,4 @@
+// マーカーからのテンポを決めるダイアログ
 import { useEffect, useState } from 'react'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material'
 import { NumberInput } from './inspector/Inspector'

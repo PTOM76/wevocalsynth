@@ -1,3 +1,4 @@
+// 動画の書き出しのダイアログ
 import { useEffect, useRef, useState } from 'react'
 import { Box, Button, Checkbox, DialogActions, DialogContent, FormControlLabel, LinearProgress, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import { enterToSubmit, WindowDialog, pevenFont } from 'pevenmui'

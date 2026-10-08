@@ -1,3 +1,4 @@
+// スペクトログラムの計算を追加機能「解析」に頼む
 import type * as Analyzer from '../../analyzer/src/index'
 import { loadAddon } from '../addons/addons'
 import type { Clip } from './types'

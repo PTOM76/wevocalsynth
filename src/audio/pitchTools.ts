@@ -1,3 +1,4 @@
+// ピッチの曲線の一括操作（平らにする、音程に揃える、ビブラート、MIDI に合わせる）
 import { F0_HOP_SEC } from '../dsp/engine'
 import { hzToMidi, midiToHz } from './notes'
 import type { MidiNote } from './midi'

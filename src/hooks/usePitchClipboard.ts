@@ -1,3 +1,4 @@
+// ピッチの曲線の切り取り、コピー、貼り付け
 import { useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { F0_HOP_SEC } from '../dsp/engine'

@@ -1,3 +1,4 @@
+// 名前の変更のダイアログ（トラック、プロジェクト）
 import { useEffect, useState } from 'react'
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
 import { useT } from '../../i18n/i18n'

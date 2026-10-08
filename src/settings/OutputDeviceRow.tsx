@@ -1,3 +1,4 @@
+// 設定の「音声の出力先」の行
 import { useEffect, useState } from 'react'
 import { Button } from '@mui/material'
 import { Choice, Row } from 'pevenmui'

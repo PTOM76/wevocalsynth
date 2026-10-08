@@ -1,3 +1,4 @@
+// プロジェクトファイル（.wvsp）の読み書き
 import { readWvsp, writeWvsp, WVSP_EXT, WvspError } from 'wevocal-lib'
 import type { Clip } from '../audio/types'
 import { pickStoredSettings, type StoredTrackSettings } from '../audio/tracks'

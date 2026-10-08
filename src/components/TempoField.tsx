@@ -1,3 +1,4 @@
+// BPM の表示と入力（タップで測る、再解析）
 import { useRef, useState } from 'react'
 import { Box, Button, ButtonBase, CircularProgress, Popover, Stack, Tooltip, Typography } from '@mui/material'
 import type { TempoCandidate } from '../dsp/engine'

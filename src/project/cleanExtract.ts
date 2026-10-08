@@ -1,3 +1,4 @@
+// メモリが足りないときの抽出（再読み込みしてから抽出する）
 import type { Clip, Range } from '../audio/types'
 import type { Project } from './projectFile'
 import { idbDelete, idbGet, idbPut } from './idb'

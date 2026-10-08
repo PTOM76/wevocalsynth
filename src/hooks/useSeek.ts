@@ -1,3 +1,4 @@
+// 矢印キーと Home、End での再生位置の移動（拍に合わせる）
 import type { Clip } from '../audio/types'
 import { stepBeat, type TempoSegment } from '../audio/tempoMap'
 

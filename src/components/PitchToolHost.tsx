@@ -1,3 +1,4 @@
+// ピッチの一括操作のダイアログを開く場所
 import { addVibrato, fitMidi, snapPitch } from '../audio/pitchTools'
 import type { usePitchTools } from '../hooks/usePitchTools'
 import { SnapDialog, VibratoDialog } from './PitchToolDialogs'

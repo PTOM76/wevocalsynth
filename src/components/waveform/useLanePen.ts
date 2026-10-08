@@ -1,3 +1,4 @@
+// ペンで帯に曲線を描く
 import { localPoint } from 'pevenmui'
 import { useRef, type RefObject } from 'react'
 

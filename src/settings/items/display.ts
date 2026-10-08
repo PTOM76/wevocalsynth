@@ -1,3 +1,4 @@
+// 設定の項目の定義（表示と、表示メニューの切り替え）
 import type { LangSetting } from '../../i18n/i18n'
 import type { ThemeSetting } from '../settings'
 import { UI_SCALES } from '../../constants/ui'

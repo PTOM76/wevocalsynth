@@ -1,3 +1,4 @@
+// 進み具合のゲージに表示する処理の種類
 import { startJob as start } from 'pevenmui'
 
 /** 進んでいる処理の大まかな種類（ゲージに出す名前は i18n の job.kind.*） */

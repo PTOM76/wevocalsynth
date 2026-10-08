@@ -1,3 +1,4 @@
+// スマホの上部バー（プロジェクト名とメニュー）
 import { faRotateLeft, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import { AppHeader as PevenAppHeader, HeaderIcon, type MenuGroup } from 'pevenmui'
 import AppIcon from './AppIcon'

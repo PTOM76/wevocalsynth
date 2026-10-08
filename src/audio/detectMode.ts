@@ -1,3 +1,4 @@
+// 音声がボーカルか楽器かを判定し、モードごとの既定の処理方式を決める
 import type { Clip } from './types'
 import { analyzeF0, F0_HOP_SEC, type Algorithm } from '../dsp/engine'
 

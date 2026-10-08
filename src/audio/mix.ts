@@ -1,3 +1,4 @@
+// トラックを足し合わせて 1 つにする（統合と書き出し）
 import type { Clip } from './types'
 import { clipDuration } from './types'
 

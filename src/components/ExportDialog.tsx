@@ -1,3 +1,4 @@
+// 音声の書き出しのダイアログ
 import type { FinishOptions } from '../audio/finish'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Box, Checkbox, FormControlLabel,

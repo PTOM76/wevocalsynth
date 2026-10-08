@@ -1,3 +1,4 @@
+// 通常の再生と試聴の切り替え（片方を始めたらもう片方を止める）
 import type { Range } from '../audio/types'
 
 /** usePlayer の戻り値のうち、ここで使う部分 */

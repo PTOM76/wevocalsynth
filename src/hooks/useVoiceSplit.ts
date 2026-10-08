@@ -1,3 +1,4 @@
+// 和音を 2 つの声に分ける操作（試作）
 import type { Clip, Range } from '../audio/types'
 import type { Track } from '../audio/tracks'
 import { spliceProcessed } from '../audio/edit'

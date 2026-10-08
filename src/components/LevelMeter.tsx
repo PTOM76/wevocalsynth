@@ -1,3 +1,4 @@
+// 音量メーター（wevocal-lib の部品にテーマの色を渡す）
 import { useMemo, type ComponentProps } from 'react'
 import { canvasPixelRatio, usePalette } from 'pevenmui'
 import { LevelMeter as Meter } from 'wevocal-lib/react'

@@ -1,3 +1,4 @@
+// メニューバーと右クリックメニューを作る（項目は menus/）
 import type { MenuEntry, MenuGroup } from 'pevenmui'
 import { keyLabelOf, type ActionId } from '../settings/keymap'
 import { useT } from '../i18n/i18n'

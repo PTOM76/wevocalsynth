@@ -1,3 +1,4 @@
+// 「ライセンス情報」に表示する、使っている部品とモデルの一覧
 import type { LicenseEntry } from 'pevenmui'
 import { t } from './i18n/i18n'
 import { REPOSITORY_URL } from './links'

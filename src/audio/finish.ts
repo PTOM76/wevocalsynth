@@ -1,3 +1,4 @@
+// 書き出しの仕上げ（ノーマライズと両端のフェード）
 import type { Clip } from './types'
 import { clipDuration } from './types'
 import { fadeRange, normalizeRange } from './edit'

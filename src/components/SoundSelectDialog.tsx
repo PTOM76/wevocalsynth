@@ -1,3 +1,4 @@
+// 無音で区切って選択するダイアログ
 import { useMemo, useState } from 'react'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material'
 import type { Clip, Range } from '../audio/types'

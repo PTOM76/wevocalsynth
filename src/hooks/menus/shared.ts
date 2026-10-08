@@ -1,3 +1,4 @@
+// メニューバーと右クリックで共通の項目
 import type { MenuEntry } from 'pevenmui'
 import type { MessageKey } from '../../i18n/i18n'
 import type { ActionId } from '../../settings/keymap'

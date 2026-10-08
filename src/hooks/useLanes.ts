@@ -1,3 +1,4 @@
+// 帯の表示と、フォーカスしている帯
 import { useState } from 'react'
 import type { Lane } from '../components/waveform/draw'
 

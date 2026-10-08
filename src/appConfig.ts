@@ -1,3 +1,4 @@
+// アプリの定義（名前、URL、保存のキー）。Worker からも読み込める
 import { defineApp } from 'pevenmui/web'
 import { APP_INFO } from './appInfo'
 

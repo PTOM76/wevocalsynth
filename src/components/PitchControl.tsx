@@ -1,3 +1,4 @@
+// ピッチの変更量のスライダーと入力欄
 import { IconButton, Slider, Tooltip, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnet } from '@fortawesome/free-solid-svg-icons'

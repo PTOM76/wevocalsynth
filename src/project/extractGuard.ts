@@ -1,3 +1,4 @@
+// 抽出のあとにアプリが落ちたかを、次の起動で知る印
 import { app } from '../appConfig'
 
 /**

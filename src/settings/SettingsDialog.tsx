@@ -1,3 +1,4 @@
+// 設定のダイアログ（PevenMUI の設定画面に、分類と中身を渡す）
 import { SettingsDialog as PevenSettingsDialog } from 'pevenmui'
 import { DEFAULT_SETTINGS, type Settings } from './settings'
 import { useT } from '../i18n/i18n'

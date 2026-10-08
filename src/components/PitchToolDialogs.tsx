@@ -1,3 +1,4 @@
+// ピッチの一括操作のダイアログ（音程に揃える、ビブラート）
 import { useState, type ReactNode } from 'react'
 import {
   Box,

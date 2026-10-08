@@ -1,3 +1,4 @@
+// 元に戻す、やり直す（差分で持ち、メモリの上限で古い段を捨てる）
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { reportMemory } from '../debug/debugStats'
 import type { Clip } from '../audio/types'

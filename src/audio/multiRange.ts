@@ -1,3 +1,4 @@
+// 複数の選択範囲の整理、切り出し、範囲ごとの加工
 import type { Clip, Range } from './types'
 import { applyEdit, removeRange, sliceClip } from './edit'
 import type { ProcessOptions } from '../dsp/engine'

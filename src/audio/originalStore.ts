@@ -1,3 +1,4 @@
+// 原音を IndexedDB に退避してメモリを節約する
 import { useEffect, useState } from 'react'
 import type { Clip } from './types'
 import { idbDelete, idbDeletePrefix, idbGet, idbPut } from '../project/idb'

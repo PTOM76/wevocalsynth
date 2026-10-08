@@ -1,3 +1,4 @@
+// トラックの欄（波形付きの一覧）
 import { useEffect, useRef } from 'react'
 import { Box, ButtonBase, Tooltip, Typography } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackMix } from '../../audio/tracks'

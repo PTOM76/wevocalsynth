@@ -1,3 +1,4 @@
+// キーボードショートカットと、フォーカスしている帯に効く切り取りなど
 import { useMemo, type Dispatch, type SetStateAction } from 'react'
 import { useShortcuts } from 'pevenmui'
 import type { Clip, Range } from '../audio/types'

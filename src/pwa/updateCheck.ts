@@ -1,3 +1,4 @@
+// 新しい版の確認
 import { formatBuild } from 'pevenmui/pwa'
 
 // 新しい版の通知と確認は PevenMUI（pevenmui/pwa）が受け持つ

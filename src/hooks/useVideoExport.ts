@@ -1,3 +1,4 @@
+// 動画の書き出し（追加機能「変換」）
 import { useEffect, useState } from 'react'
 import { folderFileTarget, pickSaveTarget } from 'pevenmui/web'
 import { renderVideo, VIDEO_EXT, VIDEO_MIME } from '../audio/video'

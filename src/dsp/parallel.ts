@@ -1,3 +1,4 @@
+// 長い音を区間に分けて並列に加工する（試験的）
 import { isMobile } from 'pevenmui/web'
 import type { ProcessRequest } from './worker'
 import { newId, sendTo } from './engine'

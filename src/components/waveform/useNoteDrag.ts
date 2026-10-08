@@ -1,3 +1,4 @@
+// 音符ブロックのドラッグ（移動と端の伸縮）
 import { useRef } from 'react'
 import { F0_HOP_SEC } from '../../dsp/engine'
 import { noteBlockAt } from '../../audio/noteBlocks'

@@ -1,3 +1,4 @@
+// 音声の編集の計算（範囲への加工、切り取りと挿入、音量、フェード、反転、曲線の書き込み）
 import type { Clip, Range } from './types'
 import { F0_HOP_SEC, processAudio, processCurve, processFormantCurve, type ProcessOptions } from '../dsp/engine'
 

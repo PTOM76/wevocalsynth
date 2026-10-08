@@ -1,3 +1,4 @@
+// トラックの欄（タブの形）
 import { Box, Tab, Tabs, Tooltip } from '@mui/material'
 import { DEFAULT_MIX, isAudible, type Track, type TrackMix } from '../../audio/tracks'
 import { MixToggle, TrackMenuButton } from './TrackLanes'

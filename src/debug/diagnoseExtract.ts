@@ -1,3 +1,4 @@
+// ボーカル抽出の診断の本体
 import { isExtracting, openExtractor, RUNTIME_ADDONS, VOCAL_MODELS, type ExtractOptions } from '../audio/vocalExtract'
 import { addonFileUrl, installedManifest } from '../addons/addons'
 import { releaseIdleDsp } from '../dsp/engine'

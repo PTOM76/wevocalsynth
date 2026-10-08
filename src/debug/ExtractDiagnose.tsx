@@ -1,3 +1,4 @@
+// ボーカル抽出の診断の画面（設定の開発者向け）
 import { useState } from 'react'
 import { Box, Button, Typography } from '@mui/material'
 import { useT } from '../i18n/i18n'

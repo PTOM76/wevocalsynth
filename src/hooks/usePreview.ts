@@ -1,3 +1,4 @@
+// 加工の結果を前もって作る（試聴と適用を速くする）
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { processRange, type ProcessedRange } from '../audio/edit'

@@ -1,3 +1,4 @@
+// 画面の定数（選択肢の表、小さいボタンの見た目）
 import { pevenFont } from 'pevenmui'
 
 /** 画面の大きさの選択肢（倍率） */

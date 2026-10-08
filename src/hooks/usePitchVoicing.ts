@@ -1,3 +1,4 @@
+// ピッチを出す所と消す所の指定
 import { useCallback, useMemo, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { F0_HOP_SEC } from '../dsp/engine'

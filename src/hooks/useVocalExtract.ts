@@ -1,3 +1,4 @@
+// ボーカル抽出の操作（モデルの確認、実行、結果をトラックへ）
 import { useEffect } from 'react'
 import { useConfirm } from 'pevenmui'
 import type { Clip, Range } from '../audio/types'

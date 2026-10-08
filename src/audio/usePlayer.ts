@@ -1,3 +1,4 @@
+// 再生（全トラックのミックス、ループ、音量メーター、フェーダーと EQ）
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from './types'
 import { DEFAULT_FADER, faderGain, type TrackFader } from './tracks'

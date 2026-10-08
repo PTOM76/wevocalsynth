@@ -1,3 +1,4 @@
+// トラックのグラフィック EQ の計算（再生と書き出しに掛ける）
 import type { Clip } from './types'
 
 /**

@@ -1,3 +1,4 @@
+// 時間のかかる処理を、処理中の印、進み具合、通知、中断付きで実行する
 import { useRef, useState } from 'react'
 import { markActivity } from '../debug/debugStats'
 import { cancelDsp } from '../dsp/engine'

@@ -2,6 +2,11 @@
 
 AI のエージェント向けの決まり。[docs/CODING.md](docs/CODING.md) の決まりも同じく守る。ここには AI だけに当てはまることを書く。
 
+## コードを探す
+
+- どこに何があるかは `npm run map`（各ファイルの 1 行目の説明の一覧）。フォルダーを渡すと絞れる（`npm run map -- src/hooks`）
+- ファイルを足したら 1 行目に説明を書き、`npm run map -- --write` で docs/STRUCTURE.md を更新する
+
 ## 訳文
 
 - `src/i18n/*.json`（5 言語で約 220 KB）は直接開かない。`node scripts/i18n.mjs` で扱う

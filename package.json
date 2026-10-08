@@ -14,7 +14,8 @@
     "build:addons": "node scripts/build-addons.mjs",
     "build:addons:dev": "node scripts/build-addons.mjs public",
     "docs:shots": "node scripts/screenshots/run.mjs",
-    "i18n": "node scripts/i18n.mjs"
+    "i18n": "node scripts/i18n.mjs",
+    "map": "node scripts/map.mjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",

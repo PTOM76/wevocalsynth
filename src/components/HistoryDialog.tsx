@@ -1,3 +1,4 @@
+// 編集の履歴のダイアログ（押した段へ戻る）
 import { Dialog, DialogContent, DialogTitle, List, ListItemButton, ListItemText, Typography } from '@mui/material'
 import { useT } from '../i18n/i18n'
 import { pevenFont } from 'pevenmui'

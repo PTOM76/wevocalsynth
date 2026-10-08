@@ -1,3 +1,4 @@
+// 音声を MIDI の音符に並べて新しいトラックを作る
 import type { Clip } from './types'
 import { processAudio } from '../dsp/engine'
 

@@ -1,3 +1,4 @@
+// ピッチの曲線の一括操作と、その試聴
 import { useEffect, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'

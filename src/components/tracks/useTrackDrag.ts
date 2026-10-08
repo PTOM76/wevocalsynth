@@ -1,3 +1,4 @@
+// トラックの選択（修飾キーで複数）とドラッグでの並び替え
 import { useState } from 'react'
 import type { Track } from '../../audio/tracks'
 

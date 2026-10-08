@@ -1,3 +1,4 @@
+// 選択範囲の開始と終了の入力欄
 import { useState } from 'react'
 import { Box, ButtonBase, Popover, Stack, TextField, Tooltip } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

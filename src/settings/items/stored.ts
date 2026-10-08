@@ -1,3 +1,4 @@
+// 設定の項目の定義（画面の操作で覚えておく値）
 import type { Preset } from '../../components/PresetMenu'
 import { DEFAULT_VIDEO_PREFS, type VideoExportPrefs } from '../../components/videoPrefs'
 import { defineItems, value } from './define'

@@ -1,3 +1,4 @@
+// 処理方式の一覧と選ぶメニュー（従来の方式と試験的な方式の表示を含む）
 import { useState } from 'react'
 import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

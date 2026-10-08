@@ -1,3 +1,4 @@
+// インスペクタ（右の欄）の部品（折りたたむ欄、行、数値の入力）
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import { Box, ButtonBase, InputBase, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

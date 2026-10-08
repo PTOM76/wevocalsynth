@@ -1,3 +1,4 @@
+// 音を 0 から作る（声の母音、楽器の波形）
 import type { Clip } from './types'
 import { midiToHz } from './notes'
 

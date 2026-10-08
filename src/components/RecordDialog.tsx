@@ -1,3 +1,4 @@
+// 録音のダイアログ（入力元、レベル、録音したものを新しいトラックへ）
 import { useEffect, useRef, useState } from 'react'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, MenuItem, Select, Typography } from '@mui/material'
 import { listInputDevices, openInput, startRecording, type Clip, type InputDevice, type InputOptions, type Recording } from 'wevocal-lib'

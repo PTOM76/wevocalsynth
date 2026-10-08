@@ -1,3 +1,4 @@
+// 設定の「キーとマウス」のショートカットの割り当て
 import { useMemo } from 'react'
 import { KeymapEditor } from 'pevenmui'
 import { ACTIONS, defaultKeys, type KeymapOverrides } from './keymap'

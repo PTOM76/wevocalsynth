@@ -1,3 +1,4 @@
+// 波形と帯（スペクトログラム、ピッチ、音量、フォルマント）の Canvas と、その上の操作
 import { nearestBeat } from '../audio/tempoMap'
 import { CURVE_HOP_SEC, type CurvePoint } from '../hooks/useLaneCurve'
 import { FORMANT_SCALE, GAIN_SCALE, curveValueAt, drawCurveLane, type CurveScale } from './waveform/curveLane'

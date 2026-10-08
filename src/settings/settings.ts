@@ -1,3 +1,4 @@
+// 設定の保存と読み込み、Context
 import { createContext, createElement, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import type { F0Params } from '../dsp/engine'
 import { DEFAULT_SETTINGS, type Settings } from './items'

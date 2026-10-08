@@ -1,3 +1,4 @@
+// 無音で区切って、音のある所を探す
 import type { Clip, Range } from './types'
 
 /** 無音で区切るときの設定 */

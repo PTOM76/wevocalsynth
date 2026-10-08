@@ -1,3 +1,4 @@
+// 設定画面の分類の並びと、検索の対象
 import type { SettingsCategory } from 'pevenmui'
 import type { MessageKey } from '../i18n/i18n'
 import { ACTIONS } from './keymap'

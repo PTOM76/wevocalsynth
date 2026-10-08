@@ -1,3 +1,4 @@
+// 設定の項目の定義（全般、編集、キーとマウス、ファイル）
 import type { StartFolder } from 'pevenmui/web'
 import type { WheelZoom } from 'wevocal-lib/react'
 import type { CtrlSAction } from '../settings'

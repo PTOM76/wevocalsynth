@@ -1,3 +1,4 @@
+// 動画の書き出しを追加機能「変換」に頼む
 import type * as Video from '../../converter/src/video/index'
 import { loadAddon } from '../addons/addons'
 import type { Clip } from './types'

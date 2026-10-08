@@ -1,3 +1,4 @@
+// 音声の編集の操作（切り取り、コピー、貼り付け、削除、無音の挿入、音量、パンなど）
 import { useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'

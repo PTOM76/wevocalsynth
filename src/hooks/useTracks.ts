@@ -1,3 +1,4 @@
+// トラックの操作（追加、複製、削除、選択）と、鳴らし方（ミュート、ソロ）
 import { useEffect, useMemo, useState } from 'react'
 import { clipDuration, type Clip, type Range } from '../audio/types'
 import { mapRanges, normalizeRanges } from '../audio/multiRange'

@@ -1,3 +1,4 @@
+// 起動時の処理（自動保存からの復元、ファイルから起動、抽出から戻る）
 import { useEffect, useRef } from 'react'
 import { rememberLaunched } from 'pevenmui/web'
 import type { Clip } from '../audio/types'

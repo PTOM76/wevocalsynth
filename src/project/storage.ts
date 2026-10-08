@@ -1,3 +1,4 @@
+// ブラウザ内に保存しているデータの確認と削除（設定の「データ」）
 import { idbClear } from './idb'
 import { ORIGINAL_PREFIX } from '../audio/originalStore'
 import { ADDON_CACHE } from '../addons/addons'

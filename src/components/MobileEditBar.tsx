@@ -1,3 +1,4 @@
+// スマホで範囲を選んだときの編集のボタンの列
 import { Box, ButtonBase, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'

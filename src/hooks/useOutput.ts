@@ -1,3 +1,4 @@
+// プロジェクトの保存と、音声の書き出し
 import { finishClip, type FinishOptions } from '../audio/finish'
 import type { Clip, Range } from '../audio/types'
 import { applyFader } from '../audio/edit'

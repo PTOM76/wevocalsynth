@@ -1,3 +1,4 @@
+// 新しい版が公開されたときの通知
 import { UpdatePrompt as PevenUpdatePrompt } from 'pevenmui/pwa'
 import { APP_BUILD } from '../pwa/updateCheck'
 

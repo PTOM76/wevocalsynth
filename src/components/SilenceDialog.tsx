@@ -1,3 +1,4 @@
+// 無音を挿入するダイアログ
 import { useEffect, useState } from 'react'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select } from '@mui/material'
 import { NumberInput } from './inspector/Inspector'

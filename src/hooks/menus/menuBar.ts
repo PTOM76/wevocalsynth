@@ -1,3 +1,4 @@
+// メニューバー（スマホでは ⋮ のメニュー一覧）
 import type { MenuGroup } from 'pevenmui'
 import { openExternal, USER_GUIDE_URL } from '../../links'
 import { editEntries, recentEntries, toolsEntries, volumeMenu, type MenuCtx } from './shared'

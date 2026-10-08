@@ -1,3 +1,4 @@
+// MIDI の音符に並べるダイアログ（サンプラー）
 import { useRef, useState } from 'react'
 import { Box, Button, DialogActions, DialogContent, FormControlLabel, MenuItem, Radio, RadioGroup, Select, Typography } from '@mui/material'
 import { enterToSubmit, WindowDialog, pevenFont } from 'pevenmui'

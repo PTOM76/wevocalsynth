@@ -1,3 +1,4 @@
+// スマホの下の再生バー
 import type { ReactNode } from 'react'
 import { Box, IconButton, Stack, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

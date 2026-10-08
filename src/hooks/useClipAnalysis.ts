@@ -1,3 +1,4 @@
+// 表示しているときだけ音声を解析して結果を持つ（ピッチ、スペクトログラム）
 import { useEffect, useRef, useState } from 'react'
 import type { Clip } from '../audio/types'
 import { isCancelled } from '../dsp/engine'

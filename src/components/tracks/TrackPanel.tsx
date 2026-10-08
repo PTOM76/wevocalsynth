@@ -1,3 +1,4 @@
+// トラックの欄の外枠（一覧とタブの切り替え、たたむ）
 import { memo } from 'react'
 import { Box, IconButton, Tooltip } from '@mui/material'
 import { countRender } from '../../debug/debugStats'

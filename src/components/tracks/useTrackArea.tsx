@@ -1,3 +1,4 @@
+// トラックの欄と、右クリックメニュー、名前の変更のつなぎ込み
 import { useMemo, useState } from 'react'
 import type { useEditor } from '../../hooks/useEditor'
 import type { View } from '../waveform/draw'

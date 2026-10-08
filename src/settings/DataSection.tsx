@@ -1,3 +1,4 @@
+// 設定の「データ」（使用量と削除）
 import { useEffect, useState } from 'react'
 import { Box, Button, Typography } from '@mui/material'
 import {

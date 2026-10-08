@@ -1,3 +1,4 @@
+// オンとオフの設定を切り替えるメニューの項目を作る
 import type { MenuEntry } from 'pevenmui'
 import { useT } from '../../i18n/i18n'
 import { useAppSettings } from '../settings'

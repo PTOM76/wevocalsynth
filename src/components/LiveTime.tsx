@@ -1,3 +1,4 @@
+// 再生中の時間の表示（部品の中だけで更新する）
 import { useEffect, useState } from 'react'
 import { ButtonBase, InputBase } from '@mui/material'
 import { formatTime, parseTime } from '../audio/types'

@@ -1,3 +1,4 @@
+// Synth の操作の一覧と既定のキー
 import { resolveKeymap as resolve, type Keymap as PevenKeymap, type KeymapOverrides as PevenOverrides } from 'pevenmui'
 import type { MessageKey } from '../i18n/i18n'
 import type { CtrlSAction } from './settings'

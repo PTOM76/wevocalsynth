@@ -1,3 +1,4 @@
+// 数値の入力欄を、打っている途中の文字のまま扱う
 import { useState } from 'react'
 
 /**

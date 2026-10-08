@@ -1,3 +1,4 @@
+// 作業状態を IndexedDB に保存する
 import type { Clip } from '../audio/types'
 import { pickStoredSettings, type StoredTrackSettings } from '../audio/tracks'
 import type { EditParams } from '../components/EditPanel'

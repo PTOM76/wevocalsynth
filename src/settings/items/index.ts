@@ -1,3 +1,4 @@
+// 設定の項目をまとめ、型と既定値を作る
 import { debug, debugAudio, experimental } from './debug'
 import type { AnyItem, Item, ItemGroup, ValueOf } from './define'
 import { display, view } from './display'

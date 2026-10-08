@@ -1,3 +1,4 @@
+// 項目の定義から設定画面の 1 行を作る
 import { Check, Choice, Row } from 'pevenmui'
 import { NumberInput } from '../../components/inspector/Inspector'
 import type { MessageKey } from '../../i18n/i18n'

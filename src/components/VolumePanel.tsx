@@ -1,3 +1,4 @@
+// 音量の欄（トラックのフェーダーと、範囲の音量の編集）
 import { Box, Button, IconButton, Slider, Tooltip, Typography } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRotateLeft } from '@fortawesome/free-solid-svg-icons'

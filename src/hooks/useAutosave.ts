@@ -1,3 +1,4 @@
+// 作業状態の自動保存と、起動時の復元
 import { useEffect, useRef } from 'react'
 import type { Clip } from '../audio/types'
 import { fromStoredSettings, toStoredSettings, type Track, type TrackSettings } from '../audio/tracks'

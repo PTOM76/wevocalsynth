@@ -1,3 +1,4 @@
+// 波形の右クリックメニュー
 import type { MenuEntry } from 'pevenmui'
 import { extractEntries, toNewTrack, volumeMenu, type MenuCtx } from './shared'
 

@@ -1,3 +1,4 @@
+// 波形の欄の描画（波形、目盛り、帯、選択範囲、再生位置、マーカー）
 import { beatsIn, type TempoSegment } from '../../audio/tempoMap'
 import { alpha, type Theme } from '@mui/material'
 import { RULER_HEIGHT, SELECTION_DARK, SELECTION_LIGHT, timeToX, type View, type WaveColors, type WaveDrawContext } from 'wevocal-lib'

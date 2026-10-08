@@ -1,3 +1,4 @@
+// メニューに渡す状態と操作の型
 import type { Keymap } from '../../settings/keymap'
 
 /** メニューが使う状態と操作（App から渡す。設定から読めるものは入れない） */

@@ -1,3 +1,4 @@
+// 上下の帯の境目のドラッグ
 import { localPoint } from 'pevenmui'
 import { useRef, type PointerEvent, type RefObject } from 'react'
 import { RULER_HEIGHT } from './draw'

@@ -1,3 +1,4 @@
+// 何も開いていないときの画面（開く、最近使用したファイル、音声の作成、録音）
 import { vw, pevenFont } from 'pevenmui'
 import { useState } from 'react'
 import { Box, Button, Stack, Typography } from '@mui/material'

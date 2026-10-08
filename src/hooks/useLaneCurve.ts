@@ -1,3 +1,4 @@
+// 帯に描く曲線（音量、フォルマント）の値
 import { useCallback, useRef, useState } from 'react'
 import type { Clip } from '../audio/types'
 import { clipDuration } from '../audio/types'

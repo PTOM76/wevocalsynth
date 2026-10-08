@@ -1,3 +1,4 @@
+// 動画の書き出しで覚えておく選択（既定値）
 import type { VideoContainer, VideoLook, WaveStyle } from '../audio/video'
 
 /** 動画の書き出しで選んだもの（設定に覚える。背景の画像は覚えない） */

@@ -1,3 +1,4 @@
+// ショートカットの一覧のダイアログ
 import { ShortcutsDialog as PevenShortcutsDialog, keymapRows } from 'pevenmui'
 import { useT, type MessageKey } from '../i18n/i18n'
 import type { WheelZoom } from '../settings/settings'

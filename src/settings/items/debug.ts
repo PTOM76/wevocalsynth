@@ -1,3 +1,4 @@
+// 設定の項目の定義（開発者向け、音声処理、試験的機能）
 import type { WindowMode } from 'pevenmui'
 import type { PickerMode } from 'pevenmui/web'
 import { check, choice, defineItems, value } from './define'

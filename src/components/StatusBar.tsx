@@ -1,3 +1,4 @@
+// PC の下のステータスバー（プロジェクト名、形式、選択範囲、BPM、原音と加工後）
 import { ToggleButton, ToggleButtonGroup } from '@mui/material'
 import type { Clip, Range } from '../audio/types'
 import { useT } from '../i18n/i18n'

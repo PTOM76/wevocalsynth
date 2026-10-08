@@ -1,3 +1,4 @@
+// 再生中の位置を、部品の中だけで決まった間隔で読む
 import { useEffect, useState } from 'react'
 
 /**

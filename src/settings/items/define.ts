@@ -1,3 +1,4 @@
+// 設定の項目を定義する関数（check、choice、number、value）
 import type { MessageKey } from '../../i18n/i18n'
 import type { Category } from '../settingsSearch'
 

@@ -1,3 +1,4 @@
+// 選択範囲の書き出し（外へのドラッグ、フォルダーへの保存）と、書き出しの保存先フォルダー
 import { useEffect, useState } from 'react'
 import { useStableFn } from 'pevenmui'
 import { canSaveToFolder, chooseSaveFolder, saveToFolder, savedFolderName } from 'pevenmui/web'

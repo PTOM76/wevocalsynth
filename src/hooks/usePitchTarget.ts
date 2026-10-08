@@ -1,3 +1,4 @@
+// ペンで描いた目標のピッチ
 import { useCallback, useRef, useState } from 'react'
 import type { Clip } from '../audio/types'
 import type { DrawPoint } from '../components/Waveform'

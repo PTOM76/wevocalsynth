@@ -1,3 +1,4 @@
+// 選択範囲の音程を解析する
 import { useEffect, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { analyzeF0 } from '../dsp/engine'

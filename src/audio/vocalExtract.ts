@@ -1,3 +1,4 @@
+// ボーカル抽出の本体（モデルの選択と実行環境。React に依存しない）
 import type { Clip, Range } from './types'
 import { spliceProcessed } from './edit'
 import { normalizeRanges } from './multiRange'

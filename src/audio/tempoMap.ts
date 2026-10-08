@@ -1,3 +1,4 @@
+// テンポが途中で変わる曲のための、区間ごとのテンポと拍の位置
 import type { Marker, ProjectTempo } from '../project/projectFile'
 
 /**

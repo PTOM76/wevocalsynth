@@ -1,3 +1,4 @@
+// 設定の「プロジェクト」（名前とテンポ）
 import { useEffect, useState } from 'react'
 import { TextField, Typography } from '@mui/material'
 import { NumberInput } from '../components/inspector/Inspector'

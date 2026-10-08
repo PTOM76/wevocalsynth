@@ -1,3 +1,4 @@
+// MIDI に合わせてピッチの曲線を作るダイアログ
 import { useRef, useState } from 'react'
 import { Box, Button, Checkbox, FormControlLabel, MenuItem, Radio, RadioGroup, Select, Typography } from '@mui/material'
 import { parseMidi, type MidiFile } from '../audio/midi'

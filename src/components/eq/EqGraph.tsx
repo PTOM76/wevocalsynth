@@ -1,3 +1,4 @@
+// グラフィック EQ のグラフ（なぞって値を描く）
 import { useRef, useState } from 'react'
 import { Box } from '@mui/material'
 import { pevenFont, usePalette } from 'pevenmui'

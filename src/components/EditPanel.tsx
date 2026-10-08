@@ -1,3 +1,4 @@
+// 加工の欄（ピッチ、長さ、フォルマント、処理方式、試聴と適用）
 import PresetMenu, { type Preset } from './PresetMenu'
 import { useState } from 'react'
 import {

@@ -1,3 +1,4 @@
+// PC の上のツールバー（再生、編集、表示のボタン）
 import type { ReactNode } from 'react'
 import { IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { OverflowRow } from 'pevenmui'

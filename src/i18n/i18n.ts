@@ -1,3 +1,4 @@
+// 多言語化（訳文の JSON をまとめて t() を出す）
 import { createI18n } from 'pevenmui'
 import ja from './ja_jp.json'
 import en from './en_us.json'

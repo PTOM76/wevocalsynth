@@ -1,3 +1,4 @@
+// 加工のプリセットのメニュー
 import { useState } from 'react'
 import { Button } from '@mui/material'
 import { ContextMenu, type MenuEntry, pevenFont } from 'pevenmui'

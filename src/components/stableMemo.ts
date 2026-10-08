@@ -1,3 +1,4 @@
+// 関数の props が作り直されても描き直さない memo
 import { createElement, isValidElement, memo, useRef, type ComponentType, type ReactElement } from 'react'
 
 /**

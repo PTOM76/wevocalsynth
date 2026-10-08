@@ -1,3 +1,4 @@
+// メモリが足りないときの抽出の画面（再読み込みの直後に表示する）
 import { FULL_HEIGHT, vw } from 'pevenmui'
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Box, Button, LinearProgress, Stack, Typography } from '@mui/material'

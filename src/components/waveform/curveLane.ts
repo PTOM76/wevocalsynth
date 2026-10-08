@@ -1,3 +1,4 @@
+// 曲線の帯（音量、フォルマント）の縦軸と描画
 import { alpha } from '@mui/material'
 import type { DrawContext } from './draw'
 

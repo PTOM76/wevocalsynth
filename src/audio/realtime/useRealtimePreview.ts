@@ -1,3 +1,4 @@
+// 範囲をループ再生しながら、ピッチと伸縮率の変更をすぐ反映する（AudioWorklet）
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../types'
 import { startContext } from 'wevocal-lib'

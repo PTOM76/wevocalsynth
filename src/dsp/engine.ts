@@ -1,3 +1,4 @@
+// DSP の Worker への頼みごと（加工、解析）と、Worker の管理
 import type { DspRequest, DspResponse } from './worker'
 import { markActivity, recordDspJob, reportMemory } from '../debug/debugStats'
 import { processParallel, shouldSplit } from './parallel'

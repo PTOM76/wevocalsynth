@@ -1,3 +1,4 @@
+// 音声（Clip）の型と長さ、時間の表記の変換
 import type { Clip } from 'wevocal-lib'
 
 // 音声データと時間範囲の型は wevocal-lib（読み込み・書き出しと共通）

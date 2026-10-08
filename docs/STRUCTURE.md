@@ -1,5 +1,5 @@
 # ファイル構成
-どのディレクトリ・ファイルが何を担当するかの一覧。コードのどこを見ればよいかを探すときに使う。(2026-10-04 時点、v1.4)
+どのディレクトリ・ファイルが何を担当するかの一覧。コードのどこを見ればよいかを探すときに使う。
 
 関連: [アーキテクチャ](ARCHITECTURE.md) / [機能の仕組み](INTERNALS.md) / [アルゴリズム](ALGORITHM.md)
 
@@ -29,61 +29,244 @@ analyzer/            声の解析（WeVocalAnalyzer）。submodule。スペク�
 converter/           音声ファイルの形式の変換（WeVocalConverter）。submodule。今は Extractor を写した土台（準備中。converter/docs/REQUIREMENT.md）
 pevenmui/            UI 部品（PevenMUI。テーマ・メニューバー・確認ダイアログ・分割バー・設定画面の部品・ダイアログを別の窓に表示する WindowDialog / WindowPortal・進み具合のゲージ・ファイルを開く画面と最近使用したファイル・IndexedDB）。submodule
 ```
+## ファイルの一覧
 
-| フック | 担当 |
-| --- | --- |
-| `useEditor` | 状態と操作をまとめ、`App.tsx` に渡す |
-| `useHistory` | トラックと、元に戻す・やり直す・操作履歴。各段は「どのトラックの差分か」と操作名（トラックの追加・削除は一覧）だけを持つ（段数・メモリの上限は設定） |
-| `useTracks` | トラックの操作（複製・追加・分ける・統合・名前・削除・選択）と、フェーダー・ミュート・ソロ・重ねる表示 |
-| `usePlayer` | Web Audio での再生。ほかのトラックも一緒に鳴らし、フェーダー・適用前の音量とパン・ミュートをすぐ反映する。範囲のループ再生、再生中のトラックの切り替えにも対応する。音量メーター用の AnalyserNode も持つ。AudioContext の起動と一時停止は wevocal-lib の `startContext` / `suspendContext`（`web/src/playback.ts`。iOS の再生用オーディオセッション、`interrupted` の状態からの復帰、停止と再生の競合の回避） |
-| `usePlayback` | 再生・試聴・ループ（加工の欄）の切り替え（どれかを始めたらほかを止める） |
-| `usePreview` | 加工済みプレビューを裏で作る |
-| `useClipAnalysis` | F0・スペクトログラム（表示が ON のときだけ。解析の設定が変わったら解析し直す）。スペクトログラムは追加機能「解析」で計算する（`audio/spectrogram.ts`） |
-| `useLanes` | 帯パネル（波形・スペクトログラム・ピッチ・音量・フォルマント）の表示とフォーカス。ツールバーとショートカットはフォーカスしているパネルに反映される |
-| `useLaneCurve` / `useFormantCurve` | 音量・フォルマントパネルに描いた曲線（10ms 間隔）。音量は再生にすぐ反映し、フォルマントは試聴で加工して聴く。どちらも適用で確定する |
-| `usePitchClipboard` | ピッチパネルでの切り取り・コピー・貼り付け（曲線が対象） |
-| `usePitchTarget` / `usePitchTools` | 目標ピッチの曲線（ペン・一括の加工）と、適用前の試聴 |
-| `usePitchVoicing` | ピッチの強制表示・非表示 |
-| `useTempo` | テンポの自動解析と候補 |
-| `useNumberDraft` | 数値欄（入力途中の文字を持ち、確定時に丸める） |
-| `useClipCommands` | 切り貼り・音量とパンの適用・フェードなど（JS で即時に処理） |
-| `useVocalExtract` | ボーカル抽出（追加機能）。範囲の置き換えと、ボーカル・伴奏の2トラックへの分割 |
-| `useTask` | 時間のかかる処理の、処理中の表示・進捗・中断（加工用の DSP の Worker を止める） |
-| `useAutosave` | IndexedDB への自動保存（トラックごと）と、起動時の復元 |
-| `useAppMenus` | メニューバー・⋮ メニュー・右クリックメニューの中身 |
-| `useSeek` | 矢印キー・Home / End での再生位置の移動 |
-| `useOutput` | プロジェクトの保存（開いたファイルへの上書き）と、音声の書き出し（ミックス、仕上げ、保存先フォルダーとファイル名）。書き出す音声を作る `renderClip` は動画の書き出しでも使う |
-| `useVideoExport` | 動画の書き出し（追加機能「変換」。`audio/video.ts`）。導入しているときだけメニューに表示する |
-| `useMarkers` | マーカー（追加、名前の変更、削除、ドラッグでの移動、ここからのテンポ）。元に戻すの対象にはしない |
-| `useRangeNote` | 選択範囲の今の音程（「音程を合わせる」用） |
+各ファイルの 1 行目の説明を並べたもの。`npm run map -- --write` で書き出す（手で直さない）。説明を変えるときは、そのファイルの 1 行目を直す。
 
-キーボード操作（`useShortcuts`）と、設定のショートカットの割り当ての画面（`KeymapEditor`）、一覧のダイアログ（`ShortcutsDialog`）は PevenMUI の keymap を使う。Synth に残るのは操作の一覧と既定のキー（`settings/keymap.ts`。Ctrl+S の入れ替えも）と、一覧のマウスの操作の行。
+<!-- map:start -->
+```
+src/
+  App.tsx  （説明なし）
+  appConfig.ts  アプリの定義（名前、URL、保存のキー）。Worker からも読み込める
+  appInfo.ts  アプリの定義。vite.config.ts からも読み込むので、ほかのファイルを import しない（使い方は appConfig.ts の app）
+  licenses.ts  「ライセンス情報」に表示する、使っている部品とモデルの一覧
+  links.ts  外部へのリンク（URL は appInfo.ts）
+  main.tsx  （説明なし）
 
-PC とスマホの画面の配置（`DesktopLayout` / `MobileLayout`）、ステータスバーとスマホの下のバーの枠（`StatusBar` / `BottomBar`）は PevenMUI のものを使う。中身（`components/StatusBar.tsx`、`MobilePlayBar.tsx`、範囲を選んだときの編集の列 `MobileEditBar.tsx`）は Synth。インスペクタの幅と、スマホの横向きの右の欄の固定は、今までと同じキー（`wevocalsynth.inspectorWidth`、`wevocalsynth.mobilePanelPinned`）で覚える。
+src/addons/
+  addons.ts  （説明なし）
 
-ファイルのドロップと選択の画面（`useFileDrop` / `useFilePicker`）、最近使用したファイル（`useRecentFiles`）、閉じる前の保存確認（`useLeaveGuard`）は PevenMUI のフックを `useEditor` から使う。
+src/audio/
+  detectMode.ts  音声がボーカルか楽器かを判定し、モードごとの既定の処理方式を決める
+  edit.ts  音声の編集の計算（範囲への加工、切り取りと挿入、音量、フェード、反転、曲線の書き込み）
+  eq.ts  トラックのグラフィック EQ の計算（再生と書き出しに掛ける）
+  finish.ts  書き出しの仕上げ（ノーマライズと両端のフェード）
+  midi.ts  標準 MIDI ファイル（.mid、形式 0 / 1）の読み込み。ピッチに当てはめるための音符（高さと、秒単位の始まり・終わり）だけを取り出す。
+  mix.ts  トラックを足し合わせて 1 つにする（統合と書き出し）
+  multiRange.ts  複数の選択範囲の整理、切り出し、範囲ごとの加工
+  noteBlocks.ts  ピッチの線を音符ブロックに区切る
+  notes.ts  音名（C から B まで、シャープ表記）
+  originalStore.ts  原音を IndexedDB に退避してメモリを節約する
+  pitchTools.ts  ピッチの曲線の一括操作（平らにする、音程に揃える、ビブラート、MIDI に合わせる）
+  sampler.ts  音声を MIDI の音符に並べて新しいトラックを作る
+  silence.ts  無音で区切って、音のある所を探す
+  spectrogram.ts  スペクトログラムの計算を追加機能「解析」に頼む
+  synth.ts  音を 0 から作る（声の母音、楽器の波形）
+  tempoChange.ts  （説明なし）
+  tempoMap.ts  テンポが途中で変わる曲のための、区間ごとのテンポと拍の位置
+  tracks.ts  トラックの形と、保存する設定（フェーダー、鳴らし方、EQ）の変換
+  types.ts  音声（Clip）の型と長さ、時間の表記の変換
+  useLivePosition.ts  再生中の位置を、部品の中だけで決まった間隔で読む
+  usePlayer.ts  再生（全トラックのミックス、ループ、音量メーター、フェーダーと EQ）
+  video.ts  動画の書き出しを追加機能「変換」に頼む
+  vocalExtract.ts  ボーカル抽出の本体（モデルの選択と実行環境。React に依存しない）
 
-### 波形（`components/waveform`）
+src/audio/realtime/
+  granularProcessor.ts  リアルタイム試聴用の AudioWorklet。グラニュラー方式でピッチ変更・時間伸縮を行う。
+  useRealtimePreview.ts  範囲をループ再生しながら、ピッチと伸縮率の変更をすぐ反映する（AudioWorklet）
 
-| ファイル | 担当 |
-| --- | --- |
-| `draw.ts` | Canvas への描画のうち Synth だけのもの（スペクトログラム・ピッチ・拍の線・帯のフォーカス）と、パネルの高さの割り振り（`laneHeights`）。テーマから波形の色を作る `waveColors`。目盛り・波形・選択範囲・再生位置は wevocal-lib のものを同じ名前で出し直す |
-| `WaveformToolbar.tsx` | 表示のボタンと、フォーカスしているパネルの操作のボタン |
-| `curveLane.ts` | 音量・フォルマントパネル（目盛りと描いた曲線。縦軸の範囲だけを変えて共通に使う） |
-| `useLanePen.ts` | パネルのペン。押したパネルで描き始め、離すまでそのパネルに描く（ピッチ・音量・フォルマントで共通） |
-| `usePitchGrab.ts` | ピッチの線を掴んで上下に動かす（掴むモード。選択範囲の中ならその範囲、外なら途切れるまで） |
-| `useLaneDivider.ts` | 上のパネル（波形・スペクトログラム）と下のパネル（ピッチ・音量・フォルマント）の境目のドラッグ |
+src/components/
+  AboutDialog.tsx  「このアプリについて」のダイアログ
+  AlgorithmMenu.tsx  処理方式の一覧と選ぶメニュー（従来の方式と試験的な方式の表示を含む）
+  AppDialogs.tsx  （説明なし）
+  AppHeader.tsx  スマホの上部バー（プロジェクト名とメニュー）
+  AppIcon.tsx  アプリのアイコン（public/icon.svg）。GitHub Pages ではサブパスで配信されるため BASE_URL から組み立てる
+  CleanExtractScreen.tsx  メモリが足りないときの抽出の画面（再読み込みの直後に表示する）
+  EditPanel.tsx  加工の欄（ピッチ、長さ、フォルマント、処理方式、試聴と適用）
+  EmptyState.tsx  何も開いていないときの画面（開く、最近使用したファイル、音声の作成、録音）
+  ExportDialog.tsx  音声の書き出しのダイアログ
+  HistoryDialog.tsx  編集の履歴のダイアログ（押した段へ戻る）
+  LevelMeter.tsx  音量メーター（wevocal-lib の部品にテーマの色を渡す）
+  LiveTime.tsx  再生中の時間の表示（部品の中だけで更新する）
+  MarkerTempoDialog.tsx  マーカーからのテンポを決めるダイアログ
+  MidiDialog.tsx  MIDI に合わせてピッチの曲線を作るダイアログ
+  MobileEditBar.tsx  スマホで範囲を選んだときの編集のボタンの列
+  MobilePlayBar.tsx  スマホの下の再生バー
+  PitchControl.tsx  ピッチの変更量のスライダーと入力欄
+  PitchToolDialogs.tsx  ピッチの一括操作のダイアログ（音程に揃える、ビブラート）
+  PitchToolHost.tsx  ピッチの一括操作のダイアログを開く場所
+  PresetMenu.tsx  加工のプリセットのメニュー
+  RecordDialog.tsx  録音のダイアログ（入力元、レベル、録音したものを新しいトラックへ）
+  RepeatDialog.tsx  選択範囲を繰り返すダイアログ
+  SamplerDialog.tsx  MIDI の音符に並べるダイアログ（サンプラー）
+  SelectionField.tsx  選択範囲の開始と終了の入力欄
+  ShortcutsDialog.tsx  ショートカットの一覧のダイアログ
+  SilenceDialog.tsx  無音を挿入するダイアログ
+  SoundSelectDialog.tsx  無音で区切って選択するダイアログ
+  stableMemo.ts  関数の props が作り直されても描き直さない memo
+  StatusBar.tsx  PC の下のステータスバー（プロジェクト名、形式、選択範囲、BPM、原音と加工後）
+  SynthDialog.tsx  音を 0 から作るダイアログ
+  TempoChangeDialog.tsx  （説明なし）
+  TempoField.tsx  BPM の表示と入力（タップで測る、再解析）
+  Toolbar.tsx  PC の上のツールバー（再生、編集、表示のボタン）
+  UpdatePrompt.tsx  新しい版が公開されたときの通知
+  VideoExportDialog.tsx  動画の書き出しのダイアログ
+  videoPrefs.ts  動画の書き出しで覚えておく選択（既定値）
+  VolumePanel.tsx  音量の欄（トラックのフェーダーと、範囲の音量の編集）
+  Waveform.tsx  波形と帯（スペクトログラム、ピッチ、音量、フォルマント）の Canvas と、その上の操作
 
-WeVocalAnalyzer でも使う共通の部分は wevocal-lib にある（[wevocal-lib の README](../wevocal-lib/README.md)）。
+src/components/eq/
+  EqDialog.tsx  トラックのグラフィック EQ のダイアログ
+  EqGraph.tsx  グラフィック EQ のグラフ（なぞって値を描く）
 
-| 場所 | 担当 |
-| --- | --- |
-| `wevocal-lib/web/src/waveform/`（`wevocal-lib`） | 表示範囲（`View`）、ピーク（最小値・最大値のピラミッド。拡大率に合った段から求めるので、全体表示でも速い）、色（`WaveColors`）、目盛り・波形・選択範囲・再生位置の描画、`prepareCanvas`（大きさが同じなら Canvas を確保し直さない） |
-| `wevocal-lib/web/src/react/`（`wevocal-lib/react`） | `useWaveformView`（拡大縮小・スクロール・再生中の追従）、`useRangeEdges`（範囲の端のドラッグ）、`useTouchGestures`（スマホ: ピンチ、目盛りのタップ・ドラッグ・長押し）、`useEdgeScroll`（目盛りのドラッグで端に来たら流す）、`Minimap`（全体の縮図と表示範囲） |
+src/components/inspector/
+  Inspector.tsx  インスペクタ（右の欄）の部品（折りたたむ欄、行、数値の入力）
 
-ピークの表を作ったときの計測は、`main.tsx` で `setPeaksOnBuild` に `markActivity` を渡して残す。
+src/components/tracks/
+  RenameDialog.tsx  名前の変更のダイアログ（トラック、プロジェクト）
+  TrackLanes.tsx  トラックの欄（波形付きの一覧）
+  trackMenu.ts  トラックの右クリックメニュー
+  TrackPanel.tsx  トラックの欄の外枠（一覧とタブの切り替え、たたむ）
+  TrackTabs.tsx  トラックの欄（タブの形）
+  useTrackArea.tsx  トラックの欄と、右クリックメニュー、名前の変更のつなぎ込み
+  useTrackDrag.ts  トラックの選択（修飾キーで複数）とドラッグでの並び替え
 
-再生位置の線は、波形の上に重ねた別の Canvas に描く（再生中に波形全体を描き直さないため）。
+src/components/waveform/
+  curveLane.ts  曲線の帯（音量、フォルマント）の縦軸と描画
+  draw.ts  波形の欄の描画（波形、目盛り、帯、選択範囲、再生位置、マーカー）
+  useLaneDivider.ts  上下の帯の境目のドラッグ
+  useLanePen.ts  ペンで帯に曲線を描く
+  useNoteDrag.ts  音符ブロックのドラッグ（移動と端の伸縮）
+  usePitchGrab.ts  ピッチの線を掴んで上下に動かす
+  WaveformToolbar.tsx  波形の上のツールバー（拡大縮小、ペン、掴む、ピッチの道具）
+
+src/constants/
+  ui.ts  画面の定数（選択肢の表、小さいボタンの見た目）
+
+src/debug/
+  DebugOverlay.tsx  デバッグ表示（FPS、描画回数、メモリ、DSP の時間）
+  debugStats.ts  デバッグ表示用の計測値。計測はいつも行う（数を足すだけなので軽い）ので、
+  diagnoseExtract.ts  ボーカル抽出の診断の本体
+  ExtractDiagnose.tsx  ボーカル抽出の診断の画面（設定の開発者向け）
+
+src/dsp/
+  engine.ts  DSP の Worker への頼みごと（加工、解析）と、Worker の管理
+  parallel.ts  長い音を区間に分けて並列に加工する（試験的）
+  worker.ts  wasm の DSP エンジンをメインスレッド外で実行する Worker
+
+src/hooks/
+  editActions.ts  音声を書き換える操作（加工の適用、テンポの伸縮、区間の伸縮、サンプラー、曲線の書き込み）
+  useAppMenus.ts  メニューバーと右クリックメニューを作る（項目は menus/）
+  useAutosave.ts  作業状態の自動保存と、起動時の復元
+  useClipAnalysis.ts  表示しているときだけ音声を解析して結果を持つ（ピッチ、スペクトログラム）
+  useClipCommands.ts  音声の編集の操作（切り取り、コピー、貼り付け、削除、無音の挿入、音量、パンなど）
+  useDialogs.ts  （説明なし）
+  useEditor.ts  （説明なし）
+  useEditorKeys.ts  キーボードショートカットと、フォーカスしている帯に効く切り取りなど
+  useFormantCurve.ts  フォルマントの帯に描いた曲線と、その試聴
+  useHistory.ts  元に戻す、やり直す（差分で持ち、メモリの上限で古い段を捨てる）
+  useLaneCurve.ts  帯に描く曲線（音量、フォルマント）の値
+  useLanes.ts  帯の表示と、フォーカスしている帯
+  useMarkers.ts  （説明なし）
+  useNumberDraft.ts  数値の入力欄を、打っている途中の文字のまま扱う
+  useOutput.ts  プロジェクトの保存と、音声の書き出し
+  usePitchClipboard.ts  ピッチの曲線の切り取り、コピー、貼り付け
+  usePitchTarget.ts  ペンで描いた目標のピッチ
+  usePitchTools.ts  ピッチの曲線の一括操作と、その試聴
+  usePitchVoicing.ts  ピッチを出す所と消す所の指定
+  usePlayback.ts  通常の再生と試聴の切り替え（片方を始めたらもう片方を止める）
+  usePreview.ts  加工の結果を前もって作る（試聴と適用を速くする）
+  useRangeNote.ts  選択範囲の音程を解析する
+  useSeek.ts  矢印キーと Home、End での再生位置の移動（拍に合わせる）
+  useSelectionExport.ts  選択範囲の書き出し（外へのドラッグ、フォルダーへの保存）と、書き出しの保存先フォルダー
+  useStartup.ts  起動時の処理（自動保存からの復元、ファイルから起動、抽出から戻る）
+  useTask.ts  時間のかかる処理を、処理中の印、進み具合、通知、中断付きで実行する
+  useTempo.ts  （説明なし）
+  useTracks.ts  トラックの操作（追加、複製、削除、選択）と、鳴らし方（ミュート、ソロ）
+  useVideoExport.ts  動画の書き出し（追加機能「変換」）
+  useVocalExtract.ts  ボーカル抽出の操作（モデルの確認、実行、結果をトラックへ）
+  useVoiceSplit.ts  和音を 2 つの声に分ける操作（試作）
+
+src/hooks/menus/
+  actions.ts  メニューに渡す状態と操作の型
+  context.ts  波形の右クリックメニュー
+  menuBar.ts  メニューバー（スマホでは ⋮ のメニュー一覧）
+  shared.ts  メニューバーと右クリックで共通の項目
+
+src/i18n/
+  i18n.ts  多言語化（訳文の JSON をまとめて t() を出す）
+
+src/progress/
+  jobs.ts  進み具合のゲージに表示する処理の種類
+
+src/project/
+  autosave.ts  作業状態を IndexedDB に保存する
+  autosaveWorker.ts  自動保存の書き込み専用の Worker。
+  cleanExtract.ts  メモリが足りないときの抽出（再読み込みしてから抽出する）
+  extractGuard.ts  抽出のあとにアプリが落ちたかを、次の起動で知る印
+  idb.ts  このアプリの IndexedDB。画面（メインスレッド）と自動保存の Worker の両方から使う
+  projectFile.ts  プロジェクトファイル（.wvsp）の読み書き
+  storage.ts  ブラウザ内に保存しているデータの確認と削除（設定の「データ」）
+
+src/pwa/
+  updateCheck.ts  新しい版の確認
+
+src/settings/
+  DataSection.tsx  設定の「データ」（使用量と削除）
+  keymap.ts  Synth の操作の一覧と既定のキー
+  OutputDeviceRow.tsx  設定の「音声の出力先」の行
+  ProjectSection.tsx  設定の「プロジェクト」（名前とテンポ）
+  settings.ts  設定の保存と読み込み、Context
+  SettingsDialog.tsx  設定のダイアログ（PevenMUI の設定画面に、分類と中身を渡す）
+  SettingsPages.tsx  （説明なし）
+  settingsSearch.ts  設定画面の分類の並びと、検索の対象
+  ShortcutSection.tsx  設定の「キーとマウス」のショートカットの割り当て
+
+src/settings/items/
+  debug.ts  設定の項目の定義（開発者向け、音声処理、試験的機能）
+  define.ts  設定の項目を定義する関数（check、choice、number、value）
+  display.ts  設定の項目の定義（表示と、表示メニューの切り替え）
+  general.ts  設定の項目の定義（全般、編集、キーとマウス、ファイル）
+  index.ts  設定の項目をまとめ、型と既定値を作る
+  process.ts  （説明なし）
+  SettingRow.tsx  項目の定義から設定画面の 1 行を作る
+  stored.ts  設定の項目の定義（画面の操作で覚えておく値）
+  toggle.ts  オンとオフの設定を切り替えるメニューの項目を作る
+
+dsp/src/
+  curve.rs  ピッチカーブ編集: 時間ごとに変わるピッチ比で、長さを変えずにピッチを変える。
+  ffi.rs  wasm 向け C ABI。wasm-bindgen を使わず、Worker から素の `WebAssembly.instantiate` で呼べる関数だけを公開する。
+  formant.rs  スペクトル包絡（フォルマント）補正。
+  hpss.rs  打楽器分離（HPSS）を使った時間伸縮（Driedger, Müller, Ewert 2014）。
+  kana.rs  声の素材から一音を作る（試験的。memo/kana-voice.md）。今は母音だけ。
+  lib.rs  WeVocalSynth の DSP エンジン。
+  pipeline.rs  ピッチ変更・時間伸縮・フォルマント補正をまとめた処理の流れ。
+  psola.rs  TD-PSOLA（Time-Domain Pitch-Synchronous Overlap-Add）による時間伸縮。ボーカル向け。
+  pv.rs  identity phase locking（Laroche & Dolson）付き Phase Vocoder による時間伸縮。
+  segment.rs  区間に分けて並列に加工する（試験的。memo の WebGPU の設計の 9.）。
+  sms.rs  正弦波と雑音のモデル（SMS、Spectral Modeling Synthesis）による時間伸縮。愛称は Specraw。できるだけ可逆な方式。
+  sola.rs  2乗誤差で区切り位置を探す、クロスフェード方式の時間伸縮（SOLA）。
+  sola2.rs  SOLA の改良版（SOLAv2）。声のある所は、切り貼りの単位を声の 1 周期にし、近くの周期と混ぜて少しずつ移り変わらせる。
+  timemap.rs  伸縮処理で使う、出力位置 → 入力位置の時間対応。
+  wsola.rs  WSOLA（Waveform Similarity Overlap-Add）による時間伸縮。
+
+dsp/src/tests/
+  analysis.rs  F0 推定・スペクトログラムのテスト。
+  consonant.rs  声の子音（破裂音）のテスト。母音・閉鎖（無音）・破裂（短い雑音）・息（弱い雑音）を繰り返す音を伸ばし、
+  curve.rs  ピッチカーブ編集のテスト。
+  formant.rs  フォルマント補正のテスト。
+  mod.rs  テスト共通の信号生成・計測ヘルパ。
+  roundtrip.rs  往復の劣化（可逆性）のテスト。+n 半音のあと -n 半音、×a のあと ×1/a で、どれだけ元の音に戻るかを方式ごとに測る。
+  segment.rs  区間に分けて並列に加工する試作の確認（segment.rs）
+  sola_params.rs  SOLAv2・v3 の調整できる値（`sola2::Params`）を、組み合わせごとに測って比べる。
+  stretch.rs  時間伸縮・ピッチ変更のテスト。
+  voices.rs  和音を 2 つの声に分ける試作の確認（memo/harmony-split.md）。結果は `cargo test voices -- --nocapture` で表示する
+
+dsp/src/voices/
+  detect.rs  和音を 2 つの声に分けるための、フレームごとの声（F0 と倍音の振幅）の推定（memo/harmony-split.md）
+  mod.rs  和音を 2 つの声に分ける（試作。memo/harmony-split.md）。
+```
+<!-- map:end -->
 
 ## DSP（`dsp/src`）
 

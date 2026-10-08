@@ -1,3 +1,4 @@
+// 波形の上のツールバー（拡大縮小、ペン、掴む、ピッチの道具）
 import { Button, Divider, IconButton, Tooltip } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'

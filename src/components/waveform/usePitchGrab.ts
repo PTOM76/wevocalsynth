@@ -1,3 +1,4 @@
+// ピッチの線を掴んで上下に動かす
 import { localPoint } from 'pevenmui'
 import { useRef, type RefObject } from 'react'
 import type { Range } from '../../audio/types'
