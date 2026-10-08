@@ -35,6 +35,8 @@ import {
   type BeatGrid,
   type DrawContext,
   waveColors,
+  drawMarkers,
+  drawNoteGhost,
 } from './waveform/draw'
 import { computePeaks } from 'wevocal-lib'
 import { useLang, useT } from '../i18n/i18n'
@@ -304,38 +306,8 @@ function Waveform(props: Props) {
       g.clearRect(0, 0, width, height)
       for (const r of selections) drawSelection(c, r, height)
       if (props.touchHandles) for (const r of selections) drawSelectionHandles(c, r, height)
-      // マーカー: 縦の点線と、目盛りの上に名前
-      g.font = `11px ${font}`
-      for (const m of props.markers ?? []) {
-        const x = Math.round(((m.time - view.start) / view.dur) * width) + 0.5
-        if (x < -100 || x > width) continue
-        g.strokeStyle = pal.warning.main
-        g.setLineDash([3, 3])
-        g.beginPath()
-        g.moveTo(x, RULER_HEIGHT)
-        g.lineTo(x, height)
-        g.stroke()
-        g.setLineDash([])
-        // テンポを持つマーカーは、名前の後ろにテンポを出す
-        const label = m.tempo ? `${m.name} ♩${Math.round(m.tempo.bpm * 100) / 100} ${m.tempo.beatsPerBar}/4` : m.name
-        const w = g.measureText(label).width + 8
-        g.fillStyle = pal.warning.main
-        g.fillRect(x, 0, w, RULER_HEIGHT - 2)
-        g.fillStyle = pal.warning.contrastText
-        g.textBaseline = 'middle'
-        g.fillText(label, x + 4, (RULER_HEIGHT - 2) / 2)
-      }
-      if (noteGhost && range) {
-        // ドラッグ中の音符ブロックの行き先
-        const per = pitchLaneH / (range.hi - range.lo)
-        const y = pitchY + ((range.hi - noteGhost.note - 0.5) / (range.hi - range.lo)) * pitchLaneH
-        const x0 = ((noteGhost.start - view.start) / view.dur) * width
-        const x1 = ((noteGhost.end - view.start) / view.dur) * width
-        g.strokeStyle = pal.text.primary
-        g.lineWidth = 2
-        g.strokeRect(x0, y, Math.max(1, x1 - x0), Math.max(4, per))
-        g.lineWidth = 1
-      }
+      drawMarkers(c, props.markers ?? [], height, font)
+      if (noteGhost && range) drawNoteGhost(c, noteGhost, range, pitchY, pitchLaneH)
       drawPlayhead(c, t, height)
     }
     draw(position)

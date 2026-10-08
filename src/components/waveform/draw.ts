@@ -7,6 +7,8 @@ import { hzToMidi, noteName } from '../../audio/notes'
 import { noteBlocks } from '../../audio/noteBlocks'
 import { markActivity } from '../../debug/debugStats'
 import { t } from '../../i18n/i18n'
+import type { Marker } from '../../project/projectFile'
+import type { NoteGhost } from './useNoteDrag'
 
 export { RULER_HEIGHT, SELECTION_LIGHT, SELECTION_DARK }
 export { prepareCanvas, drawRuler, drawSelection, drawSelectionHandles, drawGhostWave, drawWave, drawPlayhead, type View } from 'wevocal-lib'
@@ -244,5 +246,43 @@ export function drawPitchLane(c: DrawContext, pitch: Float32Array | null, range:
   g.lineJoin = 'round'
   curve(pitch, edited ? alpha(pal.secondary.main, 0.4) : pal.secondary.main)
   if (edited) curve(target, pal.primary.main)
+  g.lineWidth = 1
+}
+
+/** マーカー: 縦の点線と、目盛りの上に名前（テンポを持つマーカーは名前の後ろにテンポ） */
+export function drawMarkers(c: DrawContext, markers: Marker[], height: number, font: string | undefined) {
+  const { g, width, view, pal } = c
+  g.font = `11px ${font}`
+  for (const m of markers) {
+    const x = Math.round(((m.time - view.start) / view.dur) * width) + 0.5
+    if (x < -100 || x > width) continue
+    g.strokeStyle = pal.warning.main
+    g.setLineDash([3, 3])
+    g.beginPath()
+    g.moveTo(x, RULER_HEIGHT)
+    g.lineTo(x, height)
+    g.stroke()
+    g.setLineDash([])
+    // テンポを持つマーカーは、名前の後ろにテンポを出す
+    const label = m.tempo ? `${m.name} ♩${Math.round(m.tempo.bpm * 100) / 100} ${m.tempo.beatsPerBar}/4` : m.name
+    const w = g.measureText(label).width + 8
+    g.fillStyle = pal.warning.main
+    g.fillRect(x, 0, w, RULER_HEIGHT - 2)
+    g.fillStyle = pal.warning.contrastText
+    g.textBaseline = 'middle'
+    g.fillText(label, x + 4, (RULER_HEIGHT - 2) / 2)
+  }
+}
+
+/** ドラッグ中の音符ブロックの行き先 */
+export function drawNoteGhost(c: DrawContext, noteGhost: NoteGhost, range: { lo: number; hi: number }, pitchY: number, pitchLaneH: number) {
+  const { g, width, view, pal } = c
+  const per = pitchLaneH / (range.hi - range.lo)
+  const y = pitchY + ((range.hi - noteGhost.note - 0.5) / (range.hi - range.lo)) * pitchLaneH
+  const x0 = ((noteGhost.start - view.start) / view.dur) * width
+  const x1 = ((noteGhost.end - view.start) / view.dur) * width
+  g.strokeStyle = pal.text.primary
+  g.lineWidth = 2
+  g.strokeRect(x0, y, Math.max(1, x1 - x0), Math.max(4, per))
   g.lineWidth = 1
 }
