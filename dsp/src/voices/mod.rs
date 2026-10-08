@@ -156,7 +156,7 @@ fn assign(frames: &[Vec<Voice>], by: SplitBy) -> Vec<(Option<Voice>, Option<Voic
         tracks.push(slot);
     }
     let energy: Vec<[f32; 2]> = tracks.iter().map(|t| [0, 1].map(|i| t[i].as_ref().map_or(0.0, |v| v.energy()))).collect();
-    (0..tracks.len())
+    let mut out: Vec<(Option<Voice>, Option<Voice>)> = (0..tracks.len())
         .map(|f| {
             let [s0, s1] = tracks[f].clone();
             let first_is_a = match by {
@@ -173,8 +173,65 @@ fn assign(frames: &[Vec<Voice>], by: SplitBy) -> Vec<(Option<Voice>, Option<Voic
             };
             if first_is_a { (s0, s1) } else { (s1, s0) }
         })
-        .collect()
+        .collect();
+    merge_same_singer(&mut out);
+    out
 }
+
+/// 音の変わり目で、同じ人の前の音の終わりと次の音が重なって 2 声に見えるフレームは、2 つとも同じ出力に入れる。
+/// 片方の声が、ある出力の直前（`RECENT` フレーム以内）の高さにつながり、もう片方が新しく始まった音で、その出力の方に近く、
+/// もう一方の出力の声が小さくなっているときに、そうみなす
+fn merge_same_singer(frames: &mut [(Option<Voice>, Option<Voice>)]) {
+    // 出力ごとの、直前の声（フレーム、F0、大きさ）と、`RECENT` フレーム以内の最大の大きさ
+    let mut hist: [Vec<(usize, f32, f32)>; 2] = [Vec::new(), Vec::new()];
+    let d = |a: f32, b: f32| (a / b).log2().abs();
+    for f in 0..frames.len() {
+        let recent = |i: usize| hist[i].last().filter(|&&(g, _, _)| f - g <= RECENT).copied();
+        let peak = |i: usize| hist[i].iter().rev().take_while(|&&(g, _, _)| f - g <= 2 * RECENT).map(|x| x.2).fold(0.0f32, f32::max);
+        // 2 フレーム以内の声が、最近の最大より `FADE` 以上小さい（その人が音を終えかけている）。途切れているだけでは見ない
+        // （まとめたフレームではその出力の記録が止まるので、途切れを条件にするとまとめ続けてしまう）
+        let fading = |i: usize| recent(i).is_some_and(|(g, _, e)| f - g <= 2 && e < peak(i) * FADE);
+        // 出力ごとの最近の高さ（一瞬だけの誤った F0 に引きずられないように、`2 * RECENT` フレーム以内の中央値）
+        let pitch = |i: usize| {
+            let mut p: Vec<f32> = hist[i].iter().rev().take_while(|&&(g, _, _)| f - g <= 2 * RECENT).map(|x| x.1).collect();
+            p.sort_by(|a, b| a.total_cmp(b));
+            p.get(p.len() / 2).copied()
+        };
+        let merged = match (&frames[f], recent(0).and(pitch(0)), recent(1).and(pitch(1))) {
+            ((Some(a), Some(b)), Some(pa), Some(pb)) => {
+                // 片方がその出力の直前の高さにつながり、もう片方はどちらにもつながらない（新しく始まった音）で、そちらに近い
+                let link = |x: f32, p: f32| d(x, p) < LINK_OCT;
+                let new_note = |x: f32| !link(x, pa) && !link(x, pb);
+                let to = |p: f32, q: f32| {
+                    (link(a.f0, p) && new_note(b.f0) && d(b.f0, p) < d(b.f0, q)) || (link(b.f0, p) && new_note(a.f0) && d(a.f0, p) < d(a.f0, q))
+                };
+                let (to_a, to_b) = (to(pa, pb) && fading(1), to(pb, pa) && fading(0));
+                // マスクは声のない出力に何も入れないので、片方を空にすれば 2 つとも残る方に入る
+                if to_a {
+                    frames[f].1 = None;
+                } else if to_b {
+                    frames[f].0 = None;
+                }
+                to_a || to_b
+            }
+            _ => false,
+        };
+        // まとめたフレームは、残った出力に 2 声あるので記録しない
+        if !merged {
+            for (i, v) in [&frames[f].0, &frames[f].1].into_iter().enumerate() {
+                if let Some(v) = v {
+                    hist[i].push((f, v.f0, v.energy()));
+                }
+            }
+        }
+    }
+}
+
+/// 同じ人の前後の音とみなすときに見る、直前のフレーム数と、直前の高さにつながるとみなす範囲（オクターブ。100 セント）
+const RECENT: usize = 10;
+const LINK_OCT: f32 = 100.0 / 1200.0;
+/// 音を終えかけているとみなす、最近の最大に対する大きさ（-6dB）
+const FADE: f32 = 0.25;
 
 /// 時刻 `center`（サンプル）の A、B の声。前後の推定のフレームの声を直線で補う（同じ出力に近い高さの声があるときだけ）。
 /// `scale` はマスクの窓の長さの、推定の窓に対する比（F0 の動きの幅を合わせる）

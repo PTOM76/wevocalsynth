@@ -209,7 +209,7 @@ fn voices_file() {
     if let Ok(at) = std::env::var("VOICES_AT") {
         for t in at.split(',').map(|t| t.parse::<f32>().unwrap()) {
             let c = ((t * SR - 2048.0) / 512.0) as usize;
-            for f in c - 3..=c + 3 {
+            for f in c - 12..=c + 6 {
                 let d: Vec<String> = frames[f].iter().map(|x| format!("{:.0}Hz {:.0}dB", x.f0, 10.0 * x.amps.iter().map(|a| a * a).sum::<f32>().max(1e-12).log10())).collect();
                 eprintln!("AT {:.2} {}", (f * 512 + 2048) as f32 / SR, d.join(" | "));
             }
@@ -254,3 +254,47 @@ fn voices_singing_reverb() {
     eprintln!("歌声 残響 -6dB: ハモリ {pa:.1} / 主 {pb:.1} dB");
 }
 
+
+/// 分けたあとの低い方（`VOICES_OUT`_b.f32）に残った、高い方の声の倍音の大きさ（漏れ）を、フレームごとに測る。
+/// 高い方の出力（_a）で推定した F0 の倍音のうち、低い方の F0 の倍音から離れた位置の大きさを、低い方の声の倍音の大きさと比べる
+#[test]
+#[ignore]
+fn voices_leak() {
+    use wevocal_lib::stft::Stft;
+    let Ok(out) = std::env::var("VOICES_OUT") else { return };
+    let read = |p: String| -> Vec<f32> {
+        let raw: Vec<f32> = std::fs::read(p).unwrap().chunks_exact(4).map(|b| f32::from_le_bytes(b.try_into().unwrap())).collect();
+        let n = raw.len() / 2;
+        (0..n).map(|i| (raw[i] + raw[n + i]) / 2.0).collect()
+    };
+    let (hi, lo) = (read(format!("{out}_a.f32")), read(format!("{out}_b.f32")));
+    let (fh, fl) = (analyze(&hi, SR, &mut |_| {}), analyze(&lo, SR, &mut |_| {}));
+    let mut st = Stft::new(4096, 512);
+    let b = st.bins();
+    let bin_hz = SR / 4096.0;
+    let (mut re, mut im) = (vec![0.0; b], vec![0.0; b]);
+    let mut leaks = Vec::new();
+    for f in 0..fh.len().min(fl.len()) {
+        let (Some(h), Some(l)) = (fh[f].first(), fl[f].first()) else { continue };
+        st.forward(&lo, f, &mut re, &mut im);
+        let mag: Vec<f32> = re.iter().zip(&im).map(|(r, i)| (r * r + i * i).sqrt()).collect();
+        let at = |hz: f32| {
+            let k = (hz / bin_hz).round() as usize;
+            if k >= 1 && k + 1 < b { mag[k - 1].max(mag[k]).max(mag[k + 1]).powi(2) } else { 0.0 }
+        };
+        let near_l = |hz: f32| ((hz / l.f0).round() * l.f0 - hz).abs() < 2.0 * bin_hz;
+        let leak: f32 = (1..=(4000.0 / h.f0) as usize).map(|k| k as f32 * h.f0).filter(|&hz| !near_l(hz)).map(at).sum();
+        let own: f32 = (1..=(4000.0 / l.f0) as usize).map(|k| at(k as f32 * l.f0)).sum();
+        if own > 1e-6 && f as f32 * 512.0 / SR > 12.0 {
+            leaks.push(((f * 512 + 2048) as f32 / SR, 10.0 * (leak / own).log10(), h.f0, l.f0));
+        }
+    }
+    let mut sorted: Vec<f32> = leaks.iter().map(|x| x.1).collect();
+    sorted.sort_by(|a, b| a.total_cmp(b));
+    let mean = sorted[sorted.len() / 2];
+    eprintln!("漏れの中央値 {mean:.1} dB（{} フレーム）", leaks.len());
+    leaks.sort_by(|a, b| b.1.total_cmp(&a.1));
+    for (t, d, h, l) in leaks.iter().take(25) {
+        eprintln!("LEAK {t:.2} {d:.1} dB 高い方 {h:.0}Hz 低い方 {l:.0}Hz");
+    }
+}
