@@ -20,6 +20,11 @@ export interface TrackActions {
   mergeAll: () => void
   toggleMute: (id: string) => void
   toggleSolo: (id: string) => void
+  /** 位相の反転と EQ（トラックの欄の「⋯」から開いたときも、ここで切り替える） */
+  inverted: (id: string) => boolean
+  toggleInvert: (id: string) => void
+  eqOn: (id: string) => boolean
+  openEq: (id: string) => void
   /** 大きな波形の後ろに重ねるトラックと、その切り替え */
   overlay: ReadonlySet<string>
   toggleOverlay: (id: string) => void
@@ -50,6 +55,8 @@ export function trackMenuEntries(id: string, a: TrackActions): MenuEntry[] {
     { divider: true },
     { label: t('track.mute'), checked: m.mute, onClick: () => a.toggleMute(id) },
     { label: t('track.solo'), checked: m.solo, onClick: () => a.toggleSolo(id) },
+    { label: t('track.invert'), checked: a.inverted(id), onClick: () => a.toggleInvert(id) },
+    { label: t('eq.menu'), checked: a.eqOn(id), disabled: a.busy, onClick: () => a.openEq(id) },
     // 選んでいるトラックは大きな波形そのものなので、重ねられない
     { label: t('track.overlay'), checked: a.overlay.has(id), disabled: id === a.activeId, onClick: () => a.toggleOverlay(id) },
     { divider: true },

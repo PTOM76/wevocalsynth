@@ -4,6 +4,7 @@ import type { View } from '../waveform/draw'
 import { ContextMenu, useStableFn } from 'pevenmui'
 import TrackPanel from './TrackPanel'
 import RenameDialog from './RenameDialog'
+import { isFlatEq } from '../../audio/eq'
 import { multiTrackMenuEntries, trackMenuEntries } from './trackMenu'
 import type { PickMods } from './useTrackDrag'
 
@@ -11,7 +12,7 @@ import type { PickMods } from './useTrackDrag'
  * トラックの欄と、その右クリックメニュー・名前の変更のつなぎ込み（App から分けたもの）。
  * `panel(view)` を波形の上に、`overlays` を画面のどこかに置く
  */
-export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, meter: ((id: string) => AnalyserNode | null) | null, menuButton = false) {
+export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, meter: ((id: string) => AnalyserNode | null) | null, openEq: () => void) {
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const tr = ed.tracks
@@ -64,6 +65,14 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
     mergeAll: () => void tr.mergeAll(),
     toggleMute: tr.toggleMute,
     toggleSolo: tr.toggleSolo,
+    inverted: (id: string) => !!tr.faders[id]?.invert,
+    toggleInvert: tr.toggleInvert,
+    eqOn: (id: string) => !isFlatEq(tr.eqOf(id)),
+    // EQ のダイアログは選んでいるトラックを編集するので、選んでから開く
+    openEq: (id: string) => {
+      tr.select(id)
+      openEq()
+    },
     overlay: tr.overlay,
     toggleOverlay: tr.toggleOverlay,
     remove: tr.remove,
@@ -76,12 +85,19 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
   /** 複数選んだトラックの上で右クリックしたらまとめての操作、それ以外はそのトラックの操作 */
   const menuFor = (id: string) => (picked.size > 1 && picked.has(id) ? multiTrackMenuEntries(tr.tracks.filter((x) => picked.has(x.id)).map((x) => x.id), actions) : trackMenuEntries(id, actions))
 
+  // 位相の反転か EQ を使っているトラック（「⋯」に色を付ける）
+  const marked = useMemo(
+    () => new Set(tr.tracks.filter((x) => tr.faders[x.id]?.invert || !isFlatEq(tr.eqOf(x.id))).map((x) => x.id)) as ReadonlySet<string>,
+    // eqOf は eqs だけで決まる
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tr.tracks, tr.faders, tr.eqs],
+  )
+
   // トラックの欄に渡す関数は作り直さない（トラックの欄は memo してあり、関係ない操作では描き直さない）
   const onSelect = useStableFn(select)
   const onMove = useStableFn(tr.move)
   const onToggleMute = useStableFn(tr.toggleMute)
   const onToggleSolo = useStableFn(tr.toggleSolo)
-  const onToggleInvert = useStableFn(tr.toggleInvert)
   const onContextMenu = useStableFn((id: string, x: number, y: number) => setMenu({ id, x, y }))
 
   // トラックが2本以上あるときだけ出る（広げると波形付きの一覧、折りたたむとタブ）
@@ -97,10 +113,8 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
       onMove={onMove}
       onToggleMute={onToggleMute}
       onToggleSolo={onToggleSolo}
-      faders={tr.faders}
-      onToggleInvert={onToggleInvert}
+      marked={marked}
       onContextMenu={onContextMenu}
-      menuButton={menuButton}
       meter={meter}
     />
   )

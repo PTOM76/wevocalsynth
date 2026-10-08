@@ -78,6 +78,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         <Group title={t('settings.groupProcess')}>
           {S('initialMode')}
           {S('saveMemory')}
+          {S('eqBands')}
         </Group>
       </>
     ),

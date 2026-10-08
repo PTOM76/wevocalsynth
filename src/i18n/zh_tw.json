@@ -271,6 +271,7 @@
   "settings.kanaStrength": "改變共振的強度",
   "settings.kanaStrengthHelp": "減弱後母音感會降低，但能保留原本的音色",
   "settings.groupAddonConverter": "轉換",
+  "settings.eqBands": "EQ 頻段數（新音軌）",
 
   "export.title": "匯出音訊檔",
   "export.run": "匯出",
@@ -373,6 +374,7 @@
   "track.move": "調整音軌順序",
   "track.mergeSelected": "合併選取的音軌",
   "track.removeSelected": "刪除選取的 {count} 條音軌",
+  "track.effectsOn": "音軌選單（正在使用反相或 EQ）",
 
   "soundSelect.menu": "依靜音分段選取…",
   "soundSelect.selected": "已選取 {n} 個範圍",
@@ -872,5 +874,16 @@
   "video.styleNone": "無波形",
   "video.preview": "預覽",
   "video.bars256": "很細（256）",
-  "video.bars512": "最細（512）"
+  "video.bars512": "最細（512）",
+
+  "eq.title": "EQ（{name}）",
+  "eq.menu": "EQ…",
+  "eq.on": "啟用 EQ",
+  "eq.bands": "頻段數",
+  "eq.bandsN": "{n} 段",
+  "eq.flat": "重設為平直",
+  "eq.graph": "EQ 曲線",
+  "eq.help": "在圖上拖曳即可繪製曲線。按住 Shift 拖曳可微調單一頻段，按住 Alt 拖曳可與相鄰頻段平滑過渡，按兩下可將頻段恢復為 0 dB。會套用於播放與匯出。",
+  "eq.play": "播放",
+  "eq.pause": "暫停"
 }

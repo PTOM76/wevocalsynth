@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 
 /** App が開くダイアログ。足すときはここに名前を足し、AppDialogs.tsx に描画を置く */
-export type DialogId = 'shortcuts' | 'settings' | 'about' | 'licenses' | 'history' | 'synth' | 'sampler' | 'silence' | 'record' | 'repeat' | 'soundSelect'
+export type DialogId = 'shortcuts' | 'settings' | 'about' | 'licenses' | 'history' | 'synth' | 'sampler' | 'silence' | 'record' | 'repeat' | 'soundSelect' | 'eq'
 
 /** ダイアログの開閉をまとめて持つ（ダイアログごとに useState を書かずに済ませる） */
 export function useDialogs() {

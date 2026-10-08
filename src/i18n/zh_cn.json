@@ -271,6 +271,7 @@
   "settings.kanaStrength": "改变共振的强度",
   "settings.kanaStrengthHelp": "减弱后元音感会降低，但能保留原本的音色",
   "settings.groupAddonConverter": "转换",
+  "settings.eqBands": "EQ 频段数（新音轨）",
 
   "export.title": "导出音频文件",
   "export.run": "导出",
@@ -373,6 +374,7 @@
   "track.move": "调整音轨顺序",
   "track.mergeSelected": "合并选中的音轨",
   "track.removeSelected": "删除选中的 {count} 条音轨",
+  "track.effectsOn": "音轨菜单（正在使用反相或 EQ）",
 
   "soundSelect.menu": "按静音分段选择…",
   "soundSelect.selected": "已选择 {n} 个范围",
@@ -872,5 +874,16 @@
   "video.styleNone": "无波形",
   "video.preview": "预览",
   "video.bars256": "很细（256）",
-  "video.bars512": "最细（512）"
+  "video.bars512": "最细（512）",
+
+  "eq.title": "EQ（{name}）",
+  "eq.menu": "EQ…",
+  "eq.on": "启用 EQ",
+  "eq.bands": "频段数",
+  "eq.bandsN": "{n} 段",
+  "eq.flat": "重置为平直",
+  "eq.graph": "EQ 曲线",
+  "eq.help": "在图上拖动即可绘制曲线。按住 Shift 拖动可微调单个频段，按住 Alt 拖动可与相邻频段平滑过渡，双击可将频段恢复为 0 dB。会应用于播放和导出。",
+  "eq.play": "播放",
+  "eq.pause": "暂停"
 }

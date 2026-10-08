@@ -271,6 +271,7 @@
   "settings.kanaStrength": "Resonance change strength",
   "settings.kanaStrengthHelp": "Lower values keep more of the original voice quality at the cost of vowel clarity",
   "settings.groupAddonConverter": "Conversion",
+  "settings.eqBands": "EQ bands (new tracks)",
 
   "export.title": "Export audio",
   "export.run": "Export",
@@ -373,6 +374,7 @@
   "track.move": "Reorder tracks",
   "track.mergeSelected": "Merge selected tracks",
   "track.removeSelected": "Delete {count} selected tracks",
+  "track.effectsOn": "Track menu (phase invert or EQ in use)",
 
   "soundSelect.menu": "Select sounds between silences…",
   "soundSelect.selected": "Selected {n} ranges",
@@ -872,5 +874,16 @@
   "video.styleNone": "No waveform",
   "video.preview": "Preview",
   "video.bars256": "Very fine (256)",
-  "video.bars512": "Finest (512)"
+  "video.bars512": "Finest (512)",
+
+  "eq.title": "EQ ({name})",
+  "eq.menu": "EQ…",
+  "eq.on": "Enable EQ",
+  "eq.bands": "Number of bands",
+  "eq.bandsN": "{n} bands",
+  "eq.flat": "Flatten",
+  "eq.graph": "EQ graph",
+  "eq.help": "Drag across the graph to draw a curve. Shift-drag fine-tunes one band, Alt-drag smooths bands with their neighbors, and double-click resets a band to 0 dB. Applies to playback and export.",
+  "eq.play": "Play",
+  "eq.pause": "Pause"
 }

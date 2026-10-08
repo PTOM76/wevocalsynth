@@ -5,10 +5,12 @@ import type { Dialogs } from '../hooks/useDialogs'
 import type { useEditor } from '../hooks/useEditor'
 import type { useSelectionExport } from '../hooks/useSelectionExport'
 import { t } from '../i18n/i18n'
+import { flatEq } from '../audio/eq'
 import { licenseEntries } from '../licenses'
 import { useAppSettings } from '../settings/settings'
 import SettingsDialog from '../settings/SettingsDialog'
 import AboutDialog from './AboutDialog'
+import EqDialog from './eq/EqDialog'
 import ExportDialog from './ExportDialog'
 import HistoryDialog from './HistoryDialog'
 import PitchToolHost, { type PitchDialogKind } from './PitchToolHost'
@@ -119,6 +121,15 @@ export default function AppDialogs({ ed, dialogs, pitchDialog, setPitchDialog, s
     onJump={(n) => !busy && ed.history.jumpTo(n)}
   />
   <LicensesDialog open={dialogs.isOpen('licenses')} onClose={dialogs.closer('licenses')} title={t('menu.licenses')} intro={t('licenses.intro')} entries={licenseEntries()} />
+  <EqDialog
+    open={dialogs.isOpen('eq')}
+    trackName={ed.tracks.tracks.find((tr) => tr.id === ed.tracks.activeId)?.name ?? ''}
+    eq={ed.tracks.eqs[ed.tracks.activeId] ?? flatEq(settings.eqBands)}
+    onChange={(eq) => ed.tracks.setEq(ed.tracks.activeId, eq)}
+    playing={player.playing}
+    onTogglePlay={ed.playback.togglePlay}
+    onClose={dialogs.closer('eq')}
+  />
   <AboutDialog open={dialogs.isOpen('about')} onClose={dialogs.closer('about')} />
   <ShortcutsDialog keymap={ed.keymap} open={dialogs.isOpen('shortcuts')} onClose={dialogs.closer('shortcuts')} wheelZoom={settings.wheelZoom} />
   <SettingsDialog

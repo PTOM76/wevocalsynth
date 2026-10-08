@@ -19,6 +19,8 @@ export const process = defineItems('process', {
       ['instrument', 'common.instrument'],
     ],
   }),
+  // 新しいトラックの EQ のバンドの数（トラックごとにダイアログでも切り替えられる）
+  eqBands: choice<10 | 31>(10, { label: 'settings.eqBands', values: [10, 31], format: (v) => String(v) }),
   // メモリの節約（加工したトラックの原音を IndexedDB に退避する。auto はスマホとタブレットだけ。audio/originalStore.ts）
   saveMemory: choice<'auto' | 'on' | 'off'>('auto', {
     label: 'settings.saveMemory',

@@ -3,7 +3,7 @@ import { Box, IconButton, Tooltip } from '@mui/material'
 import { countRender } from '../../debug/debugStats'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
-import type { Track, TrackFader, TrackMix } from '../../audio/tracks'
+import type { Track, TrackMix } from '../../audio/tracks'
 import type { View } from '../waveform/draw'
 import { usePersistentNumber } from 'pevenmui'
 import TrackLanes from './TrackLanes'
@@ -26,12 +26,9 @@ interface Props {
   onMove: (id: string, to: number) => void
   onToggleMute: (id: string) => void
   onToggleSolo: (id: string) => void
-  /** 位相の反転（フェーダーの invert）と、その切り替え */
-  faders: Record<string, TrackFader>
-  onToggleInvert: (id: string) => void
+  /** 位相の反転か EQ を使っているトラック（「⋯」に色を付ける） */
+  marked: ReadonlySet<string>
   onContextMenu: (id: string, x: number, y: number) => void
-  /** 「⋯」でトラックのメニューを開けるようにする（スマホ） */
-  menuButton?: boolean
   /** トラック `id` のレベルメーター（再生していなければ null） */
   meter: ((id: string) => AnalyserNode | null) | null
 }

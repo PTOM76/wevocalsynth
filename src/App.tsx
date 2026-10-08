@@ -2,6 +2,7 @@ import MobileEditBar from './components/MobileEditBar'
 import { canSaveToFolder } from 'pevenmui/web'
 import MarkerTempoDialog from './components/MarkerTempoDialog'
 import { segmentAt } from './audio/tempoMap'
+import { isFlatEq } from './audio/eq'
 import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -115,8 +116,8 @@ export default function App() {
   }, [player.position])
   const center = view.start + view.dur / 2
   // トラックの欄（右クリックメニュー・名前の変更を含む）。メニューの「トラック → 名前の変更」からも使う
-  // スマホは右クリックができないので、トラックに「⋯」を出してメニューを開けるようにする
-  const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null, mobile)
+  // トラックの「⋯」でも同じメニューを開ける（スマホは右クリックができない。位相の反転と EQ もここから）
+  const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null, dialogs.opener('eq'))
   const activeSettings = ed.tracks.settingsOf(ed.tracks.activeId)
   const activeIndex = ed.tracks.tracks.findIndex((tr) => tr.id === ed.tracks.activeId)
 
@@ -232,6 +233,8 @@ export default function App() {
     toggleMute: () => ed.tracks.toggleMute(ed.tracks.activeId),
     toggleSolo: () => ed.tracks.toggleSolo(ed.tracks.activeId),
     toggleInvert: () => ed.tracks.toggleInvert(ed.tracks.activeId),
+    activeEq: !isFlatEq(activeSettings.eq),
+    openEq: dialogs.opener('eq'),
     renameTrack: () => trackArea.openRename(ed.tracks.activeId),
     removeTrack: () => ed.tracks.remove(ed.tracks.activeId),
     canMergeDown: activeIndex >= 0 && activeIndex < ed.tracks.tracks.length - 1,

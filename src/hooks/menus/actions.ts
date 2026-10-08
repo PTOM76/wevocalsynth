@@ -122,6 +122,9 @@ export interface MenuActions {
   toggleMute: () => void
   toggleSolo: () => void
   toggleInvert: () => void
+  /** 選んでいるトラックの EQ が掛かっているか、と EQ のダイアログを開く */
+  activeEq: boolean
+  openEq: () => void
   renameTrack: () => void
   removeTrack: () => void
   /** すぐ下にトラックがあるか（すぐ下と統合を使えるか） */

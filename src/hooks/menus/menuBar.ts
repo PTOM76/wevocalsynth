@@ -111,6 +111,7 @@ export function menuBar(c: MenuCtx): MenuGroup[] {
         { label: t('track.mute'), checked: a.activeMute, disabled: noClip || a.trackCount < 2, onClick: a.toggleMute },
         { label: t('track.solo'), checked: a.activeSolo, disabled: noClip || a.trackCount < 2, onClick: a.toggleSolo },
         { label: t('track.invert'), checked: a.activeInvert, disabled: noClip || a.trackCount < 2, onClick: a.toggleInvert },
+        { label: t('eq.menu'), checked: a.activeEq, disabled: noClip, onClick: a.openEq },
         { divider: true },
         { label: t('track.mergeDown'), disabled: noClip || !a.canMergeDown, onClick: a.mergeDown },
         { label: t('track.mergeAll'), disabled: noClip || a.trackCount < 2, onClick: a.mergeAll },

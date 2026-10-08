@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Box, ButtonBase, Tooltip, Typography } from '@mui/material'
-import { DEFAULT_MIX, isAudible, type Track, type TrackFader, type TrackMix } from '../../audio/tracks'
+import { DEFAULT_MIX, isAudible, type Track, type TrackMix } from '../../audio/tracks'
 import { computePeaks } from 'wevocal-lib'
 import { prepareCanvas, type View } from '../waveform/draw'
 import { canvasPixelRatio, usePalette, pevenFont } from 'pevenmui'
@@ -28,19 +28,18 @@ interface Props {
   onMove: (id: string, to: number) => void
   onToggleMute: (id: string) => void
   onToggleSolo: (id: string) => void
-  /** 「⋯」でトラックのメニューを開けるようにする（スマホ） */
-  menuButton?: boolean
-  /** 位相の反転（フェーダーの invert）と、その切り替え */
-  faders: Record<string, TrackFader>
-  onToggleInvert: (id: string) => void
+  /** 位相の反転か EQ を使っているトラック（「⋯」に色を付ける） */
+  marked: ReadonlySet<string>
   onContextMenu: (id: string, x: number, y: number) => void
   /** トラック `id` のレベルメーター（再生していなければ null） */
   meter: ((id: string) => AnalyserNode | null) | null
 }
 
-/** M / S / I の小さな切り替え（オンなら色を付ける） */
-/** トラックの操作のメニューを開く「⋯」（スマホ。右クリックができないため）。行やタブを押したときの「選ぶ」とは分ける */
-export function TrackMenuButton(p: { title: string; onOpen: (x: number, y: number) => void }) {
+/**
+ * トラックの操作のメニューを開く「⋯」（右クリックと同じメニュー。位相の反転と EQ もここから）。行やタブを押したときの「選ぶ」とは分ける。
+ * `on` なら色を付ける（位相の反転か EQ を使っている）
+ */
+export function TrackMenuButton(p: { title: string; on?: boolean; onOpen: (x: number, y: number) => void }) {
   return (
     <Tooltip title={p.title}>
       <ButtonBase
@@ -52,7 +51,7 @@ export function TrackMenuButton(p: { title: string; onOpen: (x: number, y: numbe
           const r = e.currentTarget.getBoundingClientRect()
           p.onOpen(r.left, r.bottom)
         }}
-        sx={{ width: 24, height: 24, borderRadius: 0.5, color: 'text.secondary', fontSize: pevenFont('lg'), lineHeight: 1 }}
+        sx={{ width: 24, height: 24, borderRadius: 0.5, color: p.on ? 'info.main' : 'text.secondary', fontWeight: p.on ? 700 : 400, fontSize: pevenFont('lg'), lineHeight: 1 }}
       >
         ⋯
       </ButtonBase>
@@ -60,6 +59,7 @@ export function TrackMenuButton(p: { title: string; onOpen: (x: number, y: numbe
   )
 }
 
+/** M / S の小さな切り替え（オンなら色を付ける） */
 export function MixToggle(p: { label: string; title: string; on: boolean; color: string; onClick: () => void }) {
   return (
     <Tooltip title={p.title}>
@@ -184,13 +184,12 @@ export default function TrackLanes(p: Props) {
                     {tr.name}
                   </Typography>
                 </Tooltip>
-                {/* メーターは名前の列に収める（固定幅だと M・S・I のボタンにはみ出した） */}
+                {/* メーターは名前の列に収める（固定幅だと M・S のボタンにはみ出した） */}
                 {p.meter && <LevelMeter source={() => p.meter?.(tr.id) ?? null} width={80} height={4} label={t('meter.track', { name: tr.name })} />}
               </Box>
               <MixToggle label="M" title={t('track.mute')} on={m.mute} color="warning.main" onClick={() => p.onToggleMute(tr.id)} />
               <MixToggle label="S" title={t('track.solo')} on={m.solo} color="success.main" onClick={() => p.onToggleSolo(tr.id)} />
-              <MixToggle label="I" title={t('track.invert')} on={!!p.faders[tr.id]?.invert} color="info.main" onClick={() => p.onToggleInvert(tr.id)} />
-              {p.menuButton && <TrackMenuButton title={t('track.menu')} onOpen={(x, y) => p.onContextMenu(tr.id, x, y)} />}
+              <TrackMenuButton title={t(p.marked.has(tr.id) ? 'track.effectsOn' : 'track.menu')} on={p.marked.has(tr.id)} onOpen={(x, y) => p.onContextMenu(tr.id, x, y)} />
             </Box>
             {/* 鳴らないトラックは薄く出す */}
             <Box sx={{ flex: 1, minWidth: 0, opacity: audible ? 1 : 0.35, py: 0.25 }}>

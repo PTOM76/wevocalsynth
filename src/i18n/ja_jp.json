@@ -271,6 +271,7 @@
   "settings.kanaStrength": "響きを変える強さ",
   "settings.kanaStrengthHelp": "弱めると、母音らしさは減るが、元の声質が残る",
   "settings.groupAddonConverter": "変換",
+  "settings.eqBands": "EQ のバンドの数（新しいトラック）",
 
   "export.title": "音声ファイルを書き出す",
   "export.run": "書き出す",
@@ -373,6 +374,7 @@
   "track.move": "トラックの並び替え",
   "track.mergeSelected": "選択したトラックを統合",
   "track.removeSelected": "選択した {count} 本のトラックを削除",
+  "track.effectsOn": "トラックのメニュー（位相の反転か EQ を使用中）",
 
   "soundSelect.menu": "無音で区切って選択…",
   "soundSelect.selected": "{n} 個の範囲を選択しました",
@@ -872,5 +874,16 @@
   "video.styleNone": "波形なし",
   "video.preview": "プレビュー",
   "video.bars256": "とても細かい（256）",
-  "video.bars512": "最も細かい（512）"
+  "video.bars512": "最も細かい（512）",
+
+  "eq.title": "EQ（{name}）",
+  "eq.menu": "EQ…",
+  "eq.on": "EQ を使用する",
+  "eq.bands": "バンドの数",
+  "eq.bandsN": "{n} バンド",
+  "eq.flat": "平らにする",
+  "eq.graph": "EQ のグラフ",
+  "eq.help": "グラフをなぞると曲線を描けます。Shift を押しながらドラッグすると 1 つのバンドを細かく動かし、Alt を押しながらなぞると周りとなじませます。ダブルクリックで 0 dB に戻ります。再生と書き出しに反映されます。",
+  "eq.play": "再生",
+  "eq.pause": "一時停止"
 }
