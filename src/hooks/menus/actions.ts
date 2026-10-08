@@ -66,6 +66,8 @@ export interface MenuActions {
   /** 選んでいるトラックを、ボーカルと伴奏の2トラックに分ける */
   splitStems: () => void
   splitLeadStems: () => void
+  /** 選んでいるトラックを、楽器ごとのトラックに分ける（Demucs） */
+  splitInstrumentStems: () => void
   /** 和音を 2 つの声に分ける（試作。設定の開発者向けでオンのときだけ渡す） */
   splitVoices?: (by: 'pitch' | 'volume') => void
   /** 声の素材から一音を作る（試験的）の試し。設定で ON のときだけ */

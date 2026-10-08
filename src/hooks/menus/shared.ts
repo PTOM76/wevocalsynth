@@ -57,6 +57,7 @@ export function extractEntries({ a, t, noClip }: MenuCtx): MenuEntry[] {
     { label: t('extract.accompanimentMenu'), disabled: noClip, onClick: () => a.extract('accompaniment') },
     { label: t('extract.splitMenu'), disabled: noClip, onClick: a.splitStems },
     { label: t('extract.splitLeadMenu'), disabled: noClip, onClick: a.splitLeadStems },
+    { label: t('extract.splitInstrumentsMenu'), disabled: noClip, onClick: a.splitInstrumentStems },
     ...(a.splitVoices
       ? [
           { divider: true } as const,

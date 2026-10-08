@@ -5,13 +5,15 @@ import DataSection from './DataSection'
 import AddonSection from './AddonSection'
 import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
-import { EXTRACT_MODELS } from '../audio/vocalExtract'
+import { EXTRACT_MODELS, STEM_MODELS } from '../audio/vocalExtract'
 import { isMdxModel, resolveModel } from '../audio/vocalExtract'
 import { backendAllowed } from '../../extractor/src/compat'
 import { visibleAlgorithms } from '../components/AlgorithmMenu'
 import ExtractDiagnose from '../debug/ExtractDiagnose'
 import OutputDeviceRow from './OutputDeviceRow'
 import SettingRow from './items/SettingRow'
+import AddonFolderRow from './AddonFolderRow'
+import { addonFolderSupported } from '../addons/addonFolder'
 import ShortcutSection from './ShortcutSection'
 import type { Algorithm } from '../dsp/engine'
 import { i18n, t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
@@ -20,7 +22,7 @@ import { Box, Button, Typography } from '@mui/material'
 import { Check, Choice, Group, Row, type WindowMode, pevenFont } from 'pevenmui'
 
 /** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
-const VOCAL_ADDONS = Object.values(VOCAL_MODELS).map((m) => m.addon)
+const VOCAL_ADDONS = [...Object.values(VOCAL_MODELS), ...Object.values(STEM_MODELS)].map((m) => m.addon)
 
 interface PageProps {
   draft: Settings
@@ -164,6 +166,10 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
           {/* 抽出の動きを変える設定なので、診断ではなくここに置く（iPad などで抽出できないときに下げる） */}
           {S('vocalMemoryMb')}
         </Group>
+        <Group title={t('settings.groupStems')}>
+          {S('stemModel')}
+          {S('stemChorus')}
+        </Group>
         <Group title={t('settings.groupAddons')}>
           {/* 追加機能の一覧（AddonSection）と同じく、説明は左、ボタンは右 */}
           <Box sx={{ gridColumn: '1 / -1', width: '100cqi', maxWidth: '100cqi', display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -234,6 +240,9 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         {S('showKanaVoice')}
         {draft.showKanaVoice && S('kanaStrength')}
         {S('parallelProcess')}
+        {/* 追加機能の保存先のフォルダー（Chrome、Edge だけ） */}
+        {addonFolderSupported() && S('addonFolder')}
+        {addonFolderSupported() && draft.addonFolder && <AddonFolderRow />}
       </Group>
     ),
     diagnose: (

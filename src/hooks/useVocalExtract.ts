@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { useConfirm } from 'pevenmui'
 import type { Clip, Range } from '../audio/types'
-import type { VocalModel } from '../settings/settings'
+import type { StemModel, VocalModel } from '../settings/settings'
 import type { Track } from '../audio/tracks'
 import type { Project } from '../project/projectFile'
 import type { JobKind } from '../progress/jobs'
 import { t } from '../i18n/i18n'
-import { extractRanges, isOutOfMemory, LEAD_MODEL, planBackend, resolveModel, splitBoth, splitLead, VOCAL_MODELS, type ExtractOptions, type ExtractStem } from '../audio/vocalExtract'
+import { extractRanges, isOutOfMemory, LEAD_MODEL, planBackend, resolveModel, splitBoth, splitInstruments, splitLead, STEM_MODELS, VOCAL_MODELS, type ExtractOptions, type ExtractStem, type InstrumentStems } from '../audio/vocalExtract'
+import type { MessageKey } from '../i18n/i18n'
 import { backendAllowed } from '../../extractor/src/compat'
 import { scheduleCleanExtract, type CleanJobBody } from '../project/cleanExtract'
 import { clearExtracting, crashedDuringExtract, markExtracting } from '../project/extractGuard'
@@ -24,6 +25,9 @@ interface Deps {
   keepHighBand: boolean
   /** 実行環境のメモリの上限（MB） */
   memoryMb: number
+  /** 楽器ごとに分けるモデルと、ボーカルをさらに主旋律とハモリに分けるか */
+  stemModel: StemModel
+  stemChorus: boolean
   /** 追加機能が導入済みか確かめ、なければ導入の確認ダイアログを出す */
   ensure: (id: string, also?: string[]) => Promise<boolean>
   run: (label: string, task: (signal: AbortSignal) => Promise<void>, kind?: JobKind) => Promise<void>
@@ -201,5 +205,48 @@ export function useVocalExtract(d: Deps) {
     if (!done) clearExtracting()
   }
 
-  return { extract, splitStems, splitLeadStems, dialog }
+  /** トラック `id`（既定は選んでいるもの）全体を、楽器ごとのトラックに分ける（Demucs。設定でボーカルを主旋律とハモリにも分ける） */
+  const splitInstrumentStems = async (id = d.activeId) => {
+    const track = d.tracks.find((tr) => tr.id === id)
+    if (!track) return
+    const edited = track.clip
+    const options: ExtractOptions = { ...base(), stemModel: d.stemModel }
+    const plan = await planBackend(options)
+    if (!(await d.ensure(STEM_MODELS[d.stemModel].addon, [plan.runtimeAddon]))) return
+    if (d.stemChorus) {
+      const lead = await planBackend({ ...base(), model: LEAD_MODEL })
+      if (!(await d.ensure(VOCAL_MODELS[LEAD_MODEL].addon, [lead.runtimeAddon]))) return
+    }
+    await d.prepare()
+    let done = false
+    markExtracting()
+    await d.run(t('task.splitInstruments'), async (signal) => {
+      const r = await splitInstruments(edited, { ...options, backend: plan.backend }, d.stemChorus, d.setProgress, signal, confirmCpu)
+      if (signal.aborted) return
+      const sr = edited.sampleRate
+      d.split(
+        STEM_ORDER.flatMap(([k, name]) => (r[k] ? [{ name: t(name, { name: track.name }), clip: { sampleRate: sr, channels: r[k] } }] : [])),
+        t('extract.splitInstruments'),
+        id,
+      )
+      done = true
+      clearExtracting(true)
+      d.notify(t('toast.extracted'))
+    }, 'extract')
+    if (!done) clearExtracting()
+  }
+
+  return { extract, splitStems, splitLeadStems, splitInstrumentStems, dialog }
 }
+
+/** 楽器ごとに分けたトラックの並びと名前（モデルが出さない音は作らない） */
+const STEM_ORDER: [keyof InstrumentStems, MessageKey][] = [
+  ['vocals', 'track.vocalsName'],
+  ['lead', 'track.leadName'],
+  ['harmony', 'track.harmonyName'],
+  ['drums', 'track.drumsName'],
+  ['bass', 'track.bassName'],
+  ['guitar', 'track.guitarName'],
+  ['piano', 'track.pianoName'],
+  ['other', 'track.otherName'],
+]

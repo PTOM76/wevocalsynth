@@ -6,6 +6,7 @@
 // - vocal-extractor-gpu / -cpu: ONNX Runtime の wasm（WebGPU 対応版 / WASM 版。要る方だけ入れる）
 // - spleeter-<種類>: モデル。sherpa-onnx の配布物を取得し、vocals.onnx / accompaniment.onnx に名前をそろえる
 // - uvr-mdx-<種類>: UVR の MDX-Net のモデル（model.onnx）
+// - demucs-4 / -6: Demucs のモデル（model.onnx を 90MB ずつに分けた model.onnx.000…）
 // - analyzer: 解析（analyzer/ をビルド。今はスペクトログラム）
 // - converter: 変換（converter/ をビルド。今は動画の書き出し）
 // 各フォルダに manifest.json（ファイルの大きさとハッシュ、内容から決めたバージョン）を書く
@@ -29,6 +30,8 @@ const MODELS = {
 }
 
 const run = (cmd) => execSync(cmd, { stdio: 'inherit' })
+/** 分けて置くときの 1 ファイルの大きさ（GitHub Pages の 1 ファイルの上限 100MB より小さく） */
+const PART_BYTES = 90 * 2 ** 20
 
 function listFiles(dir) {
   return readdirSync(dir).flatMap((name) => {
@@ -114,6 +117,24 @@ if (want('models')) {
     mkdirSync(dir, { recursive: true })
     copyFileSync(src, join(dir, 'model.onnx'))
     addLicenses(dir, ['uvr-MIT.txt', 'sherpa-onnx-Apache-2.0.txt'])
+    writeManifest(id, dir, null)
+  }
+
+  // Demucs（ONNX 版を Hugging Face から取得。extractor/src/demucsModels.ts）。GitHub Pages は 1 ファイル 100MB までなので、
+  // model.onnx.000、.001… に分けて置き、アプリがつなげて読み込む（src/audio/vocalExtract.ts）
+  const HF = 'https://huggingface.co/adowu'
+  const DEMUCS = { 'demucs-4': `${HF}/htdemucs-onnx/resolve/main/htdemucs_fp16weights.onnx`, 'demucs-6': `${HF}/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx` }
+  for (const [id, url] of Object.entries(DEMUCS)) {
+    const src = join(CACHE, url.split('/').pop())
+    if (!existsSync(src)) run(`curl -sSfL -o "${src}" ${url}`)
+    const dir = join(OUT, id)
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(dir, { recursive: true })
+    const data = readFileSync(src)
+    for (let i = 0, at = 0; at < data.length; i++, at += PART_BYTES) {
+      writeFileSync(join(dir, `model.onnx.${String(i).padStart(3, '0')}`), data.subarray(at, at + PART_BYTES))
+    }
+    addLicenses(dir, ['demucs-MIT.txt'])
     writeManifest(id, dir, null)
   }
 }

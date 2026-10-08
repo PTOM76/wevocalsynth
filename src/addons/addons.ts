@@ -1,11 +1,12 @@
 import type { MessageKey } from '../i18n/i18n'
 import { app } from '../appConfig'
+import { clearAddonFolder, installsToFolder, readAddonFile, removeAddonDir, writeAddonFile } from './addonFolder'
 
 /**
  * 追加機能（アドオン）。使いたい人だけが導入し、導入後はオフラインでも使える（docs/EXTRACTOR.md）。
  * - 配信: `addons/<id>/manifest.json` とファイル一式（アプリと同じ場所）
- * - 保存先: アプリ本体とは別の Cache Storage（アプリの更新では消えない）
- * - 読み込み: Service Worker が保存先から返すので、普通に `import()` できる
+ * - 保存先: アプリ本体とは別の Cache Storage（アプリの更新では消えない）。試験的に、選んだフォルダーにも置ける（addonFolder.ts）
+ * - 読み込み: Service Worker が保存先（Cache Storage、なければフォルダー）から返すので、普通に `import()` できる
  */
 
 /** 保存先の名前。vite.config.ts の Service Worker の設定と一致させる */
@@ -49,6 +50,9 @@ export const ADDONS: AddonInfo[] = [
   { id: 'uvr-mdx-voc-ft', name: 'addon.uvrVocFt', shortName: 'addon.modelVocalHq', requires: ['vocal-extractor'] },
   { id: 'uvr-mdx-inst-hq4', name: 'addon.uvrInstHq4', shortName: 'addon.modelInstHq', requires: ['vocal-extractor'] },
   { id: 'uvr-mdx-kara2', name: 'addon.uvrKara2', shortName: 'addon.modelLead', requires: ['vocal-extractor'] },
+  // 楽器ごとに分ける（Demucs。モデルは 100MB を超えるので、分けて置いてある。src/audio/vocalExtract.ts）
+  { id: 'demucs-4', name: 'addon.demucs4', shortName: 'addon.modelStems4', requires: ['vocal-extractor'] },
+  { id: 'demucs-6', name: 'addon.demucs6', shortName: 'addon.modelStems6', requires: ['vocal-extractor'] },
   // 解析（analyzer/ の WeVocalAnalyzer）。今はスペクトログラムの表示に使う（src/audio/spectrogram.ts）
   { id: 'analyzer', name: 'addon.analyzer' },
   // 変換（converter/ の WeVocalConverter）。今は動画の書き出しに使う（src/audio/video.ts）
@@ -84,7 +88,10 @@ export async function fetchManifest(id: string): Promise<AddonManifest> {
 export async function installedManifest(id: string): Promise<AddonManifest | null> {
   if (!addonsSupported()) return null
   const res = await (await caches.open(ADDON_CACHE)).match(manifestUrl(id))
-  return res ? res.json() : null
+  if (res) return res.json()
+  // 選んだフォルダーに入れたもの（許可がなければ未導入として扱う）
+  const file = await readAddonFile(id, 'manifest.json').catch(() => null)
+  return file ? JSON.parse(await file.text()) : null
 }
 
 async function sha256(buf: ArrayBuffer) {
@@ -120,6 +127,8 @@ async function readAll(res: Response, onBytes: (n: number) => void): Promise<Arr
  * `onProgress` は 0〜1
  */
 export async function install(m: AddonManifest, onProgress: (p: number) => void, signal?: AbortSignal) {
+  // 選んだフォルダーに入れる設定なら、そちらへ書く（Cache Storage にある前の版は消す）
+  if (await installsToFolder()) return installToFolder(m, onProgress, signal)
   const cache = await caches.open(ADDON_CACHE)
   const base = baseUrl(m.id)
   const total = addonSize(m) || 1
@@ -148,9 +157,34 @@ export async function install(m: AddonManifest, onProgress: (p: number) => void,
   }
 }
 
+/** `install` の、選んだフォルダーに入れる版（試験的。addonFolder.ts） */
+async function installToFolder(m: AddonManifest, onProgress: (p: number) => void, signal?: AbortSignal) {
+  const base = baseUrl(m.id)
+  const total = addonSize(m) || 1
+  let loaded = 0
+  try {
+    await uninstall(m.id)
+    for (const f of m.files) {
+      const res = await fetch(`${new URL(f.path, base).href}?v=${encodeURIComponent(m.version)}`, { cache: 'no-store', signal })
+      if (!res.ok) throw new Error(`${f.path}: HTTP ${res.status}`)
+      const buf = await readAll(res, (n) => onProgress(Math.min(1, (loaded += n) / total)))
+      if (buf.byteLength !== f.size || (await sha256(buf)) !== f.sha256) throw new Error(`${f.path}: 内容が一致しません`)
+      await writeAddonFile(m.id, f.path, buf)
+    }
+    // マニフェストは最後に書く（あれば導入済みとみなすため）
+    await writeAddonFile(m.id, 'manifest.json', JSON.stringify(m))
+    changed()
+  } catch (e) {
+    await uninstall(m.id)
+    throw e
+  }
+}
+
 // 導入、削除のたびに知らせる（メニューに出すかを決め直すため。設定を別の窓で開いていても同じ JS の中で動く）
 const listeners = new Set<() => void>()
 const changed = () => listeners.forEach((fn) => fn())
+/** 導入済みかが変わったことを知らせる（フォルダーへのアクセスを許可したときなど） */
+export const notifyAddonsChanged = changed
 /** 追加機能を導入、削除したときに `fn` を呼ぶ。戻り値で解除する */
 export function onAddonsChanged(fn: () => void) {
   listeners.add(fn)
@@ -165,6 +199,8 @@ export async function uninstall(id: string) {
   for (const req of await cache.keys()) {
     if (req.url.startsWith(base)) await cache.delete(req)
   }
+  // 選んだフォルダーに入れたものも消す
+  await removeAddonDir(id)
   changed()
 }
 
@@ -198,6 +234,7 @@ export async function installedAddonsSize(): Promise<number> {
 /** 導入済みの追加機能をすべて消す（設定の「データ」） */
 export async function clearAddons() {
   if (addonsSupported()) await caches.delete(ADDON_CACHE)
+  await clearAddonFolder()
   changed()
 }
 

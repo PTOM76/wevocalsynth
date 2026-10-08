@@ -1,5 +1,5 @@
 import type { Algorithm } from '../../dsp/engine'
-import type { F0Voicing, InitialMode, VocalModel } from '../settings'
+import type { F0Voicing, InitialMode, StemModel, VocalModel } from '../settings'
 import { MEMORY_MB } from '../../constants/ui'
 import { check, choice, defineItems, number, value } from './define'
 
@@ -78,4 +78,15 @@ export const vocal = defineItems('vocal', {
   vocalKeepHighBand: check(false, { label: 'settings.vocalKeepHighBand', help: 'settings.vocalKeepHighBandHelp' }),
   // 抽出の実行環境の wasm のメモリの上限（MB）。iOS は上限の分を予約の枠から差し引くので、抽出できなければ下げる
   vocalMemoryMb: choice<number>(1024, { label: 'settings.vocalMemory', help: 'settings.vocalMemoryHelp', values: MEMORY_MB, format: (mb) => (mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`) }),
+  // 楽器ごとに分けるモデル（Demucs。4 つか、ギターとピアノも分ける 6 つ）
+  stemModel: choice<StemModel>('htdemucs', {
+    label: 'settings.stemModel',
+    help: 'settings.stemModelHelp',
+    options: [
+      ['htdemucs', 'addon.modelStems4'],
+      ['htdemucs6s', 'addon.modelStems6'],
+    ],
+  }),
+  // 楽器ごとに分けるとき、ボーカルをさらに主旋律とハモリに分ける（主旋律モデルも使う）
+  stemChorus: check(false, { label: 'settings.stemChorus', help: 'settings.stemChorusHelp' }),
 })

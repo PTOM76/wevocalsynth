@@ -22,6 +22,7 @@ export const licenseEntries = (): LicenseEntry[] => [
   { name: 'ONNX Runtime Web', license: 'MIT', url: 'https://github.com/microsoft/onnxruntime', note: t('licenses.ort') },
   { name: 'Spleeter', license: 'MIT', url: 'https://github.com/deezer/spleeter', note: t('licenses.spleeter') },
   { name: 'Ultimate Vocal Remover (UVR)', license: 'MIT', url: 'https://github.com/Anjok07/ultimatevocalremovergui', note: t('licenses.uvr') },
+  { name: 'Demucs', license: 'MIT', url: 'https://github.com/facebookresearch/demucs', note: t('licenses.demucs') },
   { name: 'WeVocalConverter', license: 'MIT', url: 'https://github.com/PTOM76/wevocalconverter', note: t('licenses.converter') },
   { name: 'Mediabunny', license: 'MPL-2.0', url: 'https://github.com/Vanilagy/mediabunny', note: t('licenses.mediabunny') },
   { name: 'sherpa-onnx', license: 'Apache-2.0', url: 'https://github.com/k2-fsa/sherpa-onnx', note: t('licenses.sherpa') },

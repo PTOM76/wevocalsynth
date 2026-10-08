@@ -50,4 +50,6 @@ export const experimental = defineItems('experimental', {
   kanaStrength: choice<number>(100, { label: 'settings.kanaStrength', help: 'settings.kanaStrengthHelp', values: [50, 70, 85, 100], format: (p) => `${p}%` }),
   // 長い音の加工を、区間に分けて複数の Worker で並列に行う（試験的。dsp/src/segment.rs）
   parallelProcess: check(false, { label: 'settings.parallelProcess', help: 'settings.parallelProcessHelp' }),
+  // 追加機能を、選んだフォルダーに保存する（試験的。Chrome、Edge。memo/addon-folder.md）。フォルダーは AddonFolderRow で選ぶ
+  addonFolder: check(false, { label: 'settings.addonFolder', help: 'settings.addonFolderHelp' }),
 })

@@ -2,10 +2,11 @@ import type { Clip, Range } from './types'
 import { spliceProcessed } from './edit'
 import { normalizeRanges } from './multiRange'
 import { addonFileUrl, installedManifest, loadAddon } from '../addons/addons'
-import type { VocalModel } from '../settings/settings'
+import type { StemModel, VocalModel } from '../settings/settings'
 import type { MessageKey } from '../i18n/i18n'
 import { backendAllowed, effectiveModel } from '../../extractor/src/compat'
 import { MDX_MODELS, type MdxModelId } from '../../extractor/src/mdxModels'
+import { DEMUCS_MODELS, type DemucsModelId } from '../../extractor/src/demucsModels'
 import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from './usePlayer'
 import { isMobile } from 'pevenmui/web'
@@ -33,6 +34,12 @@ export const VOCAL_MODELS: Record<VocalModel, { addon: string; label: MessageKey
   kara2: { addon: 'uvr-mdx-kara2', label: 'addon.modelLead', mdx: 'kara2', lead: true },
 }
 
+/** 楽器ごとに分けるモデルの追加機能 ID と、表示する名前 */
+export const STEM_MODELS: Record<StemModel, { addon: string; label: MessageKey; demucs: DemucsModelId }> = {
+  htdemucs: { addon: 'demucs-4', label: 'addon.modelStems4', demucs: 'htdemucs' },
+  htdemucs6s: { addon: 'demucs-6', label: 'addon.modelStems6', demucs: 'htdemucs6s' },
+}
+
 /** 主旋律とハモリを分けるモデル */
 export const LEAD_MODEL: VocalModel = 'kara2'
 
@@ -51,6 +58,8 @@ export function resolveModel(model: VocalModel, gpu: boolean): { model: VocalMod
 /** 抽出の設定（設定の「ボーカル抽出」） */
 export interface ExtractOptions {
   model: VocalModel
+  /** 楽器ごとに分けるときのモデル（あれば `model` の代わりに使う） */
+  stemModel?: StemModel
   /** GPU（WebGPU）を使ってよいか */
   gpu: boolean
   /** 約 11kHz より上を残す（モデルが扱わない帯域。残すと伴奏の高い音が混ざりやすい） */
@@ -81,7 +90,7 @@ const runtimeOf = (backend: ExtractorModule.Backend): ExtractorModule.Runtime =>
 
 /** 計算の種類と、それに要る実行環境の追加機能（抽出の前に、導入済みか確かめるため） */
 export async function planBackend(o: ExtractOptions): Promise<{ backend: ExtractorModule.Backend; runtimeAddon: string }> {
-  const backend = o.gpu && backendAllowed(o.model, 'webgpu') && (await hasWebGpu()) ? 'webgpu' : 'wasm'
+  const backend = o.gpu && backendAllowed(o.stemModel ?? o.model, 'webgpu') && (await hasWebGpu()) ? 'webgpu' : 'wasm'
   return { backend, runtimeAddon: RUNTIME_ADDONS[runtimeOf(backend)] }
 }
 
@@ -99,7 +108,28 @@ async function fetchModel(addon: string, file: ExtractStem | 'model') {
   return res.arrayBuffer()
 }
 
-/** 実行環境を作る。`runtime` は読み込む ONNX Runtime（その追加機能が導入済みであること） */
+/**
+ * 追加機能の model.onnx を読み込む。配信先（GitHub Pages）は 1 ファイル 100MB までなので、大きいモデルは
+ * model.onnx.000、.001… に分けて置いてあり、つなげて返す（scripts/build-addons.mjs）
+ */
+async function fetchJoined(addon: string) {
+  const parts = (await installedManifest(addon))?.files.map((f) => f.path).filter((p) => /^model\.onnx\.\d+$/.test(p)).sort() ?? []
+  if (!parts.length) return fetchModel(addon, 'model')
+  const bufs: ArrayBuffer[] = []
+  for (const p of parts) {
+    const res = await fetch(addonFileUrl(addon, p))
+    if (!res.ok) throw new Error(`${p}: HTTP ${res.status}`)
+    bufs.push(await res.arrayBuffer())
+  }
+  const out = new Uint8Array(bufs.reduce((n, b) => n + b.byteLength, 0))
+  let at = 0
+  for (const b of bufs.splice(0)) {
+    out.set(new Uint8Array(b), at)
+    at += b.byteLength
+  }
+  return out.buffer
+}
+
 /** WebGPU のデバイスが失われたときに呼ぶ（画面がブラウザの再起動を勧める。`setGpuLostHandler`） */
 let gpuLostHandler: ((message: string) => void) | undefined
 export const setGpuLostHandler = (f: ((message: string) => void) | undefined) => {
@@ -112,10 +142,13 @@ export type ConfirmCpu = (reason: string) => Promise<boolean>
 async function open(o: ExtractOptions, backend: ExtractorModule.Backend, runtime: ExtractorModule.Runtime, keepAliveMs?: number, confirmCpu?: ConfirmCpu) {
   const info = VOCAL_MODELS[o.model]
   const mod = await loadAddon<typeof ExtractorModule>('vocal-extractor')
-  // Spleeter はボーカル用・伴奏用の 2 つ、MDX-Net は model.onnx の 1 つ
-  const model = info.mdx
-    ? { mdx: { model: await fetchModel(info.addon, 'model'), params: MDX_MODELS[info.mdx].params } }
-    : { vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment') }
+  // Spleeter はボーカル用・伴奏用の 2 つ、MDX-Net と Demucs は model.onnx の 1 つ
+  const stem = o.stemModel && STEM_MODELS[o.stemModel]
+  const model = stem
+    ? { demucs: { model: await fetchJoined(stem.addon), params: DEMUCS_MODELS[stem.demucs].params } }
+    : info.mdx
+      ? { mdx: { model: await fetchModel(info.addon, 'model'), params: MDX_MODELS[info.mdx].params } }
+      : { vocals: await fetchModel(info.addon, 'vocals'), accompaniment: await fetchModel(info.addon, 'accompaniment') }
   return mod.createExtractor({
     ...model,
     backend,
@@ -225,4 +258,24 @@ export async function splitLead(clip: Clip, o: ExtractOptions, onProgress: (p: n
   const lead: ExtractOptions = { ...o, model: LEAD_MODEL, backend: undefined }
   const second = await splitBoth({ sampleRate: clip.sampleRate, channels: first.vocals }, lead, (p) => onProgress(0.5 + p / 2), signal, confirmCpu)
   return { lead: second.vocals, harmony: second.accompaniment, accompaniment: first.accompaniment }
+}
+
+/** 楽器ごとに分けた音（モデルが出す音ごと。`lead` と `harmony` は、ボーカルをさらに分けたとき） */
+export type InstrumentStems = Partial<Record<ExtractorModule.DemucsSource | 'lead' | 'harmony', Float32Array[]>>
+
+/**
+ * `clip` 全体を、`o.stemModel` のモデル（Demucs）で楽器ごとに分ける。`chorus` なら、ボーカルをさらに
+ * 主旋律モデル（UVR Karaoke 2）で主旋律とハモリに分ける（推論は 2 回。Demucs の方がずっと長いので、進み具合は 9 割を当てる）
+ */
+export async function splitInstruments(clip: Clip, o: ExtractOptions, chorus: boolean, onProgress: (p: number) => void, signal?: AbortSignal, confirmCpu?: ConfirmCpu) {
+  if (!o.stemModel) throw new Error('stemModel is required')
+  const sources = DEMUCS_MODELS[STEM_MODELS[o.stemModel].demucs].params.sources
+  const share = chorus ? 0.9 : 1
+  const outs = await withExtractor(o, signal, (ex) => ex.separateStems(clip.channels, clip.sampleRate, [...sources], { onProgress: (p) => onProgress(p * share) }), confirmCpu)
+  const r: InstrumentStems = Object.fromEntries(sources.map((s, i) => [s, outs[i]]))
+  if (!chorus || !r.vocals) return r
+  if (signal?.aborted) throw new DOMException('cancelled', 'AbortError')
+  const lead: ExtractOptions = { ...o, model: LEAD_MODEL, stemModel: undefined, backend: undefined }
+  const second = await splitBoth({ sampleRate: clip.sampleRate, channels: r.vocals }, lead, (p) => onProgress(share + p * (1 - share)), signal, confirmCpu)
+  return { ...r, vocals: undefined, lead: second.vocals, harmony: second.accompaniment }
 }

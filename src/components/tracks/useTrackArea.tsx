@@ -57,6 +57,7 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
     rename: setRenaming,
     splitStems: (id: string) => void ed.splitStems(id),
     splitLeadStems: (id: string) => void ed.splitLeadStems(id),
+    splitInstrumentStems: (id: string) => void ed.splitInstrumentStems(id),
     exportTrack: (id: string) => {
       tr.select(id)
       ed.openExport(true)

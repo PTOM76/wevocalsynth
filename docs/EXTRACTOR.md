@@ -59,7 +59,7 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 
 
 ## ボーカル抽出の追加機能
-モデルは Spleeter（`spleeter-fp16` / `-int8` / `-fp32`）と、UVR の MDX-Net（`uvr-mdx-voc-ft`: ボーカルを取り出す、`uvr-mdx-inst-hq4`: 伴奏を取り出す、`uvr-mdx-kara2`: 取り出したボーカルを主旋律とハモリに分ける。各約 50〜60MB）。MDX-Net は WebGPU で曲の長さの 0.4〜0.6 倍、CPU では約 10 倍かかるので、GPU を使用できないときは設定の画面で知らせる。仕組みと値は extractor の docs/MODELS.md の「UVR の MDX-Net」（2026-10-04）
+モデルは Spleeter（`spleeter-fp16` / `-int8` / `-fp32`）と、Demucs（`demucs-4` / `-6`。楽器ごとに分ける。仕組みと値は extractor の docs/MODELS.md の「Demucs」）と、UVR の MDX-Net（`uvr-mdx-voc-ft`: ボーカルを取り出す、`uvr-mdx-inst-hq4`: 伴奏を取り出す、`uvr-mdx-kara2`: 取り出したボーカルを主旋律とハモリに分ける。各約 50〜60MB）。MDX-Net は WebGPU で曲の長さの 0.4〜0.6 倍、CPU では約 10 倍かかるので、GPU を使用できないときは設定の画面で知らせる。仕組みと値は extractor の docs/MODELS.md の「UVR の MDX-Net」（2026-10-04）
 
 ONNX Runtime の wasm は、計算の種類ごとに別の追加機能にする（`vocal-extractor-gpu`: WebGPU 対応版 28MB / `vocal-extractor-cpu`: WASM 版 14MB）。抽出の前に計算の種類を決め（`planBackend`）、モデルと一緒に要る方だけを入れる。場所は Worker に渡す（`wasmUrl`）。CPU で WebGPU 対応版を使わないのは、Safari 26 で推論のあとにタブが落ちるため（extractor の docs/COMPATIBILITY.md）。CPU だけの端末は 28MB → 14MB になる (2026-10-03)
 
@@ -72,6 +72,7 @@ ONNX Runtime の wasm は、計算の種類ごとに別の追加機能にする�
 | `spleeter-fp32` | 高精度モデル | 75MB |
 | `uvr-mdx-voc-ft` / `uvr-mdx-inst-hq4` | 高品質モデル（ボーカル向け / 伴奏向け）。GPU がないと遅い | 各約 60MB |
 | `uvr-mdx-kara2` | 主旋律モデル。「主旋律、ハモリ、伴奏の 3 トラックに分離」で、ボーカル用のモデルのあとに掛ける（`splitLead`）。曲に直接掛けると伴奏が主旋律の側に残るので、抽出のモデルの選択肢には出さない。GPU がないと遅い | 約 53MB |
+| `demucs-4` / `demucs-6` | 楽器ごとに分けるモデル（Demucs。4 つ / ギターとピアノも分ける 6 つ）。「楽器ごとのトラックに分離」で使う（`splitInstruments`）。GitHub Pages は 1 ファイル 100MB までなので、`model.onnx.000`、`.001` に分けて置き、読み込むときにつなげる（`fetchJoined`）。CPU では曲の長さの約 6 倍かかる | 158MB / 130MB |
 
 - モデルは `vocal-extractor` に依存する。設定の一覧には表示せず、モデルと一緒に導入・削除する
 - `onnxruntime-web` は実行環境の中に含め、アプリ本体には入れない
