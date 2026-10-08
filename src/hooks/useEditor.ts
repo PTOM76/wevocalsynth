@@ -1,9 +1,8 @@
-import { tempoSegments } from '../audio/tempoMap'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
 import { AUDIO_ACCEPT, configurePlayback, decodeFile } from 'wevocal-lib'
-import { DEFAULT_TEMPO, PROJECT_EXT, isProjectFile, loadProject, type Project, type ProjectTempo } from '../project/projectFile'
+import { PROJECT_EXT, isProjectFile, loadProject, type Project } from '../project/projectFile'
 import { normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
 import { useRealtimePreview } from '../audio/realtime/useRealtimePreview'
@@ -12,8 +11,8 @@ import { analyzeSpectrogram } from '../audio/spectrogram'
 import { detectMode, modeSettings, type Mode } from '../audio/detectMode'
 import type { EditParams } from '../components/EditPanel'
 import type { Source } from '../components/StatusBar'
-import { useHistory } from './useHistory'
-import { useFileDrop, useFilePicker, useLeaveGuard, useRecentFiles } from 'pevenmui'
+import { useDocument } from './useDocument'
+import { useFileDrop, useFilePicker, useRecentFiles } from 'pevenmui'
 import { useClipAnalysis } from './useClipAnalysis'
 import { usePreview } from './usePreview'
 import { usePitchTarget } from './usePitchTarget'
@@ -24,7 +23,7 @@ import { clipBytes, reportAudioContext, reportMemory } from '../debug/debugStats
 import { useClipCommands } from './useClipCommands'
 import { useTask } from './useTask'
 import { isOffloaded, offloadClip, restoreClip, useOffloadVersion } from '../audio/originalStore'
-import { canSaveToFolder, configureFileAccess, fileRefOf, initFileAccess, isMobile, isStandalone, type SavedFile } from 'pevenmui/web'
+import { canSaveToFolder, configureFileAccess, fileRefOf, initFileAccess, isMobile } from 'pevenmui/web'
 import { usePlayback } from './usePlayback'
 import { useRangeNote } from './useRangeNote'
 import { useVocalExtract } from './useVocalExtract'
@@ -33,8 +32,6 @@ import { setGpuLostHandler } from '../audio/vocalExtract'
 import { useAddonInstall } from 'pevenmui'
 import { useVideoExport } from './useVideoExport'
 import { installedManifest } from '../addons/addons'
-import { useTracks } from './useTracks'
-import { useMarkers } from './useMarkers'
 import { useLanes } from './useLanes'
 import { useOutput } from './useOutput'
 import { useSeek } from './useSeek'
@@ -42,11 +39,11 @@ import { useStartup } from './useStartup'
 import { useEditorKeys } from './useEditorKeys'
 import { CURVE_HOP_SEC, useLaneCurve } from './useLaneCurve'
 import { useFormantCurve } from './useFormantCurve'
-import { fromStoredSettings, makeTrack, newTrackId, toStoredSettings } from '../audio/tracks'
 import { f0ParamsFrom, useAppSettings } from '../settings/settings'
 import { editActions, NEUTRAL } from './editActions'
 import { t, type MessageKey } from '../i18n/i18n'
 import { idbGet, idbPut } from '../project/idb'
+import type { TimeMap } from '../audio/timeMap'
 
 /** 通知。`actions` は通知の中に出すボタン（次の操作の案内） */
 export type Toast = { severity: 'success' | 'error' | 'info'; message: string; actions?: { label: string; onClick: () => void }[] }
@@ -54,8 +51,6 @@ export type Toast = { severity: 'success' | 'error' | 'info'; message: string; a
 // 最近使用したファイルはこのアプリの IndexedDB に保存し、フォルダは「wevocal-用途」の名前で覚えさせる
 initFileAccess({ store: { get: idbGet, put: idbPut }, idPrefix: 'wevocal' })
 
-/** タイトルバーの名前（index.html の title） */
-const APP_TITLE = typeof document === 'undefined' ? '' : document.title
 
 /** エディタ全体の状態と操作。画面の組み立て（App）から切り離してある */
 export function useEditor() {
@@ -64,21 +59,14 @@ export function useEditor() {
   const tempo = useTempo()
   const tempoRef = useRef({ tempo })
   tempoRef.current = { tempo }
-  // プロジェクトのテンポ（BPM・拍子・1拍目の位置）。プロジェクトファイルと自動保存に入る
-  // 自動解析しないときの BPM は設定の既定値
-  const defaultTempo: ProjectTempo = { ...DEFAULT_TEMPO, bpm: settings.defaultBpm }
-  const [projectTempo, setProjectTempoState] = useState<ProjectTempo>(defaultTempo)
   // ボーカル・楽器のモードで使う処理方式（設定の既定値）
   const modes = modeSettings(settings)
-  const markers = useMarkers()
-  const setProjectTempo = useCallback((patch: Partial<ProjectTempo>) => setProjectTempoState((p) => ({ ...p, ...patch })), [])
-  // プロジェクト名。初めは開いたファイルの名前（拡張子を除く）で、変えられる。保存・書き出しのファイル名の初期値になる
-  const [fileName, setFileName] = useState('')
-  // プロジェクト名を自分で変えたか（変えていなければ、書き出しの名前に _wevocal を付ける）
-  const [named, setNamed] = useState(false)
-  const history = useHistory({ limit: settings.historyLimit, budgetBytes: settings.historyMemoryMb * 2 ** 20 }, settings.keepOriginal)
-  // 編集できるのは選んでいるトラックだけ。original / edited はそのトラックの原音・加工後
-  const tracks = useTracks(history)
+  // 開いている文書（名前、テンポ、マーカー、トラックと元に戻す、未保存の印、保存先。useDocument.ts）
+  const doc = useDocument(settings)
+  const { history, tracks, markers } = doc
+  const projectTempo = doc.tempo
+  const setProjectTempo = doc.setTempo
+  // 編集できるのは選んでいるトラックだけ。original / edited はそのトラックの原音、加工後
   const original = history.original
   const [source, setSource] = useState<Source>('edited')
   // 選択範囲（複数可、開始位置順に正規化）。開始・終了の入力欄は一番後ろの範囲を編集する
@@ -198,8 +186,8 @@ export function useEditor() {
     if (!settings.keepOriginal) setSource('edited')
   }, [settings.keepOriginal])
 
-  const commit = (clip: Clip, label: string) => {
-    history.commit(clip, label)
+  const commit = (clip: Clip, label: string, map?: TimeMap) => {
+    history.commit(clip, label, map)
     setSource('edited')
   }
   const cmd = useClipCommands({
@@ -269,37 +257,14 @@ export function useEditor() {
       for (const tr of history.tracks) await restoreClip(tr.original)
     },
     // 今の作業（メモリが足りないときの抽出で、保存して再読み込みするため。自動保存と同じ中身）
-    snapshot: () =>
-      history.tracks.length
-        ? {
-            fileName,
-            named,
-            params,
-            tempo: projectTempo,
-            markers: markers.markers,
-            tracks: history.tracks.map((tr) => ({ name: tr.name, original: tr.original, edited: tr.clip, ...toStoredSettings(tracks.settingsOf(tr.id)) })),
-            active: Math.max(0, history.tracks.findIndex((tr) => tr.id === history.activeId)),
-          }
-        : null,
+    snapshot: () => doc.project(params),
   })
 
   /** 読み込んだ音声（またはプロジェクト）を画面に反映する */
   const openClip = useCallback(
     (clip: Clip, name: string, project: Project | null, ids?: string[]) => {
-      // 拡張子は除く（以前のプロジェクトファイルは、拡張子付きの名前を持っていた）
-      setFileName(name.replace(/\.[^.]+$/, ''))
-      setNamed(!!project?.named)
-      // 古いプロジェクト（テンポを持たない）と新しい素材は既定のテンポから（新しい素材は下で解析する）
-      setProjectTempoState(project?.tempo ?? defaultTempo)
-      markers.reset(project?.markers)
-      // プロジェクトはトラックごとに。自動保存から戻すときは保存先の ID を引き継ぐ（保存し直さずに済む）
-      const list = project
-        ? project.tracks.map((tr, i) => ({ id: ids?.[i] || newTrackId(), name: tr.name, original: tr.original, clip: tr.edited }))
-        : [makeTrack(name, clip)]
-      history.reset(list, list[project ? project.active : 0].id)
-      // フェーダー・鳴らし方・重ねる表示は、プロジェクトに保存した値から（新しいファイルは既定値）
-      const saved = project?.tracks ?? []
-      tracks.restoreSettings(Object.fromEntries(saved.map((tr, i) => [list[i].id, fromStoredSettings(tr)])))
+      // 文書（名前、テンポ、マーカー、トラック）を作り直す（useDocument）
+      doc.reset(name, clip, project, ids)
       setGainDb(0)
       setPan(0)
       setSource('edited')
@@ -338,7 +303,7 @@ export function useEditor() {
           .catch(() => {})
       }
     },
-    [history, tracks, lanes, gainCurve, formantCurve, pitchTarget, cmd, settings.initialMode, settings.autoTempo, setProjectTempo],
+    [doc, lanes, gainCurve, formantCurve, pitchTarget, cmd, settings.initialMode, settings.autoTempo, setProjectTempo],
   )
 
   const loadFile = useCallback(
@@ -351,7 +316,7 @@ export function useEditor() {
           const clip = project ? null : await decodeFile(file, setProgress)
           if (signal.aborted) return
           // 選ぶ画面などから開いたプロジェクトは、保存で上書きする
-          projectFileRef.current = project ? (fileRefOf(file) ?? null) : null
+          doc.fileRef.current = project ? (fileRefOf(file) ?? null) : null
           if (project) openClip(project.tracks[project.active].edited, project.fileName, project)
           else if (clip) openClip(clip, file.name, null)
         } catch (e) {
@@ -369,26 +334,13 @@ export function useEditor() {
   })
 
   // プロジェクトの保存と書き出し
-  const projectFileRef = useRef<SavedFile | null>(null)
-  const [, setSavedTick] = useState(0)
   const { baseName, exportName, saveProjectFile, exportFile, renderClip } = useOutput({
-    fileName,
-    named,
+    doc,
     params,
-    tempo: projectTempo,
-    markers: markers.markers,
-    history,
-    tracks,
     selections,
     task,
     notify: (message) => setToast({ severity: 'success', message }),
     closeExport: () => setExportOpen(false),
-    onSaved: () => {
-      savedTracksRef.current = history.tracks
-      // 名前の * を消すため描き直す
-      setSavedTick((n) => n + 1)
-    },
-    projectFile: projectFileRef,
     exportToFolder: canSaveToFolder(),
     finish: { normalize: settings.exportNormalize, fadeMs: settings.exportFadeMs },
   })
@@ -403,19 +355,6 @@ export function useEditor() {
     notify: (message) => setToast({ severity: 'success', message }),
   })
 
-  // 閉じるときの保存確認（自動保存を切っていて、PWA として開いているとき。設定の「全般」）。
-  // 未保存の変更 = 開いてから、または最後に保存・書き出ししてから、操作履歴が変わったか（マーカーやテンポだけの変更は含めない）
-  const savedTracksRef = useRef(history.tracks)
-  // 開いた直後（元に戻す・やり直す操作がない）は保存済みとみなす
-  if (!history.canUndo && !history.canRedo) savedTracksRef.current = history.tracks
-  const dirty = history.tracks.length > 0 && history.tracks !== savedTracksRef.current
-  useLeaveGuard(settings.confirmClose && !settings.autoRestore && isStandalone(), () => dirty)
-  // タイトルバーにもプロジェクト名と、未保存なら * を出す
-  useEffect(() => {
-    // PWA の窓はアプリ名を自分で付けるので、名前だけにする（付けると「WeVocalSynth - 名前 - WeVocalSynth」になる）
-    const name = `${dirty ? '* ' : ''}${fileName}`
-    document.title = !fileName ? APP_TITLE : isStandalone() ? name : `${name} - ${APP_TITLE}`
-  }, [fileName, dirty])
 
   // 通常の再生と試聴は、片方を始めたらもう片方を止める
   // ピッチ曲線の加工と試聴（試聴を始めるときはほかの再生を止める）
@@ -465,7 +404,7 @@ export function useEditor() {
   // 起動時の復元、ファイルから起動、メモリが足りないときの抽出から戻る（useStartup.ts）
   useStartup({
     autoRestore: settings.autoRestore,
-    state: { fileName, named, tempo: projectTempo, markers: markers.markers, tracks: history.tracks, activeId: history.activeId, settings: tracks.settings },
+    state: doc.autosaveState,
     params, openClip, loadFile, setToast,
     applyVocalParams: () => setParams((p) => ({ ...p, ...modes.vocal })),
   })
@@ -489,7 +428,7 @@ export function useEditor() {
 
   // 矢印キー・Home / End での再生位置の移動
   // 区間ごとのテンポ（プロジェクトのテンポと、テンポを持つマーカー）
-  const tempoSegs = useMemo(() => tempoSegments(projectTempo, markers.markers), [projectTempo, markers.markers])
+  const tempoSegs = doc.tempoSegs
   const { seekBy, seekEdge } = useSeek({ shown, duration, showBeatGrid: settings.showBeatGrid, segments: tempoSegs, getPosition: player.livePosition, seek: player.seek })
 
   // キーの割り当てと、フォーカスしている帯に効く切り取りなど（useEditorKeys.ts。キーの処理はコマンド）
@@ -498,11 +437,7 @@ export function useEditor() {
   return {
     keymap,
     // 素材と履歴
-    fileName, projectTempo, tempoSegs, setProjectTempo, changeTempo, setProjectName: (name: string) => {
-      if (!name.trim()) return
-      setFileName(name.trim())
-      setNamed(true)
-    }, original, edited, shown, duration, editing, source, setSource, history, commit,
+    fileName: doc.fileName, projectTempo, tempoSegs, setProjectTempo, changeTempo, setProjectName: doc.rename, original, edited, shown, duration, editing, source, setSource, history, commit,
     // 処理状態と通知
     busy, progress, taskLabel: task.label, cancelTask: task.cancel, toast, setToast,
     // 選択範囲
@@ -515,6 +450,6 @@ export function useEditor() {
     showPitch, setShowPitch, showSpec, setShowSpec: requestShowSpec, analyzerInstalled, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, applyTrackEq, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, splitLeadStems: vocal.splitLeadStems, splitInstrumentStems: vocal.splitInstrumentStems, splitVoices, kanaDemo, addonDialog: addons.dialog, ensureAddon: addons.ensure, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty, exportFile, exportOpen, openExport, video, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,
+    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, splitLeadStems: vocal.splitLeadStems, splitInstrumentStems: vocal.splitInstrumentStems, splitVoices, kanaDemo, addonDialog: addons.dialog, ensureAddon: addons.ensure, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty: doc.dirty, exportFile, exportOpen, openExport, video, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,
   }
 }
