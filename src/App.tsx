@@ -77,7 +77,7 @@ export default function App() {
   setExperimentalAlgorithms(settings.showExperimentalAlgorithms)
   useEffect(() => setOutputDevice(settings.outputDevice), [settings.outputDevice])
   // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
-  const ed = useEditor(settings, updateSettings)
+  const ed = useEditor()
   // 設定のテーマ（既定 / ライト / ダーク）を反映する
   const { setMode } = useColorScheme()
   useEffect(() => setMode(settings.theme), [settings.theme, setMode])
