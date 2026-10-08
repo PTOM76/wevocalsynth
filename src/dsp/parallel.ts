@@ -26,7 +26,7 @@ export async function processParallel(req: ProcessRequest, onProgress?: (p: numb
   const done = new Float64Array(count)
   // つなぐ処理の分を 5% 残す
   const report = () => onProgress?.((0.95 * done.reduce((a, b) => a + b, 0)) / count)
-  const outs: Float32Array[][] = new Array(count)
+  const outs: Float32Array[][] = Array.from({ length: count }, () => [])
   let next = 0
   // 終わった Worker が次の区間を取る
   const lanes = Array.from({ length: Math.min(workerCount(), count) }, (_, i) => `par${i}` as const)
