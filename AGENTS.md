@@ -24,12 +24,11 @@ AI のエージェント向けの決まり。[docs/CODING.md](docs/CODING.md) �
 - 設定画面に出すときは `SettingsPages.tsx` の分類に `{S('名前')}` を足す。表示や押せるかが状況で変わる項目は `value` で定義し、画面は自前で作る
 - 画面に出さない値（メニューの切り替え、覚えておく値）は `page` が null の集まり（`view`、`stored`）に置く
 - 部品とフックは `useAppSettings()` で設定を直接読む。App から props で渡さない
-- 表示メニューのオンとオフは `useToggleItem()` の `toggle('名前', { disabled })` で作る（名前は定義の label）
 
 ## 画面
 
-- ダイアログを足すときは `src/hooks/useDialogs.ts` の `DialogId` に名前を足し、描画は `src/components/AppDialogs.tsx` に置く。開くのは `dialogs.opener('名前')`
-- メニューの項目は `src/hooks/menus/`（メニューバーは menuBar.ts、右クリックは context.ts、両方に出るものは shared.ts）。App から渡す値の型は actions.ts
+- ダイアログを足すときは `src/hooks/useDialogs.ts` の `DialogId` に名前を足し、描画は `src/components/AppDialogs.tsx` に置く。開くのは `dialogs.open('名前', 値)`（値は省ける）
+- 操作は `src/commands/` の分類のファイルにコマンドとして足す（名前、押せるか、チェック、表示するか、実行）。メニューバーと右クリックの並びは `src/commands/menus.ts` に id を並べる
 - 音声を書き換える操作（適用、伸縮、曲線の書き込み）は `src/hooks/editActions.ts`、ショートカットは `src/hooks/useEditorKeys.ts`、起動時の処理は `src/hooks/useStartup.ts`。useEditor はそれらを束ねる
 - 文字の大きさは数字で書かず `pevenFont('base')`（xs 10、sm 11、md 12、base 13、lg 14、xl 16。PevenMUI の寸法）。選択肢の表などの定数は `src/constants/`
 

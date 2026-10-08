@@ -2,7 +2,6 @@ import MobileEditBar from './components/MobileEditBar'
 import { canSaveToFolder } from 'pevenmui/web'
 import MarkerTempoDialog from './components/MarkerTempoDialog'
 import { segmentAt } from './audio/tempoMap'
-import { isFlatEq } from './audio/eq'
 import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -42,7 +41,6 @@ import { countRender } from './debug/debugStats'
 import { i18n, LangContext, resolveLang, setLang, t } from './i18n/i18n'
 import { setSpliceFadeSec } from './audio/edit'
 import { setFastMath, setParallel } from './dsp/engine'
-import { checkForUpdate, promptUpdate } from 'pevenmui/pwa'
 import { app } from './appConfig'
 
 /** 操作できないパネルを薄く表示し、触れないようにする */
@@ -132,9 +130,9 @@ export default function App() {
   // トラックの欄（右クリックメニュー・名前の変更を含む）。メニューの「トラック → 名前の変更」からも使う
   // トラックの「⋯」でも同じメニューを開ける（スマホは右クリックができない。位相の反転と EQ もここから）
   const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null, dialogs.opener('eq'))
-  const activeSettings = ed.tracks.settingsOf(ed.tracks.activeId)
-  const activeIndex = ed.tracks.tracks.findIndex((tr) => tr.id === ed.tracks.activeId)
 
+  const selectionExport = useSelectionExport(ed)
+  const { dragSelectionFile, saveSelectionToFolder } = selectionExport
   // 切り出しと加工でよく使う操作のキー（既定はなし。設定で割り当てる。ほかの操作は useEditor）
   useShortcuts(ed.keymap, {
     playSelection: selection ? playback.playSelection : undefined,
@@ -144,109 +142,12 @@ export default function App() {
     saveToFolder: selection && canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
     selectSounds: edited ? dialogs.opener('soundSelect') : undefined,
   })
-  // 操作（コマンド）。メニューは id で参照する（src/commands/）
-  const commands = useCommands({ ed, dialogs, noClip: !edited || busy, noSel: !edited || busy || !selection }, ed.keymap)
-  const { menus, mobileMenus, context } = useAppMenus({
-    keymap: ed.keymap,
-    hasClip: !!edited,
-    hasSelection: !!selection,
-    busy,
-    showSpectrogram: ed.showSpec,
-    showPitch: ed.showPitch,
-    open: ed.picker.open,
-    recent: ed.recent,
-    save: () => void ed.saveProjectFile(),
-    saveAs: () => void ed.saveProjectFile(true),
-    openExport: () => ed.openExport(),
-    openVideoExport: () => void ed.video.openDialog(),
-    videoAvailable: ed.video.available,
-    playSelection: playback.playSelection,
-    toggleLoop: toggleRepeat,
-    toggleSpectrogram: () => ed.setShowSpec(!ed.showSpec),
-    togglePitch: () => ed.setShowPitch(!ed.showPitch),
-    showWave: ed.showWave,
-    toggleWave: () => ed.setShowWave(!ed.showWave),
-    showGain: ed.showGain,
-    toggleGain: () => ed.setShowGain(!ed.showGain),
-    showFormant: ed.showFormant,
-    toggleFormant: () => ed.setShowFormant(!ed.showFormant),
-    pitchReady: ed.showPitch && !!ed.pitch,
-    setVoicing: (v) => ed.voicing.set(ed.selections, v),
-    pitchLane: ed.focusLane === 'pitch',
-    extract: (stem) => void ed.extract(stem),
-    splitStems: () => void ed.splitStems(),
-    splitLeadStems: () => void ed.splitLeadStems(),
-    splitInstrumentStems: () => void ed.splitInstrumentStems(),
-    splitVoices: settings.showVoiceSplit ? (by) => void ed.splitVoices(by) : undefined,
-    kanaDemo: settings.showKanaVoice ? (v) => void ed.kanaDemo(v) : undefined,
-    duplicateTrack: () => ed.tracks.duplicate(),
-    hasOriginal: !!ed.tracks.tracks.find((tr) => tr.id === ed.tracks.activeId && tr.original !== tr.clip),
-    trackFromOriginal: () => ed.tracks.fromOriginal(),
-    addEmptyTrack: ed.tracks.addEmpty,
-    saveToFolder: canSaveToFolder() ? () => void saveSelectionToFolder() : undefined,
-    saveManyToFolder: canSaveToFolder() && ed.selections.length > 1 ? () => void saveSelectionsToFolder() : undefined,
-    selectionCount: ed.selections.length,
-    selectionToTrack: (move) => ed.tracks.fromSelection(ed.selections, move),
-    addTrack: () => ed.addPicker.open(),
-    record: canRecord() ? dialogs.opener('record') : undefined,
-    synth: dialogs.opener('synth'),
-    sampler: dialogs.opener('sampler'),
-    showShortcuts: dialogs.opener('shortcuts'),
-    showSettings: dialogs.opener('settings'),
-    showAbout: dialogs.opener('about'),
-    showLicenses: dialogs.opener('licenses'),
-    playing: player.playing,
-    togglePlay: playback.togglePlay,
-    stop: playback.stop,
-    seekEdge: ed.seekEdge,
-    repeat: ed.repeat,
-    canZoomIn: viewCtl.canZoomIn,
-    zoomed: viewCtl.zoomed,
-    zoomIn: () => viewCtl.zoomAround(ZOOM_STEP, selection ? (selection.start + selection.end) / 2 : center),
-    zoomOut: () => viewCtl.zoomAround(1 / ZOOM_STEP, center),
-    showAll: viewCtl.showAll,
-    zoomSelection: () => selection && viewCtl.setRange(selection.start - (selection.end - selection.start) * 0.05, (selection.end - selection.start) * 1.1),
-    pitchTool: { shift: ed.pitchTools.shift, flatten: () => ed.pitchTools.edit((tg, f0, k0, k1) => flattenPitch(tg, f0, k0, k1, settings.flattenStrength)), snap: () => dialogs.open('pitchTool', 'snap'), vibrato: () => dialogs.open('pitchTool', 'vibrato'), midi: () => dialogs.open('pitchTool', 'midi') },
-    hasMarkers: ed.markers.markers.length > 0,
-    hasCurrentMarker: !!ed.markers.current(player.position),
-    addMarker: ed.addMarker,
-    renameMarker: () => openMarker('renameMarker', ed.markers.current(player.livePosition())?.id),
-    markerTempo: () => openMarker('markerTempo', ed.markers.current(player.livePosition())?.id),
-    removeMarker: () => {
-      const m = ed.markers.current(player.livePosition())
-      if (m) ed.markers.remove(m.id)
-    },
-    clearMarkers: ed.markers.clear,
-    seekMarker: ed.seekMarker,
-    waveScale,
-    stepWaveScale,
-    resetWaveScale: () => setWaveScale(1),
-    trackCount: ed.tracks.tracks.length,
-    activeMute: activeSettings.mix.mute,
-    activeSolo: activeSettings.mix.solo,
-    activeInvert: !!activeSettings.fader.invert,
-    toggleMute: () => ed.tracks.toggleMute(ed.tracks.activeId),
-    toggleSolo: () => ed.tracks.toggleSolo(ed.tracks.activeId),
-    toggleInvert: () => ed.tracks.toggleInvert(ed.tracks.activeId),
-    activeEq: !isFlatEq(activeSettings.eq),
-    openEq: dialogs.opener('eq'),
-    renameTrack: () => trackArea.openRename(ed.tracks.activeId),
-    removeTrack: () => ed.tracks.remove(ed.tracks.activeId),
-    canMergeDown: activeIndex >= 0 && activeIndex < ed.tracks.tracks.length - 1,
-    mergeDown: () => void ed.tracks.mergeDown(ed.tracks.activeId),
-    mergeAll: () => void ed.tracks.mergeAll(),
-    volumeAction: ed.cmd.volume,
-    // 新しい版があれば、右下の通知（UpdatePrompt）からそのまま更新できる。ここでは結果だけを知らせる
-    checkUpdate: () =>
-      void checkForUpdate().then((r) => {
-        // 新しい版があれば、版の表示と更新ボタンのある通知を出す
-        if (r.kind === 'found') return promptUpdate(r.build)
-        const l = i18n.labels(lang)
-        const text = { found: l.updateAvailable, latest: l.updateLatest, unsupported: l.updateUnsupported, failed: l.updateFailed }[r.kind]
-        ed.setToast({ severity: r.kind === 'failed' ? 'error' : 'info', message: text })
-      }),
-  }, commands)
-
+  // 操作（コマンド）。メニュー、右クリックは id で参照する（src/commands/、並びは commands/menus.ts）
+  const commands = useCommands(
+    { ed, dialogs, settings, update: updateSettings, view: { ctl: viewCtl, center, waveScale, setWaveScale }, trackArea, selectionExport },
+    ed.keymap,
+  )
+  const { menus, mobileMenus, context } = useAppMenus(commands)
 
   // 編集パネルはファイルを開く前から表示しておく（開くまでは操作できない）
   const panelsDisabled = !editing || !edited
@@ -258,8 +159,6 @@ export default function App() {
   const bpm = seg?.bpm || baseBpm
   const hasCurve = !!ed.pitchTarget.target && ed.pitchTarget.target.hz.some((v) => v > 0)
   const totalDuration = ed.editRanges.reduce((s, r) => s + r.end - r.start, 0)
-  const selectionExport = useSelectionExport(ed)
-  const { dragSelectionFile, saveSelectionToFolder, saveSelectionsToFolder } = selectionExport
   const setActiveSelection = (r: Range | null) => ed.setSelections(r ? [...ed.selections.slice(0, -1), r] : [])
 
   const tempoField = (fontSize?: number) => (

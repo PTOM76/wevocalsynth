@@ -43,7 +43,7 @@ export const display = defineItems('display', {
   language: value<LangSetting>('auto', { label: 'settings.language' }),
 })
 
-/** 表示メニューとツールバーで切り替えるもの（設定画面には出さない。label はメニューの名前で、useToggleItem が使う） */
+/** 表示メニューとツールバーで切り替えるもの（設定画面には出さない。メニューの項目は src/commands/view.ts） */
 export const view = defineItems(null, {
   // ピッチ帯に音符ブロック（音ごとの半音の高さ）を表示する
   showNotes: value(false, { label: 'menu.notes' }),
