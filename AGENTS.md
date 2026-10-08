@@ -1,6 +1,6 @@
 # AGENTS.md
 
-AI のエージェント向けの決まり。人向けの決まりは [docs/CODING.md](docs/CODING.md)。
+AI のエージェント向けの決まり。[docs/CODING.md](docs/CODING.md) の決まりも同じく守る。ここには AI だけに当てはまることを書く。
 
 ## 訳文
 
