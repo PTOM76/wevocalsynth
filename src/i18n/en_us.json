@@ -278,7 +278,7 @@
   "settings.groupAddonConverter": "Conversion",
   "settings.eqBands": "EQ bands (new tracks)",
   "settings.addonFolder": "Store add-ons in a chosen folder",
-  "settings.addonFolderHelp": "Lets you keep large add-ons such as models outside the C drive (Chrome, Edge). Add-ons installed from now on go into the chosen folder; installed ones keep working",
+  "settings.addonFolderHelp": "Saves add-ons such as models to a folder you choose instead of the browser's storage (Chrome, Edge). Applies to add-ons installed from now on; installed ones keep working",
 
   "export.title": "Export audio",
   "export.run": "Export",

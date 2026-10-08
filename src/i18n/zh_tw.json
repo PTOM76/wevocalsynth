@@ -278,7 +278,7 @@
   "settings.groupAddonConverter": "轉換",
   "settings.eqBands": "EQ 頻段數（新音軌）",
   "settings.addonFolder": "將附加功能儲存到所選資料夾",
-  "settings.addonFolderHelp": "可以將模型等較大的附加功能放在 C 槽以外的資料夾中（Chrome、Edge）。之後安裝的會放入所選資料夾，已安裝的仍可使用",
+  "settings.addonFolderHelp": "將模型等附加功能儲存到所選資料夾，而不是瀏覽器的儲存空間（Chrome、Edge）。僅適用於之後安裝的附加功能，已安裝的仍可使用",
 
   "export.title": "匯出音訊檔",
   "export.run": "匯出",

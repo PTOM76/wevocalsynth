@@ -278,7 +278,7 @@
   "settings.groupAddonConverter": "変換",
   "settings.eqBands": "EQ のバンドの数（新しいトラック）",
   "settings.addonFolder": "追加機能を選んだフォルダーに保存する",
-  "settings.addonFolderHelp": "モデルなどの大きい追加機能を、Cドライブ以外のフォルダーにも置けます（Chrome、Edge）。これから導入するものが選んだフォルダーに入り、導入済みのものはそのまま使えます",
+  "settings.addonFolderHelp": "モデルなどの追加機能を、ブラウザのデータ領域ではなく、選んだフォルダーに保存します（Chrome、Edge）。これから導入するものが対象で、導入済みのものはそのまま使用できます",
 
   "export.title": "音声ファイルを書き出す",
   "export.run": "書き出す",
