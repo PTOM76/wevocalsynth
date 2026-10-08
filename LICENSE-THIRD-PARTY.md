@@ -26,3 +26,14 @@ MP3 以外（WAV / Opus）の書き出しと、アプリのほかの部分は la
 | --- | --- | --- |
 | `converter` | WeVocalConverter の動画の書き出し（`converter/src/video/`） | MIT |
 | `converter` | Mediabunny（映像と音声を 1 つのファイルにまとめる。配布元 https://github.com/Vanilagy/mediabunny） | MPL-2.0。改変せずに使用しており、ファイル単位の条件のため、ほかの部分には及ばない |
+
+## 追加機能（歌詞の文字化）
+| 追加機能 | 含むもの | ライセンス |
+| --- | --- | --- |
+| `analyzer-lyrics` | WeVocalAnalyzer の歌詞の文字化（`analyzer/src/lyrics.ts`） | MIT |
+| `analyzer-lyrics` | Transformers.js | Apache-2.0（Hugging Face） |
+| `analyzer-lyrics` | ONNX Runtime Web の wasm | MIT（Microsoft） |
+| `analyzer-lyrics` | kuromoji.js（読みを付ける形態素解析） | Apache-2.0 |
+| `analyzer-lyrics` | mecab-ipadic-2.7.0-20070801（kuromoji の辞書） | 奈良先端科学技術大学院大学の許諾（著作権表示と許諾文を付ければ利用、再配布できる）。全文は追加機能の `licenses/kuromoji-NOTICE.md` |
+
+Whisper のモデルは追加機能に含めず、初めて使うときに Hugging Face（onnx-community）から取得する（MIT）。
