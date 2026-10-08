@@ -194,6 +194,27 @@ fn voices_file() {
         }
     }
     eprintln!("音程（半音）ごとのフレーム数 {hist:?}");
+    // 前後 1 フレームに近い声がない声（一瞬だけの外れ）
+    let near = |v: &[crate::voices::Voice], f0: f32| v.iter().any(|x| (1200.0 * (x.f0 / f0).log2()).abs() < 100.0);
+    let blips: Vec<String> = (1..frames.len() - 1)
+        .filter(|&f| frames[f].iter().any(|x| !near(&frames[f - 1], x.f0) && !near(&frames[f + 1], x.f0)))
+        .map(|f| format!("{:.2}", (f * 512 + 2048) as f32 / SR))
+        .collect();
+    eprintln!("一瞬だけの外れ {} フレーム: {}", blips.len(), blips.join(" "));
+    let ones: Vec<String> = (0..frames.len())
+        .filter(|&f| f as f32 * 512.0 / SR > 12.0 && frames[f].len() < 2)
+        .map(|f| format!("{:.2}({})", (f * 512 + 2048) as f32 / SR, frames[f].len()))
+        .collect();
+    eprintln!("1 声以下のフレーム {}: {}", ones.len(), ones.join(" "));
+    if let Ok(at) = std::env::var("VOICES_AT") {
+        for t in at.split(',').map(|t| t.parse::<f32>().unwrap()) {
+            let c = ((t * SR - 2048.0) / 512.0) as usize;
+            for f in c - 3..=c + 3 {
+                let d: Vec<String> = frames[f].iter().map(|x| format!("{:.0}Hz {:.0}dB", x.f0, 10.0 * x.amps.iter().map(|a| a * a).sum::<f32>().max(1e-12).log10())).collect();
+                eprintln!("AT {:.2} {}", (f * 512 + 2048) as f32 / SR, d.join(" | "));
+            }
+        }
+    }
     let (a, b) = split(&[l, r], SR, SplitBy::Pitch, &mut |_| {});
     for (name, o) in [("a", a), ("b", b)] {
         let bytes: Vec<u8> = o.concat().iter().flat_map(|x| x.to_le_bytes()).collect();

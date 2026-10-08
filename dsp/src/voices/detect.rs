@@ -40,9 +40,41 @@ pub fn analyze(x: &[f32], sr: f32, progress: &mut dyn FnMut(f64)) -> Vec<Vec<Voi
             out[f] = v;
         }
     }
+    // 一瞬だけの外れ（前と後ろのフレームがそろって持つ声が、そのフレームだけない）も同じように探し直す
+    let second: Vec<Vec<Voice>> = out.clone();
+    for f in 1..frames.saturating_sub(1) {
+        let Some((keep, hint)) = blip_plan(&second, f) else { continue };
+        st.forward(x, f, &mut re, &mut im);
+        let mut mag: Vec<f32> = re.iter().zip(&im).map(|(r, i)| (r * r + i * i).sqrt()).collect();
+        let v = frame_voices_with(&mut mag, sr, &cands, keep, hint);
+        if v.len() == 2 {
+            out[f] = v;
+        }
+    }
     progress(1.0);
     out
 }
+
+/// 一瞬だけの外れを探し直すときの、残す声の F0 と、もう 1 つの声の見込み。前後 1 フレームだけを見る
+fn blip_plan(frames: &[Vec<Voice>], f: usize) -> Option<(f32, f32)> {
+    let close = |a: f32, b: f32| (1200.0 * (a / b).log2()).abs() < BLIP_CENT;
+    let (prev, cur, next) = (&frames[f - 1], &frames[f], &frames[f + 1]);
+    // 前と後ろがそろって持つ声
+    let shared: Vec<f32> = prev.iter().filter_map(|p| next.iter().find(|n| close(p.f0, n.f0)).map(|n| (p.f0 * n.f0).sqrt())).collect();
+    if shared.len() < 2 {
+        return None;
+    }
+    let has = |g: f32| cur.iter().any(|c| close(c.f0, g));
+    let missing: Vec<f32> = shared.iter().copied().filter(|&g| !has(g)).collect();
+    let kept: Vec<f32> = shared.iter().copied().filter(|&g| has(g)).collect();
+    match (kept.as_slice(), missing.as_slice()) {
+        (&[k], &[m]) => Some((cur.iter().map(|c| c.f0).find(|&c| close(c, k))?, m)),
+        _ => None,
+    }
+}
+
+/// 一瞬だけの外れで、前後のフレームの声と同じとみなす範囲（セント）
+const BLIP_CENT: f32 = 100.0;
 
 /// 前後 `HINT_FRAMES` 以内のフレームのうち、`f0` から `HINT_CENT` 以内の声があるフレームの割合
 fn support(frames: &[Vec<Voice>], f: usize, f0: f32) -> f32 {

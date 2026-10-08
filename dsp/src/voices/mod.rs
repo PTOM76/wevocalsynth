@@ -13,6 +13,11 @@ use wevocal_lib::stft::Stft;
 
 pub(crate) const N_FFT: usize = 4096;
 pub(crate) const HOP: usize = 512;
+/// マスクで分ける STFT の窓の長さ。推定より短くすると音の変わり目に強くなるはずだが、2048 は合成の声で約 0.5dB 悪く、
+/// 実際の曲では聞いて違いが分からなかった（2026-10-08）
+const MASK_FFT: usize = N_FFT;
+/// マスクの中央値をとるフレーム数（推定のフレームで前後）
+const MASK_MEDIAN: usize = 2;
 /// 音量で振り分けるとき、大きさをならすフレーム数（前後）
 const SMOOTH: usize = 8;
 
@@ -61,18 +66,46 @@ pub fn split(channels: &[&[f32]], sr: f32, by: SplitBy, progress: &mut dyn FnMut
     let voices = analyze(&mono, sr, &mut |p| progress(p * 0.5));
     let mut assigned = assign(&voices, by);
     add_spread(&mut assigned);
-    let mut st = Stft::new(N_FFT, HOP);
+    let m_fft = MASK_FFT;
+    let m_hop = m_fft / 8;
+    let mut st = Stft::new(m_fft, m_hop);
     let b = st.bins();
-    let bin_hz = sr / N_FFT as f32;
+    let bin_hz = sr / m_fft as f32;
+    let frames = (mono.len() - m_fft) / m_hop + 1;
+    // マスクのフレームの中心の時刻に、推定のフレームの声を補って合わせる
+    let at = |g: usize| voices_at(&assigned, (g * m_hop + m_fft / 2) as f32, m_fft as f32 / N_FFT as f32);
+    let radius = MASK_MEDIAN * HOP / m_hop;
     let (mut re, mut im) = (vec![0.0; b], vec![0.0; b]);
     let (mut ra, mut ia, mut rb, mut ib) = (vec![0.0; b], vec![0.0; b], vec![0.0; b], vec![0.0; b]);
     let mut outs = (Vec::new(), Vec::new());
     let nch = padded.len() as f64;
     for (ci, c) in padded.iter().enumerate() {
         let (mut ya, mut yb, mut w) = (vec![0.0; c.len()], vec![0.0; c.len()], vec![0.0; c.len()]);
-        for (f, (va, vb)) in assigned.iter().enumerate() {
+        // 前後 `radius` フレームのマスク（一瞬だけの振り分けの外れを、ビンごとの中央値で消す）
+        let raw = |g: usize| {
+            let (va, vb) = at(g);
+            mask_a(va.as_ref(), vb.as_ref(), b, bin_hz)
+        };
+        // `ring` は `start` からのフレームのマスク。フレーム f では f - radius 〜 f + radius を持つ
+        let mut ring: std::collections::VecDeque<Vec<f32>> = std::collections::VecDeque::new();
+        let mut start = 0;
+        let mut mask = vec![0.0f32; b];
+        let mut vals = Vec::with_capacity(2 * radius + 1);
+        for f in 0..frames {
+            while start + ring.len() <= (f + radius).min(frames - 1) {
+                ring.push_back(raw(start + ring.len()));
+            }
+            while start + radius < f {
+                ring.pop_front();
+                start += 1;
+            }
+            for k in 0..b {
+                vals.clear();
+                vals.extend(ring.iter().map(|m| m[k]));
+                vals.sort_by(|a, b| a.total_cmp(b));
+                mask[k] = vals[vals.len() / 2];
+            }
             st.forward(c, f, &mut re, &mut im);
-            let mask = mask_a(va.as_ref(), vb.as_ref(), b, bin_hz);
             for k in 0..b {
                 ra[k] = re[k] * mask[k];
                 ia[k] = im[k] * mask[k];
@@ -82,7 +115,7 @@ pub fn split(channels: &[&[f32]], sr: f32, by: SplitBy, progress: &mut dyn FnMut
             st.inverse_add(&ra, &ia, f, &mut ya, Some(&mut w));
             st.inverse_add(&rb, &ib, f, &mut yb, None);
             if f % 64 == 0 {
-                progress(0.5 + 0.5 * (ci as f64 + f as f64 / assigned.len() as f64) / nch);
+                progress(0.5 + 0.5 * (ci as f64 + f as f64 / frames as f64) / nch);
             }
         }
         let norm = |y: &[f32]| (0..len).map(|i| y[N_FFT + i] / w[N_FFT + i].max(1e-6)).collect::<Vec<f32>>();
@@ -141,6 +174,31 @@ fn assign(frames: &[Vec<Voice>], by: SplitBy) -> Vec<(Option<Voice>, Option<Voic
             if first_is_a { (s0, s1) } else { (s1, s0) }
         })
         .collect()
+}
+
+/// 時刻 `center`（サンプル）の A、B の声。前後の推定のフレームの声を直線で補う（同じ出力に近い高さの声があるときだけ）。
+/// `scale` はマスクの窓の長さの、推定の窓に対する比（F0 の動きの幅を合わせる）
+fn voices_at(frames: &[(Option<Voice>, Option<Voice>)], center: f32, scale: f32) -> (Option<Voice>, Option<Voice>) {
+    let pos = ((center - N_FFT as f32 / 2.0) / HOP as f32).clamp(0.0, (frames.len() - 1) as f32);
+    let (i, t) = (pos.floor() as usize, pos.fract());
+    let j = (i + 1).min(frames.len() - 1);
+    let mix = |a: &Option<Voice>, b: &Option<Voice>| -> Option<Voice> {
+        let near = match (a, b) {
+            (Some(x), Some(y)) if (x.f0 / y.f0).log2().abs() < 0.1 => Some((x, y)),
+            _ => None,
+        };
+        let mut v = match near {
+            Some((x, y)) => Voice {
+                f0: x.f0 + (y.f0 - x.f0) * t,
+                spread: x.spread + (y.spread - x.spread) * t,
+                amps: x.amps.iter().zip(y.amps.iter().chain(std::iter::repeat(&0.0))).map(|(p, q)| p + (q - p) * t).collect(),
+            },
+            None => if t < 0.5 { a.clone()? } else { b.clone()? },
+        };
+        v.spread *= scale;
+        Some(v)
+    };
+    (mix(&frames[i].0, &frames[j].0), mix(&frames[i].1, &frames[j].1))
 }
 
 /// 各声に、前後のフレームの同じ出力の F0 から、窓の長さの間の F0 の動きを入れる
