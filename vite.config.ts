@@ -12,6 +12,8 @@ export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
   // UI 部品のライブラリ（サブモジュール）はソースのまま読み込む
   resolve: {
+    // サブモジュール（converter など）の node_modules の React を読むと 2 つ混ざって動かないので、Synth のものにそろえる
+    dedupe: ['react', 'react-dom', '@emotion/react', '@emotion/styled', '@mui/material'],
     alias: [
       { find: /^pevenmui$/, replacement: fileURLToPath(new URL('./pevenmui/src/index.ts', import.meta.url)) },
       { find: /^pevenmui\/pwa$/, replacement: fileURLToPath(new URL('./pevenmui/src/pwa/index.ts', import.meta.url)) },
