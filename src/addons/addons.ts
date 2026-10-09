@@ -25,6 +25,10 @@ export const ADDONS: AddonInfo<MessageKey>[] = [
   { id: 'analyzer', name: 'addon.analyzer' },
   // 歌詞の文字化（analyzer/ の src/lyrics.ts。Analyzer と同じもの。一音ずつの切り出しに使う予定。memo/kana-cut.md）
   { id: 'analyzer-lyrics', name: 'addon.lyrics' },
+  // そのモデル（ファイルは Hugging Face から取得して、追加機能の保存先に置く。analyzer/scripts/whisperAddons.mjs）
+  { id: 'whisper-tiny', name: 'addon.whisperTiny', shortName: 'addon.whisperTinyShort', requires: ['analyzer-lyrics'] },
+  { id: 'whisper-base', name: 'addon.whisperBase', shortName: 'addon.whisperBaseShort', requires: ['analyzer-lyrics'] },
+  { id: 'whisper-small', name: 'addon.whisperSmall', shortName: 'addon.whisperSmallShort', requires: ['analyzer-lyrics'] },
   // 変換（converter/ の WeVocalConverter）。今は動画の書き出しに使う（src/audio/video.ts）
   { id: 'converter', name: 'addon.converter' },
 ]

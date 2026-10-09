@@ -50,7 +50,8 @@ export default function KanaCutDialog(p: Props) {
   }
 
   const transcribe = async () => {
-    if (!(await p.ensure('analyzer-lyrics'))) return
+    // 文字化の処理と、選んだ大きさのモデル
+    if (!(await p.ensure(`whisper-${model}`))) return
     const ac = (abort.current = new AbortController())
     setError(null)
     setStep({ kind: 'busy', label: t('kanaCut.downloading', { percent: 0 }), progress: 0 })

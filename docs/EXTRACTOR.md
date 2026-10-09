@@ -28,7 +28,7 @@ dsp/（PSOLA・F0 など）    extractor/ = wevocalextractor（TypeScript、subm
 - clone するときは `--recursive` を付ける（付け忘れたら `git submodule update --init`）
 
 ## 追加機能の仕組み
-ボーカル抽出は「追加機能」として、使いたい人だけが導入する。普段の起動を重くしないため、かつ導入した人はオフラインでも使用できるようにするため。仕組みは汎用にし、ボーカル抽出をその第1号とする（[src/addons/](../src/addons/)）。第2号はスペクトログラムの「解析」（`analyzer`。submodule の analyzer/ をビルドしたもの。`vite.addons.analyzer.config.ts`、[src/audio/spectrogram.ts](../src/audio/spectrogram.ts)）。第3号は動画の書き出しの「変換」（`converter`。submodule の converter/ の `src/video/` をビルドしたもの。`vite.addons.converter.config.ts`、[src/audio/video.ts](../src/audio/video.ts)。導入しているときだけ「ファイル」→「動画として書き出す…」を表示する。導入と削除は設定の「追加機能」。導入と削除は `onAddonsChanged` で知らせる）。第4号は「歌詞の文字化」（`analyzer-lyrics`。analyzer/ の `src/lyrics.ts` を `analyzer/vite.addons.lyrics.config.ts` でビルドしたもの。Analyzer でも同じものを追加機能として配る。Synth では一音ずつの切り出しに使う予定）。
+ボーカル抽出は「追加機能」として、使いたい人だけが導入する。普段の起動を重くしないため、かつ導入した人はオフラインでも使用できるようにするため。仕組みは汎用にし、ボーカル抽出をその第1号とする（[src/addons/](../src/addons/)）。第2号はスペクトログラムの「解析」（`analyzer`。submodule の analyzer/ をビルドしたもの。`vite.addons.analyzer.config.ts`、[src/audio/spectrogram.ts](../src/audio/spectrogram.ts)）。第3号は動画の書き出しの「変換」（`converter`。submodule の converter/ の `src/video/` をビルドしたもの。`vite.addons.converter.config.ts`、[src/audio/video.ts](../src/audio/video.ts)。導入しているときだけ「ファイル」→「動画として書き出す…」を表示する。導入と削除は設定の「追加機能」。導入と削除は `onAddonsChanged` で知らせる）。第4号は「歌詞の文字化」（`analyzer-lyrics`。analyzer/ の `src/lyrics.ts` を `analyzer/vite.addons.lyrics.config.ts` でビルドしたもの。Analyzer でも同じものを追加機能として配る。Synth では一音ずつの切り出しに使う）。モデルは大きさごとの追加機能 `whisper-tiny`、`whisper-base`、`whisper-small` で、マニフェストだけを配り、ファイルは導入するときに Hugging Face から取る（`analyzer/scripts/whisperAddons.mjs`）。
 
 ### 導入の流れ
 ```text

@@ -188,7 +188,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
           <AddonSection ids={['analyzer']} />
         </Group>
         <Group title={t('settings.groupAddonLyrics')}>
-          <AddonSection ids={['analyzer-lyrics']} />
+          <AddonSection ids={['analyzer-lyrics', 'whisper-tiny', 'whisper-base', 'whisper-small']} />
         </Group>
         <Group title={t('settings.groupAddonConverter')}>
           <AddonSection ids={['converter']} />

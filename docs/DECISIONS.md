@@ -89,6 +89,9 @@ Analyzer でも歌詞の文字化を追加機能にするため、Synth の `src
 ### 歌詞の文字化は、Analyzer と Synth の両方で追加機能にする
 transformers.js と ONNX Runtime の wasm、読みの辞書で約 43MB あり、使う人は少ない。Analyzer の本体からも外し、同じビルド（`analyzer/vite.addons.lyrics.config.ts`）を両方のアプリで配る。中身が同じなら版も同じになる (2026-10-08)。
 
+### 文字化のモデルも追加機能にし、ファイルは Hugging Face から取る
+最初はモデル（Whisper）を transformers.js が自分で取得して保存していたため、追加機能の保存先のフォルダーを使わず、設定から削除もできなかった。モデルを大きさごとの追加機能（`whisper-tiny`、`whisper-base`、`whisper-small`）にした。モデルは tiny でも約 120MB、small は約 560MB あり、配信先（GitHub Pages）の容量に収まらないので、マニフェストだけを配り、各ファイルの `url` に Hugging Face の場所（コミットで固定）を書く。導入の仕組みはそこから取り、大きさと sha256 を確かめて保存先に置く。Worker は transformers.js の `localModelPath` で保存先から読み、transformers.js 自身の保存先は使わない（`analyzer/scripts/whisperAddons.mjs`）(2026-10-09)。
+
 ### 読みの辞書（kuromoji）は .dat.bin の名前で配る
 `.gz` の名前だと、`Content-Encoding: gzip` を付けて返す配信先がある（Vite の開発サーバーなど）。ブラウザが先に展開するため、導入のときの大きさとハッシュが合わず、kuromoji の展開も失敗した。名前を `.dat.bin` にし、読み込みを差し替えて、圧縮のままでも展開済みでも読めるようにした。kuromoji が使う Node の `path` と zlibjs は、ブラウザ向けのビルドで動かないので、kuromoji から読むときだけ差し替える（`analyzer/vite.kuromoji.ts`。Worker のビルドにも入れる）(2026-10-08)。
 

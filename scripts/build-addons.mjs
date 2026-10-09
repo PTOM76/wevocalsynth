@@ -9,12 +9,14 @@
 // - demucs-4 / -6: Demucs のモデル（model.onnx を 90MB ずつに分けた model.onnx.000…）
 // - analyzer: 解析（analyzer/ をビルド。今はスペクトログラム）
 // - analyzer-lyrics: 歌詞の文字化（analyzer/ の src/lyrics.ts。transformers.js と ONNX Runtime）
+// - whisper-<大きさ>: そのモデル。マニフェストだけを書き、ファイルは導入するときに Hugging Face から取る（analyzer/scripts/whisperAddons.mjs）
 // - converter: 変換（converter/ をビルド。今は動画の書き出し）
 // 各フォルダに manifest.json（ファイルの大きさとハッシュ、内容から決めたバージョン）を書く
 import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
+import { writeWhisperManifests } from '../analyzer/scripts/whisperAddons.mjs'
 
 const OUT = `${process.argv[2] ?? 'dist'}/addons`
 /** 作るもの（省くと全部） */
@@ -92,6 +94,8 @@ if (want('analyzer')) {
 if (want('lyrics')) {
   run('npx vite build -c analyzer/vite.addons.lyrics.config.ts')
   writeManifest('analyzer-lyrics', join(OUT, 'analyzer-lyrics'), 'index.js')
+  // モデル（マニフェストだけ。ファイルは Hugging Face から取得する）
+  await writeWhisperManifests(OUT)
 }
 
 // 変換。今は動画の書き出しだけ（converter/src/video/）
