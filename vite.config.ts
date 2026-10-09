@@ -23,6 +23,19 @@ export default defineConfig({
       { find: /^wevocal-lib$/, replacement: fileURLToPath(new URL('./wevocal-lib/web/src/index.ts', import.meta.url)) },
     ],
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        // 版ごとにほとんど変わらないライブラリを別のファイルにし、更新のときにアプリの部分だけ取り直せばよいようにする
+        codeSplitting: {
+          groups: [
+            { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 2 },
+            { name: 'mui', test: /node_modules[\\/](@mui|@emotion|@popperjs|stylis)/, priority: 1 },
+          ],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     // 版（__APP_VERSION__、__APP_COMMIT__、version.json）と、index.html の名前、言語、配信先の URL（SITE_URL で指定）。
