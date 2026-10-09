@@ -11,6 +11,10 @@ export const general = defineItems('general', {
   autoRestore: check(true, { label: 'settings.autoRestore', help: 'settings.autoRestoreHelp' }),
   // 自動保存を切っていて PWA として開いているとき、未保存の変更があれば閉じる前に確認する
   confirmClose: check(true, { label: 'settings.confirmClose', help: 'settings.confirmCloseHelp' }),
+  // 同時に開けるウィンドウの数（自動保存の保存先の枠の数。project/windowSlot.ts）
+  maxWindows: number(4, { label: 'settings.maxWindows', min: 1, max: 8, step: 1 }),
+  // 上限を超えても、自動保存しないウィンドウとして開く
+  extraWindows: check(false, { label: 'settings.extraWindows', help: 'settings.extraWindowsHelp' }),
   // 音声の出力先のデバイス ID（'' は既定の出力。OutputDeviceRow）
   outputDevice: value(''),
   // 鳴らす音の上限（大きすぎる音から耳を守る。audio/outputLimit.ts）

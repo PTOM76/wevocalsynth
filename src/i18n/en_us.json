@@ -61,6 +61,7 @@
   "menu.exportVideo": "Export as Video…",
   "menu.experimental": "Experimental",
   "menu.kanaCut": "Single sounds",
+  "menu.newWindow": "New window",
 
   "file.openType": "Audio and project files",
   "file.audioType": "Audio file",
@@ -290,6 +291,10 @@
   "settings.outputLimit": "Limit output volume",
   "settings.outputLimitHelp": "Keeps loud sounds down to protect your ears and speakers. Does not affect exported audio",
   "settings.outputLimitDb": "Limit",
+  "settings.groupWindows": "Windows",
+  "settings.maxWindows": "Maximum open windows",
+  "settings.extraWindows": "Open beyond the limit",
+  "settings.extraWindowsHelp": "Windows beyond the limit are not autosaved",
 
   "export.title": "Export audio",
   "export.run": "Export",
@@ -635,7 +640,7 @@
   "history.retime": "Note timing",
   "history.curve": "Pitch curve",
 
-  "data.usage": "Usage: {usage} (limit {quota})",
+  "data.usage": "Usage: {usage} (limit {quota}; includes other apps on the same domain)",
   "data.usageUnknown": "Usage: not available in this browser",
   "data.delete": "Delete",
   "data.reset": "Reset",
@@ -670,6 +675,7 @@
   "data.folder": "Data in the folder ({name})",
   "data.folderAddonsHelp": "Add-ons saved in the folder ({size}). After deleting, they need to be downloaded again to use",
   "data.folderAddonsConfirm": "Delete all add-ons stored in the folder?",
+  "data.workConfirmOthers": "Autosaved data of other open windows will also be deleted. Continue?",
 
   "addon.runtimeGpu": "Vocal extraction runtime (GPU)",
   "addon.runtimeCpu": "Vocal extraction runtime (CPU)",
@@ -943,5 +949,10 @@
   "kanaCut.clearMenu": "Delete the reading lane",
   "kanaCut.utauMenu": "Export as UTAU voicebank",
   "kanaCut.lineUpMenu": "Line up in kana order on a new track",
-  "kanaCut.lineUpTrack": "{name} (kana)"
+  "kanaCut.lineUpTrack": "{name} (kana)",
+
+  "window.limit": "The number of windows has reached the limit ({n})",
+  "window.limitHint": "Close another window, or change the limit in Settings",
+  "window.retry": "Retry",
+  "window.noAutosave": "This window is not autosaved"
 }

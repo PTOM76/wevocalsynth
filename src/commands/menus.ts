@@ -53,7 +53,7 @@ const kanaCut: MenuSub = { label: 'menu.kanaCut', enabled: ready, items: ['kanaC
 
 /** メニューバー（スマホでは ⋮ のメニュー一覧） */
 export const MENU_BAR: { label: MessageKey; accessKey: string; items: MenuItem[] }[] = [
-  { label: 'menu.file', accessKey: 'F', items: ['open', recent, 'addTrack', 'saveProject', 'saveProjectAs', '-', 'exportAudio', 'exportVideo', '-', 'settings'] },
+  { label: 'menu.file', accessKey: 'F', items: ['newWindow', '-', 'open', recent, 'addTrack', 'saveProject', 'saveProjectAs', '-', 'exportAudio', 'exportVideo', '-', 'settings'] },
   {
     label: 'menu.edit',
     accessKey: 'E',

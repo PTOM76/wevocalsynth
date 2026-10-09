@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import type { Clip } from './types'
 import { idbDelete, idbDeletePrefix, idbGet, idbPut } from '../project/idb'
+import { otherWindowsOpen, slot } from '../project/windowSlot'
 
 /**
  * 原音の退避（メモリの節約）。原音は聴き比べやテンポでの伸縮などでしか使わないので、加工したトラックの原音を IndexedDB に置き、
@@ -29,7 +30,7 @@ export const isOffloaded = (clip: Clip) => offloaded.has(clip)
 export async function offloadClip(clip: Clip) {
   if (offloaded.has(clip) || offloading.has(clip) || !clip.channels[0]?.length) return
   offloading.add(clip)
-  const key = `${PREFIX}${crypto.randomUUID()}`
+  const key = `${slotPrefix()}${crypto.randomUUID()}`
   try {
     await idbPut(key, clip.channels)
   } catch {
@@ -68,8 +69,18 @@ export function restoreClip(clip: Clip): Promise<void> {
   return p
 }
 
-/** 起動時に、前回の退避の残り（閉じたときに置いたままのもの）を消す */
-export const clearOffloaded = () => idbDeletePrefix(PREFIX).catch(() => {})
+/** このウィンドウが退避に使うキーの接頭辞（ほかのウィンドウの退避を消さないよう、枠ごとに分ける。windowSlot.ts） */
+const slotPrefix = () => `${PREFIX}${slot === null ? 'x' : `w${slot}`}:`
+
+/**
+ * 起動時に、前回の退避の残り（閉じたときに置いたままのもの）を消す（枠を取った後に呼ぶ）。
+ * ほかのウィンドウがなければすべて、あれば自分の枠の分だけ。枠なしのウィンドウは消さない（ほかの枠なしのものと見分けられない）
+ */
+export async function clearOffloaded() {
+  if (slot === null) return
+  const prefix = (await otherWindowsOpen().catch(() => true)) ? slotPrefix() : PREFIX
+  await idbDeletePrefix(prefix).catch(() => {})
+}
 
 /** 退避・復帰で描き直す（数を返すので、依存の配列に入れて使う） */
 export function useOffloadVersion() {

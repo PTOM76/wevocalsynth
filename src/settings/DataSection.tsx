@@ -12,6 +12,7 @@ import {
 import { addonFolder, addonsSizeIn, clearAddonsIn } from '../addons/addons'
 import { useT, type MessageKey } from '../i18n/i18n'
 import { useConfirm, useHighlighter, pevenFont } from 'pevenmui'
+import { otherWindowsOpen } from '../project/windowSlot'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 
@@ -39,12 +40,16 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   useEffect(refresh, [])
 
   /** 確認してから `run` し、結果を表示する。`okKey` は確認ダイアログの実行ボタンの文字 */
-  const act = async (okKey: MessageKey, confirmKey: MessageKey, run: () => Promise<void> | void, doneKey: MessageKey) => {
-    if (!(await confirm({ message: t(confirmKey), okLabel: t(okKey), danger: true }))) return
+  const act = async (okKey: MessageKey, confirmKey: MessageKey | (() => Promise<MessageKey>), run: () => Promise<void> | void, doneKey: MessageKey) => {
+    const key = typeof confirmKey === 'function' ? await confirmKey() : confirmKey
+    if (!(await confirm({ message: t(key), okLabel: t(okKey), danger: true }))) return
     await run()
     setMessage(t(doneKey))
     refresh()
   }
+
+  // ほかのウィンドウが開いていれば、その自動保存も消えることを伝える（project/windowSlot.ts）
+  const workConfirm = async (): Promise<MessageKey> => ((await otherWindowsOpen().catch(() => false)) ? 'data.workConfirmOthers' : 'data.workConfirm')
 
   const row = (label: MessageKey, help: MessageKey, button: React.ReactNode, vars?: Record<string, string>) => (
     <Box sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%', display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -73,7 +78,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
       {row(
         'data.work',
         'data.workHelp',
-        danger('data.delete', () => void act('data.delete', 'data.workConfirm', clearWorkData, 'data.workDone')),
+        danger('data.delete', () => void act('data.delete', workConfirm, clearWorkData, 'data.workDone')),
       )}
       {row(
         'data.cache',

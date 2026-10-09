@@ -15,7 +15,7 @@ export type ActionId =
   | 'seekBack' | 'seekForward' | 'seekBackFine' | 'seekForwardFine' | 'seekStart' | 'seekEnd'
   | 'prevMarker' | 'nextMarker' | 'addMarker'
   | 'pitchUp' | 'pitchDown' | 'pitchUpAlt' | 'pitchDownAlt' | 'nextSelection' | 'prevSelection'
-  | 'playSelection' | 'toggleLoop' | 'apply' | 'toNewTrack' | 'saveToFolder' | 'trim' | 'selectSounds'
+  | 'playSelection' | 'toggleLoop' | 'apply' | 'toNewTrack' | 'saveToFolder' | 'newWindow' | 'trim' | 'selectSounds'
 
 export interface ActionInfo {
   id: ActionId
@@ -56,6 +56,8 @@ export const ACTIONS: ActionInfo[] = [
   { id: 'apply', label: 'key.apply', keys: [] },
   { id: 'toNewTrack', label: 'key.toNewTrack', keys: [] },
   { id: 'saveToFolder', label: 'folder.save', keys: [] },
+  // 既定のキーはない（Ctrl+Shift+N はブラウザのシークレットウィンドウと重なる）
+  { id: 'newWindow', label: 'menu.newWindow', keys: [] },
   { id: 'open', label: 'menu.open', keys: ['Ctrl+KeyO'] },
   { id: 'saveProject', label: 'menu.saveProject', keys: ['Ctrl+KeyS'] },
   { id: 'exportAudio', label: 'menu.export', keys: ['Ctrl+Shift+KeyS', 'Ctrl+KeyE'] },

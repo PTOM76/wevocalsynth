@@ -61,6 +61,7 @@
   "menu.exportVideo": "動画ファイルに書き出す…",
   "menu.experimental": "試験的機能",
   "menu.kanaCut": "一音ずつ切り出し",
+  "menu.newWindow": "新しいウィンドウ",
 
   "file.openType": "音声とプロジェクトのファイル",
   "file.audioType": "音声ファイル",
@@ -290,6 +291,10 @@
   "settings.outputLimit": "音量の上限を設ける",
   "settings.outputLimitHelp": "大きすぎる音を抑え、耳とスピーカーを守ります。書き出す音には反映されません",
   "settings.outputLimitDb": "上限",
+  "settings.groupWindows": "ウィンドウ",
+  "settings.maxWindows": "同時に開くウィンドウの数",
+  "settings.extraWindows": "上限を超えても開く",
+  "settings.extraWindowsHelp": "上限を超えたウィンドウは自動保存されません",
 
   "export.title": "音声ファイルに書き出す",
   "export.run": "書き出し",
@@ -635,7 +640,7 @@
   "history.retime": "音符の長さと位置",
   "history.curve": "ピッチカーブ",
 
-  "data.usage": "使用量: {usage}（上限{quota}）",
+  "data.usage": "使用量: {usage}（上限{quota}。同じドメインのほかのアプリを含む）",
   "data.usageUnknown": "使用量: このブラウザでは確認できません",
   "data.delete": "削除",
   "data.reset": "初期化",
@@ -670,6 +675,7 @@
   "data.folder": "保存先フォルダーのデータ（{name}）",
   "data.folderAddonsHelp": "保存先フォルダーに保存した追加機能（{size}）。削除すると、次に使用するときは再度ダウンロードが必要です",
   "data.folderAddonsConfirm": "保存先フォルダーに保存した追加機能をすべて削除します。よろしいですか？",
+  "data.workConfirmOthers": "ほかのウィンドウの自動保存も削除されます。よろしいですか？",
 
   "addon.runtimeGpu": "ボーカル抽出の実行環境（GPU）",
   "addon.runtimeCpu": "ボーカル抽出の実行環境（CPU）",
@@ -943,5 +949,10 @@
   "kanaCut.clearMenu": "読みの帯を削除",
   "kanaCut.utauMenu": "UTAU音源に書き出す",
   "kanaCut.lineUpMenu": "五十音順にトラックへ並べる",
-  "kanaCut.lineUpTrack": "{name}（五十音）"
+  "kanaCut.lineUpTrack": "{name}（五十音）",
+
+  "window.limit": "ウィンドウの数が上限（{n}）に達しています",
+  "window.limitHint": "ほかのウィンドウを閉じるか、設定で上限を変更してください",
+  "window.retry": "再試行",
+  "window.noAutosave": "このウィンドウは自動保存されません"
 }

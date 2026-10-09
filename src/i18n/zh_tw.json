@@ -61,6 +61,7 @@
   "menu.exportVideo": "匯出為影片…",
   "menu.experimental": "實驗性功能",
   "menu.kanaCut": "逐音切分",
+  "menu.newWindow": "新視窗",
 
   "file.openType": "音訊與專案檔案",
   "file.audioType": "音訊檔案",
@@ -290,6 +291,10 @@
   "settings.outputLimit": "限制輸出音量",
   "settings.outputLimitHelp": "抑制過大的聲音，保護耳朵和喇叭。不影響匯出的音訊",
   "settings.outputLimitDb": "上限",
+  "settings.groupWindows": "視窗",
+  "settings.maxWindows": "同時開啟的視窗數",
+  "settings.extraWindows": "超過上限也開啟",
+  "settings.extraWindowsHelp": "超過上限的視窗不會自動儲存",
 
   "export.title": "匯出音訊檔",
   "export.run": "匯出",
@@ -635,7 +640,7 @@
   "history.retime": "音符長度·位置",
   "history.curve": "音高曲線",
 
-  "data.usage": "使用量：{usage}（上限 {quota}）",
+  "data.usage": "使用量：{usage}（上限 {quota}，包含同一網域下的其他應用程式）",
   "data.usageUnknown": "使用量：此瀏覽器無法查看",
   "data.delete": "刪除",
   "data.reset": "重設",
@@ -670,6 +675,7 @@
   "data.folder": "儲存資料夾中的資料（{name}）",
   "data.folderAddonsHelp": "儲存在資料夾中的附加功能（{size}）。刪除後，再次使用時需要重新下載",
   "data.folderAddonsConfirm": "將刪除儲存在資料夾中的所有附加功能。確定嗎？",
+  "data.workConfirmOthers": "其他視窗的自動儲存也會被刪除。確定嗎？",
 
   "addon.runtimeGpu": "人聲擷取執行環境（GPU）",
   "addon.runtimeCpu": "人聲擷取執行環境（CPU）",
@@ -943,5 +949,10 @@
   "kanaCut.clearMenu": "刪除讀音軌",
   "kanaCut.utauMenu": "匯出為 UTAU 音源",
   "kanaCut.lineUpMenu": "按五十音順序排列到音軌",
-  "kanaCut.lineUpTrack": "{name}（五十音）"
+  "kanaCut.lineUpTrack": "{name}（五十音）",
+
+  "window.limit": "視窗數已達上限（{n}）",
+  "window.limitHint": "請關閉其他視窗，或在設定中變更上限",
+  "window.retry": "重試",
+  "window.noAutosave": "此視窗不會自動儲存"
 }

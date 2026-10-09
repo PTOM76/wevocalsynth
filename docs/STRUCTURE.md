@@ -44,7 +44,7 @@ src/
   appInfo.ts  アプリの定義。vite.config.ts からも読み込むので、ほかのファイルを import しない（使い方は appConfig.ts の app）
   licenses.ts  「ライセンス情報」に表示する、使っている部品とモデルの一覧
   links.ts  外部へのリンク（URL は appInfo.ts）
-  main.tsx  起動（設定の Provider と App。メモリが足りないときの抽出から戻ったときは、その画面）
+  main.tsx  起動（設定の Provider と App。メモリが足りないときの抽出から戻ったとき、ウィンドウの数が上限のときは、その画面）
 
 src/addons/
   addons.ts  配信している追加機能の一覧と、このアプリでの呼び名（導入と読み込みの仕組みは PevenMUI）
@@ -134,6 +134,7 @@ src/components/
   videoPrefs.ts  動画の書き出しで覚えておく選択（既定値）
   VolumePanel.tsx  音量の欄（トラックのフェーダーと、範囲の音量の編集）
   Waveform.tsx  波形と帯（スペクトログラム、ピッチ、音量、フォルマント）の Canvas と、その上の操作
+  WindowLimitScreen.tsx  ウィンドウの数が上限のときの画面（作業を開かない）
 
 src/components/inspector/
   Inspector.tsx  インスペクタ（右の欄）の部品（折りたたむ欄、行、数値の入力）
@@ -230,6 +231,7 @@ src/project/
   idb.ts  このアプリの IndexedDB。画面（メインスレッド）と自動保存の Worker の両方から使う
   projectFile.ts  プロジェクトファイル（.wvsp）の読み書き
   storage.ts  ブラウザ内に保存しているデータの確認と削除（設定の「データ」）
+  windowSlot.ts  ウィンドウごとの枠（複数のウィンドウで、自動保存などの保存先を分ける）
 
 src/pwa/
   updateCheck.ts  新しい版の確認

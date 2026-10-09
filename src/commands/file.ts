@@ -1,6 +1,8 @@
 // ファイルのコマンド（開く、保存、書き出し、設定）
 import { canSaveToFolder } from 'pevenmui/web'
 import { defineCommands, ready, selected } from './types'
+import { openNewWindow, openWindowCount } from '../project/windowSlot'
+import { t } from '../i18n/i18n'
 
 export const fileCommands = defineCommands({
   open: { label: 'menu.open', enabled: (c) => !c.ed.busy, run: (c) => c.ed.picker.open() },
@@ -17,6 +19,18 @@ export const fileCommands = defineCommands({
     label: (c, t) => t('folder.saveMany', { n: c.ed.selections.length }),
     visible: (c) => canSaveToFolder() && c.ed.selections.length > 1,
     run: (c) => void c.selectionExport.saveSelectionsToFolder(),
+  },
+  // ほかのウィンドウを開く（上限なら知らせるだけ。project/windowSlot.ts）
+  newWindow: {
+    label: 'menu.newWindow',
+    // スマホとタブレットでは出さない（ウィンドウを並べて使えない）
+    visible: () => matchMedia('(pointer: fine)').matches,
+    run: (c) =>
+      void openWindowCount().then((n) =>
+        n >= c.settings.maxWindows && !c.settings.extraWindows
+          ? c.ed.setToast({ severity: 'info', message: t('window.limit', { n: c.settings.maxWindows }) })
+          : openNewWindow(),
+      ),
   },
   settings: { label: 'menu.settings', run: (c) => c.dialogs.open('settings') },
 })

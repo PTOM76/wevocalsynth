@@ -6,6 +6,7 @@ import type { EditParams } from '../components/EditPanel'
 import { t } from '../i18n/i18n'
 import { cleanBootPending, takeCleanResult } from '../project/cleanExtract'
 import type { Project } from '../project/projectFile'
+import { slot } from '../project/windowSlot'
 import { useAutosave } from './useAutosave'
 import type { Toast } from './useEditor'
 
@@ -25,9 +26,9 @@ interface Options {
 export function useStartup({ autoRestore, state, params, openClip, loadFile, setToast, applyVocalParams }: Options) {
 // ファイルから起動したか（下の launchQueue）、メモリが足りないときの抽出から戻ったか。真なら起動時の復元をしない
 const launchedRef = useRef(cleanBootPending())
-// 作業状態の自動保存と、起動時の復元
+// 作業状態の自動保存と、起動時の復元（上限を超えて開いたウィンドウは、保存先の枠がないので保存しない。project/windowSlot.ts）
 useAutosave(
-  autoRestore,
+  autoRestore && slot !== null,
   state,
   params,
   (project, ids) => {
@@ -38,6 +39,13 @@ useAutosave(
   },
   (e) => console.warn('autosave failed', e),
 )
+
+// 上限を超えて開いたウィンドウでは、自動保存されないことを知らせる
+useEffect(() => {
+  if (autoRestore && slot === null) setToast({ severity: 'info', message: t('window.noAutosave') })
+  // 起動時に1回だけ
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [])
 
 // OS でファイルをダブルクリックして起動したとき（インストールした PWA の File Handling。vite.config.ts の file_handlers）
 const loadFileRef = useRef(loadFile)

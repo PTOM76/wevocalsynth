@@ -1,5 +1,5 @@
 // 設定の保存と読み込み、Context
-import { createContext, createElement, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { F0Params } from '../dsp/engine'
 import { DEFAULT_SETTINGS, type Settings } from './items'
 
@@ -44,7 +44,7 @@ const DEFAULTS = DEFAULT_SETTINGS
 const STORAGE_KEY = app.key('settings')
 
 /** localStorage から読む。使えない環境（プライベートモードなど）や壊れた値では既定値を使う */
-function load(): Settings {
+export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) } : DEFAULTS
@@ -55,7 +55,7 @@ function load(): Settings {
 
 /** アプリの設定（localStorage に保存） */
 export function useSettings() {
-  const [settings, setState] = useState<Settings>(load)
+  const [settings, setState] = useState<Settings>(loadSettings)
   const update = useCallback((patch: Partial<Settings>) => {
     setState((s) => {
       const next = { ...s, ...patch }
@@ -66,6 +66,12 @@ export function useSettings() {
       }
       return next
     })
+  }, [])
+  // ほかのウィンドウで変えた設定を読み直す（storage イベントは、書いたウィンドウ以外にだけ届く）
+  useEffect(() => {
+    const f = (e: StorageEvent) => e.key === STORAGE_KEY && setState(loadSettings())
+    window.addEventListener('storage', f)
+    return () => window.removeEventListener('storage', f)
   }, [])
   return { settings, update }
 }
