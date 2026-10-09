@@ -7,6 +7,12 @@ import { flattenPitch } from '../audio/pitchTools'
 import { t } from '../i18n/i18n'
 import { defineCommands, ready, selected, type CommandContext } from './types'
 
+/** ZIP の名前の曲名の部分の最長（字）。展開するとこの名前のフォルダーができ、長いと Windows のパスの上限（260 字）を超えて展開できない */
+const ZIP_BASE_MAX = 32
+
+/** `base`（曲名）を短くして `suffix` を付けた ZIP の名前 */
+const zipName = (base: string, suffix: string) => `${[...base].slice(0, ZIP_BASE_MAX).join('').trim()}_${suffix}.zip`
+
 /** ピッチの道具は、ピッチを表示して解析が済んでから */
 export const pitchReady = (c: CommandContext) => ready(c) && c.ed.showPitch && !!c.ed.pitch
 /** ピッチの帯の曲線を動かせるか */
@@ -43,7 +49,7 @@ export const toolCommands = defineCommands({
     enabled: hasMorae,
     run: (c) => {
       const clip = c.ed.edited
-      if (clip) void exportMorae(clip, moraeOf(c)).then((zip) => downloadBlob(zip, `${c.ed.baseName}_kana.zip`))
+      if (clip) void exportMorae(clip, moraeOf(c)).then((zip) => downloadBlob(zip, zipName(c.ed.baseName, 'kana')))
     },
   },
   // 音ごとに 1 つを五十音順に並べた新しいトラック（範囲はそのトラックの読みの帯に付ける）
@@ -63,7 +69,7 @@ export const toolCommands = defineCommands({
     enabled: hasMorae,
     run: (c) => {
       const clip = c.ed.edited
-      if (clip) void exportUtau(clip, moraeOf(c), c.ed.baseName).then((zip) => downloadBlob(zip, `${c.ed.baseName}_voicebank.zip`))
+      if (clip) void exportUtau(clip, moraeOf(c), c.ed.baseName).then((zip) => downloadBlob(zip, zipName(c.ed.baseName, 'voicebank')))
     },
   },
   clearMorae: { label: 'kanaCut.clearMenu', enabled: hasMorae, run: (c) => c.ed.tracks.setMorae(c.ed.tracks.activeId, []) },
