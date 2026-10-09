@@ -18,11 +18,11 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
       icon={<AppIcon size={56} />}
       rows={[
         // コミットまで出して、バージョン番号を上げずにデプロイした版も見分けられるようにする
-        [t('about.version'), <span className="selectable">{APP_BUILD}</span>],
+        [t('about.version'), APP_BUILD],
         [t('about.author'), app.author],
         [
           'GitHub',
-          <Link className="selectable" href={REPOSITORY_URL} target="_blank" rel="noopener noreferrer">
+          <Link href={REPOSITORY_URL} target="_blank" rel="noopener noreferrer">
             {REPOSITORY_URL.replace('https://', '')}
           </Link>,
         ],
