@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../types'
 import { startContext } from 'wevocal-lib'
+import { limitedOutput } from '../outputLimit'
 import type { GranularMessage, GranularPosition } from './granularProcessor'
 import processorUrl from './granularProcessor.ts?worker&url'
 
@@ -76,7 +77,7 @@ export function useRealtimePreview(clip: Clip | null, range: Range | null, semit
     post({ type: 'load', channels }, channels.map((c) => c.buffer))
     post({ type: 'params', semitones, stretch })
     post({ type: 'align', on: alignRef.current })
-    node.connect(ctx.destination)
+    node.connect(limitedOutput(ctx))
     setPlaying(true)
     // semitones / stretch は下の effect で追従させるため、開始時の値だけ使う
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -13,6 +13,9 @@ export const general = defineItems('general', {
   confirmClose: check(true, { label: 'settings.confirmClose', help: 'settings.confirmCloseHelp' }),
   // 音声の出力先のデバイス ID（'' は既定の出力。OutputDeviceRow）
   outputDevice: value(''),
+  // 鳴らす音の上限（大きすぎる音から耳を守る。audio/outputLimit.ts）
+  outputLimit: check(true, { label: 'settings.outputLimit', help: 'settings.outputLimitHelp' }),
+  outputLimitDb: number(-1, { label: 'settings.outputLimitDb', min: -24, max: 0, step: 1, unit: 'dB' }),
   // 録音のブラウザの加工（声を素材にするため、既定はすべてオフ）
   recordEchoCancellation: check(false, { label: 'settings.recordEcho' }),
   recordNoiseSuppression: check(false, { label: 'settings.recordNoise' }),

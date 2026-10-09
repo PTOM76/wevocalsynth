@@ -5,6 +5,7 @@ import MarkerTempoDialog from './components/MarkerTempoDialog'
 import { segmentAt } from './audio/tempoMap'
 import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
+import { setOutputLimit } from './audio/outputLimit'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, Button, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
 import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, DesktopLayout, MobileLayout } from 'pevenmui'
@@ -78,6 +79,7 @@ export default function App() {
   // 描画中に合わせる（処理方式のメニューと設定画面が、最初から設定どおりの選択肢になるように。値を入れるだけ）
   setExperimentalAlgorithms(settings.showExperimentalAlgorithms)
   useEffect(() => setOutputDevice(settings.outputDevice), [settings.outputDevice])
+  useEffect(() => setOutputLimit(settings.outputLimit ? settings.outputLimitDb : null), [settings.outputLimit, settings.outputLimitDb])
   // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
   const ed = useEditor()
   // 追加機能の保存先のフォルダー（試験的）。開いたときに許可がなければ、通知から許可してもらう（Service Worker からは求められない）

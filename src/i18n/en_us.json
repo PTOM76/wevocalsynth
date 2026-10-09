@@ -287,6 +287,9 @@
   "settings.tempoChangeLow": "Conservative",
   "settings.tempoChangeNormal": "Normal",
   "settings.groupAddonLyrics": "Lyrics transcription",
+  "settings.outputLimit": "Limit output volume",
+  "settings.outputLimitHelp": "Keeps loud sounds down to protect your ears and speakers. Does not affect exported audio",
+  "settings.outputLimitDb": "Limit",
 
   "export.title": "Export audio",
   "export.run": "Export",

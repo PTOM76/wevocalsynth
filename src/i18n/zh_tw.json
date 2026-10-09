@@ -287,6 +287,9 @@
   "settings.tempoChangeLow": "保守",
   "settings.tempoChangeNormal": "標準",
   "settings.groupAddonLyrics": "歌詞轉寫",
+  "settings.outputLimit": "限制輸出音量",
+  "settings.outputLimitHelp": "抑制過大的聲音，保護耳朵和喇叭。不影響匯出的音訊",
+  "settings.outputLimitDb": "上限",
 
   "export.title": "匯出音訊檔",
   "export.run": "匯出",

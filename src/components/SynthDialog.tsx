@@ -1,5 +1,6 @@
 // 音を 0 から作るダイアログ
 import { useEffect, useRef, useState } from 'react'
+import { limitedOutput } from '../audio/outputLimit'
 import {
   Box,
   Button,
@@ -134,7 +135,7 @@ export default function SynthDialog(p: { open: boolean; bpm: number; onClose: ()
       buf.copyToChannel(clip.channels[0] as Float32Array<ArrayBuffer>, 0)
       const src = ctx.createBufferSource()
       src.buffer = buf
-      src.connect(ctx.destination)
+      src.connect(limitedOutput(ctx))
       src.onended = () => stop()
       src.start()
       audio.current = { ctx, src }

@@ -52,6 +52,8 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         </Group>
         <Group title={t('settings.groupOutput')}>
           <OutputDeviceRow value={draft.outputDevice} onChange={(v) => set({ outputDevice: v })} />
+          {S('outputLimit')}
+          {draft.outputLimit && S('outputLimitDb')}
         </Group>
         <Group title={t('settings.groupRecord')}>
           {S('recordEchoCancellation')}

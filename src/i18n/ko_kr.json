@@ -287,6 +287,9 @@
   "settings.tempoChangeLow": "보수적",
   "settings.tempoChangeNormal": "보통",
   "settings.groupAddonLyrics": "가사 받아쓰기",
+  "settings.outputLimit": "출력 음량 제한",
+  "settings.outputLimitHelp": "너무 큰 소리를 억제해 귀와 스피커를 보호합니다. 내보내는 소리에는 반영되지 않습니다",
+  "settings.outputLimitDb": "상한",
 
   "export.title": "오디오 파일 내보내기",
   "export.run": "내보내기",

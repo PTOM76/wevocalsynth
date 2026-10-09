@@ -5,6 +5,7 @@ import { makePanner } from '../effects/fader/fader'
 import { createLiveEffects, DEFAULT_EFFECTS, type EffectValues, type LiveEffects } from '../effects'
 import { clipDuration } from './types'
 import { startContext, suspendContext } from 'wevocal-lib'
+import { limitedOutput } from './outputLimit'
 
 /** 一緒に鳴らすトラック（id はレベルメーターの対応づけに使う） */
 export interface PlayTrack {
@@ -243,7 +244,7 @@ export function usePlayer(
       // 全体の出口（レベルメーター）。AudioContext ごとに1つ
       if (!masterRef.current || masterRef.current.context !== ctx) {
         masterRef.current = makeAnalyser(ctx)
-        masterRef.current.connect(ctx.destination)
+        masterRef.current.connect(limitedOutput(ctx))
         // 左右に分けて別々に測る（AnalyserNode はチャンネルを混ぜて読むため）
         const split = ctx.createChannelSplitter(2)
         masterRef.current.connect(split)

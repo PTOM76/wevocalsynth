@@ -287,6 +287,9 @@
   "settings.tempoChangeLow": "控えめ",
   "settings.tempoChangeNormal": "標準",
   "settings.groupAddonLyrics": "歌詞の文字化",
+  "settings.outputLimit": "音量の上限を設ける",
+  "settings.outputLimitHelp": "大きすぎる音を抑え、耳とスピーカーを守ります。書き出す音には反映されません",
+  "settings.outputLimitDb": "上限",
 
   "export.title": "音声ファイルを書き出す",
   "export.run": "書き出す",

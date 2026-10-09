@@ -61,6 +61,7 @@ src/audio/
   noteBlocks.ts  ピッチの線を音符ブロックに区切る
   notes.ts  音名（C から B まで、シャープ表記）
   originalStore.ts  原音を IndexedDB に退避してメモリを節約する
+  outputLimit.ts  鳴らす音の上限（耳とスピーカーを守るリミッター）。再生の出口は ctx.destination ではなく limitedOutput(ctx) につなぐ
   pitchTools.ts  ピッチの曲線の一括操作（平らにする、音程に揃える、ビブラート、MIDI に合わせる）
   sampler.ts  音声を MIDI の音符に並べて新しいトラックを作る
   silence.ts  無音で区切って、音のある所を探す
