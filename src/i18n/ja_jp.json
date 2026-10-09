@@ -295,6 +295,7 @@
   "settings.maxWindows": "同時に開くウィンドウの数",
   "settings.extraWindows": "上限を超えても開く",
   "settings.extraWindowsHelp": "上限を超えたウィンドウは自動保存されません",
+  "settings.groupAddonVocalRuntime": "ボーカル抽出の実行環境",
 
   "export.title": "音声ファイルに書き出す",
   "export.run": "書き出し",

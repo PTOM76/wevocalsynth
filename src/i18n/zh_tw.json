@@ -295,6 +295,7 @@
   "settings.maxWindows": "同時開啟的視窗數",
   "settings.extraWindows": "超過上限也開啟",
   "settings.extraWindowsHelp": "超過上限的視窗不會自動儲存",
+  "settings.groupAddonVocalRuntime": "人聲擷取執行環境",
 
   "export.title": "匯出音訊檔",
   "export.run": "匯出",

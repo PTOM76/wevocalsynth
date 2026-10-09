@@ -190,6 +190,10 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         <Group title={t('settings.groupAddonVocal')}>
           <AddonSection ids={VOCAL_ADDONS} />
         </Group>
+        {/* モデルを入れると一緒に入る実行環境。大きさの確認や、使わなくなった方（GPU 用、CPU 用）の削除のために分けて出す */}
+        <Group title={t('settings.groupAddonVocalRuntime')}>
+          <AddonSection ids={['vocal-extractor', 'vocal-extractor-gpu', 'vocal-extractor-cpu']} />
+        </Group>
         <Group title={t('settings.groupAddonAnalyzer')}>
           <AddonSection ids={['analyzer']} />
         </Group>

@@ -295,6 +295,7 @@
   "settings.maxWindows": "동시에 여는 창 수",
   "settings.extraWindows": "상한을 넘어도 열기",
   "settings.extraWindowsHelp": "상한을 넘은 창은 자동 저장되지 않습니다",
+  "settings.groupAddonVocalRuntime": "보컬 추출 실행 환경",
 
   "export.title": "오디오 파일 내보내기",
   "export.run": "내보내기",

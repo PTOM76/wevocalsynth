@@ -295,6 +295,7 @@
   "settings.maxWindows": "同时打开的窗口数",
   "settings.extraWindows": "超过上限也打开",
   "settings.extraWindowsHelp": "超过上限的窗口不会自动保存",
+  "settings.groupAddonVocalRuntime": "人声提取运行环境",
 
   "export.title": "导出音频文件",
   "export.run": "导出",

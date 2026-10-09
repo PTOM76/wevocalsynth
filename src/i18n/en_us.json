@@ -295,6 +295,7 @@
   "settings.maxWindows": "Maximum open windows",
   "settings.extraWindows": "Open beyond the limit",
   "settings.extraWindowsHelp": "Windows beyond the limit are not autosaved",
+  "settings.groupAddonVocalRuntime": "Vocal extraction runtime",
 
   "export.title": "Export audio",
   "export.run": "Export",
