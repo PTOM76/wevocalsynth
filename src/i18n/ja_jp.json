@@ -59,6 +59,8 @@
   "menu.minimap": "ミニマップ",
   "menu.minimapPlayhead": "ミニマップの再生位置",
   "menu.exportVideo": "動画として書き出す…",
+  "menu.experimental": "試験的機能",
+  "menu.kanaCut": "一音ずつ切り出し",
 
   "file.openType": "音声とプロジェクトのファイル",
   "file.audioType": "音声ファイル",
@@ -930,7 +932,7 @@
   "kanaCut.noGpu": "この環境では WebGPU を利用できないため、文字化できません",
   "kanaCut.failed": "処理できませんでした: {message}",
   "kanaCut.empty": "歌詞を認識できませんでした",
-  "kanaCut.exportMenu": "一音ずつ書き出す（ZIP）",
+  "kanaCut.exportMenu": "一音ずつ ZIP で書き出す",
   "kanaCut.clearMenu": "読みの帯を削除",
   "kanaCut.utauMenu": "歌声合成の音源として書き出す（oto.ini 付き、ZIP）",
   "kanaCut.lineUpMenu": "五十音順にトラックへ並べる",

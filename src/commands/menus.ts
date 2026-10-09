@@ -33,15 +33,23 @@ const recent: MenuDynamic = (c, t) => {
 const kana: MenuDynamic = (c, t) =>
   c.settings.showKanaVoice
     ? [
-        { divider: true },
         { label: t('kana.demoMenu'), disabled: !ready(c), submenu: (['a', 'i', 'u', 'e', 'o'] as const).map((v, i) => ({ label: t(`kana.from.${v}`), onClick: () => void c.ed.kanaDemo(i) })) },
       ]
     : []
 
 const toNewTrack: MenuSub = { label: 'menu.toNewTrack', enabled: selected, items: ['copySelectionToTrack', 'moveSelectionToTrack'] }
 const volume: MenuSub = { label: 'volume.title', enabled: ready, items: ['fadeIn', 'fadeOut', 'normalize', 'silence'] }
-// ボーカル抽出（選択範囲、なければ全体）。メニューバーでは「ツール」、右クリックでは編集の後ろ
-const extract: MenuItem[] = ['extractVocals', 'extractAccompaniment', 'splitStems', 'splitLeadStems', 'splitInstrumentStems', '-', 'splitVoicesByPitch', 'splitVoicesByVolume', kana]
+// ボーカル抽出と分離（選択範囲、なければ全体）。メニューバーでは「ツール」、右クリックでは編集の後ろ
+const extract: MenuSub = { label: 'context.extract', enabled: ready, items: ['extractVocals', 'extractAccompaniment', '-', 'splitStems', 'splitLeadStems', 'splitInstrumentStems'] }
+// 試験的機能（設定の「試験的機能」でオンにしたものだけ。どれもオフならサブメニューごと隠す）
+const experimental: MenuSub = {
+  label: 'menu.experimental',
+  visible: (c) => c.settings.showVoiceSplit || c.settings.showKanaVoice,
+  enabled: ready,
+  items: ['splitVoicesByPitch', 'splitVoicesByVolume', kana],
+}
+// 一音ずつ切り出し（memo/kana-cut.md）。範囲を求めたあとの書き出しと並べる操作もまとめる
+const kanaCut: MenuSub = { label: 'menu.kanaCut', enabled: ready, items: ['kanaCut', '-', 'exportMorae', 'exportUtau', 'lineUpMorae', '-', 'clearMorae'] }
 
 /** メニューバー（スマホでは ⋮ のメニュー一覧） */
 export const MENU_BAR: { label: MessageKey; accessKey: string; items: MenuItem[] }[] = [
@@ -79,7 +87,7 @@ export const MENU_BAR: { label: MessageKey; accessKey: string; items: MenuItem[]
     ],
   },
   // 編集メニューに入れすぎないよう、加工の道具（抽出、音声の作成）は「ツール」にまとめる
-  { label: 'menu.tools', accessKey: 'T', items: [...extract, '-', 'sampler', 'synth', 'record', '-', 'kanaCut', 'exportMorae', 'exportUtau', 'lineUpMorae', 'clearMorae'] },
+  { label: 'menu.tools', accessKey: 'T', items: [extract, experimental, '-', 'sampler', 'synth', 'record', '-', kanaCut] },
   { label: 'menu.help', accessKey: 'H', items: ['userGuide', 'shortcuts', '-', 'checkUpdate', 'licenses', 'about'] },
 ]
 
@@ -98,7 +106,7 @@ export const CONTEXT_MENU: MenuItem[] = [
     items: ['pitchUp', 'pitchDown', 'flatten', 'snap', 'vibrato', 'midi', '-', 'voicingForce', 'voicingMute', 'voicingReset'],
   },
   toNewTrack,
-  { label: 'context.extract', enabled: ready, items: extract },
+  { ...extract, items: [...extract.items, experimental] },
   '-',
   'exportRange', 'saveToFolder', 'saveManyToFolder',
 ]

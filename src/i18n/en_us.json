@@ -59,6 +59,8 @@
   "menu.minimap": "Minimap",
   "menu.minimapPlayhead": "Minimap playhead",
   "menu.exportVideo": "Export as Video…",
+  "menu.experimental": "Experimental",
+  "menu.kanaCut": "Single sounds",
 
   "file.openType": "Audio and project files",
   "file.audioType": "Audio file",
@@ -930,7 +932,7 @@
   "kanaCut.noGpu": "WebGPU is not available in this environment, so transcription cannot run",
   "kanaCut.failed": "Could not process: {message}",
   "kanaCut.empty": "No lyrics were recognized",
-  "kanaCut.exportMenu": "Export single sounds (ZIP)",
+  "kanaCut.exportMenu": "Export each sound (ZIP)",
   "kanaCut.clearMenu": "Delete the reading lane",
   "kanaCut.utauMenu": "Export as a singing voicebank (with oto.ini, ZIP)",
   "kanaCut.lineUpMenu": "Line up in kana order on a new track",

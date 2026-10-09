@@ -59,6 +59,8 @@
   "menu.minimap": "縮圖",
   "menu.minimapPlayhead": "縮圖播放位置",
   "menu.exportVideo": "匯出為影片…",
+  "menu.experimental": "實驗性功能",
+  "menu.kanaCut": "逐音切分",
 
   "file.openType": "音訊與專案檔案",
   "file.audioType": "音訊檔案",
@@ -930,7 +932,7 @@
   "kanaCut.noGpu": "此環境無法使用 WebGPU，因此無法轉寫",
   "kanaCut.failed": "無法處理：{message}",
   "kanaCut.empty": "未能辨識歌詞",
-  "kanaCut.exportMenu": "逐音匯出（ZIP）",
+  "kanaCut.exportMenu": "逐音匯出為 ZIP",
   "kanaCut.clearMenu": "刪除讀音軌",
   "kanaCut.utauMenu": "匯出為歌聲合成音源（含 oto.ini，ZIP）",
   "kanaCut.lineUpMenu": "按五十音順序排列到音軌",

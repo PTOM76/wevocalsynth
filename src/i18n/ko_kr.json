@@ -59,6 +59,8 @@
   "menu.minimap": "미니맵",
   "menu.minimapPlayhead": "미니맵 재생 위치",
   "menu.exportVideo": "동영상으로 내보내기…",
+  "menu.experimental": "실험적 기능",
+  "menu.kanaCut": "한 음씩 잘라내기",
 
   "file.openType": "오디오·프로젝트 파일",
   "file.audioType": "오디오 파일",
@@ -930,7 +932,7 @@
   "kanaCut.noGpu": "이 환경에서는 WebGPU를 쓸 수 없어 받아쓰기를 할 수 없습니다",
   "kanaCut.failed": "처리할 수 없습니다: {message}",
   "kanaCut.empty": "가사를 인식하지 못했습니다",
-  "kanaCut.exportMenu": "한 음씩 내보내기 (ZIP)",
+  "kanaCut.exportMenu": "한 음씩 ZIP으로 내보내기",
   "kanaCut.clearMenu": "읽기 레인 삭제",
   "kanaCut.utauMenu": "가창 합성 음원으로 내보내기 (oto.ini 포함, ZIP)",
   "kanaCut.lineUpMenu": "오십음 순서로 트랙에 나열",
