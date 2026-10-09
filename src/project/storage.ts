@@ -15,11 +15,11 @@ import { app } from '../appConfig'
 /** localStorage のうち、このアプリが使う項目の接頭辞 */
 const LOCAL_PREFIX = app.key('')
 
-/** 使用量と上限（バイト）。ブラウザが対応していなければ null */
-export async function storageUsage(): Promise<{ usage: number; quota: number } | null> {
+/** 使用量と上限（バイト）。`details` は種類ごとの内訳（Chrome などだけ）。ブラウザが対応していなければ null */
+export async function storageUsage(): Promise<{ usage: number; quota: number; details?: Record<string, number> } | null> {
   if (!navigator.storage?.estimate) return null
-  const e = await navigator.storage.estimate()
-  return { usage: e.usage ?? 0, quota: e.quota ?? 0 }
+  const e = (await navigator.storage.estimate()) as StorageEstimate & { usageDetails?: Record<string, number> }
+  return { usage: e.usage ?? 0, quota: e.quota ?? 0, details: e.usageDetails }
 }
 
 /** 自動保存した作業データを消す */
@@ -32,7 +32,7 @@ export const clearWorkData = () => idbClear(ORIGINAL_PREFIX)
  * 追加機能は取り直しに時間がかかるので、`withAddons` のときだけ消す
  */
 export async function clearOfflineCache(withAddons = false) {
-  // 同じドメインで配信しているほかのアプリ（Analyzer など）のキャッシュと登録は残す。workbox のキャッシュ名は登録の範囲（scope）で終わる
+  // このアプリの範囲（scope）のものだけ消す。workbox のキャッシュ名は scope で終わる
   const scope = new URL(import.meta.env.BASE_URL, location.href).href
   if ('caches' in window) {
     for (const key of await caches.keys()) if (key.endsWith(scope) || (withAddons && key === ADDON_CACHE)) await caches.delete(key)

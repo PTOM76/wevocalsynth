@@ -640,7 +640,7 @@
   "history.retime": "音符长度·位置",
   "history.curve": "音高曲线",
 
-  "data.usage": "使用量：{usage}（上限 {quota}，包括同一域名下的其他应用）",
+  "data.usage": "使用量：{usage}（上限 {quota}）",
   "data.usageUnknown": "使用量：此浏览器无法查看",
   "data.delete": "删除",
   "data.reset": "重置",
@@ -676,6 +676,7 @@
   "data.folderAddonsHelp": "保存在文件夹中的附加功能（{size}）。删除后，再次使用时需要重新下载",
   "data.folderAddonsConfirm": "将删除保存在文件夹中的所有附加功能。确定吗？",
   "data.workConfirmOthers": "其他窗口的自动保存也会被删除。确定吗？",
+  "data.usageDetails": "明细：缓存 {caches}，IndexedDB {idb}，Service Worker {sw}",
 
   "addon.runtimeGpu": "人声提取运行环境（GPU）",
   "addon.runtimeCpu": "人声提取运行环境（CPU）",

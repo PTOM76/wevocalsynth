@@ -640,7 +640,7 @@
   "history.retime": "音符の長さと位置",
   "history.curve": "ピッチカーブ",
 
-  "data.usage": "使用量: {usage}（上限{quota}。同じドメインのほかのアプリを含む）",
+  "data.usage": "使用量: {usage}（上限{quota}）",
   "data.usageUnknown": "使用量: このブラウザでは確認できません",
   "data.delete": "削除",
   "data.reset": "初期化",
@@ -676,6 +676,7 @@
   "data.folderAddonsHelp": "保存先フォルダーに保存した追加機能（{size}）。削除すると、次に使用するときは再度ダウンロードが必要です",
   "data.folderAddonsConfirm": "保存先フォルダーに保存した追加機能をすべて削除します。よろしいですか？",
   "data.workConfirmOthers": "ほかのウィンドウの自動保存も削除されます。よろしいですか？",
+  "data.usageDetails": "内訳: キャッシュ {caches}、IndexedDB {idb}、Service Worker {sw}",
 
   "addon.runtimeGpu": "ボーカル抽出の実行環境（GPU）",
   "addon.runtimeCpu": "ボーカル抽出の実行環境（CPU）",

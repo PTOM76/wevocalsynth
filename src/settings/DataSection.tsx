@@ -19,7 +19,7 @@ const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
 /** 設定の「データ」: ブラウザ内の使用量と、作業データ・キャッシュ・設定の削除 */
 export default function DataSection({ onClose }: { onClose: () => void }) {
   const t = useT()
-  const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null)
+  const [usage, setUsage] = useState<Awaited<ReturnType<typeof storageUsage>>>(null)
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const [addonBytes, setAddonBytes] = useState(0)
   // 追加機能の保存先のフォルダー（試験的）。選んでいて許可があるときだけ、そのデータを分けて表示する
@@ -75,6 +75,16 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
       <Typography sx={{ gridColumn: '1 / -1', fontSize: pevenFont('base') }}>
         {usage ? t('data.usage', { usage: mb(usage.usage), quota: mb(usage.quota) }) : t('data.usageUnknown')}
       </Typography>
+      {/* 何が容量を使っているかの内訳（Chrome などだけ） */}
+      {usage?.details && (
+        <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: pevenFont('sm'), color: 'text.secondary', mt: -1 }}>
+          {t('data.usageDetails', {
+            caches: mb(usage.details.caches ?? 0),
+            idb: mb(usage.details.indexedDB ?? 0),
+            sw: mb(usage.details.serviceWorkerRegistrations ?? 0),
+          })}
+        </Typography>
+      )}
       {row(
         'data.work',
         'data.workHelp',

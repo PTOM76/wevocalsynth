@@ -640,7 +640,7 @@
   "history.retime": "音符長度·位置",
   "history.curve": "音高曲線",
 
-  "data.usage": "使用量：{usage}（上限 {quota}，包含同一網域下的其他應用程式）",
+  "data.usage": "使用量：{usage}（上限 {quota}）",
   "data.usageUnknown": "使用量：此瀏覽器無法查看",
   "data.delete": "刪除",
   "data.reset": "重設",
@@ -676,6 +676,7 @@
   "data.folderAddonsHelp": "儲存在資料夾中的附加功能（{size}）。刪除後，再次使用時需要重新下載",
   "data.folderAddonsConfirm": "將刪除儲存在資料夾中的所有附加功能。確定嗎？",
   "data.workConfirmOthers": "其他視窗的自動儲存也會被刪除。確定嗎？",
+  "data.usageDetails": "明細：快取 {caches}，IndexedDB {idb}，Service Worker {sw}",
 
   "addon.runtimeGpu": "人聲擷取執行環境（GPU）",
   "addon.runtimeCpu": "人聲擷取執行環境（CPU）",
