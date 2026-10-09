@@ -52,6 +52,30 @@ export async function findMorae(clip: Clip, segments: LyricsSegment[], onProgres
   return analyzer.findMoraeInLyrics(clip, segments, { onProgress, signal })
 }
 
+/** ほぼ無音とみなす強さ（RMS。-50dBFS） */
+const SILENT_RMS = 10 ** (-50 / 20)
+/** 一音ずつの強さの中央値より、これだけ小さい音も無音とみなす（dB。録音ごとの音量の違いによらないよう、曲の中で比べる） */
+const SILENT_BELOW_DB = 20
+
+/** `m` の範囲の強さ（全チャンネルの RMS） */
+function rmsOf(clip: Clip, m: MoraMark): number {
+  const a = Math.max(0, Math.floor(m.start * clip.sampleRate))
+  const b = Math.min(clip.channels[0]?.length ?? 0, Math.ceil(m.end * clip.sampleRate))
+  let sum = 0
+  for (const ch of clip.channels) for (let i = a; i < b; i++) sum += ch[i] * ch[i]
+  const n = (b - a) * clip.channels.length
+  return n > 0 ? Math.sqrt(sum / n) : 0
+}
+
+/** 無音の音（境目がずれて、声のない所に入ったものなど）を除く。書き出しの前に使う */
+export function audibleMorae(clip: Clip, morae: MoraMark[]): MoraMark[] {
+  const rms = morae.map((m) => rmsOf(clip, m))
+  const sorted = [...rms].sort((a, b) => a - b)
+  const median = sorted[Math.floor(sorted.length / 2)] ?? 0
+  const limit = Math.max(SILENT_RMS, median * 10 ** (-SILENT_BELOW_DB / 20))
+  return morae.filter((_, i) => rms[i] >= limit)
+}
+
 /** 一音を切り出す（前後に余白を付け、端をフェードする） */
 export function sliceMora(clip: Clip, m: MoraMark): Clip {
   const c = slice(clip, m.start - PAD_SEC, m.end + PAD_SEC)
@@ -66,10 +90,10 @@ export function sliceMora(clip: Clip, m: MoraMark): Clip {
   return c
 }
 
-/** 一音ずつの WAV をまとめた ZIP。同じ音が何度も出たら あ.wav、あ_2.wav… とする */
+/** 一音ずつの WAV をまとめた ZIP。同じ音が何度も出たら あ.wav、あ_2.wav… とする。無音の音は入れない */
 export async function exportMorae(clip: Clip, morae: MoraMark[]): Promise<Blob> {
   const count = new Map<string, number>()
-  const entries = morae.map((m) => {
+  const entries = audibleMorae(clip, morae).map((m) => {
     const n = (count.get(m.mora) ?? 0) + 1
     count.set(m.mora, n)
     return { name: n === 1 ? `${m.mora}.wav` : `${m.mora}_${n}.wav`, data: encodeWav(sliceMora(clip, m)) }
