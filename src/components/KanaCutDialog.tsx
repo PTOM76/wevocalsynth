@@ -114,7 +114,7 @@ export default function KanaCutDialog(p: Props) {
 
   return (
     <WindowDialog open={p.open} onClose={close} title={t('kanaCut.title')} name="kanaCut" width={600} height={520} dialogProps={{ maxWidth: 'sm', fullWidth: true }}>
-      <DialogContent dividers>
+      <DialogContent>
         <Stack sx={{ gap: 1.5 }}>
           {step.kind !== 'readings' && (
             <>
@@ -168,12 +168,12 @@ export default function KanaCutDialog(p: Props) {
       <DialogActions>
         <Button onClick={close}>{t('common.cancel')}</Button>
         {step.kind === 'start' && (
-          <Button variant="contained" disabled={!gpu} onClick={() => void transcribe()}>
+          <Button disabled={!gpu} onClick={() => void transcribe()}>
             {t('kanaCut.transcribe')}
           </Button>
         )}
         {step.kind === 'readings' && (
-          <Button variant="contained" onClick={() => void find(step.segments)}>
+          <Button onClick={() => void find(step.segments)}>
             {t('kanaCut.find')}
           </Button>
         )}
