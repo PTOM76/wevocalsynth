@@ -98,5 +98,5 @@ export async function exportMorae(clip: Clip, morae: MoraMark[]): Promise<Blob> 
     count.set(m.mora, n)
     return { name: n === 1 ? `${m.mora}.wav` : `${m.mora}_${n}.wav`, data: encodeWav(sliceMora(clip, m)) }
   })
-  return createZip(entries)
+  return createZip(entries, { shiftJisNames: true })
 }
