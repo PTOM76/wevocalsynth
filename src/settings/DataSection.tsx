@@ -11,7 +11,7 @@ import {
 } from '../project/storage'
 import { addonFolder, addonsSizeIn, clearAddonsIn } from '../addons/addons'
 import { useT, type MessageKey } from '../i18n/i18n'
-import { useConfirm, useHighlighter, pevenFont } from 'pevenmui'
+import { useConfirm, useDownloadingIds, useHighlighter, pevenFont } from 'pevenmui'
 import { otherWindowsOpen } from '../project/windowSlot'
 
 const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
@@ -27,6 +27,8 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const [message, setMessage] = useState<string | null>(null)
   const { confirm, dialog } = useConfirm()
   const hit = useHighlighter()
+  // 追加機能のダウンロード中は、追加機能を消す操作を押せなくする（書きかけを消して壊さないため）
+  const downloading = useDownloadingIds().size > 0
 
   const refresh = () => {
     void storageUsage().then(setUsage)
@@ -60,8 +62,8 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
       {button}
     </Box>
   )
-  const danger = (label: MessageKey, onClick: () => void) => (
-    <Button size="small" variant="outlined" color="error" onClick={onClick} sx={{ flexShrink: 0 }}>
+  const danger = (label: MessageKey, onClick: () => void, disabled = false) => (
+    <Button size="small" variant="outlined" color="error" disabled={disabled} onClick={onClick} sx={{ flexShrink: 0 }}>
       {t(label)}
     </Button>
   )
@@ -98,7 +100,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
       {row(
         'data.addons',
         'data.addonsHelp',
-        danger('data.delete', () => void act('data.delete', 'data.addonsConfirm', () => clearAddonsIn('cache'), 'data.addonsDone')),
+        danger('data.delete', () => void act('data.delete', 'data.addonsConfirm', () => clearAddonsIn('cache'), 'data.addonsDone'), downloading),
         { size: mb(addonBytes) },
       )}
       {row(
@@ -132,6 +134,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
             },
             'data.allDone',
           ),
+          downloading,
         ),
       )}
       {row(
@@ -153,7 +156,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
           {row(
             'data.addons',
             'data.folderAddonsHelp',
-            danger('data.delete', () => void act('data.delete', 'data.folderAddonsConfirm', () => clearAddonsIn('folder'), 'data.addonsDone')),
+            danger('data.delete', () => void act('data.delete', 'data.folderAddonsConfirm', () => clearAddonsIn('folder'), 'data.addonsDone'), downloading),
             { size: mb(folder.bytes) },
           )}
         </>
