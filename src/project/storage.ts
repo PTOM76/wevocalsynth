@@ -32,11 +32,13 @@ export const clearWorkData = () => idbClear(ORIGINAL_PREFIX)
  * 追加機能は取り直しに時間がかかるので、`withAddons` のときだけ消す
  */
 export async function clearOfflineCache(withAddons = false) {
+  // 同じドメインで配信しているほかのアプリ（Analyzer など）のキャッシュと登録は残す。workbox のキャッシュ名は登録の範囲（scope）で終わる
+  const scope = new URL(import.meta.env.BASE_URL, location.href).href
   if ('caches' in window) {
-    for (const key of await caches.keys()) if (withAddons || key !== ADDON_CACHE) await caches.delete(key)
+    for (const key of await caches.keys()) if (key.endsWith(scope) || (withAddons && key === ADDON_CACHE)) await caches.delete(key)
   }
   if (navigator.serviceWorker) {
-    for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister()
+    for (const r of await navigator.serviceWorker.getRegistrations()) if (r.scope === scope) await r.unregister()
   }
 }
 
