@@ -292,7 +292,7 @@
   "settings.outputLimitDb": "上限",
 
   "export.title": "音声ファイルを書き出す",
-  "export.run": "書き出す",
+  "export.run": "書き出し",
   "export.sampleFormat": "サンプル形式",
   "export.bitrate": "ビットレート",
   "export.sampleRate": "サンプルレート",
