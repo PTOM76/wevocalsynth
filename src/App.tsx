@@ -36,7 +36,11 @@ import { canRecord } from 'wevocal-lib'
 import { flattenPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
 import { useAppSettings } from './settings/settings'
-import { addonFolder, notifyAddonsChanged } from './addons/addons'
+import { addonFolder, notifyAddonsChanged, onAddonsChanged } from './addons/addons'
+import { resyncAutosaveFolder, setAutosaveFolder } from './project/autosave'
+import { mirrorLocalSettings } from './project/settingsMirror'
+import { folderLink, linkFolder } from './project/dataFolder'
+import { restoreFromFolder } from './project/storage'
 import DebugOverlay from './debug/DebugOverlay'
 import UpdatePrompt from './components/UpdatePrompt'
 import { countRender } from './debug/debugStats'
@@ -92,6 +96,47 @@ export default function App() {
       ed.setToast({ severity: 'info', message: t('addonFolder.permission'), actions: [{ label: t('addonFolder.allow'), onClick: allow }] })
     })
     // 設定を変えたときと、開いたときだけ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.addonFolder])
+  // 設定と自動保存した作業も、指定したフォルダーに写す（PWA を消しても戻せるように。src/project/dataFolder.ts）
+  useEffect(() => {
+    if (!settings.addonFolder) return setAutosaveFolder(false)
+    let linked = false
+    const sync = () => void (linked && mirrorLocalSettings().catch(() => {}))
+    // このブラウザの写しのときだけ写す。ほかのブラウザ（入れ直す前など）の写しがあれば、戻すか上書きするかを聞く
+    const check = async () => {
+      const link = await folderLink()
+      if (link === 'empty') await linkFolder()
+      linked = link === 'empty' || link === 'linked'
+      setAutosaveFolder(linked)
+      if (linked) {
+        resyncAutosaveFolder()
+        sync()
+      }
+      if (link !== 'other') return
+      const restore = () => void restoreFromFolder().then((ok) => ok && location.reload())
+      const overwrite = () => void linkFolder().then(check)
+      ed.setToast({
+        severity: 'info',
+        message: t('dataFolder.found'),
+        actions: [
+          { label: t('data.folderRestore'), onClick: restore },
+          { label: t('dataFolder.overwrite'), onClick: overwrite },
+        ],
+      })
+    }
+    void check()
+    // フォルダーを選び直したときと、許可したときは、追加機能の変化として知らされる
+    const off = onAddonsChanged(() => void check())
+    // 画面の状態（パネルの幅など）は設定とは別に変わるので、数秒ごとと、隠れたときに写す（変わっていなければ書かない）
+    const timer = setInterval(sync, 5000)
+    const hide = () => document.visibilityState === 'hidden' && sync()
+    document.addEventListener('visibilitychange', hide)
+    return () => {
+      off()
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', hide)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.addonFolder])
   // 設定のテーマ（既定 / ライト / ダーク）を反映する

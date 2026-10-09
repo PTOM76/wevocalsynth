@@ -1,5 +1,7 @@
 // ブラウザ内に保存しているデータの確認と削除（設定の「データ」）
-import { idbClear } from './idb'
+import { idbClear, idbPut } from './idb'
+import { linkFolder, readMirroredWork } from './dataFolder'
+import { restoreLocalSettings } from './settingsMirror'
 import { ORIGINAL_PREFIX } from '../audio/originalStore'
 import { ADDON_CACHE } from '../addons/addons'
 import { app } from '../appConfig'
@@ -40,6 +42,19 @@ export async function clearOfflineCache(withAddons = false) {
   if (navigator.serviceWorker) {
     for (const r of await navigator.serviceWorker.getRegistrations()) if (r.scope === scope) await r.unregister()
   }
+}
+
+/**
+ * 指定したフォルダーに写した設定と作業を、ブラウザに戻す（PWA を入れ直したときなど）。何か戻したら true（そのあと再読み込みする）。
+ * 作業は同じキーに書くので、今ブラウザにある自動保存は置き換わる
+ */
+export async function restoreFromFolder(): Promise<boolean> {
+  const settings = await restoreLocalSettings()
+  const work = await readMirroredWork()
+  for (const [key, value] of work) await idbPut(key, value)
+  // 戻したあとは、このブラウザから写し続ける
+  await linkFolder()
+  return settings || work.length > 0
 }
 
 /** 設定と画面の状態（パネルの幅など）を消す */

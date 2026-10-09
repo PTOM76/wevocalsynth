@@ -9,6 +9,7 @@ export const idb = db
 export const idbGet = db.get
 export const idbPut = db.put
 export const idbDelete = db.delete
+export const idbKeys = db.keys
 /** `prefix` で始まるキーをすべて消す（前回の残りの掃除に使う） */
 export const idbDeletePrefix = db.deletePrefix
 /**

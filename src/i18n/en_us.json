@@ -965,5 +965,8 @@
   "window.limit": "The number of windows has reached the limit ({n})",
   "window.limitHint": "Close another window, or change the limit in Settings",
   "window.retry": "Retry",
-  "window.noAutosave": "This window is not autosaved"
+  "window.noAutosave": "This window is not autosaved",
+
+  "dataFolder.found": "The specified folder contains earlier settings and work data",
+  "dataFolder.overwrite": "Overwrite"
 }

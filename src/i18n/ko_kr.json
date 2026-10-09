@@ -965,5 +965,8 @@
   "window.limit": "창 수가 상한({n})에 도달했습니다",
   "window.limitHint": "다른 창을 닫거나 설정에서 상한을 변경하세요",
   "window.retry": "다시 시도",
-  "window.noAutosave": "이 창은 자동 저장되지 않습니다"
+  "window.noAutosave": "이 창은 자동 저장되지 않습니다",
+
+  "dataFolder.found": "지정한 폴더에 이전 설정과 작업 데이터가 있습니다",
+  "dataFolder.overwrite": "덮어쓰기"
 }

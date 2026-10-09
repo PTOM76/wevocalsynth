@@ -7,8 +7,10 @@ import {
   clearWorkData,
   isPersisted,
   requestPersist,
+  restoreFromFolder,
   storageUsage,
 } from '../project/storage'
+import { mirrorClearAll, mirroredSize } from '../project/dataFolder'
 import { addonFolder, addonsSizeIn, clearAddonsIn } from '../addons/addons'
 import { useT, type MessageKey } from '../i18n/i18n'
 import { useConfirm, useDownloadingIds, useHighlighter, pevenFont } from 'pevenmui'
@@ -23,7 +25,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const [addonBytes, setAddonBytes] = useState(0)
   // 追加機能の保存先のフォルダー（試験的）。選んでいて許可があるときだけ、そのデータを分けて表示する
-  const [folder, setFolder] = useState<{ name: string; bytes: number } | null>(null)
+  const [folder, setFolder] = useState<{ name: string; bytes: number; dataBytes: number } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const { confirm, dialog } = useConfirm()
   const hit = useHighlighter()
@@ -36,7 +38,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
     void addonsSizeIn('cache').then(setAddonBytes)
     void (async () => {
       const dir = await addonFolder.saved()
-      setFolder(dir && (await addonFolder.permission()) === 'granted' ? { name: dir.name, bytes: await addonsSizeIn('folder') } : null)
+      setFolder(dir && (await addonFolder.permission()) === 'granted' ? { name: dir.name, bytes: await addonsSizeIn('folder'), dataBytes: await mirroredSize() } : null)
     })()
   }
   useEffect(refresh, [])
@@ -158,6 +160,28 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
             'data.folderAddonsHelp',
             danger('data.delete', () => void act('data.delete', 'data.folderAddonsConfirm', () => clearAddonsIn('folder'), 'data.addonsDone'), downloading),
             { size: mb(folder.bytes) },
+          )}
+          {/* 写した設定と作業（PWA を入れ直したときは、ここから戻す。src/project/dataFolder.ts） */}
+          {row(
+            'data.folderData',
+            'data.folderDataHelp',
+            <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                disabled={!folder.dataBytes}
+                onClick={() =>
+                  void (async () => {
+                    if (!(await confirm({ message: t('data.folderRestoreConfirm'), okLabel: t('data.folderRestore') }))) return
+                    if (await restoreFromFolder()) location.reload()
+                  })()
+                }
+              >
+                {t('data.folderRestore')}
+              </Button>
+              {danger('data.delete', () => void act('data.delete', 'data.folderDataConfirm', mirrorClearAll, 'data.folderDataDone'), !folder.dataBytes)}
+            </Box>,
+            { size: mb(folder.dataBytes) },
           )}
         </>
       )}

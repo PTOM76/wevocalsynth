@@ -965,5 +965,8 @@
   "window.limit": "ウィンドウの数が上限（{n}）に達しています",
   "window.limitHint": "ほかのウィンドウを閉じるか、設定で上限を変更してください",
   "window.retry": "再試行",
-  "window.noAutosave": "このウィンドウは自動保存されません"
+  "window.noAutosave": "このウィンドウは自動保存されません",
+
+  "dataFolder.found": "指定したフォルダーに、以前の設定と作業データがあります",
+  "dataFolder.overwrite": "上書き"
 }

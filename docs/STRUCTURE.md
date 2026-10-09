@@ -227,9 +227,11 @@ src/project/
   autosave.ts  作業状態を IndexedDB に保存する
   autosaveWorker.ts  自動保存の書き込み専用の Worker。
   cleanExtract.ts  メモリが足りないときの抽出（再読み込みしてから抽出する）
+  dataFolder.ts  設定と自動保存した作業を、指定したフォルダーにも写す（PWA を消しても戻せるように。memo/data-folder.md）。画面と自動保存の Worker の両方から使う
   extractGuard.ts  抽出のあとにアプリが落ちたかを、次の起動で知る印
   idb.ts  このアプリの IndexedDB。画面（メインスレッド）と自動保存の Worker の両方から使う
   projectFile.ts  プロジェクトファイル（.wvsp）の読み書き
+  settingsMirror.ts  設定と画面の状態（localStorage）を、指定したフォルダーにも写す。戻すのは設定の「データ」から（memo/data-folder.md）
   storage.ts  ブラウザ内に保存しているデータの確認と削除（設定の「データ」）
   windowSlot.ts  ウィンドウごとの枠（複数のウィンドウで、自動保存などの保存先を分ける）
 

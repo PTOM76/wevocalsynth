@@ -32,6 +32,8 @@ export interface AutosaveMeta {
 }
 
 let worker: Worker | null = null
+/** 指定したフォルダーにも写すか（App が設定から入れる） */
+let folderOn = false
 /** 読み出しの返事を待っているもの */
 const waiting = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>()
 let nextGetId = 1
@@ -44,10 +46,23 @@ function getWorker() {
       if (e.data.error) w?.reject(new Error(e.data.error))
       else w?.resolve(e.data.value)
     }
+    if (folderOn) worker.postMessage({ type: 'folder', on: true } satisfies AutosaveMessage)
   }
   return worker
 }
 const post = (m: AutosaveMessage, transfer: Transferable[] = []) => getWorker().postMessage(m, transfer)
+
+/** 自動保存を、指定したフォルダーにも写すか（設定の「指定したフォルダーに保存する」。dataFolder.ts） */
+export function setAutosaveFolder(on: boolean) {
+  folderOn = on
+  post({ type: 'folder', on })
+}
+/** フォルダーを選び直したときや、許可したときに、今ある作業をまとめて写し直す */
+export function resyncAutosaveFolder() {
+  if (!folderOn) return
+  post({ type: 'folder', on: false })
+  post({ type: 'folder', on: true })
+}
 /**
  * 音声を Worker で読み出す（メインスレッドで IndexedDB から読むと、数十MB の復元で画面が止まった）
  */
