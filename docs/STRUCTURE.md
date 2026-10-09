@@ -173,15 +173,15 @@ src/dsp/
 
 src/effects/
   index.ts  エフェクトの表と、表の順に掛ける関数（書き出し、再生）
-  types.ts  エフェクトの型。トラックに掛けるもの（EQ、フェーダー）は、どれもこの形で表（index.ts）に登録する
+  types.ts  エフェクトの型。WeVocal Studio と共通にするため wevocal-lib に移した（ここは読み直すだけ）
 
 src/effects/eq/
-  eq.ts  トラックのグラフィック EQ の計算（再生と書き出しに掛ける）
+  eq.ts  トラックのグラフィック EQ の計算。WeVocal Studio と共通にするため wevocal-lib に移した（ここは読み直すだけ）
   EqDialog.tsx  トラックのグラフィック EQ のダイアログ
-  EqGraph.tsx  グラフィック EQ のグラフ（なぞって値を描く）
+  EqGraph.tsx  グラフィック EQ のグラフ。部品は wevocal-lib/react に移した（WeVocal Studio と共通）。ここではテーマの色と文言を渡すだけ
 
 src/effects/fader/
-  fader.ts  フェーダー（音量、パン、位相の反転）。書き出しの計算と、再生のノード
+  fader.ts  フェーダー（音量、パン、位相の反転）の計算。WeVocal Studio と共通にするため wevocal-lib に移した（ここは読み直すだけ）
 
 src/hooks/
   editActions.ts  音声を書き換える操作（加工の適用、テンポの伸縮、区間の伸縮、サンプラー、曲線の書き込み）
