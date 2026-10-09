@@ -280,7 +280,7 @@
   "settings.groupAddonConverter": "変換",
   "settings.eqBands": "EQ のバンドの数（新しいトラック）",
   "settings.addonFolder": "追加機能を選んだフォルダーに保存する",
-  "settings.addonFolderHelp": "モデルなどの追加機能を、ブラウザのデータ領域ではなく、選んだフォルダーに保存します（Chrome、Edge）。これから導入するものが対象で、導入済みのものはそのまま使用できます",
+  "settings.addonFolderHelp": "モデルなどの追加機能を、ブラウザのデータ領域ではなく、選んだフォルダーに保存します（Chrome、Edge）。導入済みのものも、このフォルダーへ移動できます",
   "settings.tempoChange": "テンポの変化の検出",
   "settings.tempoChangeHelp": "自動解析で、途中でテンポが変わるかを調べます。変化が検出された場合は、採用するかどうかを確認します",
   "settings.tempoChangeOff": "検出しない",

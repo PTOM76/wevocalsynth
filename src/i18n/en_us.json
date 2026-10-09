@@ -280,7 +280,7 @@
   "settings.groupAddonConverter": "Conversion",
   "settings.eqBands": "EQ bands (new tracks)",
   "settings.addonFolder": "Store add-ons in a chosen folder",
-  "settings.addonFolderHelp": "Saves add-ons such as models to a folder you choose instead of the browser's storage (Chrome, Edge). Applies to add-ons installed from now on; installed ones keep working",
+  "settings.addonFolderHelp": "Saves add-ons such as models to a folder you choose instead of the browser's storage (Chrome, Edge). Installed add-ons can also be moved to this folder",
   "settings.tempoChange": "Detect tempo changes",
   "settings.tempoChangeHelp": "Checks whether the tempo changes partway through during automatic analysis. If a change is detected, you will be asked whether to use it",
   "settings.tempoChangeOff": "Off",

@@ -280,7 +280,7 @@
   "settings.groupAddonConverter": "轉換",
   "settings.eqBands": "EQ 頻段數（新音軌）",
   "settings.addonFolder": "將附加功能儲存到所選資料夾",
-  "settings.addonFolderHelp": "將模型等附加功能儲存到所選資料夾，而不是瀏覽器的儲存空間（Chrome、Edge）。僅適用於之後安裝的附加功能，已安裝的仍可使用",
+  "settings.addonFolderHelp": "將模型等附加功能儲存到所選資料夾，而不是瀏覽器的儲存空間（Chrome、Edge）。已安裝的也可以移動到此資料夾",
   "settings.tempoChange": "偵測速度變化",
   "settings.tempoChangeHelp": "自動分析時檢查速度是否在中途變化。偵測到變化時，會詢問是否採用",
   "settings.tempoChangeOff": "不偵測",
