@@ -3,6 +3,7 @@ import type { Algorithm } from '../../dsp/engine'
 import type { F0Voicing, InitialMode, StemModel, VocalModel } from '../settings'
 import { MEMORY_MB } from '../../constants/ui'
 import { check, choice, defineItems, number, value } from './define'
+import { t } from '../../i18n/i18n'
 
 /** 「処理」 */
 export const process = defineItems('process', {
@@ -90,6 +91,8 @@ export const vocal = defineItems('vocal', {
   vocalBeforeAnalysis: check(false, { label: 'settings.vocalBeforeAnalysis', help: 'settings.vocalBeforeAnalysisHelp' }),
   vocalKeepHighBand: check(false, { label: 'settings.vocalKeepHighBand', help: 'settings.vocalKeepHighBandHelp' }),
   // 抽出の実行環境の wasm のメモリの上限（MB）。iOS は上限の分を予約の枠から差し引くので、抽出できなければ下げる
+  // CPU（wasm）で使うスレッドの数（0 は自動）。cross-origin isolation でないと 1（memo/wasm-threads.md）
+  vocalThreads: choice<number>(0, { label: 'settings.vocalThreads', help: 'settings.vocalThreadsHelp', values: [0, 1, 2, 4, 8], format: (n) => (n === 0 ? t('settings.vocalThreadsAuto') : String(n)) }),
   vocalMemoryMb: choice<number>(1024, { label: 'settings.vocalMemory', help: 'settings.vocalMemoryHelp', values: MEMORY_MB, format: (mb) => (mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`) }),
   // 楽器ごとに分けるモデル（Demucs。4 つか、ギターとピアノも分ける 6 つ）
   stemModel: choice<StemModel>('htdemucs', {

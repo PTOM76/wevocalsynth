@@ -169,6 +169,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
           {S('vocalKeepHighBand')}
           {S('vocalBeforeAnalysis')}
           {/* 抽出の動きを変える設定なので、診断ではなくここに置く（iPad などで抽出できないときに下げる） */}
+          {S('vocalThreads')}
           {S('vocalMemoryMb')}
         </Group>
         <Group title={t('settings.groupStems')}>

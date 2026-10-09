@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import pkg from './package.json' with { type: 'json' }
 import { APP_INFO } from './src/appInfo.ts'
-import { pevenAddonsRoute, pevenApp, pevenManifest } from './pevenmui/src/vite.ts'
+import { ISOLATION_SCRIPT, pevenAddonsRoute, pevenApp, pevenIsolation, pevenManifest } from './pevenmui/src/vite.ts'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -41,6 +41,8 @@ export default defineConfig({
     // 版（__APP_VERSION__、__APP_COMMIT__、version.json）と、index.html の名前、言語、配信先の URL（SITE_URL で指定）。
     // version.json はオフライン用のキャッシュには入れない（globPatterns に json を含めない）ので、いつもサーバーの最新を読める
     pevenApp(APP_INFO, { version: pkg.version }),
+    // ボーカル抽出と文字化を wasm のマルチスレッドで動かすため、cross-origin isolation にする（memo/wasm-threads.md）
+    pevenIsolation(),
     VitePWA({
       // 新しい版は利用者が「更新」を押したときに切り替える（作業中に勝手に再読み込みしない。UpdatePrompt 参照）
       registerType: 'prompt',
@@ -72,6 +74,8 @@ export default defineConfig({
       workbox: {
         // workbox ランタイムを sw.js に埋め込み、ハッシュ付きファイルを出さない
         inlineWorkboxRuntime: true,
+        // ページの応答に COOP/COEP を足す（pevenIsolation）
+        importScripts: [ISOLATION_SCRIPT],
         // 更新で切り替わったときに、名前の違う古い版のキャッシュを消す
         cleanupOutdatedCaches: true,
         // wasm もオフラインで使えるようにキャッシュ対象に含める。フォントは woff2 だけ（woff は woff2 に対応しないブラウザ用で、読まれない）

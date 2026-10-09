@@ -298,6 +298,9 @@
   "settings.groupAddonVocalRuntime": "人声提取运行环境",
   "settings.vocalBeforeAnalysis": "在和音分离和逐音切分前先提取人声",
   "settings.vocalBeforeAnalysisHelp": "先去除伴奏再处理，可提高有伴奏歌曲的精度。和音分离时，伴奏会成为单独的音轨。逐音切分时仅用于求取范围，不会改变音轨的声音",
+  "settings.vocalThreads": "CPU 使用的线程数",
+  "settings.vocalThreadsHelp": "不使用 GPU 时，提取和歌词转写中并行计算的线程数。增加后会更快，但会使用更多内存。自动最多为 4，iPhone 和 iPad 为 1。仅在重新打开应用一次之后、且在 Safari 以外的浏览器中生效",
+  "settings.vocalThreadsAuto": "自动",
 
   "export.title": "导出音频文件",
   "export.run": "导出",

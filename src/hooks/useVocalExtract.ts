@@ -26,6 +26,8 @@ interface Deps {
   keepHighBand: boolean
   /** 実行環境のメモリの上限（MB） */
   memoryMb: number
+  /** CPU で使うスレッドの数（0 は自動） */
+  threads: number
   /** 楽器ごとに分けるモデルと、ボーカルをさらに主旋律とハモリに分けるか */
   stemModel: StemModel
   stemChorus: boolean
@@ -65,7 +67,7 @@ export function useVocalExtract(d: Deps) {
   // この端末と非互換のモデルなら、代わりのモデルで抽出する（extractor/src/compat.ts。設定は変えない）
   // 主旋律モデルが設定に残っていたら（前の版で選べた）、高品質モデル（ボーカル向け）にする
   const model = resolveModel(VOCAL_MODELS[d.model].lead ? 'voc-ft' : d.model, d.gpu).model
-  const base = (): ExtractOptions => ({ model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb })
+  const base = (): ExtractOptions => ({ model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb, threads: d.threads })
   /** 計算の種類を決め、モデルとそれに要る実行環境（ONNX Runtime の wasm）を導入済みにする。導入しなければ null */
   const prepareOptions = async (): Promise<ExtractOptions | null> => {
     const plan = await planBackend(base())

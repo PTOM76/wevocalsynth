@@ -84,6 +84,7 @@ export default function KanaCutDialog(p: Props) {
       const segments = await transcribeRange(source.current, p.range.start, p.range.end, {
         model,
         device: 'webgpu',
+        threads: settings.vocalThreads,
         signal: ac.signal,
         onDownload: (v) => setStep({ kind: 'busy', label: t('kanaCut.downloading', { percent: Math.round(v * 100) }), progress: v }),
         onTranscribe: () => setStep({ kind: 'busy', label: t('kanaCut.transcribing'), progress: null }),

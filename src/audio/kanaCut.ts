@@ -36,6 +36,8 @@ function slice(clip: Clip, start: number, end: number): Clip {
 export interface TranscribeOptions {
   model: LyricsModel
   device: 'webgpu' | 'wasm'
+  /** CPU で使うスレッドの数（0 は自動） */
+  threads?: number
   onDownload?: (p: number) => void
   onTranscribe?: () => void
   signal?: AbortSignal

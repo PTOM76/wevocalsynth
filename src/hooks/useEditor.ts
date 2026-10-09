@@ -226,6 +226,7 @@ export function useEditor() {
     gpu: settings.vocalGpu,
     keepHighBand: settings.vocalKeepHighBand,
     memoryMb: settings.vocalMemoryMb,
+    threads: settings.vocalThreads,
     stemModel: settings.stemModel,
     stemChorus: settings.stemChorus,
     fresh: settings.vocalFreshExtract,

@@ -67,6 +67,8 @@ export interface ExtractOptions {
   keepHighBand: boolean
   /** 抽出の実行環境の wasm のメモリの上限（MB。設定の開発者向け。なければ既定の 1GB） */
   memoryMb?: number
+  /** CPU で使うスレッドの数（0 は自動） */
+  threads?: number
   /** 計算の種類（`planBackend` で決めたもの。なければ抽出のときに決める） */
   backend?: ExtractorModule.Backend
 }
@@ -156,6 +158,7 @@ async function open(o: ExtractOptions, backend: ExtractorModule.Backend, runtime
     runtime,
     wasmUrl: await wasmUrl(runtime),
     memoryMb: o.memoryMb,
+    threads: o.threads,
     keepAliveMs,
     onGpuFallback: backend === 'webgpu' ? confirmCpu : undefined,
     onGpuDeviceLost: (message) => gpuLostHandler?.(message),

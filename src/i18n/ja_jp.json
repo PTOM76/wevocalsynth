@@ -298,6 +298,9 @@
   "settings.groupAddonVocalRuntime": "ボーカル抽出の実行環境",
   "settings.vocalBeforeAnalysis": "和音の分離と一音ずつ切り出しの前にボーカルを抽出する",
   "settings.vocalBeforeAnalysisHelp": "伴奏を除いてから処理するため、伴奏がある曲で精度が上がります。和音の分離では、伴奏は別のトラックになります。一音ずつ切り出しでは、範囲を求めるのに使用するだけで、トラックの音は変わりません",
+  "settings.vocalThreads": "CPU で使用するスレッドの数",
+  "settings.vocalThreadsHelp": "GPU を使用しないときの抽出と歌詞の文字化で、並列に計算するスレッドの数。増やすと速くなりますが、メモリを多く使用します。自動は最大 4 で、iPhone と iPad は 1 です。アプリを開き直したあとの 2 回目以降と、Safari 以外のブラウザでだけ反映されます",
+  "settings.vocalThreadsAuto": "自動",
 
   "export.title": "音声ファイルに書き出す",
   "export.run": "書き出し",

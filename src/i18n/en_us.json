@@ -298,6 +298,9 @@
   "settings.groupAddonVocalRuntime": "Vocal extraction runtime",
   "settings.vocalBeforeAnalysis": "Extract vocals before chord separation and one-note cutting",
   "settings.vocalBeforeAnalysisHelp": "Removes the accompaniment first, which improves accuracy for songs with accompaniment. Chord separation puts the accompaniment on its own track. One-note cutting uses the vocals only to find the ranges and leaves the track audio unchanged",
+  "settings.vocalThreads": "CPU threads",
+  "settings.vocalThreadsHelp": "Number of threads used to compute in parallel when extracting or transcribing lyrics without the GPU. More threads are faster but use more memory. Auto uses up to 4, and 1 on iPhone and iPad. Takes effect only after the app has been reopened once, and not in Safari",
+  "settings.vocalThreadsAuto": "Auto",
 
   "export.title": "Export audio",
   "export.run": "Export",

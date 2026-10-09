@@ -298,6 +298,9 @@
   "settings.groupAddonVocalRuntime": "보컬 추출 실행 환경",
   "settings.vocalBeforeAnalysis": "화음 분리와 한 음씩 잘라내기 전에 보컬 추출",
   "settings.vocalBeforeAnalysisHelp": "반주를 제거한 뒤 처리하므로 반주가 있는 곡에서 정확도가 높아집니다. 화음 분리에서는 반주가 별도 트랙이 됩니다. 한 음씩 잘라내기에서는 범위를 구하는 데만 사용하며 트랙의 소리는 바뀌지 않습니다",
+  "settings.vocalThreads": "CPU에서 사용할 스레드 수",
+  "settings.vocalThreadsHelp": "GPU를 사용하지 않을 때 추출과 가사 텍스트 변환에서 병렬로 계산할 스레드 수입니다. 늘리면 빨라지지만 메모리를 더 사용합니다. 자동은 최대 4이며, iPhone과 iPad는 1입니다. 앱을 한 번 다시 연 뒤부터, Safari 이외의 브라우저에서만 반영됩니다",
+  "settings.vocalThreadsAuto": "자동",
 
   "export.title": "오디오 파일 내보내기",
   "export.run": "내보내기",
