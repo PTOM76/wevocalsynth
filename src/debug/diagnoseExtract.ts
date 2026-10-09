@@ -15,7 +15,7 @@ import type { VocalModel } from '../settings/settings'
 export async function diagnoseExtract(o: ExtractOptions, log: Log) {
   // 抽出中に作ると、抽出のモデルを入れ替えてしまう
   if (isExtracting()) return log('抽出中のため診断できません。抽出が終わってから実行してください')
-  diagnoseEnv(log)
+  diagnoseEnv(log, o.threads)
   await diagnoseWebGpu(log)
   await diagnoseMemory(log)
   const runtime = await installedManifest('vocal-extractor')

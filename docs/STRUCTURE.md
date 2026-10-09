@@ -111,7 +111,7 @@ src/components/
   MidiDialog.tsx  MIDI に合わせてピッチの曲線を作るダイアログ
   MobileEditBar.tsx  スマホで範囲を選んだときの編集のボタンの列
   MobilePlayBar.tsx  スマホの下の再生バー
-  MoraLane.tsx  読みの帯（一音ずつの範囲を波形の下に並べ、端のドラッグで直す）
+  MoraLane.tsx  読みの帯（一音ずつの範囲を波形の下に並べ、端のドラッグで直す。ダブルクリックで読みの変更、右クリックで削除）
   PitchControl.tsx  ピッチの変更量のスライダーと入力欄
   PitchToolDialogs.tsx  ピッチの一括操作のダイアログ（音程に揃える、ビブラート）
   PitchToolHost.tsx  ピッチの一括操作のダイアログを開く場所
@@ -285,6 +285,7 @@ dsp/src/tests/
   roundtrip.rs  往復の劣化（可逆性）のテスト。+n 半音のあと -n 半音、×a のあと ×1/a で、どれだけ元の音に戻るかを方式ごとに測る。
   segment.rs  区間に分けて並列に加工する試作の確認（segment.rs）
   sola_params.rs  SOLAv2・v3 の調整できる値（`sola2::Params`）を、組み合わせごとに測って比べる。
+  sola3_level.rs  SOLAv3 を分けずに長い音に掛けると、後ろほど音量が上がるかを測る（memo/webgpu.md の 9.）。
   stretch.rs  時間伸縮・ピッチ変更のテスト。
   voices.rs  和音を 2 つの声に分ける試作の確認（memo/harmony-split.md）。結果は `cargo test voices -- --nocapture` で表示する
 

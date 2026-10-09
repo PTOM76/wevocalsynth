@@ -260,7 +260,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
     ),
     diagnose: (
       <Group title={t('settings.groupDiagnose')}>
-        <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand, memoryMb: draft.vocalMemoryMb }} />
+        <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand, memoryMb: draft.vocalMemoryMb, threads: draft.vocalThreads }} />
       </Group>
     ),
     pitch: (

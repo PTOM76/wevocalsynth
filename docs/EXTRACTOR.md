@@ -113,6 +113,7 @@ ONNX Runtime の wasm は、計算の種類ごとに別の追加機能にする�
 | モード | ボーカルを取り出した直後は、処理モードを「ボーカル」にする。変更は普段どおりできる |
 | 設定 | 設定の「ボーカル抽出」で、使うモデルと「GPU を使う」（既定 ON）を選ぶ。モデルの導入・削除もここ |
 | 実行方法 | 「GPU を使う」が ON で、WebGPU が使え、モデルが対応していれば WebGPU、それ以外は WASM |
+| スレッド | WASM のスレッドの数は、設定の「CPU で使用するスレッドの数」（自動、1、2、4、8）。cross-origin isolation のときだけ反映され、自動は最大 4、iOS は 1。歌詞の文字化も同じ設定を使う。仕組みは extractor の docs/DECISIONS.md の「WASM のマルチスレッド」 (2026-10-09) |
 | 互換性 | 端末と非互換のモデルは、抽出のときだけ代わりのモデルを使う（設定は変えず、設定の画面にその旨を表示する）。表は `extractor/src/compat.ts`、記録は extractor の [docs/COMPATIBILITY.md](../extractor/docs/COMPATIBILITY.md)。例: iPhone・iPad では fp16 を int8 に替える |
 | メモリ | モデルは抽出のたびに読み込み、終わったら解放する（推論中は数百MB使うため、スマホでメモリを持ち続けない）。抽出の前に、処理していない加工と解析の Worker を止めて wasm のメモリを手放し（`releaseIdleDsp`）、再生していないプレーヤーの AudioBuffer（音声の複製）も手放す（`releasePlayers`。AudioContext は閉じない。プレーヤーは通常の再生と試聴などで 4 つある）。推論の Worker は続けて抽出する間は使い回し、30 秒使わなければ止める（下の「iOS Safari でのメモリ不足」）。それでもメモリ不足（RangeError: out of memory、no available backend found）になったら、再読み込みしてから抽出するかを確かめる（下の「メモリが足りないとき」） |
 | 高い帯域 | 約 11kHz より上は標準では削除する。設定の「高音域を残す」で、1024 ビン目のマスクで延ばして残す（`highBand: 'edge'`） |
@@ -123,7 +124,7 @@ iPad の PWA で、抽出が `no available backend found. ERR: [wasm] RangeError
 
 | 調べたこと | 結果 |
 | --- | --- |
-| crossOriginIsolated / SharedArrayBuffer | どちらのアプリも false / なし（GitHub Pages は COOP/COEP を付けられない） |
+| crossOriginIsolated / SharedArrayBuffer | どちらのアプリも false / なし（GitHub Pages は COOP/COEP を付けられない。2026-10-09 から Service Worker で付けるが、Safari は credentialless に未対応で今も false） |
 | wasm のメモリを 1 つ作る（共有 / 共有でない、上限 256MB〜4GB） | どれも作れる。メモリの量そのものは足りている |
 | 上限 4GB の**共有**メモリを同時に持てる数 | **2 個まで**。共有でないものは 64 個以上持てる |
 | 共有メモリを増やす | 1GB 以上まで増やせる |
