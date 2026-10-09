@@ -666,6 +666,10 @@
   "data.persistButton": "要求",
   "data.persistDone": "要求已獲核准",
   "data.persistDenied": "瀏覽器拒絕了要求（常用網站或加入主畫面的應用程式較容易獲准）",
+  "data.browser": "瀏覽器中的資料",
+  "data.folder": "儲存資料夾中的資料（{name}）",
+  "data.folderAddonsHelp": "儲存在資料夾中的附加功能（{size}）。再次使用時需要重新下載",
+  "data.folderAddonsConfirm": "將刪除儲存在資料夾中的所有附加功能。確定嗎？",
 
   "addon.runtimeGpu": "人聲擷取執行環境（GPU）",
   "addon.runtimeCpu": "人聲擷取執行環境（CPU）",

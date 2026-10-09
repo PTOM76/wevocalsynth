@@ -666,6 +666,10 @@
   "data.persistButton": "申請する",
   "data.persistDone": "申請が承認されました",
   "data.persistDenied": "ブラウザに拒否されました（頻繁に利用するサイトや、ホーム画面に追加したアプリでは承認されやすくなります）",
+  "data.browser": "ブラウザ内のデータ",
+  "data.folder": "保存先フォルダーのデータ（{name}）",
+  "data.folderAddonsHelp": "保存先フォルダーに入れた追加機能（{size}）。次に使うときは再度ダウンロードが必要です",
+  "data.folderAddonsConfirm": "保存先フォルダーに入れた追加機能をすべて削除します。よろしいですか？",
 
   "addon.runtimeGpu": "ボーカル抽出の実行環境（GPU）",
   "addon.runtimeCpu": "ボーカル抽出の実行環境（CPU）",

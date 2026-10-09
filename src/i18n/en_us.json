@@ -666,6 +666,10 @@
   "data.persistButton": "Request",
   "data.persistDone": "Granted",
   "data.persistDenied": "Denied by the browser (more likely granted for frequently used or installed apps)",
+  "data.browser": "Data in the browser",
+  "data.folder": "Data in the folder ({name})",
+  "data.folderAddonsHelp": "Add-ons stored in the folder ({size}). They need to be downloaded again to use",
+  "data.folderAddonsConfirm": "Delete all add-ons stored in the folder?",
 
   "addon.runtimeGpu": "Vocal extraction runtime (GPU)",
   "addon.runtimeCpu": "Vocal extraction runtime (CPU)",

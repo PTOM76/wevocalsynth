@@ -9,7 +9,7 @@ import {
   requestPersist,
   storageUsage,
 } from '../project/storage'
-import { clearAddons, installedAddonsSize } from '../addons/addons'
+import { addonFolder, addonsSizeIn, clearAddonsIn } from '../addons/addons'
 import { useT, type MessageKey } from '../i18n/i18n'
 import { useConfirm, useHighlighter, pevenFont } from 'pevenmui'
 
@@ -21,6 +21,8 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null)
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const [addonBytes, setAddonBytes] = useState(0)
+  // 追加機能の保存先のフォルダー（試験的）。選んでいて許可があるときだけ、そのデータを分けて表示する
+  const [folder, setFolder] = useState<{ name: string; bytes: number } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const { confirm, dialog } = useConfirm()
   const hit = useHighlighter()
@@ -28,7 +30,11 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const refresh = () => {
     void storageUsage().then(setUsage)
     void isPersisted().then(setPersisted)
-    void installedAddonsSize().then(setAddonBytes)
+    void addonsSizeIn('cache').then(setAddonBytes)
+    void (async () => {
+      const dir = await addonFolder.saved()
+      setFolder(dir && (await addonFolder.permission()) === 'granted' ? { name: dir.name, bytes: await addonsSizeIn('folder') } : null)
+    })()
   }
   useEffect(refresh, [])
 
@@ -55,8 +61,12 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
     </Button>
   )
 
+  // 保存先のフォルダーがあるときは、ブラウザ内と保存先フォルダーに分けて見出しを出す
+  const heading = (text: string) => <Typography sx={{ gridColumn: '1 / -1', fontSize: pevenFont('base'), fontWeight: 600, mt: 1 }}>{text}</Typography>
+
   return (
     <>
+      {folder && heading(t('data.browser'))}
       <Typography sx={{ gridColumn: '1 / -1', fontSize: pevenFont('base') }}>
         {usage ? t('data.usage', { usage: mb(usage.usage), quota: mb(usage.quota) }) : t('data.usageUnknown')}
       </Typography>
@@ -73,7 +83,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
       {row(
         'data.addons',
         'data.addonsHelp',
-        danger('data.delete', () => void act('data.delete', 'data.addonsConfirm', clearAddons, 'data.addonsDone')),
+        danger('data.delete', () => void act('data.delete', 'data.addonsConfirm', () => clearAddonsIn('cache'), 'data.addonsDone')),
         { size: mb(addonBytes) },
       )}
       {row(
@@ -121,6 +131,17 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
         >
           {t('data.persistButton')}
         </Button>,
+      )}
+      {folder && (
+        <>
+          {heading(t('data.folder', { name: folder.name }))}
+          {row(
+            'data.addons',
+            'data.folderAddonsHelp',
+            danger('data.delete', () => void act('data.delete', 'data.folderAddonsConfirm', () => clearAddonsIn('folder'), 'data.addonsDone')),
+            { size: mb(folder.bytes) },
+          )}
+        </>
       )}
       {message && <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: pevenFont('md'), color: 'primary.main' }}>{message}</Typography>}
       {dialog}

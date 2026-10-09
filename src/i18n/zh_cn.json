@@ -666,6 +666,10 @@
   "data.persistButton": "请求",
   "data.persistDone": "请求已被批准",
   "data.persistDenied": "浏览器拒绝了请求（常用网站或添加到主屏幕的应用更容易获批）",
+  "data.browser": "浏览器中的数据",
+  "data.folder": "保存文件夹中的数据（{name}）",
+  "data.folderAddonsHelp": "保存在文件夹中的附加功能（{size}）。再次使用时需要重新下载",
+  "data.folderAddonsConfirm": "将删除保存在文件夹中的所有附加功能。确定吗？",
 
   "addon.runtimeGpu": "人声提取运行环境（GPU）",
   "addon.runtimeCpu": "人声提取运行环境（CPU）",

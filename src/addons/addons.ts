@@ -58,5 +58,7 @@ export const {
   installedAddonsSize,
   clearAddons,
   loadAddon,
+  addonsSizeIn,
+  clearAddonsIn,
 } = addons
 export { addonSize, addonsSupported, type AddonManifest } from 'pevenmui'
