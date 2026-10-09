@@ -21,7 +21,7 @@ export default function TempoChangeDialog(p: {
     <Dialog open={p.open} onClose={p.onClose} fullWidth maxWidth="xs">
       <DialogTitle sx={{ fontSize: pevenFont('xl'), py: 1.5 }}>{t('tempoChange.title')}</DialogTitle>
       <DialogContent>
-        <Typography sx={{ fontSize: pevenFont('base'), mb: 1 }}>{t('tempoChange.message')}</Typography>
+        <Typography className="selectable" sx={{ fontSize: pevenFont('base'), mb: 1 }}>{t('tempoChange.message')}</Typography>
         <List dense disablePadding>
           {p.sections.map((s) => (
             <ListItemButton key={s.time} onClick={() => p.onSeek(s.time)} sx={{ fontSize: pevenFont('base'), gap: 2 }}>

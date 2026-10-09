@@ -93,8 +93,8 @@ export default function KanaCutDialog(p: Props) {
         <Stack sx={{ gap: 1.5 }}>
           {step.kind !== 'readings' && (
             <>
-              <Typography sx={{ fontSize: pevenFont('base') }}>{t('kanaCut.intro')}</Typography>
-              <Typography sx={{ fontSize: pevenFont('md'), color: 'text.secondary' }}>
+              <Typography className="selectable" sx={{ fontSize: pevenFont('base') }}>{t('kanaCut.intro')}</Typography>
+              <Typography className="selectable" sx={{ fontSize: pevenFont('md'), color: 'text.secondary' }}>
                 {t('kanaCut.target', { start: p.range.start.toFixed(2), end: p.range.end.toFixed(2) })}
               </Typography>
               <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
@@ -118,7 +118,7 @@ export default function KanaCutDialog(p: Props) {
           )}
           {step.kind === 'readings' && (
             <>
-              <Typography sx={{ fontSize: pevenFont('md'), color: 'text.secondary' }}>{t('kanaCut.readingsHelp')}</Typography>
+              <Typography className="selectable" sx={{ fontSize: pevenFont('md'), color: 'text.secondary' }}>{t('kanaCut.readingsHelp')}</Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: 1, alignItems: 'center' }}>
                 <span />
                 <Typography sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>{t('kanaCut.lyrics')}</Typography>

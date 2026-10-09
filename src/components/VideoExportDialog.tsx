@@ -124,7 +124,7 @@ export default function VideoExportDialog(p: Props) {
             </ToggleButton>
           </ToggleButtonGroup>
           {support && !ok && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: '4px !important' }}>
+            <Typography className="selectable" variant="caption" color="text.secondary" sx={{ mt: '4px !important' }}>
               {t('video.unsupported')}
             </Typography>
           )}

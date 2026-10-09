@@ -149,7 +149,7 @@ export default function ExportDialog(p: Props) {
             </ToggleButton>
           </ToggleButtonGroup>
           {!opusOk && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: '4px !important' }}>
+            <Typography className="selectable" variant="caption" color="text.secondary" sx={{ mt: '4px !important' }}>
               {t('export.opusUnsupported')}
             </Typography>
           )}

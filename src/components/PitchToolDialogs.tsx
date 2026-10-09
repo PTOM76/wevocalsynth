@@ -52,11 +52,11 @@ export function ToolDialog(p: { open: boolean; title: string; hasSelection: bool
     >
       <DialogTitle sx={{ fontSize: pevenFont('xl'), py: 1.5 }}>{p.title}</DialogTitle>
       <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Typography sx={{ fontSize: pevenFont('md'), color: 'text.secondary' }}>
+        <Typography className="selectable" sx={{ fontSize: pevenFont('md'), color: 'text.secondary' }}>
           {t('pitchTool.target', { range: t(p.hasSelection ? 'common.selection' : 'common.whole') })}
         </Typography>
         {p.children}
-        <Typography sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>{t('pitchTool.hint')}</Typography>
+        <Typography className="selectable" sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>{t('pitchTool.hint')}</Typography>
       </DialogContent>
       <DialogActions>
         <Button

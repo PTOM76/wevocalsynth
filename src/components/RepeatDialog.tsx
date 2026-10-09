@@ -20,7 +20,7 @@ export default function RepeatDialog(p: { open: boolean; onClose: () => void; on
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
           <NumberInput value={count} onChange={(v) => setCount(Math.round(v))} min={2} max={64} step={1} unit={t('repeat.unit')} width={110} ariaLabel={t('repeat.count')} />
         </Box>
-        <Typography sx={{ fontSize: pevenFont('md'), color: 'text.secondary', mt: 1 }}>{t('repeat.help')}</Typography>
+        <Typography className="selectable" sx={{ fontSize: pevenFont('md'), color: 'text.secondary', mt: 1 }}>{t('repeat.help')}</Typography>
       </DialogContent>
       <DialogActions>
         <Button size="small" onClick={p.onClose}>
