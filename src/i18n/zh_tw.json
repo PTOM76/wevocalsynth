@@ -319,7 +319,7 @@
   "export.folderLabel": "儲存資料夾",
   "export.folderBrowse": "瀏覽…",
   "export.overwrite": "「{name}」已存在。要覆寫嗎？",
-  "export.opusUnsupported": "此瀏覽器不支援匯出 Opus",
+  "export.unsupported": "此瀏覽器不支援匯出 {formats}",
   "export.target": "匯出對象",
   "export.targetMix": "所有音軌混音",
   "export.targetActive": "僅選取的音軌",

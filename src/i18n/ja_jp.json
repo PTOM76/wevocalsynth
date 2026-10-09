@@ -319,7 +319,7 @@
   "export.folderLabel": "保存先フォルダー",
   "export.folderBrowse": "参照…",
   "export.overwrite": "「{name}」はすでにあります。上書きしますか？",
-  "export.opusUnsupported": "このブラウザはOpusの書き出しに対応していません",
+  "export.unsupported": "このブラウザは{formats}の書き出しに対応していません",
   "export.target": "書き出す対象",
   "export.targetMix": "全トラックのミックス",
   "export.targetActive": "選択中のトラックのみ",

@@ -319,7 +319,7 @@
   "export.folderLabel": "Folder",
   "export.folderBrowse": "Browse…",
   "export.overwrite": "{name} already exists. Overwrite?",
-  "export.opusUnsupported": "This browser cannot export Opus",
+  "export.unsupported": "This browser cannot export {formats}",
   "export.target": "Export",
   "export.targetMix": "Mix of all tracks",
   "export.targetActive": "Selected track only",

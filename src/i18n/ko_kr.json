@@ -319,7 +319,7 @@
   "export.folderLabel": "저장 폴더",
   "export.folderBrowse": "찾아보기…",
   "export.overwrite": "「{name}」이(가) 이미 있습니다. 덮어쓸까요?",
-  "export.opusUnsupported": "이 브라우저는 Opus 내보내기를 지원하지 않습니다",
+  "export.unsupported": "이 브라우저는 {formats} 내보내기를 지원하지 않습니다",
   "export.target": "내보낼 대상",
   "export.targetMix": "모든 트랙 믹스",
   "export.targetActive": "선택한 트랙만",

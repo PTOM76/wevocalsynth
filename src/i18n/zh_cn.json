@@ -319,7 +319,7 @@
   "export.folderLabel": "保存文件夹",
   "export.folderBrowse": "浏览…",
   "export.overwrite": "「{name}」已存在。要覆盖吗？",
-  "export.opusUnsupported": "此浏览器不支持导出 Opus",
+  "export.unsupported": "此浏览器不支持导出 {formats}",
   "export.target": "导出对象",
   "export.targetMix": "所有音轨混音",
   "export.targetActive": "仅选中的音轨",

@@ -44,7 +44,7 @@ WeVocalSynth は、React の画面、Web Worker 上の Rust（WebAssembly）の 
 | 重い処理 | Web Worker | 数秒かかる処理でも画面を止めない |
 | リアルタイム処理 | AudioWorklet | 再生と同じスレッドで少しずつ音を作れる |
 | 保存 | IndexedDB（作業）、localStorage（設定） | 音声は localStorage の容量に収まらない |
-| 書き出し | WAV（自前）、MP3（lamejs を Worker で）、Opus（WebCodecs ＋自前の Ogg） | MP3 のエンコーダは使うときだけ読み込む |
+| 書き出し | WAV（自前）、FLAC（自前のエンコーダーを Worker で）、MP3（lamejs を Worker で）、Opus（WebCodecs ＋自前の Ogg）、AAC（WebCodecs ＋自前の M4A） | WAV 以外のエンコーダは使うときだけ読み込む |
 | オフライン | PWA（vite-plugin-pwa） | 新しい版は通知して、利用者が「更新」を押したときに切り替える |
 | 多言語化 | JSON（ja_jp / en_us / ko_kr / zh_cn / zh_tw）をビルド時に取り込む | 実行時の読み込み待ちがない |
 

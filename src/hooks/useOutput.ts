@@ -5,7 +5,7 @@ import { renderEffects } from '../effects'
 import { sliceRanges } from '../audio/multiRange'
 import { mixClips } from '../audio/mix'
 import { isAudible } from '../audio/tracks'
-import { EXPORT_EXT, exportAudio, type ExportFormat } from 'wevocal-lib'
+import { EXPORT_EXT, EXPORT_MIME, exportAudio } from 'wevocal-lib'
 import { folderFileTarget, overwriteTarget, pickSaveTarget } from 'pevenmui/web'
 import { restoreClip } from '../audio/originalStore'
 import { PROJECT_EXT, saveProject } from '../project/projectFile'
@@ -29,9 +29,6 @@ interface Deps {
   /** 書き出しの仕上げ（ノーマライズ、両端のフェード） */
   finish: FinishOptions
 }
-
-/** 書き出す形式ごとの MIME（保存先を選ぶ画面の、ファイルの種類） */
-const EXPORT_MIME: Record<ExportFormat, string> = { wav: 'audio/wav', mp3: 'audio/mpeg', opus: 'audio/ogg' }
 
 /** プロジェクトの保存（.wvsp）と、音声ファイルの書き出し */
 export function useOutput(d: Deps) {

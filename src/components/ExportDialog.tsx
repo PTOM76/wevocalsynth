@@ -17,7 +17,7 @@ import { Box, Checkbox, FormControlLabel,
   Typography,
 } from '@mui/material'
 import { enterToSubmit, WindowDialog, pevenFont } from 'pevenmui'
-import { EXPORT_EXT, MP3_SAMPLE_RATES, OPUS_SAMPLE_RATE, canEncodeOpus, type ExportFormat, type WavFormat } from 'wevocal-lib'
+import { AAC_SAMPLE_RATES, BITRATES, EXPORT_EXT, MP3_SAMPLE_RATES, OPUS_SAMPLE_RATE, canEncodeAac, canEncodeOpus, isLossy, type ExportFormat, type WavFormat } from 'wevocal-lib'
 import { useT } from '../i18n/i18n'
 
 /** ダイアログで選んだ設定（範囲は「選択範囲か全体か」だけを持つ） */
@@ -59,10 +59,9 @@ interface Props {
 /** 両端のフェードの長さの選択肢（ms。0 はなし） */
 const FADES = [0, 5, 10, 20, 50]
 
-const BITRATES: Record<'mp3' | 'opus', number[]> = {
-  mp3: [96, 128, 160, 192, 256, 320],
-  opus: [64, 96, 128, 160, 192, 256],
-}
+/** 形式の並びとボタンの名前（FLAC はロスレス、ほかは圧縮） */
+const FORMATS: ExportFormat[] = ['wav', 'flac', 'mp3', 'opus', 'aac']
+const FORMAT_NAME: Record<ExportFormat, string> = { wav: 'WAV', flac: 'FLAC', mp3: 'MP3', opus: 'Opus', aac: 'AAC' }
 const RATES = [22050, 32000, 44100, 48000, 96000]
 
 /** ラベル付きのセレクトボックス（VideoExportDialog でも使う） */
@@ -94,30 +93,33 @@ export default function ExportDialog(p: Props) {
     selectionOnly: false,
     mix: true,
   })
-  const [opusOk, setOpusOk] = useState(false)
+  // WebCodecs で書き出す形式が、このブラウザで使えるか
+  const [codecOk, setCodecOk] = useState({ opus: false, aac: false })
   const set = (patch: Partial<ExportSettings>) => setS((v) => ({ ...v, ...patch }))
 
   // 開くたびにファイル名と範囲を今の状態に合わせ、Opus が使えるかを確かめる
   useEffect(() => {
     if (!p.open) return
     setS((v) => ({ ...v, fileName: p.baseName, selectionOnly: p.hasSelection, ...(p.activeOnly ? { mix: false } : {}) }))
-    void canEncodeOpus(Math.min(2, p.sourceChannels)).then(setOpusOk)
+    const ch = Math.min(2, p.sourceChannels)
+    void Promise.all([canEncodeOpus(ch), canEncodeAac(ch)]).then(([opus, aac]) => setCodecOk({ opus, aac }))
   }, [p.open, p.baseName, p.hasSelection, p.sourceChannels, p.activeOnly])
 
-  // 形式ごとに選べるサンプルレートが違う（MP3 は 32/44.1/48kHz、Opus は 48kHz 固定）
+  // 形式ごとに選べるサンプルレートが違う（MP3 は 32/44.1/48kHz、AAC は 44.1/48kHz、Opus は 48kHz 固定）
+  const fixedRates = s.format === 'mp3' ? MP3_SAMPLE_RATES : s.format === 'aac' ? AAC_SAMPLE_RATES : null
   const rateOptions: [number, string][] =
     s.format === 'opus'
       ? [[OPUS_SAMPLE_RATE, '48000 Hz']]
       : [
-          ...(s.format === 'wav' || MP3_SAMPLE_RATES.includes(p.sourceRate)
+          ...(!fixedRates || fixedRates.includes(p.sourceRate)
             ? [[0, t('export.originalRate', { rate: p.sourceRate })] as [number, string]]
             : []),
-          ...(s.format === 'mp3' ? MP3_SAMPLE_RATES : RATES).map((r): [number, string] => [r, `${r} Hz`]),
+          ...(fixedRates ?? RATES).map((r): [number, string] => [r, `${r} Hz`]),
         ]
   const rate = rateOptions.some(([v]) => v === s.sampleRate) ? s.sampleRate : rateOptions[0][0]
-  const lossy = s.format !== 'wav'
-  const kbpsOptions = lossy ? BITRATES[s.format as 'mp3' | 'opus'] : []
+  const kbpsOptions = isLossy(s.format) ? BITRATES[s.format] : []
   const kbps = kbpsOptions.includes(s.kbps) ? s.kbps : 128
+  const unsupported = (['opus', 'aac'] as const).filter((f) => !codecOk[f]).map((f) => FORMAT_NAME[f])
 
   return (
     <WindowDialog
@@ -142,27 +144,28 @@ export default function ExportDialog(p: Props) {
             value={s.format}
             onChange={(_, v: ExportFormat | null) => v && set({ format: v })}
           >
-            <ToggleButton value="wav">WAV</ToggleButton>
-            <ToggleButton value="mp3">MP3</ToggleButton>
-            <ToggleButton value="opus" disabled={!opusOk}>
-              Opus
-            </ToggleButton>
+            {FORMATS.map((f) => (
+              <ToggleButton key={f} value={f} disabled={(f === 'opus' || f === 'aac') && !codecOk[f]}>
+                {FORMAT_NAME[f]}
+              </ToggleButton>
+            ))}
           </ToggleButtonGroup>
-          {!opusOk && (
+          {unsupported.length > 0 && (
             <Typography className="selectable" variant="caption" color="text.secondary" sx={{ mt: '4px !important' }}>
-              {t('export.opusUnsupported')}
+              {t('export.unsupported', { formats: unsupported.join(', ') })}
             </Typography>
           )}
 
-          {s.format === 'wav' ? (
+          {!isLossy(s.format) ? (
             <Choice
               label={t('export.sampleFormat')}
-              value={s.wavFormat}
+              value={s.format === 'flac' && s.wavFormat === 'float32' ? 'pcm24' : s.wavFormat}
               onChange={(v) => set({ wavFormat: v })}
               options={[
                 ['pcm16', '16-bit PCM'],
                 ['pcm24', '24-bit PCM'],
-                ['float32', '32-bit float'],
+                // FLAC は整数だけ
+                ...(s.format === 'wav' ? [['float32', '32-bit float'] as [WavFormat, string]] : []),
               ]}
             />
           ) : (
