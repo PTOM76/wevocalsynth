@@ -941,7 +941,7 @@
   "kanaCut.empty": "未能识别歌词",
   "kanaCut.exportMenu": "逐音导出为 ZIP",
   "kanaCut.clearMenu": "删除读音轨",
-  "kanaCut.utauMenu": "导出为歌声合成音源（含 oto.ini，ZIP）",
+  "kanaCut.utauMenu": "导出为 UTAU 音源",
   "kanaCut.lineUpMenu": "按五十音顺序排列到音轨",
   "kanaCut.lineUpTrack": "{name}（五十音）"
 }
