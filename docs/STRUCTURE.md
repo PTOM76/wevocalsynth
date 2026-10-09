@@ -260,21 +260,9 @@ src/settings/items/
   stored.ts  設定の項目の定義（画面の操作で覚えておく値）
 
 dsp/src/
-  curve.rs  ピッチカーブ編集: 時間ごとに変わるピッチ比で、長さを変えずにピッチを変える。
   ffi.rs  wasm 向け C ABI。wasm-bindgen を使わず、Worker から素の `WebAssembly.instantiate` で呼べる関数だけを公開する。
-  formant.rs  スペクトル包絡（フォルマント）補正。
-  hpss.rs  打楽器分離（HPSS）を使った時間伸縮（Driedger, Müller, Ewert 2014）。
   kana.rs  声の素材から一音を作る（試験的。memo/kana-voice.md）。今は母音だけ。
   lib.rs  WeVocalSynth の DSP エンジン。
-  pipeline.rs  ピッチ変更・時間伸縮・フォルマント補正をまとめた処理の流れ。
-  psola.rs  TD-PSOLA（Time-Domain Pitch-Synchronous Overlap-Add）による時間伸縮。ボーカル向け。
-  pv.rs  identity phase locking（Laroche & Dolson）付き Phase Vocoder による時間伸縮。
-  segment.rs  区間に分けて並列に加工する（試験的。memo の WebGPU の設計の 9.）。
-  sms.rs  正弦波と雑音のモデル（SMS、Spectral Modeling Synthesis）による時間伸縮。愛称は Specraw。できるだけ可逆な方式。
-  sola.rs  2乗誤差で区切り位置を探す、クロスフェード方式の時間伸縮（SOLA）。
-  sola2.rs  SOLA の改良版（SOLAv2）。声のある所は、切り貼りの単位を声の 1 周期にし、近くの周期と混ぜて少しずつ移り変わらせる。
-  timemap.rs  伸縮処理で使う、出力位置 → 入力位置の時間対応。
-  wsola.rs  WSOLA（Waveform Similarity Overlap-Add）による時間伸縮。
 
 dsp/src/tests/
   analysis.rs  F0 推定・スペクトログラムのテスト。
@@ -295,9 +283,9 @@ dsp/src/voices/
 ```
 <!-- map:end -->
 
-## DSP（`dsp/src`）
+## DSP（`dsp/src` と `wevocal-lib/src`）
 
-各方式の仕組みは [アルゴリズム](ALGORITHM.md) にある。
+各方式の仕組みは [アルゴリズム](ALGORITHM.md) にある。伸縮、ピッチ、フォルマントの処理（下の表の `pipeline.rs` から `segment.rs` など）は WeVocal Studio と共通にするため wevocal-lib の `src/` に置き、`dsp/src` にはかな、声部の分離、wasm の公開関数（`ffi.rs`）だけを置く。
 
 ### 加工の流れ（`pipeline.rs`）
 ```

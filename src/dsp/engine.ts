@@ -1,14 +1,11 @@
 // DSP の Worker への頼みごと（加工、解析）と、Worker の管理
+import { ALGORITHM_ID, type Algorithm } from 'wevocal-lib'
 import type { DspRequest, DspResponse } from './worker'
 import { markActivity, recordDspJob, reportMemory } from '../debug/debugStats'
 import { processParallel, shouldSplit } from './parallel'
 
-/** DSPエンジンの時間伸縮方式 */
-/** wsola / pv は従来の方式、psola はボーカル向けの新しい方式（Rust 側 `Algorithm::from_id` と対応） */
-export type Algorithm = 'wsola' | 'pv' | 'psola' | 'sola' | 'psola2' | 'wsola2' | 'pv2' | 'hpss' | 'sola2' | 'sola3' | 'sms'
-
-// sola2 / sola3 / psola2 / wsola2 / pv2 は改良版（SOLAv2 / SOLAv3 / PSOLAv2 / WSOLAv2 / Phase Vocoder v2）。従来版も残して選べる。hpss は打楽器分離のハイブリッド。sms は試験的な方式（愛称 Specraw。docs/ALGORITHM.md の SMS）
-const ALGORITHM_ID: Record<Algorithm, number> = { wsola: 0, pv: 1, psola: 2, sola: 3, psola2: 4, wsola2: 5, pv2: 6, hpss: 7, sola2: 8, sola3: 9, sms: 10 }
+/** 時間伸縮の方式と wasm に渡す番号は wevocal-lib（WeVocal Studio と共通） */
+export type { Algorithm }
 
 type Pending = {
   resolve: (r: Float32Array[] | Uint8Array) => void

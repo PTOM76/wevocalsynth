@@ -103,7 +103,7 @@ Canvas は CSS 変数を解決できない。`theme.palette` は常にライト�
 ## Rust（`dsp/`）
 
 ### `lib.rs` はモジュールの宣言と `pub use` だけにする
-アルゴリズムはファイルを分ける（`wsola.rs`、`pv.rs`、`formant.rs`、`f0.rs` など）。856行あった `lib.rs` を分けた経緯がある。
+アルゴリズムはファイルを分ける（`wsola.rs`、`pv.rs`、`formant.rs`、`f0.rs` など。伸縮とピッチの処理は wevocal-lib の `src/` にあり、`dsp/` には Synth だけの処理を置く）。856行あった `lib.rs` を分けた経緯がある。
 
 ### wasm に公開する関数は `ffi.rs` に集める
 `#[no_mangle] pub unsafe extern "C"` とし、`# Safety` にポインタの前提を書く。公開関数が散らばると、TS 側（`worker.ts` の `DspExports`）と食い違っても気づきにくい。
