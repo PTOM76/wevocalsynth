@@ -59,6 +59,8 @@ export default defineConfig({
       workbox: {
         // workbox ランタイムを sw.js に埋め込み、ハッシュ付きファイルを出さない
         inlineWorkboxRuntime: true,
+        // 更新で切り替わったときに、名前の違う古い版のキャッシュを消す
+        cleanupOutdatedCaches: true,
         // wasm もオフラインで使えるようにキャッシュ対象に含める
         globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2,wasm}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
