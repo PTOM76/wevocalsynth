@@ -925,7 +925,7 @@
   "kanaCut.model.base": "標準（約 {mb} MB）",
   "kanaCut.model.small": "高精度（約 {mb} MB）",
   "kanaCut.transcribe": "轉寫",
-  "kanaCut.downloading": "正在下載模型… {percent}%",
+  "kanaCut.downloading": "正在載入模型… {percent}%",
   "kanaCut.transcribing": "正在轉寫…",
   "kanaCut.readingsHelp": "讀音請用平假名輸入。每個音的範圍以此讀音為準",
   "kanaCut.lyrics": "歌詞",

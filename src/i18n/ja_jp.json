@@ -925,7 +925,7 @@
   "kanaCut.model.base": "標準（約 {mb} MB）",
   "kanaCut.model.small": "高精度（約 {mb} MB）",
   "kanaCut.transcribe": "文字化する",
-  "kanaCut.downloading": "モデルをダウンロード中… {percent}%",
+  "kanaCut.downloading": "モデルを読み込み中… {percent}%",
   "kanaCut.transcribing": "文字化しています…",
   "kanaCut.readingsHelp": "読みはひらがなで入力します。一音ずつの範囲は、この読みをもとに求めます",
   "kanaCut.lyrics": "歌詞",

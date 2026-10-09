@@ -925,7 +925,7 @@
   "kanaCut.model.base": "Standard (about {mb} MB)",
   "kanaCut.model.small": "Precise (about {mb} MB)",
   "kanaCut.transcribe": "Transcribe",
-  "kanaCut.downloading": "Downloading the model… {percent}%",
+  "kanaCut.downloading": "Loading the model… {percent}%",
   "kanaCut.transcribing": "Transcribing…",
   "kanaCut.readingsHelp": "Enter readings in hiragana. The range of each sound is found from these readings",
   "kanaCut.lyrics": "Lyrics",
