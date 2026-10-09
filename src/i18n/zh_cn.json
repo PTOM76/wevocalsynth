@@ -962,6 +962,7 @@
   "kanaCut.lineUpTrack": "{name}（五十音）",
   "kanaCut.vocalsFirst": "先提取人声（有伴奏时）",
   "kanaCut.keepAllMenu": "导出时包含不可用的音",
+  "kanaCut.editMora": "更改读音",
 
   "window.limit": "窗口数已达上限（{n}）",
   "window.limitHint": "请关闭其他窗口，或在设置中更改上限",

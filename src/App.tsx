@@ -265,6 +265,8 @@ export default function App() {
   const onWaveDrawFormant = useStableFn((from: CurvePoint, to: CurvePoint) => edited && shown === edited && ed.formantCurve.draw(edited, from, to))
   const onWaveFocus = useStableFn(ed.setFocusLane)
   const morae = ed.tracks.moraeOf(ed.tracks.activeId)
+  /** 読みの帯の端の時刻（つかんでいるか乗っているとき。波形に縦の線を引く） */
+  const [moraGuide, setMoraGuide] = useState<number | null>(null)
   const waveform = shown ? (
     <Waveform
       clip={shown}
@@ -317,11 +319,17 @@ export default function App() {
   const editor = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       {trackArea.panel(view)}
-      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{waveform}</Box>
-      {/* 読みの帯（一音ずつ切り出した範囲。加工後の音声を表示しているときだけ） */}
-      {shown && shown === ed.edited && morae.length > 0 && (
-        <MoraLane morae={morae} view={view} onChange={(list) => ed.tracks.setMorae(ed.tracks.activeId, list)} onPlay={(m) => ed.playback.playRange(m.start, m.end)} />
-      )}
+      <Box sx={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{waveform}</Box>
+        {/* 読みの帯（一音ずつ切り出した範囲。加工後の音声を表示しているときだけ） */}
+        {shown && shown === ed.edited && morae.length > 0 && (
+          <MoraLane morae={morae} view={view} onChange={(list) => ed.tracks.setMorae(ed.tracks.activeId, list)} onPlay={(m) => ed.playback.playRange(m.start, m.end)} onGuide={setMoraGuide} />
+        )}
+        {/* 読みの帯の端をつかんでいるときの縦の線（波形まで引く） */}
+        {moraGuide !== null && morae.length > 0 && (
+          <Box sx={{ position: 'absolute', top: 0, bottom: 0, left: `${((moraGuide - view.start) / view.dur) * 100}%`, width: '1px', bgcolor: 'primary.main', pointerEvents: 'none' }} />
+        )}
+      </Box>
     </Box>
   )
 

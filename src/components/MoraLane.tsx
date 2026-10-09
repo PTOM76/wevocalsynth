@@ -1,9 +1,10 @@
-// 読みの帯（一音ずつの範囲を波形の下に並べ、端のドラッグで直す）
+// 読みの帯（一音ずつの範囲を波形の下に並べ、端のドラッグで直す。ダブルクリックで読みの変更、右クリックで削除）
 import { useEffect, useRef, useState } from 'react'
-import { Box } from '@mui/material'
-import { canvasPixelRatio, localPoint, usePalette } from 'pevenmui'
+import { Box, InputBase, Menu, MenuItem } from '@mui/material'
+import { canvasPixelRatio, localPoint, pevenFont, usePalette } from 'pevenmui'
 import { timeToX, type View } from 'wevocal-lib'
 import type { MoraMark } from '../audio/kanaCut'
+import { t } from '../i18n/i18n'
 
 /** 帯の高さ（px） */
 const HEIGHT = 36
@@ -18,6 +19,8 @@ interface Props {
   onChange: (morae: MoraMark[]) => void
   /** 一音を押したとき（その範囲を試聴する） */
   onPlay: (m: MoraMark) => void
+  /** 端をつかんでいるか端に乗っているときの時刻（秒。なければ null）。波形に縦の線を引くのに使う */
+  onGuide?: (t: number | null) => void
 }
 
 /** つかんだ端（何番目の音の始まりか終わりか） */
@@ -27,12 +30,16 @@ type Grab = { index: number; edge: 'start' | 'end' }
  * 読みの帯。一音ずつの範囲を波形の下に並べ、端のドラッグで直す（隣の音の端も一緒に動く）。
  * 確かでない音（境目がはっきりしない）は色を変える
  */
-export default function MoraLane({ morae, view, onChange, onPlay }: Props) {
+export default function MoraLane({ morae, view, onChange, onPlay, onGuide }: Props) {
   const ref = useRef<HTMLCanvasElement>(null)
   const { pal, font } = usePalette()
   const [width, setWidth] = useState(0)
   const [grab, setGrab] = useState<Grab | null>(null)
   const [hoverEdge, setHoverEdge] = useState(false)
+  /** 読みを変更している音（何番目か） */
+  const [editing, setEditing] = useState<number | null>(null)
+  /** 右クリックのメニュー（何番目の音か、出す位置） */
+  const [menu, setMenu] = useState<{ index: number; x: number; y: number } | null>(null)
 
   useEffect(() => {
     const c = ref.current
@@ -92,6 +99,20 @@ export default function MoraLane({ morae, view, onChange, onPlay }: Props) {
     return best
   }
 
+  /** `clientX` の所の音（何番目か。なければ -1） */
+  const indexAt = (clientX: number) => {
+    const at = timeAt(clientX)
+    return morae.findIndex((m) => at >= m.start && at < m.end)
+  }
+
+  /** `index` 番目の音の読みを `text` にする。空なら削除する。直した音は確かなものとして扱う */
+  const rename = (index: number, text: string) => {
+    const mora = text.trim()
+    if (!mora) return onChange(morae.filter((_, i) => i !== index))
+    if (mora === morae[index].mora) return
+    onChange(morae.map((m, i) => (i === index ? { start: m.start, end: m.end, mora, sure: true } : m)))
+  }
+
   /** つかんだ端を `t` に動かす。隣の音とくっついている端は一緒に動かす */
   const move = (g: Grab, t: number) => {
     const next = morae.map((m) => ({ ...m }))
@@ -112,11 +133,12 @@ export default function MoraLane({ morae, view, onChange, onPlay }: Props) {
     // 直した音は確かなものとして扱う
     m.sure = true
     delete m.vowelOk
+    onGuide?.(m[g.edge])
     onChange(next)
   }
 
   return (
-    <Box sx={{ height: HEIGHT, flexShrink: 0, borderTop: 1, borderColor: 'divider' }}>
+    <Box sx={{ position: 'relative', height: HEIGHT, flexShrink: 0, borderTop: 1, borderColor: 'divider' }}>
       <canvas
         ref={ref}
         style={{ width: '100%', height: HEIGHT, display: 'block', cursor: grab || hoverEdge ? 'ew-resize' : 'pointer', touchAction: 'none' }}
@@ -127,17 +149,72 @@ export default function MoraLane({ morae, view, onChange, onPlay }: Props) {
             setGrab(g)
             return
           }
-          const t = timeAt(e.clientX)
-          const m = morae.find((m) => t >= m.start && t < m.end)
-          if (m) onPlay(m)
+          if (e.button !== 0) return
+          const i = indexAt(e.clientX)
+          if (i >= 0) onPlay(morae[i])
+        }}
+        onDoubleClick={(e) => {
+          const i = indexAt(e.clientX)
+          if (i >= 0) setEditing(i)
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          const i = indexAt(e.clientX)
+          if (i >= 0) setMenu({ index: i, x: e.clientX, y: e.clientY })
         }}
         onPointerMove={(e) => {
-          if (grab) move(grab, timeAt(e.clientX))
-          else setHoverEdge(!!edgeAt(e.clientX))
+          if (grab) {
+            move(grab, timeAt(e.clientX))
+            return
+          }
+          const g = edgeAt(e.clientX)
+          setHoverEdge(!!g)
+          onGuide?.(g ? morae[g.index][g.edge] : null)
         }}
         onPointerUp={() => setGrab(null)}
         onPointerCancel={() => setGrab(null)}
+        onPointerLeave={() => !grab && onGuide?.(null)}
       />
+      {editing !== null && morae[editing] && (
+        <InputBase
+          autoFocus
+          defaultValue={morae[editing].mora}
+          onFocus={(e) => e.target.select()}
+          onBlur={(e) => {
+            rename(editing, e.target.value)
+            setEditing(null)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.querySelector('input')?.blur()
+            if (e.key === 'Escape') setEditing(null)
+            e.stopPropagation()
+          }}
+          inputProps={{ style: { textAlign: 'center', padding: 0 } }}
+          sx={() => {
+            const x0 = Math.max(0, timeToX(width, view, morae[editing].start))
+            const x1 = Math.min(width, timeToX(width, view, morae[editing].end))
+            return { position: 'absolute', top: 2, left: x0, width: Math.max(48, x1 - x0), height: HEIGHT - 4, bgcolor: 'background.paper', border: 1, borderColor: 'primary.main', fontSize: pevenFont('base') }
+          }}
+        />
+      )}
+      <Menu open={!!menu} onClose={() => setMenu(null)} anchorReference="anchorPosition" anchorPosition={menu ? { top: menu.y, left: menu.x } : undefined}>
+        <MenuItem
+          onClick={() => {
+            setEditing(menu!.index)
+            setMenu(null)
+          }}
+        >
+          {t('kanaCut.editMora')}
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            rename(menu!.index, '')
+            setMenu(null)
+          }}
+        >
+          {t('edit.delete')}
+        </MenuItem>
+      </Menu>
     </Box>
   )
 }
