@@ -58,11 +58,13 @@ export default function MoraLane({ morae, view, onChange, onPlay }: Props) {
       const x0 = timeToX(width, view, m.start)
       const x1 = timeToX(width, view, m.end)
       if (x1 < 0 || x0 > width) continue
-      g.fillStyle = m.sure ? pal.primary.main : pal.warning.main
+      // 中身が読みと合わない音は赤、境目が確かでない音は橙
+      const color = m.vowelOk === false ? pal.error.main : m.sure ? pal.primary.main : pal.warning.main
+      g.fillStyle = color
       g.globalAlpha = 0.22
       g.fillRect(x0, 2, x1 - x0, HEIGHT - 4)
       g.globalAlpha = 1
-      g.strokeStyle = m.sure ? pal.primary.main : pal.warning.main
+      g.strokeStyle = color
       g.strokeRect(x0 + 0.5, 2.5, Math.max(0, x1 - x0 - 1), HEIGHT - 5)
       // 字が収まるときだけ書く
       if (x1 - x0 > 10) {
@@ -109,6 +111,7 @@ export default function MoraLane({ morae, view, onChange, onPlay }: Props) {
     }
     // 直した音は確かなものとして扱う
     m.sure = true
+    delete m.vowelOk
     onChange(next)
   }
 

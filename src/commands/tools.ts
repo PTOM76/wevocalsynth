@@ -49,7 +49,7 @@ export const toolCommands = defineCommands({
     enabled: hasMorae,
     run: (c) => {
       const clip = c.ed.edited
-      if (clip) void exportMorae(clip, moraeOf(c)).then((zip) => downloadBlob(zip, zipName(c.ed.baseName, 'kana')))
+      if (clip) void exportMorae(clip, moraeOf(c), c.settings.kanaKeepAll).then((zip) => downloadBlob(zip, zipName(c.ed.baseName, 'kana')))
     },
   },
   // 音ごとに 1 つを五十音順に並べた新しいトラック（範囲はそのトラックの読みの帯に付ける）
@@ -59,7 +59,7 @@ export const toolCommands = defineCommands({
     run: (c) => {
       const clip = c.ed.edited
       if (!clip) return
-      const out = lineUp(clip, moraeOf(c))
+      const out = lineUp(clip, moraeOf(c), c.settings.kanaKeepAll)
       const id = c.ed.tracks.addClip(out.clip, t('kanaCut.lineUpTrack', { name: c.ed.baseName }))
       c.ed.tracks.setMorae(id, out.morae)
     },
@@ -69,9 +69,11 @@ export const toolCommands = defineCommands({
     enabled: hasMorae,
     run: (c) => {
       const clip = c.ed.edited
-      if (clip) void exportUtau(clip, moraeOf(c), c.ed.baseName).then((zip) => downloadBlob(zip, zipName(c.ed.baseName, 'voicebank')))
+      if (clip) void exportUtau(clip, moraeOf(c), c.ed.baseName, c.settings.kanaKeepAll).then((zip) => downloadBlob(zip, zipName(c.ed.baseName, 'voicebank')))
     },
   },
+  // 書き出しに、短すぎる音や中身が読みと合わない音も入れる（既定は入れない）
+  kanaKeepAll: { label: 'kanaCut.keepAllMenu', checked: (c) => c.settings.kanaKeepAll, enabled: hasMorae, run: (c) => c.update({ kanaKeepAll: !c.settings.kanaKeepAll }) },
   clearMorae: { label: 'kanaCut.clearMenu', enabled: hasMorae, run: (c) => c.ed.tracks.setMorae(c.ed.tracks.activeId, []) },
   record: { label: 'record.menu', enabled: (c) => !c.ed.busy && canRecord(), run: (c) => c.dialogs.open('record') },
 

@@ -17,6 +17,8 @@ export interface MoraMark {
   mora: string
   /** 境目がはっきりしているか */
   sure: boolean
+  /** 中身が読みと合うか（偽なら、ほかの母音に近いか、いくつかの音が入っている。前の版の結果にはない） */
+  vowelOk?: boolean
 }
 
 /** 書き出すときの前後の余白（秒） */
@@ -76,6 +78,15 @@ export function audibleMorae(clip: Clip, morae: MoraMark[]): MoraMark[] {
   return morae.filter((_, i) => rms[i] >= limit)
 }
 
+/** 使い物にならないとみなす短さ（秒） */
+const MIN_USABLE_SEC = 0.1
+
+/** 書き出す音。無音を除き、`keepAll` でなければ短すぎるものと中身が読みと合わないものも除く */
+export function usableMorae(clip: Clip, morae: MoraMark[], keepAll = false): MoraMark[] {
+  const audible = audibleMorae(clip, morae)
+  return keepAll ? audible : audible.filter((m) => m.end - m.start >= MIN_USABLE_SEC && m.vowelOk !== false)
+}
+
 /** 一音を切り出す（前後に余白を付け、端をフェードする） */
 export function sliceMora(clip: Clip, m: MoraMark): Clip {
   const c = slice(clip, m.start - PAD_SEC, m.end + PAD_SEC)
@@ -90,10 +101,10 @@ export function sliceMora(clip: Clip, m: MoraMark): Clip {
   return c
 }
 
-/** 一音ずつの WAV をまとめた ZIP。同じ音が何度も出たら あ.wav、あ_2.wav… とする。無音の音は入れない */
-export async function exportMorae(clip: Clip, morae: MoraMark[]): Promise<Blob> {
+/** 一音ずつの WAV をまとめた ZIP。同じ音が何度も出たら あ.wav、あ_2.wav… とする。使えない音は入れない（usableMorae） */
+export async function exportMorae(clip: Clip, morae: MoraMark[], keepAll = false): Promise<Blob> {
   const count = new Map<string, number>()
-  const entries = audibleMorae(clip, morae).map((m) => {
+  const entries = usableMorae(clip, morae, keepAll).map((m) => {
     const n = (count.get(m.mora) ?? 0) + 1
     count.set(m.mora, n)
     return { name: n === 1 ? `${m.mora}.wav` : `${m.mora}_${n}.wav`, data: encodeWav(sliceMora(clip, m)) }

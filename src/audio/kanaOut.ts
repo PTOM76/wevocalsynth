@@ -1,7 +1,7 @@
 // 一音ずつ切り出したものの出し方（五十音順のトラック、UTAU の音源）。memo/kana-voice.md の 3.5
 import { createZip } from 'pevenmui/web'
 import { encodeWav } from 'wevocal-lib'
-import { audibleMorae, type MoraMark, sliceMora } from './kanaCut'
+import { type MoraMark, sliceMora, usableMorae } from './kanaCut'
 import type { Clip } from './types'
 
 /** 五十音の行（段の順はあいうえお）。ローマ字は UTAU の音源でよく使う形 */
@@ -55,8 +55,8 @@ export function pickPerMora(morae: MoraMark[]): MoraMark[] {
 const GAP_SEC = 0.2
 
 /** 音ごとに 1 つ（無音のものは除く）を五十音順に、無音を挟んで 1 本の音声にする。返す範囲は新しい音声の中の位置 */
-export function lineUp(clip: Clip, morae: MoraMark[]): { clip: Clip; morae: MoraMark[] } {
-  const parts = pickPerMora(audibleMorae(clip, morae)).map((m) => ({ m, c: sliceMora(clip, m) }))
+export function lineUp(clip: Clip, morae: MoraMark[], keepAll = false): { clip: Clip; morae: MoraMark[] } {
+  const parts = pickPerMora(usableMorae(clip, morae, keepAll)).map((m) => ({ m, c: sliceMora(clip, m) }))
   const gap = Math.round(GAP_SEC * clip.sampleRate)
   const len = parts.reduce((s, p) => s + p.c.channels[0].length + gap, gap)
   const channels = clip.channels.map(() => new Float32Array(len))
@@ -89,8 +89,8 @@ function toShiftJis(text: string): Uint8Array {
  * UTAU の音源（ZIP）。音ごとに 1 つ（無音のものは除く）を ローマ字.wav にし、oto.ini の別名でかなを付ける。
  * 各ファイルは切り出した一音だけなので、左ブランクは 0、先行発声と固定範囲は前の余白の長さから決める
  */
-export async function exportUtau(clip: Clip, morae: MoraMark[], name: string): Promise<Blob> {
-  const picked = pickPerMora(audibleMorae(clip, morae))
+export async function exportUtau(clip: Clip, morae: MoraMark[], name: string, keepAll = false): Promise<Blob> {
+  const picked = pickPerMora(usableMorae(clip, morae, keepAll))
   const files = picked.map((m) => ({ name: `${romajiOf(m.mora)}.wav`, data: encodeWav(sliceMora(clip, m)) }))
   // 左ブランク, 固定範囲, 右ブランク（0 は最後まで）, 先行発声, オーバーラップ（ms）
   const oto = picked.map((m) => `${romajiOf(m.mora)}.wav=${m.mora},0,60,0,20,10`).join('\r\n')

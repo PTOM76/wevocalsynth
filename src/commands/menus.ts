@@ -49,7 +49,7 @@ const experimental: MenuSub = {
   items: ['splitVoicesByPitch', 'splitVoicesByVolume', kana],
 }
 // 一音ずつ切り出し（memo/kana-cut.md）。範囲を求めたあとの書き出しと並べる操作もまとめる
-const kanaCut: MenuSub = { label: 'menu.kanaCut', enabled: ready, items: ['kanaCut', '-', 'exportMorae', 'exportUtau', 'lineUpMorae', '-', 'clearMorae'] }
+const kanaCut: MenuSub = { label: 'menu.kanaCut', enabled: ready, items: ['kanaCut', '-', 'exportMorae', 'exportUtau', 'lineUpMorae', 'kanaKeepAll', '-', 'clearMorae'] }
 
 /** メニューバー（スマホでは ⋮ のメニュー一覧） */
 export const MENU_BAR: { label: MessageKey; accessKey: string; items: MenuItem[] }[] = [

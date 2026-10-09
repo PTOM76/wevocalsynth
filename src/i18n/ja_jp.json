@@ -961,6 +961,7 @@
   "kanaCut.lineUpMenu": "五十音順にトラックへ並べる",
   "kanaCut.lineUpTrack": "{name}（五十音）",
   "kanaCut.vocalsFirst": "先にボーカルを抽出する（伴奏がある場合）",
+  "kanaCut.keepAllMenu": "使えない音も書き出す",
 
   "window.limit": "ウィンドウの数が上限（{n}）に達しています",
   "window.limitHint": "ほかのウィンドウを閉じるか、設定で上限を変更してください",

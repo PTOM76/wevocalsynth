@@ -961,6 +961,7 @@
   "kanaCut.lineUpMenu": "Line up in kana order on a new track",
   "kanaCut.lineUpTrack": "{name} (kana)",
   "kanaCut.vocalsFirst": "Extract vocals first (for songs with accompaniment)",
+  "kanaCut.keepAllMenu": "Include unusable sounds in export",
 
   "window.limit": "The number of windows has reached the limit ({n})",
   "window.limitHint": "Close another window, or change the limit in Settings",

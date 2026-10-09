@@ -961,6 +961,7 @@
   "kanaCut.lineUpMenu": "오십음 순서로 트랙에 나열",
   "kanaCut.lineUpTrack": "{name} (오십음)",
   "kanaCut.vocalsFirst": "먼저 보컬 추출 (반주가 있는 경우)",
+  "kanaCut.keepAllMenu": "사용할 수 없는 소리도 내보내기",
 
   "window.limit": "창 수가 상한({n})에 도달했습니다",
   "window.limitHint": "다른 창을 닫거나 설정에서 상한을 변경하세요",

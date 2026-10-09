@@ -14,4 +14,6 @@ export const stored = defineItems(null, {
   exportVideo: value<VideoExportPrefs>(DEFAULT_VIDEO_PREFS),
   // 加工のプリセット（components/PresetMenu.tsx）
   presets: value<Preset[]>([]),
+  // 一音ずつの書き出しに、短すぎる音や中身が読みと合わない音も入れる（commands/tools.ts）
+  kanaKeepAll: value(false),
 })
