@@ -941,7 +941,7 @@
   "kanaCut.empty": "歌詞を認識できませんでした",
   "kanaCut.exportMenu": "一音ずつ ZIP に書き出し",
   "kanaCut.clearMenu": "読みの帯を削除",
-  "kanaCut.utauMenu": "UTAU 音源に書き出し",
+  "kanaCut.utauMenu": "UTAU音源に書き出し",
   "kanaCut.lineUpMenu": "五十音順にトラックへ並べる",
   "kanaCut.lineUpTrack": "{name}（五十音）"
 }
