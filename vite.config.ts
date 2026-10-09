@@ -61,8 +61,8 @@ export default defineConfig({
         inlineWorkboxRuntime: true,
         // 更新で切り替わったときに、名前の違う古い版のキャッシュを消す
         cleanupOutdatedCaches: true,
-        // wasm もオフラインで使えるようにキャッシュ対象に含める
-        globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2,wasm}'],
+        // wasm もオフラインで使えるようにキャッシュ対象に含める。フォントは woff2 だけ（woff は woff2 に対応しないブラウザ用で、読まれない）
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2,wasm}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         // 追加機能はアプリ本体のプリキャッシュに入れず、導入した人だけ別のキャッシュに保存する（docs/EXTRACTOR.md）
         globIgnores: ['addons/**'],
