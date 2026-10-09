@@ -167,6 +167,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
             help={backendAllowed(draft.vocalModel, 'webgpu') ? t('settings.vocalGpuHelp') : t('settings.vocalGpuUnsupported')}
           />
           {S('vocalKeepHighBand')}
+          {S('vocalBeforeAnalysis')}
           {/* 抽出の動きを変える設定なので、診断ではなくここに置く（iPad などで抽出できないときに下げる） */}
           {S('vocalMemoryMb')}
         </Group>

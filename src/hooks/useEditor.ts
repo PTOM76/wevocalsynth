@@ -219,15 +219,6 @@ export function useEditor() {
     if (v) setAnalyzerInstalled(true)
     setShowSpec(v)
   }
-  const splitVoices = useVoiceSplit({
-    tracks: history.tracks,
-    activeId: history.activeId,
-    selections,
-    split: tracks.split,
-    run: task.run,
-    setProgress,
-    notify: (message) => setToast({ severity: 'success', message }),
-  })
   const vocal = useVocalExtract({
     edited,
     editRanges,
@@ -258,6 +249,17 @@ export function useEditor() {
     },
     // 今の作業（メモリが足りないときの抽出で、保存して再読み込みするため。自動保存と同じ中身）
     snapshot: () => doc.project(params),
+  })
+  const splitVoices = useVoiceSplit({
+    tracks: history.tracks,
+    activeId: history.activeId,
+    selections,
+    split: tracks.split,
+    run: task.run,
+    setProgress,
+    notify: (message) => setToast({ severity: 'success', message }),
+    vocalsFirst: settings.vocalBeforeAnalysis,
+    prepareSeparate: vocal.prepareSeparate,
   })
 
   /** 読み込んだ音声（またはプロジェクト）を画面に反映する */
@@ -450,6 +452,6 @@ export function useEditor() {
     showPitch, setShowPitch, showSpec, setShowSpec: requestShowSpec, analyzerInstalled, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, applyTrackEq, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
-    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, splitStems: vocal.splitStems, splitLeadStems: vocal.splitLeadStems, splitInstrumentStems: vocal.splitInstrumentStems, splitVoices, kanaDemo, addonDialog: addons.dialog, ensureAddon: addons.ensure, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty: doc.dirty, exportFile, exportOpen, openExport, video, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,
+    cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, prepareSeparate: vocal.prepareSeparate, splitStems: vocal.splitStems, splitLeadStems: vocal.splitLeadStems, splitInstrumentStems: vocal.splitInstrumentStems, splitVoices, kanaDemo, addonDialog: addons.dialog, ensureAddon: addons.ensure, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty: doc.dirty, exportFile, exportOpen, openExport, video, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,
   }
 }

@@ -112,6 +112,7 @@ export default function AppDialogs({ ed, dialogs, bpm, seg, selectionExport }: P
       // 選択範囲があればそこだけ、なければ全体
       range={selection ?? { start: 0, end: (edited.channels[0]?.length ?? 0) / edited.sampleRate }}
       ensure={(id) => ed.ensureAddon(id)}
+      prepareSeparate={ed.prepareSeparate}
       onDone={(morae) => ed.tracks.setMorae(ed.tracks.activeId, morae)}
     />
   )}

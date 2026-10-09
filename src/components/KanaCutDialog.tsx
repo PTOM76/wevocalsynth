@@ -1,9 +1,11 @@
 // 一音ずつ切り出すダイアログ（文字化して読みを付け、一音ずつの範囲を求める）
 import { useEffect, useRef, useState } from 'react'
-import { Alert, Box, Button, DialogActions, DialogContent, LinearProgress, MenuItem, Select, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Checkbox, DialogActions, FormControlLabel, DialogContent, LinearProgress, MenuItem, Select, Stack, TextField, Typography } from '@mui/material'
 import { pevenFont, WindowDialog } from 'pevenmui'
 import type { Clip, Range } from 'wevocal-lib'
 import { hasWebGpu, LYRICS_MODEL_MB, type LyricsModel } from '../../analyzer/src/lyricsTypes'
+import { spliceProcessed } from '../audio/edit'
+import { useAppSettings } from '../settings/settings'
 import { findMorae, transcribeRange, type LyricsSegment, type MoraMark } from '../audio/kanaCut'
 import { useT } from '../i18n/i18n'
 
@@ -19,6 +21,8 @@ interface Props {
   ensure: (id: string) => Promise<boolean>
   /** 一音ずつの範囲が求まった（読みの帯に並べる） */
   onDone: (morae: MoraMark[]) => void
+  /** ボーカルと伴奏に分ける関数を用意する（モデルを導入しなければ null。useVocalExtract） */
+  prepareSeparate: () => Promise<((clip: Clip, onProgress: (p: number) => void, signal?: AbortSignal) => Promise<{ vocals: Float32Array[] }>) | null>
 }
 
 type Step = { kind: 'start' } | { kind: 'busy'; label: string; progress: number | null } | { kind: 'readings'; segments: LyricsSegment[] }
@@ -31,11 +35,15 @@ export default function KanaCutDialog(p: Props) {
   const [step, setStep] = useState<Step>({ kind: 'start' })
   const [error, setError] = useState<string | null>(null)
   const abort = useRef<AbortController | null>(null)
+  const { settings, update } = useAppSettings()
+  // 範囲を求めるのに使う音（先にボーカルを取り出したら、その範囲をボーカルに置き換えた音。トラックの音は変えない）
+  const source = useRef<Clip>(p.clip)
 
   useEffect(() => {
     if (!p.open) return
     setStep({ kind: 'start' })
     setError(null)
+    source.current = p.clip
     void hasWebGpu().then(setGpu)
   }, [p.open])
 
@@ -52,11 +60,28 @@ export default function KanaCutDialog(p: Props) {
   const transcribe = async () => {
     // 文字化の処理と、選んだ大きさのモデル
     if (!(await p.ensure(`whisper-${model}`))) return
+    const separate = settings.vocalBeforeAnalysis ? await p.prepareSeparate() : null
+    if (settings.vocalBeforeAnalysis && !separate) return
     const ac = (abort.current = new AbortController())
     setError(null)
+    source.current = p.clip
+    if (separate) {
+      const sr = p.clip.sampleRate
+      const len = p.clip.channels[0]?.length ?? 0
+      const s = Math.max(0, Math.min(len, Math.round(p.range.start * sr)))
+      const e = Math.max(s, Math.min(len, Math.round(p.range.end * sr)))
+      setStep({ kind: 'busy', label: t('task.extractVocals'), progress: 0 })
+      try {
+        const r = await separate({ sampleRate: sr, channels: p.clip.channels.map((c) => c.subarray(s, e)) }, (v) => setStep({ kind: 'busy', label: t('task.extractVocals'), progress: v }), ac.signal)
+        if (ac.signal.aborted) return
+        source.current = spliceProcessed(p.clip, { s, e, channels: r.vocals }).clip
+      } catch (e) {
+        return fail(e, { kind: 'start' })
+      }
+    }
     setStep({ kind: 'busy', label: t('kanaCut.downloading', { percent: 0 }), progress: 0 })
     try {
-      const segments = await transcribeRange(p.clip, p.range.start, p.range.end, {
+      const segments = await transcribeRange(source.current, p.range.start, p.range.end, {
         model,
         device: 'webgpu',
         signal: ac.signal,
@@ -76,7 +101,7 @@ export default function KanaCutDialog(p: Props) {
     setError(null)
     setStep({ kind: 'busy', label: t('kanaCut.finding'), progress: 0 })
     try {
-      const morae = await findMorae(p.clip, segments, (v) => setStep({ kind: 'busy', label: t('kanaCut.finding'), progress: v }), ac.signal)
+      const morae = await findMorae(source.current, segments, (v) => setStep({ kind: 'busy', label: t('kanaCut.finding'), progress: v }), ac.signal)
       p.onDone(morae)
       p.onClose()
     } catch (e) {
@@ -107,6 +132,10 @@ export default function KanaCutDialog(p: Props) {
                   ))}
                 </Select>
               </Stack>
+              <FormControlLabel
+                control={<Checkbox size="small" checked={settings.vocalBeforeAnalysis} disabled={step.kind === 'busy'} onChange={(e) => update({ vocalBeforeAnalysis: e.target.checked })} />}
+                label={<Typography sx={{ fontSize: pevenFont('base') }}>{t('kanaCut.vocalsFirst')}</Typography>}
+              />
               {gpu === false && <Alert severity="error">{t('kanaCut.noGpu')}</Alert>}
             </>
           )}

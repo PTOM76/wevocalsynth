@@ -237,7 +237,25 @@ export function useVocalExtract(d: Deps) {
     if (!done) clearExtracting()
   }
 
-  return { extract, splitStems, splitLeadStems, splitInstrumentStems, dialog }
+  /** ほかの処理（和音の分離、一音ずつ切り出し）の前に、ボーカルと伴奏に分ける関数を返す。モデルを導入しなければ null */
+  const prepareSeparate = async () => {
+    const options = await prepareOptions()
+    if (!options) return null
+    return async (clip: Clip, onProgress: (p: number) => void, signal?: AbortSignal) => {
+      await d.prepare()
+      markExtracting()
+      try {
+        const r = await splitBoth(clip, options, onProgress, signal, confirmCpu)
+        clearExtracting(true)
+        return r
+      } catch (e) {
+        clearExtracting()
+        throw isOutOfMemory(e) ? new Error(t('extract.outOfMemory')) : e
+      }
+    }
+  }
+
+  return { extract, prepareSeparate, splitStems, splitLeadStems, splitInstrumentStems, dialog }
 }
 
 /** 楽器ごとに分けたトラックの並びと名前（モデルが出さない音は作らない） */

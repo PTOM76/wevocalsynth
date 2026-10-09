@@ -86,6 +86,8 @@ export const vocal = defineItems('vocal', {
   // GPU（WebGPU）を使う。使えない環境やモデル（fp16）では CPU（WASM）で動く。押せるかがモデルで変わるので画面は自前
   vocalGpu: value(true, { label: 'settings.vocalGpu', help: 'settings.vocalGpuHelp' }),
   // 約 11kHz より上を残す（既定は消す。残すと声は明るいが、シンバルなどが混ざりやすい）
+  // 和音の分離と一音ずつ切り出しの前に、ボーカルを取り出す（伴奏があると精度が下がるため）
+  vocalBeforeAnalysis: check(false, { label: 'settings.vocalBeforeAnalysis', help: 'settings.vocalBeforeAnalysisHelp' }),
   vocalKeepHighBand: check(false, { label: 'settings.vocalKeepHighBand', help: 'settings.vocalKeepHighBandHelp' }),
   // 抽出の実行環境の wasm のメモリの上限（MB）。iOS は上限の分を予約の枠から差し引くので、抽出できなければ下げる
   vocalMemoryMb: choice<number>(1024, { label: 'settings.vocalMemory', help: 'settings.vocalMemoryHelp', values: MEMORY_MB, format: (mb) => (mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`) }),
