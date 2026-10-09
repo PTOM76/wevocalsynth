@@ -211,6 +211,11 @@ fn run(channels: &[&[f32]], map: &TimeMap, sample_rate: f32, p: &Params, progres
                 }
             }
         }
+        // 重みの寄る側の周期が入力に収まらない（末尾）と合計が 0 になるので、選んだ周期をそのまま使う
+        if taps.iter().map(|t| t.1).sum::<f32>() <= 1e-6 {
+            taps.truncate(1);
+            taps[0].1 = 1.0;
+        }
         let total: f32 = taps.iter().map(|t| t.1).sum();
         // 1ブロック = 前の重なり（fade）+ 本体（hop - fade）+ 次の重なり（fade）
         let n = hop + fade;

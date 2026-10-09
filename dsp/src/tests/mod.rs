@@ -5,6 +5,7 @@ mod consonant;
 mod curve;
 mod formant;
 mod roundtrip;
+mod sola3_level;
 mod sola_params;
 mod segment;
 mod stretch;
