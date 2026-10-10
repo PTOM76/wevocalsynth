@@ -1,5 +1,5 @@
 // 設定の保存と読み込み、Context
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createSettingsStore } from 'pevenmui'
 import type { F0Params } from '../dsp/engine'
 import { DEFAULT_SETTINGS, type Settings } from './items'
 
@@ -40,58 +40,17 @@ export function f0ParamsFrom(s: Settings): F0Params {
   }
 }
 
-const DEFAULTS = DEFAULT_SETTINGS
-const STORAGE_KEY = app.key('settings')
-
+// 保存と読み込み、Context は PevenMUI の createSettingsStore（WeVocal Studio と共通）
+const store = createSettingsStore<Settings>(app.key('settings'), DEFAULT_SETTINGS)
 /** localStorage から読む。使えない環境（プライベートモードなど）や壊れた値では既定値を使う */
-export function loadSettings(): Settings {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) } : DEFAULTS
-  } catch {
-    return DEFAULTS
-  }
-}
-
+export const loadSettings = store.load
 /** アプリの設定（localStorage に保存） */
-export function useSettings() {
-  const [settings, setState] = useState<Settings>(loadSettings)
-  const update = useCallback((patch: Partial<Settings>) => {
-    setState((s) => {
-      const next = { ...s, ...patch }
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      } catch {
-        // 保存できなくても、このセッション中は設定を使う
-      }
-      return next
-    })
-  }, [])
-  // ほかのウィンドウで変えた設定を読み直す（storage イベントは、書いたウィンドウ以外にだけ届く）
-  useEffect(() => {
-    const f = (e: StorageEvent) => e.key === STORAGE_KEY && setState(loadSettings())
-    window.addEventListener('storage', f)
-    return () => window.removeEventListener('storage', f)
-  }, [])
-  return { settings, update }
-}
-
+export const useSettings = store.useSettings
 /** useSettings() の戻り値 */
 export type SettingsStore = ReturnType<typeof useSettings>
-
 /** 設定を、部品とフックから直接読むための Context */
-export const SettingsContext = createContext<SettingsStore | null>(null)
-
+export const SettingsContext = store.SettingsContext
 /** 設定を持ち、内側の部品とフックに渡す（main.tsx で App を包む） */
-export function SettingsProvider({ children }: { children: ReactNode }) {
-  const { settings, update } = useSettings()
-  const store = useMemo(() => ({ settings, update }), [settings, update])
-  return createElement(SettingsContext.Provider, { value: store }, children)
-}
-
+export const SettingsProvider = store.SettingsProvider
 /** App の設定を読む（SettingsProvider の中だけで使える） */
-export function useAppSettings(): SettingsStore {
-  const store = useContext(SettingsContext)
-  if (!store) throw new Error('useAppSettings は SettingsProvider の中で使う')
-  return store
-}
+export const useAppSettings = store.useAppSettings

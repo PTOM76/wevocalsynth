@@ -4,7 +4,7 @@ import type { MessageKey } from '../i18n/i18n'
 import { ACTIONS } from './keymap'
 import { canPickFiles } from 'pevenmui/web'
 import { GROUPS } from './items'
-import { searchKeys } from './items/define'
+import { searchKeys, type AnyItem } from './items/define'
 
 /** 設定画面の分類 */
 export type Category = 'project' | 'general' | 'edit' | 'keys' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'addons' | 'data' | 'debug' | 'debugAudio' | 'experimental' | 'diagnose'
@@ -73,7 +73,7 @@ const INDEX: Record<Category, MessageKey[]> = {
 
 /** 分類の検索の対象（手で書いたものと、定義から集めたもの） */
 function searchIndex(c: Category): MessageKey[] {
-  const fromItems = GROUPS.filter((g) => g.page === c).flatMap((g) => Object.values(g.items).flatMap(searchKeys))
+  const fromItems = GROUPS.filter((g) => g.page === c).flatMap((g) => (Object.values(g.items) as AnyItem[]).flatMap((i) => searchKeys(i)))
   return [...new Set([...INDEX[c], ...fromItems])]
 }
 
