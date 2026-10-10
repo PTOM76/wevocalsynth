@@ -14,7 +14,7 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-    "paths": { "pevenmui": ["./pevenmui/src/index.ts"], "pevenmui/pwa": ["./pevenmui/src/pwa/index.ts"], "pevenmui/web": ["./pevenmui/src/web/index.ts"], "wevocal-lib": ["./wevocal-lib/web/src/index.ts"], "wevocal-lib/react": ["./wevocal-lib/web/src/react/index.ts"] },
+    "paths": { "pevenmui": ["./pevenmui/src/index.ts"], "pevenmui/pwa": ["./pevenmui/src/pwa/index.ts"], "pevenmui/web": ["./pevenmui/src/web/index.ts"], "pevenmui/debug": ["./pevenmui/src/debug/index.ts"], "wevocal-lib": ["./wevocal-lib/web/src/index.ts"], "wevocal-lib/react": ["./wevocal-lib/web/src/react/index.ts"] },
     "jsx": "react-jsx",
 
     /* Linting */
