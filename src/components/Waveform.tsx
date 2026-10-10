@@ -4,7 +4,7 @@ import { CURVE_HOP_SEC, type CurvePoint } from '../hooks/useLaneCurve'
 import { FORMANT_SCALE, GAIN_SCALE, curveValueAt, drawCurveLane, type CurveScale } from './waveform/curveLane'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Slider, Stack, Typography } from '@mui/material'
-import { canvasPixelRatio, localPoint, usePalette } from 'pevenmui'
+import { canvasPixelRatio, localPoint, usePalette, useLongPress } from 'pevenmui'
 import { useLaneDivider } from './waveform/useLaneDivider'
 import { useLanePen } from './waveform/useLanePen'
 import { usePitchGrab } from './waveform/usePitchGrab'
@@ -50,8 +50,6 @@ const DRAG_THRESHOLD_PX = 3
 /** 拍の線へ吸着する距離（px） */
 const SNAP_PX = 6
 /** 長押しでメニューを出すまでの時間（ミリ秒）と、その間に動いてよい距離（px） */
-const LONG_PRESS_MS = 500
-const LONG_PRESS_SLOP_PX = 8
 /** スマホの新しい画面で、範囲の端のつまみを指でつかめる距離（px） */
 const HANDLE_GRAB_PX = 22
 
@@ -198,7 +196,8 @@ function Waveform(props: Props) {
   // 描いた曲線（ピッチ・音量）は配列の中身だけが変わるので、描き直しのきっかけに使うカウンタ
   const [drawVersion, setDrawVersion] = useState(0)
   const width = size.width
-  const longPressRef = useRef<{ timer: number; x: number; y: number } | null>(null)
+  // タッチの長押し（PevenMUI。WeVocal Studio と共通）
+  const longPress = useLongPress()
   // 新しいスマホの画面で、波形を押してから離すまで: なぞったらスクロール（moved）、長押ししたら範囲選択（selecting）
   const panRef = useRef<{ x0: number; start0: number; dur: number; moved: boolean; selecting: boolean } | null>(null)
   const duration = clipDuration(clip)
@@ -433,10 +432,7 @@ function Waveform(props: Props) {
   // モードや帯の表示が変わったときもカーソルを合わせ直す
   useEffect(updateCursor)
 
-  const cancelLongPress = () => {
-    if (longPressRef.current) clearTimeout(longPressRef.current.timer)
-    longPressRef.current = null
-  }
+  const cancelLongPress = longPress.cancel
 
   return (
     <Stack sx={{ width: '100%', height: '100%', minHeight: 0, userSelect: 'none' }}>
@@ -461,7 +457,7 @@ function Waveform(props: Props) {
           e.preventDefault()
           // 新しいスマホの画面: 指の長押しはブラウザも右クリックとして送ってくるが、範囲選択に使うのでメニューは出さない
           // （出すとメニューが指の操作を奪い、選択が続かない。メニューは編集の列の「その他」）
-          if (props.touchPan && (panRef.current || longPressRef.current || dragRef.current)) return
+          if (props.touchPan && (panRef.current || longPress.active() || dragRef.current)) return
           // 目盛りの上なら、その位置（マーカーの追加など）も渡す
           const ruler = localPoint(e.currentTarget, e.clientX, e.clientY).y <= RULER_HEIGHT
           props.onContextMenu(e.clientX, e.clientY, ruler ? { time: snapTime(e.clientX), markerId: markerAt(e.clientX)?.id ?? null } : undefined)
@@ -510,24 +506,19 @@ function Waveform(props: Props) {
           }
           // 新しいスマホの画面: なぞるとスクロール、長押しで範囲選択（memo/mobile-ui.md の 4.4）。長押しのメニューは編集の列の「⋯」へ
           if (e.pointerType === 'touch' && props.touchPan) {
-            const { clientX: x, clientY: y } = e
-            const timer = window.setTimeout(() => {
-              longPressRef.current = null
+            longPress.start(e.clientX, e.clientY, () => {
               const p = panRef.current
               if (!p || p.moved) return
               p.selecting = true
               navigator.vibrate?.(10)
-            }, LONG_PRESS_MS)
-            longPressRef.current = { timer, x, y }
+            })
           } else if (e.pointerType === 'touch') {
             // 以前の画面: タッチの長押しは右クリックの代わり（離すか動かすと取り消す）
             const { clientX: x, clientY: y } = e
-            const timer = window.setTimeout(() => {
-              longPressRef.current = null
+            longPress.start(x, y, () => {
               dragRef.current = null
               props.onContextMenu(x, y)
-            }, LONG_PRESS_MS)
-            longPressRef.current = { timer, x, y }
+            })
           }
           if (pen.down(e)) return
           if (grab.down(e)) {
@@ -550,8 +541,7 @@ function Waveform(props: Props) {
         }}
         onPointerMove={(e) => {
           altRef.current = e.altKey
-          const lp = longPressRef.current
-          if (lp && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > LONG_PRESS_SLOP_PX) cancelLongPress()
+          longPress.move(e.clientX, e.clientY)
           if (touch.move(e)) return
           if (divider.dragging()) return divider.move(e)
           const md = markerDragRef.current
