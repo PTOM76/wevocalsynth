@@ -82,7 +82,7 @@ ONNX Runtime の wasm は、計算の種類ごとに別の追加機能にする�
 | 場所 | 内容 |
 | --- | --- |
 | [scripts/build-addons.mjs](../scripts/build-addons.mjs) | 実行環境のビルド、モデルの取得（`.cache/addon-models/`、sherpa-onnx の配布物）、マニフェストの生成。バージョンは内容のハッシュ。再配布に要るライセンスの全文（`extractor/licenses/`）も各フォルダに入れる（[LICENSE-THIRD-PARTY.md](../LICENSE-THIRD-PARTY.md)） |
-| [vite.addons.config.ts](../vite.addons.config.ts) | `extractor/` を `addons/vocal-extractor/` にビルドする。ライブラリモードは wasm を JS に埋め込む（76MB になった）ので使わない |
+| [extractor/vite.addons.config.ts](../extractor/vite.addons.config.ts) | `extractor/` を `addons/vocal-extractor/` にビルドする（作る手順は [extractor/scripts/addons.mjs](../extractor/scripts/addons.mjs)。WeVocal Studio と共通）。ライブラリモードは wasm を JS に埋め込む（76MB になった）ので使わない |
 
 | コマンド | 出力先 |
 | --- | --- |
