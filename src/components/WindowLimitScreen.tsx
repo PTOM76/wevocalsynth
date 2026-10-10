@@ -1,6 +1,5 @@
-// ウィンドウの数が上限のときの画面（作業を開かない）
-import { FULL_HEIGHT } from 'pevenmui'
-import { Button, Stack, Typography } from '@mui/material'
+// ウィンドウの数が上限のときの画面（部品は PevenMUI。WeVocal Studio と共通）
+import { WindowLimitScreen as PevenScreen } from 'pevenmui'
 import { resolveLang, setLang, t } from '../i18n/i18n'
 import { useSettings } from '../settings/settings'
 
@@ -8,18 +7,5 @@ import { useSettings } from '../settings/settings'
 export default function WindowLimitScreen() {
   const { settings } = useSettings()
   setLang(resolveLang(settings.language))
-  return (
-    <Stack spacing={2} sx={{ height: FULL_HEIGHT, alignItems: 'center', justifyContent: 'center', p: 3, bgcolor: 'background.default', textAlign: 'center' }}>
-      <Typography>{t('window.limit', { n: settings.maxWindows })}</Typography>
-      <Typography variant="caption" color="text.secondary">
-        {t('window.limitHint')}
-      </Typography>
-      <Stack direction="row" spacing={1}>
-        <Button variant="contained" onClick={() => location.reload()}>
-          {t('window.retry')}
-        </Button>
-        <Button onClick={() => window.close()}>{t('common.close')}</Button>
-      </Stack>
-    </Stack>
-  )
+  return <PevenScreen message={t('window.limit', { n: settings.maxWindows })} hint={t('window.limitHint')} retry={t('window.retry')} close={t('common.close')} />
 }
