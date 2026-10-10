@@ -3,13 +3,9 @@ import type { Clip } from './types'
 import { clipDuration } from './types'
 import { fadeRange, normalizeRange } from './edit'
 
-/** 書き出すときの仕上げ（書き出し、フォルダーへの保存、外へのドラッグで共通。設定に覚える） */
-export interface FinishOptions {
-  /** 最大の音量を -1dB にそろえる */
-  normalize: boolean
-  /** 両端にかけるフェードの長さ（ミリ秒。0 ならかけない）。切り出した素材の端のプチッを防ぐ */
-  fadeMs: number
-}
+/** 書き出すときの仕上げ（型は wevocal-lib。書き出しのダイアログと共通） */
+export type { FinishOptions } from 'wevocal-lib/react'
+import type { FinishOptions } from 'wevocal-lib/react'
 
 /** `c` に仕上げをかける。フェードは長さの半分までにし、そのあとでノーマライズする（フェードで下がった分は数えない） */
 export function finishClip(c: Clip, o: FinishOptions): Clip {
