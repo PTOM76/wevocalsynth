@@ -5,6 +5,10 @@ import { restoreLocalSettings } from './settingsMirror'
 import { ORIGINAL_PREFIX } from '../audio/originalStore'
 import { ADDON_CACHE } from '../addons/addons'
 import { app } from '../appConfig'
+import { clearLocalItems, clearOfflineCache as clearCache } from 'pevenmui/web'
+
+// 使用量、消されにくくする申請は PevenMUI（WeVocal Studio と共通）
+export { storageUsage, isPersisted, requestPersist } from 'pevenmui/web'
 
 /**
  * ブラウザ内に保存しているデータの確認と削除（設定の「データ」）。
@@ -17,32 +21,9 @@ import { app } from '../appConfig'
 /** localStorage のうち、このアプリが使う項目の接頭辞 */
 const LOCAL_PREFIX = app.key('')
 
-/** 使用量と上限（バイト）。`details` は種類ごとの内訳（Chrome などだけ）。ブラウザが対応していなければ null */
-export async function storageUsage(): Promise<{ usage: number; quota: number; details?: Record<string, number> } | null> {
-  if (!navigator.storage?.estimate) return null
-  const e = (await navigator.storage.estimate()) as StorageEstimate & { usageDetails?: Record<string, number> }
-  return { usage: e.usage ?? 0, quota: e.quota ?? 0, details: e.usageDetails }
-}
-
 /** 自動保存した作業データを消す */
 // 開いている作業で退避中の原音は残す（消すと戻せなくなる。次の起動時の掃除で消える）
 export const clearWorkData = () => idbClear(ORIGINAL_PREFIX)
-
-/**
- * オフライン用キャッシュを消し、Service Worker の登録を外す。
- * 次にページを開いたときに、アプリ本体をサーバーから取り直して登録し直す。
- * 追加機能は取り直しに時間がかかるので、`withAddons` のときだけ消す
- */
-export async function clearOfflineCache(withAddons = false) {
-  // このアプリの範囲（scope）のものだけ消す。workbox のキャッシュ名は scope で終わる
-  const scope = new URL(import.meta.env.BASE_URL, location.href).href
-  if ('caches' in window) {
-    for (const key of await caches.keys()) if (key.endsWith(scope) || (withAddons && key === ADDON_CACHE)) await caches.delete(key)
-  }
-  if (navigator.serviceWorker) {
-    for (const r of await navigator.serviceWorker.getRegistrations()) if (r.scope === scope) await r.unregister()
-  }
-}
 
 /**
  * 指定したフォルダーに写した設定と作業を、ブラウザに戻す（PWA を入れ直したときなど）。何か戻したら true（そのあと再読み込みする）。
@@ -57,25 +38,9 @@ export async function restoreFromFolder(): Promise<boolean> {
   return settings || work.length > 0
 }
 
+
+/** オフライン用キャッシュを消し、Service Worker の登録を外す。追加機能は取り直しに時間がかかるので、`withAddons` のときだけ消す */
+export const clearOfflineCache = (withAddons = false) => clearCache(withAddons ? [ADDON_CACHE] : [])
+
 /** 設定と画面の状態（パネルの幅など）を消す */
-export function clearLocalSettings() {
-  try {
-    for (const key of Object.keys(localStorage)) {
-      if (key.startsWith(LOCAL_PREFIX)) localStorage.removeItem(key)
-    }
-  } catch {
-    // localStorage が使えない環境では、もともと何も保存されていない
-  }
-}
-
-/** ブラウザが容量不足のときに自動で消さないようにする申請が通っているか（対応していなければ null） */
-export async function isPersisted(): Promise<boolean | null> {
-  if (!navigator.storage?.persisted) return null
-  return navigator.storage.persisted()
-}
-
-/** 自動で消さないよう申請する。通ったかを返す（ブラウザが断ることもある） */
-export async function requestPersist(): Promise<boolean> {
-  if (!navigator.storage?.persist) return false
-  return navigator.storage.persist()
-}
+export const clearLocalSettings = () => clearLocalItems(LOCAL_PREFIX)

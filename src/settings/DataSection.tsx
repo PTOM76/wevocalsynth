@@ -1,6 +1,6 @@
 // 設定の「データ」（使用量と削除）
 import { useEffect, useState } from 'react'
-import { Box, Button, Typography } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import {
   clearLocalSettings,
   clearOfflineCache,
@@ -13,10 +13,11 @@ import {
 import { mirrorClearAll, mirroredSize } from '../project/dataFolder'
 import { addonFolder, addonsSizeIn, clearAddonsIn } from '../addons/addons'
 import { useT, type MessageKey } from '../i18n/i18n'
-import { useConfirm, useDownloadingIds, useHighlighter, pevenFont } from 'pevenmui'
+import { DangerButton, DataHeading, DataRow, DataText, useConfirm, useDownloadingIds } from 'pevenmui'
+import { formatMb } from 'pevenmui/web'
 import { otherWindowsOpen } from '../project/windowSlot'
 
-const mb = (bytes: number) => `${(bytes / 2 ** 20).toFixed(1)} MB`
+const mb = formatMb
 
 /** 設定の「データ」: ブラウザ内の使用量と、作業データ・キャッシュ・設定の削除 */
 export default function DataSection({ onClose }: { onClose: () => void }) {
@@ -28,7 +29,6 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const [folder, setFolder] = useState<{ name: string; bytes: number; dataBytes: number } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const { confirm, dialog } = useConfirm()
-  const hit = useHighlighter()
   // 追加機能のダウンロード中は、追加機能を消す操作を押せなくする（書きかけを消して壊さないため）
   const downloading = useDownloadingIds().size > 0
 
@@ -56,38 +56,28 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
   const workConfirm = async (): Promise<MessageKey> => ((await otherWindowsOpen().catch(() => false)) ? 'data.workConfirmOthers' : 'data.workConfirm')
 
   const row = (label: MessageKey, help: MessageKey, button: React.ReactNode, vars?: Record<string, string>) => (
-    <Box sx={{ gridColumn: '1 / -1', width: 0, minWidth: '100%', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontSize: pevenFont('base'), ...hit(t(label), t(help, vars)) }}>{t(label)}</Typography>
-        <Typography className="selectable" sx={{ fontSize: pevenFont('sm'), color: 'text.secondary' }}>{t(help, vars)}</Typography>
-      </Box>
+    <DataRow label={t(label)} help={t(help, vars)}>
       {button}
-    </Box>
+    </DataRow>
   )
-  const danger = (label: MessageKey, onClick: () => void, disabled = false) => (
-    <Button size="small" variant="outlined" color="error" disabled={disabled} onClick={onClick} sx={{ flexShrink: 0 }}>
-      {t(label)}
-    </Button>
-  )
+  const danger = (label: MessageKey, onClick: () => void, disabled = false) => <DangerButton label={t(label)} onClick={onClick} disabled={disabled} />
 
   // 保存先のフォルダーがあるときは、ブラウザ内と保存先フォルダーに分けて見出しを出す
-  const heading = (text: string) => <Typography sx={{ gridColumn: '1 / -1', fontSize: pevenFont('base'), fontWeight: 600, mt: 1 }}>{text}</Typography>
+  const heading = (text: string) => <DataHeading>{text}</DataHeading>
 
   return (
     <>
       {folder && heading(t('data.browser'))}
-      <Typography sx={{ gridColumn: '1 / -1', fontSize: pevenFont('base') }}>
-        {usage ? t('data.usage', { usage: mb(usage.usage), quota: mb(usage.quota) }) : t('data.usageUnknown')}
-      </Typography>
+      <DataText>{usage ? t('data.usage', { usage: mb(usage.usage), quota: mb(usage.quota) }) : t('data.usageUnknown')}</DataText>
       {/* 何が容量を使っているかの内訳（Chrome などだけ） */}
       {usage?.details && (
-        <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: pevenFont('sm'), color: 'text.secondary', mt: -1 }}>
+        <DataText note>
           {t('data.usageDetails', {
             caches: mb(usage.details.caches ?? 0),
             idb: mb(usage.details.indexedDB ?? 0),
             sw: mb(usage.details.serviceWorkerRegistrations ?? 0),
           })}
-        </Typography>
+        </DataText>
       )}
       {row(
         'data.work',
@@ -185,7 +175,7 @@ export default function DataSection({ onClose }: { onClose: () => void }) {
           )}
         </>
       )}
-      {message && <Typography className="selectable" sx={{ gridColumn: '1 / -1', fontSize: pevenFont('md'), color: 'primary.main' }}>{message}</Typography>}
+      {message && <DataText done>{message}</DataText>}
       {dialog}
     </>
   )
