@@ -7,9 +7,8 @@ import type { Track } from '../audio/tracks'
 import type { Project } from '../project/projectFile'
 import type { JobKind } from '../progress/jobs'
 import { t } from '../i18n/i18n'
-import { prepareExtract } from '../../extractor/src/host'
-import { extractRanges, isOutOfMemory, LEAD_MODEL, planBackend, resolveModel, splitBoth, splitInstruments, splitLead, STEM_MODELS, VOCAL_MODELS, type ExtractOptions, type ExtractStem, type InstrumentStems } from '../audio/vocalExtract'
-import type { MessageKey } from '../i18n/i18n'
+import { prepareExtract, STEM_ORDER } from '../../extractor/src/host'
+import { extractRanges, isOutOfMemory, LEAD_MODEL, planBackend, resolveModel, splitBoth, splitInstruments, splitLead, STEM_MODELS, VOCAL_MODELS, type ExtractOptions, type ExtractStem } from '../audio/vocalExtract'
 import { scheduleCleanExtract, type CleanJobBody } from '../project/cleanExtract'
 import { clearExtracting, crashedDuringExtract, markExtracting } from '../project/extractGuard'
 
@@ -254,15 +253,3 @@ export function useVocalExtract(d: Deps) {
 
   return { extract, prepareSeparate, splitStems, splitLeadStems, splitInstrumentStems, dialog }
 }
-
-/** 楽器ごとに分けたトラックの並びと名前（モデルが出さない音は作らない） */
-const STEM_ORDER: [keyof InstrumentStems, MessageKey][] = [
-  ['vocals', 'track.vocalsName'],
-  ['lead', 'track.leadName'],
-  ['harmony', 'track.harmonyName'],
-  ['drums', 'track.drumsName'],
-  ['bass', 'track.bassName'],
-  ['guitar', 'track.guitarName'],
-  ['piano', 'track.pianoName'],
-  ['other', 'track.otherName'],
-]
