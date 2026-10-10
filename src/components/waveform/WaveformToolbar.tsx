@@ -1,7 +1,6 @@
 // 波形の上のツールバー（拡大縮小、ペン、掴む、ピッチの道具）
-import { Button, Divider, IconButton, Tooltip } from '@mui/material'
+import { Button } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
   faAnglesRight,
   faArrowDown,
@@ -30,32 +29,9 @@ import { countRender } from '../../debug/debugStats'
 import type { WheelZoom } from '../../settings/settings'
 import { stableMemo } from '../stableMemo'
 
-/** ツールチップ付きの小さいアイコンボタン。`pressed` を渡すと ON/OFF の切替ボタンになる */
-export function SmallButton(props: {
-  title: string
-  label: string
-  icon: IconDefinition
-  pressed?: boolean
-  disabled?: boolean
-  onClick: () => void
-}) {
-  return (
-    <Tooltip title={props.title}>
-      <span>
-        <IconButton
-          aria-label={props.label}
-          aria-pressed={props.pressed}
-          size="small"
-          color={props.pressed ? 'primary' : 'default'}
-          disabled={props.disabled}
-          onClick={props.onClick}
-        >
-          <FontAwesomeIcon icon={props.icon} />
-        </IconButton>
-      </span>
-    </Tooltip>
-  )
-}
+/** 小さいアイコンボタンと区切り線（PevenMUI。WeVocal Studio と共通） */
+export { SmallButton, ToolbarDivider } from 'pevenmui'
+import { SmallButton, ToolbarDivider } from 'pevenmui'
 
 interface Props {
   zoomed: boolean
@@ -128,13 +104,6 @@ interface Props {
   disabled?: boolean
 }
 
-/**
- * ツールバーの操作のまとまりの区切り線（ツールバーの切り取りなどとの間と、帯ごとの操作の間で同じものを使う）。
- * 上下は空けず、置いた列の高さいっぱいに伸ばす。`gap` なら左右にすき間を付ける（ツールバーの Stack の spacing と同じ幅）
- */
-export function ToolbarDivider({ gap = false }: { gap?: boolean }) {
-  return <Divider orientation="vertical" flexItem sx={{ mx: gap ? 0.5 : 0 }} />
-}
 const Sep = () => <ToolbarDivider gap />
 
 /** 波形の表示ツール（拡大縮小・表示の切替・ピッチ描画）。PC はツールバー、スマホは波形のすぐ下に置く */
