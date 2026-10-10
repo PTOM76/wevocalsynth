@@ -39,7 +39,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .cache/addon-models
-          key: addon-models-${{ hashFiles('scripts/build-addons.mjs') }}
+          key: addon-models-${{ hashFiles('scripts/build-addons.mjs', 'extractor/scripts/addons.mjs') }}
       # 追加機能（ボーカル抽出の実行環境とモデル）
       - run: npm run build:addons
       - uses: actions/upload-pages-artifact@v3
