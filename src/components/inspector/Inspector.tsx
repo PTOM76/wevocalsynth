@@ -66,13 +66,8 @@ export function PropRow(p: { label?: string; children: ReactNode }) {
 export { NumberInput } from 'pevenmui'
 
 /** インスペクタ用の細いスライダーの見た目（目盛りの数字は出さず、行の高さに収める） */
-/** スライダーのダブルクリックで既定値に戻すか（設定。既定は使う） */
-export const SliderResetContext = createContext(true)
-
-/** スライダーに付ける、ダブルクリックで `reset` する指定（設定で切っていれば何も付けない） */
-export function useDoubleClickReset(reset: () => void) {
-  return useContext(SliderResetContext) ? { onDoubleClick: reset } : {}
-}
+/** スライダーのダブルクリックで既定値に戻す仕組み（PevenMUI。WeVocal Studio と共通） */
+export { SliderResetContext, useDoubleClickReset } from 'pevenmui'
 
 export const COMPACT_SLIDER_SX = {
   flex: 1,
