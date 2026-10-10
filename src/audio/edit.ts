@@ -1,5 +1,8 @@
 // 音声の編集の計算（範囲への加工、切り取りと挿入、音量、フェード、反転、曲線の書き込み）
 import type { Clip, Range } from './types'
+import { GAIN_RAMP_SEC, mapGain, toFrames } from 'wevocal-lib'
+// 範囲の音量、フェード、ノーマライズは wevocal-lib（WeVocal Studio と共通）
+export { gainRange, fadeRange, normalizeRange } from 'wevocal-lib'
 import { F0_HOP_SEC, processAudio, processCurve, processFormantCurve, type ProcessOptions } from '../dsp/engine'
 
 /**
@@ -200,13 +203,6 @@ export function insertAt(clip: Clip, part: Clip, at: number): Clip {
   return join(join(head, part), tail)
 }
 
-function toFrames(clip: Clip, range: Range): [number, number] {
-  const len = clip.channels[0].length
-  const s = Math.max(0, Math.min(len, Math.round(range.start * clip.sampleRate)))
-  const e = Math.max(s, Math.min(len, Math.round(range.end * clip.sampleRate)))
-  return [s, e]
-}
-
 /** 2つのクリップを連結する。クリックノイズ防止のため継ぎ目に短いフェードを入れる */
 function join(a: Clip, b: Clip): Clip {
   const fade = Math.round(FADE_SEC * a.sampleRate)
@@ -229,65 +225,6 @@ function join(a: Clip, b: Clip): Clip {
 }
 
 /** 音量操作の境界で急な段差が出ないよう、ゲインをなめらかに切り替える時間 */
-const GAIN_RAMP_SEC = 0.005
-
-/**
- * `range` 内の各サンプルに `gainAt(u)` を掛けた新しいクリップを返す。
- * u は範囲内の位置（0〜1）。範囲の両端は短いランプで元の音量につなぐ。
- */
-function mapGain(clip: Clip, range: Range, gainAt: (u: number) => number): Clip {
-  const [s, e] = toFrames(clip, range)
-  const n = e - s
-  const ramp = Math.min(Math.round(GAIN_RAMP_SEC * clip.sampleRate), Math.floor(n / 2))
-  return {
-    sampleRate: clip.sampleRate,
-    channels: clip.channels.map((src) => {
-      const out = src.slice()
-      for (let i = 0; i < n; i++) {
-        let g = gainAt(n > 1 ? i / (n - 1) : 0)
-        // 端では 1（元の音量）から目的のゲインへ移る
-        const edge = Math.min(i, n - 1 - i)
-        if (edge < ramp) g = 1 + (g - 1) * (edge / ramp)
-        out[s + i] = src[s + i] * g
-      }
-      return out
-    }),
-  }
-}
-
-/** `range` の音量を `db` デシベル変える */
-export function gainRange(clip: Clip, range: Range, db: number): Clip {
-  const g = 10 ** (db / 20)
-  return mapGain(clip, range, () => g)
-}
-
-/** `range` をフェードイン（'in'）またはフェードアウト（'out'）する。カーブは聴感上なめらかな sin² */
-export function fadeRange(clip: Clip, range: Range, dir: 'in' | 'out'): Clip {
-  const [s, e] = toFrames(clip, range)
-  const n = e - s
-  return {
-    sampleRate: clip.sampleRate,
-    channels: clip.channels.map((src) => {
-      const out = src.slice()
-      for (let i = 0; i < n; i++) {
-        const u = n > 1 ? i / (n - 1) : 1
-        const g = Math.sin((Math.PI / 2) * (dir === 'in' ? u : 1 - u)) ** 2
-        out[s + i] = src[s + i] * g
-      }
-      return out
-    }),
-  }
-}
-
-/** `range` のピークが `peakDb` デシベルになるよう音量を揃える。無音なら null */
-export function normalizeRange(clip: Clip, range: Range, peakDb = -1): Clip | null {
-  const [s, e] = toFrames(clip, range)
-  let peak = 0
-  for (const c of clip.channels) for (let i = s; i < e; i++) peak = Math.max(peak, Math.abs(c[i]))
-  if (peak < 1e-6) return null
-  return gainRange(clip, range, peakDb - 20 * Math.log10(peak))
-}
-
 /**
  * `range` のパン（-1 = 左 … 0 = 中央 … 1 = 右）を変える。計算は Web Audio の StereoPannerNode（ステレオ入力）と同じ式で、
  * 再生中の試聴（usePlayer）と結果が一致する。モノラルは左右同じ音のステレオにしてから掛ける（パン 0 の部分は音量が変わらない）。
