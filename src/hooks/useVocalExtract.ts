@@ -7,9 +7,9 @@ import type { Track } from '../audio/tracks'
 import type { Project } from '../project/projectFile'
 import type { JobKind } from '../progress/jobs'
 import { t } from '../i18n/i18n'
+import { prepareExtract } from '../../extractor/src/host'
 import { extractRanges, isOutOfMemory, LEAD_MODEL, planBackend, resolveModel, splitBoth, splitInstruments, splitLead, STEM_MODELS, VOCAL_MODELS, type ExtractOptions, type ExtractStem, type InstrumentStems } from '../audio/vocalExtract'
 import type { MessageKey } from '../i18n/i18n'
-import { backendAllowed } from '../../extractor/src/compat'
 import { scheduleCleanExtract, type CleanJobBody } from '../project/cleanExtract'
 import { clearExtracting, crashedDuringExtract, markExtracting } from '../project/extractGuard'
 
@@ -69,13 +69,8 @@ export function useVocalExtract(d: Deps) {
   const model = resolveModel(VOCAL_MODELS[d.model].lead ? 'voc-ft' : d.model, d.gpu).model
   const base = (): ExtractOptions => ({ model, gpu: d.gpu, keepHighBand: d.keepHighBand, memoryMb: d.memoryMb, threads: d.threads })
   /** 計算の種類を決め、モデルとそれに要る実行環境（ONNX Runtime の wasm）を導入済みにする。導入しなければ null */
-  const prepareOptions = async (): Promise<ExtractOptions | null> => {
-    const plan = await planBackend(base())
-    // GPU を使う設定で、ブラウザに WebGPU があるのに使えない（アダプターが取れない）ときも、黙って CPU にしない
-    if (d.gpu && plan.backend === 'wasm' && 'gpu' in navigator && backendAllowed(model, 'webgpu') && !(await confirmCpu(t('extract.noAdapter')))) return null
-    if (!(await d.ensure(VOCAL_MODELS[model].addon, [plan.runtimeAddon]))) return null
-    return { ...base(), backend: plan.backend }
-  }
+  // 手順は extractor の host.ts（WeVocal Studio と共通）
+  const prepareOptions = () => prepareExtract(base(), VOCAL_MODELS[model].addon, { ensure: d.ensure, confirmCpu, noAdapter: t('extract.noAdapter') })
 
   // 前回、抽出の前後でアプリが落ちていたら、メモリを空けてから抽出する設定を勧める
   useEffect(() => {
