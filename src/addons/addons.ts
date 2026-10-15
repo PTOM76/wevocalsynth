@@ -5,20 +5,15 @@ import { createAddons, type AddonInfo, type AddonsContextValue } from 'pevenmui'
 import { idb } from '../project/idb'
 import { app } from '../appConfig'
 import { EXTRACTOR_ADDONS } from '../../extractor/src/host'
+import { ANALYZER_ADDONS } from '../../analyzer/src/kanaCut'
 
 /** 追加機能（アドオン）。仕組みは PevenMUI（pevenmui/src/addons/）。ここは配信している一覧と、このアプリでの呼び名 */
 
 export const ADDONS: AddonInfo<MessageKey>[] = [
   // ボーカル抽出の実行環境とモデル（一覧は extractor の host.ts。WeVocal Studio と共通）
   ...EXTRACTOR_ADDONS.map((a) => ({ ...a, requires: 'requires' in a ? [...a.requires] : undefined })),
-  // 解析（analyzer/ の WeVocalAnalyzer）。今はスペクトログラムの表示に使う（src/audio/spectrogram.ts）
-  { id: 'analyzer', name: 'addon.analyzer' },
-  // 歌詞の文字化（analyzer/ の src/lyrics.ts。Analyzer と同じもの。一音ずつの切り出しに使う予定。memo/kana-cut.md）
-  { id: 'analyzer-lyrics', name: 'addon.lyrics' },
-  // そのモデル（ファイルは Hugging Face から取得して、追加機能の保存先に置く。analyzer/scripts/whisperAddons.mjs）
-  { id: 'whisper-tiny', name: 'addon.whisperTiny', shortName: 'addon.whisperTinyShort', requires: ['analyzer-lyrics'] },
-  { id: 'whisper-base', name: 'addon.whisperBase', shortName: 'addon.whisperBaseShort', requires: ['analyzer-lyrics'] },
-  { id: 'whisper-small', name: 'addon.whisperSmall', shortName: 'addon.whisperSmallShort', requires: ['analyzer-lyrics'] },
+  // 解析、歌詞の文字化とそのモデル（一覧は analyzer の kanaCut.ts。WeVocal Studio と共通）
+  ...ANALYZER_ADDONS.map((a) => ({ ...a, requires: 'requires' in a ? [...a.requires] : undefined })),
   // 変換（converter/ の WeVocalConverter）。今は動画の書き出しに使う（src/audio/video.ts）
   { id: 'converter', name: 'addon.converter' },
 ]
