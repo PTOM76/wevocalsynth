@@ -100,6 +100,13 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
   const onMove = useStableFn(tr.move)
   const onToggleMute = useStableFn(tr.toggleMute)
   const onToggleSolo = useStableFn(tr.toggleSolo)
+  const onVolume = useStableFn((id: string, db: number) => tr.setFader(id, { db }))
+  // トラックごとの音量（欄のつまみ）。faderOf は effects だけで決まる
+  const volumes = useMemo(
+    () => Object.fromEntries(tr.tracks.map((x) => [x.id, tr.faderOf(x.id).db])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tr.tracks, tr.effects],
+  )
   const onContextMenu = useStableFn((id: string, x: number, y: number) => setMenu({ id, x, y }))
 
   // トラックが2本以上あるときだけ出る（広げると波形付きの一覧、折りたたむとタブ）
@@ -118,6 +125,8 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
       marked={marked}
       onContextMenu={onContextMenu}
       meter={meter}
+      volumes={volumes}
+      onVolume={onVolume}
     />
   )
 

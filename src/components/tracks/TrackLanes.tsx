@@ -5,7 +5,7 @@ import { DEFAULT_MIX, isAudible, type Track, type TrackMix } from '../../audio/t
 import { computePeaks } from 'wevocal-lib'
 import { prepareCanvas, type View } from '../waveform/draw'
 import { canvasPixelRatio, usePalette, pevenFont } from 'pevenmui'
-import LevelMeter from '../LevelMeter'
+import { MeterFader } from 'wevocal-lib/react'
 import { useT } from '../../i18n/i18n'
 import { pickMods, useTrackDrag, type PickMods } from './useTrackDrag'
 
@@ -34,6 +34,9 @@ interface Props {
   onContextMenu: (id: string, x: number, y: number) => void
   /** トラック `id` のレベルメーター（再生していなければ null） */
   meter: ((id: string) => AnalyserNode | null) | null
+  /** トラックごとの音量（dB）と、その変更（欄のつまみ。メーターと一つにした部品） */
+  volumes: Record<string, number>
+  onVolume: (id: string, db: number) => void
 }
 
 /**
@@ -185,8 +188,10 @@ export default function TrackLanes(p: Props) {
                     {tr.name}
                   </Typography>
                 </Tooltip>
-                {/* メーターは名前の列に収める（固定幅だと M・S のボタンにはみ出した） */}
-                {p.meter && <LevelMeter source={() => p.meter?.(tr.id) ?? null} width={80} height={4} label={t('meter.track', { name: tr.name })} />}
+                {/* 音量のつまみとメーターを一つにして、名前の列に収める（WeVocal Studio と同じ部品。固定幅だと M・S のボタンにはみ出した） */}
+                <Box onPointerDown={(e) => e.stopPropagation()}>
+                  <MeterFader value={p.volumes[tr.id] ?? 0} onChange={(db) => p.onVolume(tr.id, db)} onCommit={() => {}} meter={p.meter ? () => p.meter?.(tr.id) ?? null : undefined} height={8} label={t('meter.track', { name: tr.name })} />
+                </Box>
               </Box>
               <MixToggle label="M" title={t('track.mute')} on={m.mute} color="warning.main" onClick={() => p.onToggleMute(tr.id)} />
               <MixToggle label="S" title={t('track.solo')} on={m.solo} color="success.main" onClick={() => p.onToggleSolo(tr.id)} />

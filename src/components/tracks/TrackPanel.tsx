@@ -32,6 +32,9 @@ interface Props {
   onContextMenu: (id: string, x: number, y: number) => void
   /** トラック `id` のレベルメーター（再生していなければ null） */
   meter: ((id: string) => AnalyserNode | null) | null
+  /** トラックごとの音量（dB）と、その変更（欄のつまみ。メーターと一つにした部品） */
+  volumes: Record<string, number>
+  onVolume: (id: string, db: number) => void
 }
 
 /** 折りたたみの状態を覚えておくキー（1: 広げる / 2: 折りたたむ。usePersistentNumber は 0 を覚えられない） */
