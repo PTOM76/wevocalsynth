@@ -13,7 +13,7 @@ import { detectMode, modeSettings, type Mode } from '../audio/detectMode'
 import type { EditParams } from '../components/EditPanel'
 import type { Source } from '../components/StatusBar'
 import { useDocument } from './useDocument'
-import { useFileDrop, useFilePicker, useRecentFiles, type ToastData } from 'pevenmui'
+import { useFileDrop, useFilePicker, useRecentFiles, type NoticeMessageData } from 'pevenmui'
 import { useClipAnalysis } from './useClipAnalysis'
 import { usePreview } from './usePreview'
 import { usePitchTarget } from './usePitchTarget'
@@ -47,7 +47,7 @@ import { idbGet, idbPut } from '../project/idb'
 import type { TimeMap } from '../audio/timeMap'
 
 /** 通知。`actions` は通知の中に出すボタン（次の操作の案内） */
-export type Toast = ToastData
+export type Toast = NoticeMessageData
 
 // 最近使用したファイルはこのアプリの IndexedDB に保存し、フォルダは「wevocal-用途」の名前で覚えさせる
 initFileAccess({ store: { get: idbGet, put: idbPut }, idPrefix: 'wevocal' })

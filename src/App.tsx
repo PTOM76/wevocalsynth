@@ -8,7 +8,7 @@ import { setOutputDevice } from 'wevocal-lib'
 import { setOutputLimit } from './audio/outputLimit'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Button, GlobalStyles, Stack, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, Toast, editBarEnabled, DesktopLayout, MobileLayout } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, NoticeMessage, editBarEnabled, DesktopLayout, MobileLayout } from 'pevenmui'
 import LevelMeter from './components/LevelMeter'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -614,8 +614,8 @@ export default function App() {
       {ed.addonDialog}
       {ed.extractDialog}
 
-      {/* 通知（PevenMUI の Toast。スマホは下の再生バーを隠さないよう上に出す） */}
-      <Toast toast={ed.toast} onClose={() => ed.setToast(null)} top={mobile} />
+      {/* 通知（PevenMUI の NoticeMessage。スマホは下の再生バーを隠さないよう上に出す） */}
+      <NoticeMessage message={ed.toast} onClose={() => ed.setToast(null)} top={mobile} />
       </SliderResetContext.Provider>
       </WindowModeContext.Provider>
       </PevenLabels.Provider>
