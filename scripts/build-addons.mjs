@@ -12,11 +12,9 @@
 // - whisper-<大きさ>: そのモデル。マニフェストだけを書き、ファイルは導入するときに Hugging Face から取る（analyzer/scripts/whisperAddons.mjs）
 // - converter: 変換（converter/ をビルド。今は動画の書き出し）
 // 各フォルダに manifest.json（ファイルの大きさとハッシュ、内容から決めたバージョン）を書く
-import { execSync } from 'node:child_process'
-import { join } from 'node:path'
-import { writeWhisperManifests } from '../analyzer/scripts/whisperAddons.mjs'
+import { buildAnalyzerAddon, buildLyricsAddons } from '../analyzer/scripts/addons.mjs'
 import { buildConverterAddon } from '../converter/scripts/addons.mjs'
-import { buildModelAddons, buildRuntimeAddons, writeManifest } from '../extractor/scripts/addons.mjs'
+import { buildModelAddons, buildRuntimeAddons } from '../extractor/scripts/addons.mjs'
 
 const OUT = `${process.argv[2] ?? 'dist'}/addons`
 /** 作るもの（省くと全部） */
@@ -25,25 +23,15 @@ const want = (group) => !ONLY.length || ONLY.includes(group)
 /** 取得したモデルの置き場所（git には入れない。CI ではキャッシュする） */
 const CACHE = '.cache/addon-models'
 
-const run = (cmd) => execSync(cmd, { stdio: 'inherit' })
-
 // 実行環境とモデルは extractor（WeVocal Studio と共通）
 if (want('extractor')) buildRuntimeAddons(OUT)
 if (want('models')) buildModelAddons(OUT, CACHE)
 
 // 解析。モデルは使わない（wasm は analyzer/src/dsp.wasm をそのまま使う）
-if (want('analyzer')) {
-  run('npx vite build -c vite.addons.analyzer.config.ts')
-  writeManifest('analyzer', join(OUT, 'analyzer'), 'index.js')
-}
+if (want('analyzer')) buildAnalyzerAddon(OUT)
 
 // 歌詞の文字化（analyzer/src/lyrics.ts。設定は Analyzer のものを使い、Analyzer と同じものを配る）
-if (want('lyrics')) {
-  run('npx vite build -c analyzer/vite.addons.lyrics.config.ts')
-  writeManifest('analyzer-lyrics', join(OUT, 'analyzer-lyrics'), 'index.js')
-  // モデル（マニフェストだけ。ファイルは Hugging Face から取得する）
-  await writeWhisperManifests(OUT)
-}
+if (want('lyrics')) await buildLyricsAddons(OUT)
 
 // 変換。今は動画の書き出しだけ（作る手順は converter。WeVocal Studio と共通）
 if (want('converter')) buildConverterAddon(OUT)
