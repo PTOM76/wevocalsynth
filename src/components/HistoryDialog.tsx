@@ -1,42 +1,9 @@
-// 編集の履歴のダイアログ（押した段へ戻る）
-import { Dialog, DialogContent, DialogTitle, List, ListItemButton, ListItemText, Typography } from '@mui/material'
+// 編集の履歴のダイアログ（部品は PevenMUI の HistoryDialog。WeVocal Studio と共通）
+import type { ComponentProps } from 'react'
+import { HistoryDialog as PevenHistoryDialog } from 'pevenmui'
 import { useT } from '../i18n/i18n'
-import { pevenFont } from 'pevenmui'
 
-interface Props {
-  open: boolean
-  onClose: () => void
-  /** 操作の名前（行った順） */
-  labels: string[]
-  /** そのうち今までに行った数。これより後ろはやり直せる操作 */
-  done: number
-  onJump: (done: number) => void
-}
-
-/**
- * 操作履歴の一覧。押した操作の直後の状態へ、まとめて戻る・進む。
- * 一番上の「開いたとき」を押すと、履歴に残っている一番古い状態に戻る
- */
-export default function HistoryDialog(p: Props) {
+export default function HistoryDialog(p: Omit<ComponentProps<typeof PevenHistoryDialog>, 'text'>) {
   const t = useT()
-  const rows = [t('history.opened'), ...p.labels]
-  return (
-    <Dialog open={p.open} onClose={p.onClose} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ fontSize: pevenFont('xl'), py: 1.5 }}>{t('history.title')}</DialogTitle>
-      <DialogContent dividers sx={{ p: 0 }}>
-        <List dense>
-          {rows.map((label, i) => (
-            <ListItemButton key={i} selected={i === p.done} onClick={() => p.onJump(i)}>
-              <ListItemText
-                primary={label}
-                // やり直せる操作（今より後ろ）は薄く出す
-                slotProps={{ primary: { sx: { fontSize: pevenFont('base'), color: i > p.done ? 'text.disabled' : 'text.primary' } } }}
-              />
-              {i === p.done && <Typography sx={{ fontSize: pevenFont('sm'), color: 'primary.main' }}>{t('history.current')}</Typography>}
-            </ListItemButton>
-          ))}
-        </List>
-      </DialogContent>
-    </Dialog>
-  )
+  return <PevenHistoryDialog {...p} text={{ title: t('history.title'), opened: t('history.opened'), current: t('history.current') }} />
 }
