@@ -1,6 +1,5 @@
 // スマホの上部バー（プロジェクト名とメニュー）
-import { faRotateLeft, faRotateRight } from '@fortawesome/free-solid-svg-icons'
-import { AppHeader as PevenAppHeader, HeaderIcon, type MenuGroup } from 'pevenmui'
+import { AppHeader as PevenAppHeader, UndoRedoButtons, type MenuGroup } from 'pevenmui'
 import AppIcon from './AppIcon'
 import { useT } from '../i18n/i18n'
 import { app } from '../appConfig'
@@ -30,10 +29,17 @@ export default function AppHeader({ menus, canUndo, canRedo, busy, onUndo, onRed
       icon={<AppIcon size={16} />}
       menus={menus}
       actions={(mobile) => (
-        <>
-          <HeaderIcon small={!mobile} title={mobile ? t('common.undo') : withKey(t('common.undo'), keymap, 'undo')} icon={faRotateLeft} disabled={!canUndo || busy} onClick={onUndo} />
-          <HeaderIcon small={!mobile} title={mobile ? t('common.redo') : withKey(t('common.redo'), keymap, 'redo')} icon={faRotateRight} disabled={!canRedo || busy} onClick={onRedo} />
-        </>
+        // 元に戻す、やり直し（PevenMUI。WeVocal Studio と共通）
+        <UndoRedoButtons
+          mobile={mobile}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          busy={busy}
+          onUndo={onUndo}
+          onRedo={onRedo}
+          undoTitle={mobile ? t('common.undo') : withKey(t('common.undo'), keymap, 'undo')}
+          redoTitle={mobile ? t('common.redo') : withKey(t('common.redo'), keymap, 'redo')}
+        />
       )}
     />
   )
