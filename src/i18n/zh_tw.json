@@ -301,6 +301,11 @@
   "settings.vocalThreads": "CPU 使用的執行緒數",
   "settings.vocalThreadsHelp": "不使用 GPU 時，擷取和歌詞轉寫中並行計算的執行緒數。增加後會更快，但會使用更多記憶體。自動最多為 4，iPhone 和 iPad 為 1。僅在重新開啟應用程式一次之後、且在 Safari 以外的瀏覽器中生效",
   "settings.vocalThreadsAuto": "自動",
+  "settings.editBar": "編輯列顯示",
+  "settings.editBarAuto": "自動",
+  "settings.editBarOn": "一律顯示",
+  "settings.editBarOff": "不顯示",
+  "settings.editBarHelp": "選取範圍後的編輯按鈕列。自動僅在手機上顯示，一律顯示則在電腦上也顯示在工具列下方",
 
   "export.title": "匯出音訊檔",
   "export.run": "匯出",

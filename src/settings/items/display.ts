@@ -4,6 +4,8 @@ import type { ThemeSetting } from '../settings'
 import { UI_SCALES } from '../../constants/ui'
 import { check, choice, defineItems, value } from './define'
 
+export type EditBarSetting = 'auto' | 'on' | 'off'
+
 /** 「表示」 */
 export const display = defineItems('display', {
   theme: choice<ThemeSetting>('system', {
@@ -29,6 +31,16 @@ export const display = defineItems('display', {
     options: [
       ['drag', 'settings.touchSelectDrag'],
       ['longPress', 'settings.touchSelectLongPress'],
+    ],
+  }),
+  // 範囲を選んだときの編集のボタンの列（auto はスマホだけ、on はパソコンでもツールバーの下に表示する）
+  editBar: choice<EditBarSetting>('auto', {
+    label: 'settings.editBar',
+    help: 'settings.editBarHelp',
+    options: [
+      ['auto', 'settings.editBarAuto'],
+      ['on', 'settings.editBarOn'],
+      ['off', 'settings.editBarOff'],
     ],
   }),
   // 画面の大きさ（倍率）。文字、入力欄、ボタンなどをまとめて拡大縮小する（PevenMUI の setUiScale）

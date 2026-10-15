@@ -301,6 +301,11 @@
   "settings.vocalThreads": "CPU 使用的线程数",
   "settings.vocalThreadsHelp": "不使用 GPU 时，提取和歌词转写中并行计算的线程数。增加后会更快，但会使用更多内存。自动最多为 4，iPhone 和 iPad 为 1。仅在重新打开应用一次之后、且在 Safari 以外的浏览器中生效",
   "settings.vocalThreadsAuto": "自动",
+  "settings.editBar": "编辑栏显示",
+  "settings.editBarAuto": "自动",
+  "settings.editBarOn": "始终显示",
+  "settings.editBarOff": "不显示",
+  "settings.editBarHelp": "选择范围后的编辑按钮行。自动仅在手机上显示，始终显示则在电脑上也显示在工具栏下方",
 
   "export.title": "导出音频文件",
   "export.run": "导出",

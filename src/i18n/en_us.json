@@ -301,6 +301,11 @@
   "settings.vocalThreads": "CPU threads",
   "settings.vocalThreadsHelp": "Number of threads used to compute in parallel when extracting or transcribing lyrics without the GPU. More threads are faster but use more memory. Auto uses up to 4, and 1 on iPhone and iPad. Takes effect only after the app has been reopened once, and not in Safari",
   "settings.vocalThreadsAuto": "Auto",
+  "settings.editBar": "Edit bar",
+  "settings.editBarAuto": "Auto",
+  "settings.editBarOn": "Always show",
+  "settings.editBarOff": "Do not show",
+  "settings.editBarHelp": "Row of editing buttons shown when a range is selected. Auto shows it on phones only; Always show also shows it below the toolbar on desktop",
 
   "export.title": "Export audio",
   "export.run": "Export",

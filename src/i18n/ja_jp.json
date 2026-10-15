@@ -301,6 +301,11 @@
   "settings.vocalThreads": "CPU で使用するスレッドの数",
   "settings.vocalThreadsHelp": "GPU を使用しないときの抽出と歌詞の文字化で、並列に計算するスレッドの数。増やすと速くなりますが、メモリを多く使用します。自動は最大 4 で、iPhone と iPad は 1 です。アプリを開き直したあとの 2 回目以降と、Safari 以外のブラウザでだけ反映されます",
   "settings.vocalThreadsAuto": "自動",
+  "settings.editBar": "編集バーの表示",
+  "settings.editBarAuto": "自動",
+  "settings.editBarOn": "常に表示",
+  "settings.editBarOff": "表示しない",
+  "settings.editBarHelp": "範囲を選んだときの編集のボタンの列。自動はスマホだけ、常に表示はパソコンでもツールバーの下に表示する",
 
   "export.title": "音声ファイルに書き出す",
   "export.run": "書き出し",

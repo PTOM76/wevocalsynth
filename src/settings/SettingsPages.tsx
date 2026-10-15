@@ -124,6 +124,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         {S('theme')}
         {S('mobileUi')}
         {draft.mobileUi === 'new' && S('touchSelect')}
+        {S('editBar')}
         {S('uiScale')}
         {S('showMeters')}
         {S('minimapPlayhead')}
