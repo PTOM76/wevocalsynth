@@ -615,7 +615,7 @@ export default function App() {
       {ed.extractDialog}
 
       {/* 通知（PevenMUI の NoticeMessage。スマホは下の再生バーを隠さないよう上に出す） */}
-      <NoticeMessage message={ed.toast} onClose={() => ed.setToast(null)} top={mobile} />
+      <NoticeMessage message={ed.toast} onClose={() => ed.setToast(null)} vertical={mobile ? 'top' : 'bottom'} horizontal={mobile ? 'center' : 'left'} />
       </SliderResetContext.Provider>
       </WindowModeContext.Provider>
       </PevenLabels.Provider>
