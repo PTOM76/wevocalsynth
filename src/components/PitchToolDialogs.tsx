@@ -13,28 +13,18 @@ import {
   Radio,
   RadioGroup,
   Select,
-  Slider,
   Typography,
 } from '@mui/material'
-import { enterToSubmit, pevenFont } from 'pevenmui'
+import { SliderRow, enterToSubmit, pevenFont } from 'pevenmui'
 import { rateForBpm, type SnapOptions, type VibratoOptions } from '../audio/pitchTools'
 import { noteName } from '../audio/notes'
-import { COMPACT_SLIDER_SX, NumberInput } from './inspector/Inspector'
 import { useT } from '../i18n/i18n'
 
 /** 揃え先に選べる音（C2〜C6） */
 const NOTES = Array.from({ length: 49 }, (_, i) => 36 + i)
 
-/** ラベル・スライダー・数値欄の1行 */
-export function SliderRow(p: { label: string; value: number; onChange: (v: number) => void; min: number; max: number; step: number; unit?: string }) {
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-      <Typography sx={{ fontSize: pevenFont('base'), width: 72, flexShrink: 0 }}>{p.label}</Typography>
-      <Slider aria-label={p.label} value={p.value} min={p.min} max={p.max} step={p.step} onChange={(_, v) => p.onChange(v as number)} sx={COMPACT_SLIDER_SX} />
-      <NumberInput value={p.value} onChange={p.onChange} min={p.min} max={p.max} step={p.step} unit={p.unit} ariaLabel={p.label} />
-    </Box>
-  )
-}
+/** 名前、スライダー、数値欄の 1 行（PevenMUI。WeVocal Studio と共通） */
+export { SliderRow }
 
 /** 共通の枠: タイトル・対象範囲の表示・「作成」「キャンセル」 */
 export function ToolDialog(p: { open: boolean; title: string; hasSelection: boolean; onClose: () => void; onRun: () => void; children: ReactNode }) {

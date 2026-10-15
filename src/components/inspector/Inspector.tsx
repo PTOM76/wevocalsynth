@@ -69,9 +69,5 @@ export { NumberInput } from 'pevenmui'
 /** スライダーのダブルクリックで既定値に戻す仕組み（PevenMUI。WeVocal Studio と共通） */
 export { SliderResetContext, useDoubleClickReset } from 'pevenmui'
 
-export const COMPACT_SLIDER_SX = {
-  flex: 1,
-  py: '10px !important',
-  '& .MuiSlider-thumb': { width: 12, height: 12 },
-  '& .MuiSlider-rail, & .MuiSlider-track': { height: 3 },
-} as const
+/** 細いスライダーの見た目（PevenMUI。WeVocal Studio と共通） */
+export { COMPACT_SLIDER_SX } from 'pevenmui'

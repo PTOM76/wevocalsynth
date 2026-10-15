@@ -2,14 +2,9 @@
 import type { Clip } from './types'
 import { processAudio } from '../dsp/engine'
 
-/** 音符の長さへの合わせ方（stretch: 伸縮 / loop: 繰り返す / cut: そのまま、長ければ切る） */
-export type FitMode = 'stretch' | 'loop' | 'cut'
-
-export interface SamplerNote {
-  note: number
-  start: number
-  end: number
-}
+// 型は wevocal-lib（WeVocal Studio と共通）
+import type { FitMode, SamplerNote } from 'wevocal-lib'
+export type { FitMode, SamplerNote }
 
 type ProcessOptions = Parameters<typeof processAudio>[2]
 
