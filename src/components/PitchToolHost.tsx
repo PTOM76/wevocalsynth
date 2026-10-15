@@ -3,6 +3,8 @@ import { addVibrato, fitMidi, snapPitch } from '../audio/pitchTools'
 import type { usePitchTools } from '../hooks/usePitchTools'
 import { SnapDialog, VibratoDialog } from './PitchToolDialogs'
 import { MidiDialog } from './MidiDialog'
+import { PitchToolText } from 'wevocal-lib/react'
+import { useT } from '../i18n/i18n'
 
 /** 開いているピッチの一括操作のダイアログ */
 export type PitchDialogKind = 'snap' | 'vibrato' | 'midi' | null
@@ -22,8 +24,10 @@ export default function PitchToolHost(p: {
   pitchTools: ReturnType<typeof usePitchTools>
 }) {
   const { edit } = p.pitchTools
+  const t = useT()
   return (
-    <>
+    // ダイアログの訳文（wevocal-lib の PitchToolText）
+    <PitchToolText.Provider value={t}>
       <SnapDialog
         open={p.open === 'snap'}
         hasSelection={p.hasSelection}
@@ -45,6 +49,6 @@ export default function PitchToolHost(p: {
         onClose={p.onClose}
         onRun={(o) => edit((cur, f0, k0, k1) => fitMidi(cur, f0, k0, k1, o))}
       />
-    </>
+    </PitchToolText.Provider>
   )
 }
