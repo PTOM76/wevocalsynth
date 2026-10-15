@@ -2,7 +2,8 @@
 import { nearestBeat } from '../audio/tempoMap'
 import { CURVE_HOP_SEC, type CurvePoint } from '../hooks/useLaneCurve'
 import { FORMANT_SCALE, GAIN_SCALE, curveValueAt, drawCurveLane, type CurveScale } from './waveform/curveLane'
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { Box, Slider, Stack, Typography } from '@mui/material'
 import { canvasPixelRatio, localPoint, usePalette, useLongPress } from 'pevenmui'
 import { useLaneDivider } from './waveform/useLaneDivider'
@@ -212,7 +213,8 @@ function Waveform(props: Props) {
     const ro = new ResizeObserver(([e]) => {
       const width = Math.floor(e.contentRect.width)
       const height = Math.floor(e.contentRect.height)
-      setSize((s) => (s.width === width && s.height === height ? s : { width, height }))
+      // 大きさが変わった同じフレームのうちに描き直す（Canvas は大きさを変えると消えるので、描画が遅れると一瞬ちらつく）
+      flushSync(() => setSize((s) => (s.width === width && s.height === height ? s : { width, height })))
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -261,7 +263,7 @@ function Waveform(props: Props) {
     [showSpectrogram, spectrogram, width, specH, view],
   )
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !peaks) return
     const dpr = canvasPixelRatio()

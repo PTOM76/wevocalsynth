@@ -434,23 +434,18 @@ export default function App() {
   )
 
   // 範囲を選んだときの編集のボタンの列。スマホの新しい画面は波形の下、パソコンはツールバーの下（設定の「編集バーの表示」。auto はスマホだけ）
-  // 出入りで波形の高さが変わって画面が揺れないよう、出す設定のときは選んでいなくても場所を空けておく（高さは EditBar のボタン 44px + 余白 + 線）
   const editBar = (show: boolean) =>
-    show && settings.editBar !== 'off' ? (
-      <Box sx={{ height: 49, flexShrink: 0, overflow: 'hidden', borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-        {editing && ed.selections.length > 0 && (
-          <MobileEditBar
-            playSelection={playback.playSelection}
-            cut={ed.clip.cut}
-            copy={ed.clip.copy}
-            paste={ed.clip.paste}
-            canPaste={ed.clip.hasClipboard}
-            remove={ed.clip.remove}
-            toNewTrack={() => ed.tracks.fromSelection(ed.selections, false)}
-            more={(x, y) => onWaveContext(x, y)}
-          />
-        )}
-      </Box>
+    show && settings.editBar !== 'off' && editing && ed.selections.length > 0 ? (
+      <MobileEditBar
+        playSelection={playback.playSelection}
+        cut={ed.clip.cut}
+        copy={ed.clip.copy}
+        paste={ed.clip.paste}
+        canPaste={ed.clip.hasClipboard}
+        remove={ed.clip.remove}
+        toNewTrack={() => ed.tracks.fromSelection(ed.selections, false)}
+        more={(x, y) => onWaveContext(x, y)}
+      />
     ) : null
 
   return (
