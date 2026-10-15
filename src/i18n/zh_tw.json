@@ -776,6 +776,7 @@
   "job.kind.analyze": "正在分析",
   "job.kind.export": "正在匯出",
   "job.kind.save": "正在儲存",
+  "job.kind.update": "正在更新",
 
   "voices.split": "拆分和聲",
   "voices.byVolumeMenu": "將和聲拆分為大聲與小聲（試驗性）",

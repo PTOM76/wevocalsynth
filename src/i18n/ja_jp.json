@@ -776,6 +776,7 @@
   "job.kind.analyze": "解析中",
   "job.kind.export": "書き出し中",
   "job.kind.save": "保存中",
+  "job.kind.update": "更新中",
 
   "voices.split": "和音を分離",
   "voices.byVolumeMenu": "和音を大きい方と小さい方に分離（試験的）",

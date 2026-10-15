@@ -776,6 +776,7 @@
   "job.kind.analyze": "Analyzing",
   "job.kind.export": "Exporting",
   "job.kind.save": "Saving",
+  "job.kind.update": "Updating",
 
   "voices.split": "Split harmony",
   "voices.byVolumeMenu": "Split harmony into louder and quieter (experimental)",

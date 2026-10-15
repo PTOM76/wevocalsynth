@@ -776,6 +776,7 @@
   "job.kind.analyze": "분석 중",
   "job.kind.export": "내보내는 중",
   "job.kind.save": "저장 중",
+  "job.kind.update": "업데이트 중",
 
   "voices.split": "화음 나누기",
   "voices.byVolumeMenu": "화음을 큰 쪽과 작은 쪽으로 나누기 (시험적)",
