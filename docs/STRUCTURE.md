@@ -241,6 +241,7 @@ src/settings/
   DataSection.tsx  設定の「データ」（使用量と削除）
   keymap.ts  Synth の操作の一覧と既定のキー
   OutputDeviceRow.tsx  設定の「音声の出力先」の行（wevocal-lib。WeVocal Studio と共通）
+  PluginsSection.tsx  設定の「プラグイン」（導入と管理。部品は wevocal-lib の PluginManager。WeVocal Studio と共通）
   ProjectSection.tsx  設定の「プロジェクト」（名前とテンポ）
   settings.ts  設定の保存と読み込み、Context
   SettingsDialog.tsx  設定のダイアログ（PevenMUI の設定画面に、分類と中身を渡す）

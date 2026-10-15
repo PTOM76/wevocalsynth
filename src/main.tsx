@@ -9,7 +9,7 @@ import App from './App.tsx'
 import CleanExtractScreen from './components/CleanExtractScreen'
 import { checkCleanBoot, pendingCleanJob } from './project/cleanExtract'
 import { clearOffloaded } from './audio/originalStore'
-import { setPeaksOnBuild } from 'wevocal-lib'
+import { loadInstalledPlugins, setPeaksOnBuild } from 'wevocal-lib'
 import { markActivity } from './debug/debugStats'
 import { app } from './appConfig'
 import { SettingsProvider, loadSettings } from './settings/settings'
@@ -18,6 +18,8 @@ import WindowLimitScreen from './components/WindowLimitScreen'
 import { addonsContext } from './addons/addons'
 
 preventPageZoom()
+// 導入したプラグインを読む（FX の列が使う）
+void loadInstalledPlugins()
 // 波形の表を作ったことを、画面が止まったときの原因探しに残す
 setPeaksOnBuild(() => markActivity('peaks build'))
 

@@ -7,7 +7,7 @@ import { GROUPS } from './items'
 import { searchKeys, type AnyItem } from './items/define'
 
 /** 設定画面の分類 */
-export type Category = 'project' | 'general' | 'edit' | 'keys' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'addons' | 'data' | 'debug' | 'debugAudio' | 'experimental' | 'diagnose'
+export type Category = 'project' | 'general' | 'edit' | 'keys' | 'file' | 'display' | 'process' | 'pitch' | 'tempo' | 'vocal' | 'addons' | 'plugins' | 'data' | 'debug' | 'debugAudio' | 'experimental' | 'diagnose'
 /** 並び順と親子（親のない分類と、その下のサブアイテム） */
 const TREE: [Category, Category?][] = [
   ['project'],
@@ -21,6 +21,7 @@ const TREE: [Category, Category?][] = [
   ['tempo', 'process'],
   ['vocal', 'process'],
   ['addons'],
+  ['plugins'],
   ['data'],
   ['debug'],
   ['debugAudio', 'debug'],
@@ -60,6 +61,7 @@ const INDEX: Record<Category, MessageKey[]> = {
     'settings.groupVocal',
     'settings.groupAddons', 'settings.addonsMoved', 'settings.openAddons',
   ],
+  plugins: ['plugins.intro', 'plugins.url', 'plugins.add', 'plugins.notice'],
   addons: ['settings.groupAddonVocal', 'settings.groupAddonAnalyzer', 'settings.groupAddonConverter', 'addon.modelStandard', 'addon.modelLight', 'addon.modelPrecise', 'addon.modelVocalHq', 'addon.modelInstHq', 'addon.modelLead', 'addon.analyzer', 'addon.converter'],
   data: [
     'settings.groupData', 'data.work', 'data.workHelp', 'data.cache', 'data.cacheHelp', 'data.addons',

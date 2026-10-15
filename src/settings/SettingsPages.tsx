@@ -16,6 +16,7 @@ import ShortcutSection from './ShortcutSection'
 import type { Algorithm } from '../dsp/engine'
 import { i18n, t as translate, type LangSetting, type MessageKey } from '../i18n/i18n'
 import type { Category } from './settingsSearch'
+import PluginsSection from './PluginsSection'
 import { Box, Button, Typography } from '@mui/material'
 import { AddonFolderRow, AddonSection, addonFolderSupported, Check, Choice, Group, Row, type WindowMode, pevenFont } from 'pevenmui'
 
@@ -187,6 +188,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         </Group>
       </>
     ),
+    plugins: <PluginsSection />,
     addons: (
       <>
         <Group title={t('settings.groupAddonVocal')}>
