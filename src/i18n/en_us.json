@@ -279,7 +279,6 @@
   "settings.kanaStrength": "Resonance change strength",
   "settings.kanaStrengthHelp": "Lower values keep more of the original voice quality at the cost of vowel clarity",
   "settings.groupAddonConverter": "Conversion",
-  "settings.eqBands": "EQ bands (new tracks)",
   "settings.addonFolder": "Save to a specified folder",
   "settings.addonFolderHelp": "Saves add-ons such as models to a specified folder instead of the browser's storage. Settings and autosaved work are also copied there, so you can restore them even after removing the PWA (Chrome, Edge). Installed add-ons can also be moved to this folder",
   "settings.tempoChange": "Detect tempo changes",
@@ -306,6 +305,8 @@
   "settings.editBarOn": "Always show",
   "settings.editBarOff": "Do not show",
   "settings.editBarHelp": "Row of editing buttons shown when a range is selected. Auto shows it on phones only; Always show also shows it below the toolbar on desktop",
+  "settings.showDevPlugins": "Show development plugins",
+  "settings.showDevPluginsHelp": "Shows the template plugin for plugin authors in the FX Add list",
 
   "export.title": "Export audio",
   "export.run": "Export",
@@ -923,7 +924,6 @@
   "video.gapWider": "Very wide",
 
   "eq.title": "EQ ({name})",
-  "eq.menu": "EQ…",
   "eq.on": "Enable EQ",
   "eq.bands": "Number of bands",
   "eq.bandsN": "{n} bands",
@@ -934,7 +934,6 @@
   "eq.pause": "Pause",
   "eq.apply": "Apply",
   "eq.applyHelp": "Write the EQ into the track audio and reset the EQ to flat",
-  "eq.historyLabel": "EQ",
   "eq.range": "Range",
 
   "addonFolder.allow": "Allow access",
@@ -979,5 +978,22 @@
   "window.noAutosave": "This window is not autosaved",
 
   "dataFolder.found": "The specified folder contains earlier settings and work data",
-  "dataFolder.overwrite": "Overwrite"
+  "dataFolder.overwrite": "Overwrite",
+
+  "fx.menu": "FX…",
+  "fx.historyLabel": "FX",
+  "fx.title": "FX ({name})",
+  "fx.add": "Add",
+  "fx.empty": "No effects. Choose one from Add.",
+  "fx.remove": "Remove",
+  "fx.up": "Move up",
+  "fx.down": "Move down",
+  "fx.missing": "This effect ({id}) is not installed, so it is bypassed. Its values are kept.",
+  "fx.on": "On",
+  "fx.preset": "Presets",
+  "fx.presetEmpty": "No presets",
+  "fx.presetSave": "Save current values",
+  "fx.presetRemove": "Delete",
+  "fx.presetName": "Preset {n}",
+  "fx.applyHelp": "Writes the FX chain into the track audio and clears the chain"
 }

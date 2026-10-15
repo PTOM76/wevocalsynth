@@ -16,4 +16,6 @@ export const stored = defineItems(null, {
   presets: value<Preset[]>([]),
   // 一音ずつの書き出しに、短すぎる音や中身が読みと合わない音も入れる（commands/tools.ts）
   kanaKeepAll: value(false),
+  // FX のプリセット（プラグインの id ごと。wevocal-lib の FxChainDialog）
+  fxPresets: value<Record<string, { name: string; params: Record<string, number> }[]>>({}),
 })

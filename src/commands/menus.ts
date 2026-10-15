@@ -82,7 +82,7 @@ export const MENU_BAR: { label: MessageKey; accessKey: string; items: MenuItem[]
     accessKey: 'R',
     items: [
       'addTrack', 'duplicateTrack', 'trackFromOriginal', 'addEmptyTrack', 'copySelectionToTrack', 'moveSelectionToTrack', 'renameTrack', 'removeTrack', '-',
-      'mute', 'solo', 'invert', 'eq', '-',
+      'mute', 'solo', 'invert', 'fx', '-',
       'mergeDown', 'mergeAll',
     ],
   },

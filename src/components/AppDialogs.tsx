@@ -6,12 +6,11 @@ import type { Dialogs } from '../hooks/useDialogs'
 import type { useEditor } from '../hooks/useEditor'
 import type { useSelectionExport } from '../hooks/useSelectionExport'
 import { t } from '../i18n/i18n'
-import { flatEq } from '../effects/eq/eq'
 import { licenseEntries } from '../licenses'
 import { useAppSettings } from '../settings/settings'
 import SettingsDialog from '../settings/SettingsDialog'
 import AboutDialog from './AboutDialog'
-import EqDialog from '../effects/eq/EqDialog'
+import FxChainDialog from '../effects/FxChainDialog'
 import ExportDialog from './ExportDialog'
 import HistoryDialog from './HistoryDialog'
 import PitchToolHost, { type PitchDialogKind } from './PitchToolHost'
@@ -132,16 +131,19 @@ export default function AppDialogs({ ed, dialogs, bpm, seg, selectionExport }: P
     onJump={(n) => !busy && ed.history.jumpTo(n)}
   />
   <LicensesDialog open={dialogs.isOpen('licenses')} onClose={dialogs.closer('licenses')} title={t('menu.licenses')} intro={t('licenses.intro')} entries={licenseEntries()} />
-  <EqDialog
-    open={dialogs.isOpen('eq')}
-    trackName={ed.tracks.tracks.find((tr) => tr.id === ed.tracks.activeId)?.name ?? ''}
-    eq={ed.tracks.effects[ed.tracks.activeId]?.eq ?? flatEq(settings.eqBands)}
-    onChange={(eq) => ed.tracks.setEq(ed.tracks.activeId, eq)}
+  <FxChainDialog
+    open={dialogs.isOpen('fx')}
+    name={ed.tracks.tracks.find((tr) => tr.id === ed.tracks.activeId)?.name ?? ''}
+    slots={ed.tracks.fxOf(ed.tracks.activeId)}
+    dev={settings.showDevPlugins}
+    onChange={(fx) => ed.tracks.setFx(ed.tracks.activeId, fx)}
     playing={player.playing}
     onTogglePlay={ed.playback.togglePlay}
-    onApply={() => void ed.applyTrackEq()}
+    onApply={() => void ed.applyTrackFx()}
     busy={busy}
-    onClose={dialogs.closer('eq')}
+    userPresets={settings.fxPresets}
+    onUserPresetsChange={(plugin, list) => updateSettings({ fxPresets: { ...settings.fxPresets, [plugin]: list } })}
+    onClose={dialogs.closer('fx')}
   />
   <TempoChangeDialog
     open={dialogs.isOpen('tempoChange') && !!ed.tempo.changes}

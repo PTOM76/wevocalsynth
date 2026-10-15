@@ -279,7 +279,6 @@
   "settings.kanaStrength": "改变共振的强度",
   "settings.kanaStrengthHelp": "减弱后元音感会降低，但能保留原本的音色",
   "settings.groupAddonConverter": "转换",
-  "settings.eqBands": "EQ 频段数（新音轨）",
   "settings.addonFolder": "保存到指定文件夹",
   "settings.addonFolderHelp": "将模型等附加功能保存到指定文件夹，而不是浏览器的存储空间。设置和自动保存的工作也会复制到该文件夹，即使删除 PWA 也可以恢复（Chrome、Edge）。已安装的附加功能也可以移动到此文件夹",
   "settings.tempoChange": "检测速度变化",
@@ -306,6 +305,8 @@
   "settings.editBarOn": "始终显示",
   "settings.editBarOff": "不显示",
   "settings.editBarHelp": "选择范围后的编辑按钮行。自动仅在手机上显示，始终显示则在电脑上也显示在工具栏下方",
+  "settings.showDevPlugins": "显示开发用插件",
+  "settings.showDevPluginsHelp": "在 FX 的“添加”列表中显示面向开发者的模板插件",
 
   "export.title": "导出音频文件",
   "export.run": "导出",
@@ -923,7 +924,6 @@
   "video.gapWider": "很宽",
 
   "eq.title": "EQ（{name}）",
-  "eq.menu": "EQ…",
   "eq.on": "启用 EQ",
   "eq.bands": "频段数",
   "eq.bandsN": "{n} 段",
@@ -934,7 +934,6 @@
   "eq.pause": "暂停",
   "eq.apply": "应用",
   "eq.applyHelp": "将 EQ 写入音轨音频，并将 EQ 恢复为平直",
-  "eq.historyLabel": "EQ",
   "eq.range": "范围",
 
   "addonFolder.allow": "允许访问",
@@ -979,5 +978,22 @@
   "window.noAutosave": "此窗口不会自动保存",
 
   "dataFolder.found": "指定的文件夹中有以前的设置和工作数据",
-  "dataFolder.overwrite": "覆盖"
+  "dataFolder.overwrite": "覆盖",
+
+  "fx.menu": "FX…",
+  "fx.historyLabel": "FX",
+  "fx.title": "FX（{name}）",
+  "fx.add": "添加",
+  "fx.empty": "没有效果器。请从“添加”中选择。",
+  "fx.remove": "删除",
+  "fx.up": "上移",
+  "fx.down": "下移",
+  "fx.missing": "未安装此效果器（{id}），已直通。参数值会保留。",
+  "fx.on": "开启",
+  "fx.preset": "预设",
+  "fx.presetEmpty": "没有预设",
+  "fx.presetSave": "保存当前值",
+  "fx.presetRemove": "删除",
+  "fx.presetName": "预设 {n}",
+  "fx.applyHelp": "将 FX 链写入轨道音频，并清空该链"
 }

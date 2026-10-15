@@ -52,30 +52,30 @@ src/addons/
 src/audio/
   detectMode.ts  音声がボーカルか楽器かを判定し、モードごとの既定の処理方式を決める
   edit.ts  音声の編集の計算（範囲への加工、切り取りと挿入、音量、フェード、反転、曲線の書き込み）
-  finish.ts  書き出しの仕上げ（ノーマライズと両端のフェード）
-  kanaCut.ts  歌から一音（あ、い、う…）ずつ切り出す。文字化と読みは追加機能「歌詞の文字化」、境目は追加機能「解析」が行う（memo/kana-cut.md）
-  kanaOut.ts  一音ずつ切り出したものの出し方（五十音順のトラック、UTAU の音源）。memo/kana-voice.md の 3.5
-  midi.ts  標準 MIDI ファイル（.mid、形式 0 / 1）の読み込み。ピッチに当てはめるための音符（高さと、秒単位の始まり・終わり）だけを取り出す。
+  finish.ts  書き出しの仕上げ（ノーマライズと両端のフェード。wevocal-lib の finishClip。WeVocal Studio と共通）
+  kanaCut.ts  歌から一音ずつ切り出す（手順は analyzer の kanaCut.ts。WeVocal Studio と共通）
+  kanaOut.ts  一音ずつ切り出したものの出し方（analyzer の kanaOut.ts。WeVocal Studio と共通）
+  midi.ts  標準 MIDI ファイルの読み込み（wevocal-lib。WeVocal Studio と共通）
   mix.ts  トラックを足し合わせて 1 つにする（統合と書き出し）
   multiRange.ts  複数の選択範囲の整理、切り出し、範囲ごとの加工
   noteBlocks.ts  ピッチの線を音符ブロックに区切る
-  notes.ts  音名（C から B まで、シャープ表記）
+  notes.ts  音名と周波数（wevocal-lib。WeVocal Studio と共通）
   originalStore.ts  原音を IndexedDB に退避してメモリを節約する
-  outputLimit.ts  鳴らす音の上限（耳とスピーカーを守るリミッター）。再生の出口は ctx.destination ではなく limitedOutput(ctx) につなぐ
-  pitchTools.ts  ピッチの曲線の一括操作（平らにする、音程に揃える、ビブラート、MIDI に合わせる）
+  outputLimit.ts  鳴らす音の上限（wevocal-lib。WeVocal Studio と共通）
+  pitchTools.ts  ピッチの一括操作の計算（wevocal-lib。WeVocal Studio と共通）
   sampler.ts  音声を MIDI の音符に並べて新しいトラックを作る
-  silence.ts  無音で区切って、音のある所を探す
+  silence.ts  無音で区切って、音のある所を探す。WeVocal Studio と共通にするため wevocal-lib に移した（ここは読み直すだけ）
   spectrogram.ts  スペクトログラムの計算を追加機能「解析」に頼む
-  synth.ts  音を 0 から作る（声の母音、楽器の波形）
+  synth.ts  音を 0 から作る（wevocal-lib。WeVocal Studio と共通）
   tempoChange.ts  曲の途中でテンポが変わる所を探す（自動解析で見つけたら、テンポのマーカーの候補にする）
-  tempoMap.ts  テンポが途中で変わる曲のための、区間ごとのテンポと拍の位置
+  tempoMap.ts  テンポが途中で変わる曲のための、区間ごとのテンポと拍の位置。WeVocal Studio と共通にするため wevocal-lib に移した（ここは読み直すだけ）
   timeMap.ts  編集の前の時刻を、編集の後の時刻に写す（読みの帯などの位置を、音声の編集に追従させる）
-  tracks.ts  トラックの形と、保存する設定（フェーダー、鳴らし方、EQ）の変換
+  tracks.ts  トラックの形と、保存する設定（フェーダー、鳴らし方、FX の列）の変換
   types.ts  音声（Clip）の型と長さ、時間の表記の変換
-  useLivePosition.ts  再生中の位置を、部品の中だけで決まった間隔で読む
+  useLivePosition.ts  再生中の位置を、部品の中だけで決まった間隔で読む（PevenMUI。WeVocal Studio と共通）
   usePlayer.ts  再生（全トラックのミックス、ループ、音量メーター、フェーダーと EQ）
-  video.ts  動画の書き出しを追加機能「変換」に頼む
-  vocalExtract.ts  ボーカル抽出の本体（モデルの選択と実行環境。React に依存しない）
+  video.ts  動画の書き出しを追加機能「変換」に頼む（手順は converter の host.ts。WeVocal Studio と共通）
+  vocalExtract.ts  ボーカル抽出（手順は Extractor の host.ts。WeVocal Studio と共通。ここは表示の名前と、範囲に貼り直す処理だけ）
 
 src/audio/realtime/
   granularProcessor.ts  リアルタイム試聴用の AudioWorklet。グラニュラー方式でピッチ変更・時間伸縮を行う。
@@ -101,46 +101,46 @@ src/components/
   AppIcon.tsx  アプリのアイコン（public/icon.svg）。GitHub Pages ではサブパスで配信されるため BASE_URL から組み立てる
   CleanExtractScreen.tsx  メモリが足りないときの抽出の画面（再読み込みの直後に表示する）
   EditPanel.tsx  加工の欄（ピッチ、長さ、フォルマント、処理方式、試聴と適用）
-  EmptyState.tsx  何も開いていないときの画面（開く、最近使用したファイル、音声の作成、録音）
-  ExportDialog.tsx  音声の書き出しのダイアログ
-  HistoryDialog.tsx  編集の履歴のダイアログ（押した段へ戻る）
-  KanaCutDialog.tsx  一音ずつ切り出すダイアログ（文字化して読みを付け、一音ずつの範囲を求める）
-  LevelMeter.tsx  音量メーター（wevocal-lib の部品にテーマの色を渡す）
-  LiveTime.tsx  再生中の時間の表示（部品の中だけで更新する）
-  MarkerTempoDialog.tsx  マーカーからのテンポを決めるダイアログ
-  MidiDialog.tsx  MIDI に合わせてピッチの曲線を作るダイアログ
-  MobileEditBar.tsx  スマホで範囲を選んだときの編集のボタンの列
+  EmptyState.tsx  何も開いていないときの画面（部品は PevenMUI の EmptyState。WeVocal Studio と共通）
+  ExportDialog.tsx  音声の書き出しのダイアログ（部品は wevocal-lib の ExportDialog。WeVocal Studio と共通）
+  HistoryDialog.tsx  編集の履歴のダイアログ（部品は PevenMUI の HistoryDialog。WeVocal Studio と共通）
+  KanaCutDialog.tsx  一音ずつ切り出すダイアログ（部品と手順は analyzer。WeVocal Studio と共通）
+  LevelMeter.tsx  音量メーター（wevocal-lib の ThemedLevelMeter。WeVocal Studio と共通）
+  LiveTime.tsx  再生中の時間の表示（部品は PevenMUI の LiveTime。WeVocal Studio と共通）
+  MarkerTempoDialog.tsx  マーカーからのテンポを決めるダイアログ（部品は wevocal-lib。WeVocal Studio と共通）
+  MidiDialog.tsx  MIDI に合わせてピッチの曲線を作るダイアログ（wevocal-lib。WeVocal Studio と共通）
+  MobileEditBar.tsx  スマホで範囲を選んだときの編集のボタンの列（部品は PevenMUI の EditBar。ここは並べるボタンを決める）
   MobilePlayBar.tsx  スマホの下の再生バー
   MoraLane.tsx  読みの帯（一音ずつの範囲を波形の下に並べ、端のドラッグで直す。ダブルクリックで読みの変更、右クリックで削除）
   PitchControl.tsx  ピッチの変更量のスライダーと入力欄
-  PitchToolDialogs.tsx  ピッチの一括操作のダイアログ（音程に揃える、ビブラート）
+  PitchToolDialogs.tsx  ピッチの一括操作のダイアログ（wevocal-lib。WeVocal Studio と共通。訳文は PitchToolHost が PitchToolText で渡す）
   PitchToolHost.tsx  ピッチの一括操作のダイアログを開く場所
-  PresetMenu.tsx  加工のプリセットのメニュー
+  PresetMenu.tsx  加工のプリセットのメニュー（部品は PevenMUI の PresetMenu。WeVocal Studio と共通）
   RecordDialog.tsx  録音のダイアログ（入力元、レベル、録音したものを新しいトラックへ）
   RepeatDialog.tsx  選択範囲を繰り返すダイアログ
-  SamplerDialog.tsx  MIDI の音符に並べるダイアログ（サンプラー）
-  SelectionField.tsx  選択範囲の開始と終了の入力欄
+  SamplerDialog.tsx  音声を MIDI の音符に並べるダイアログ（部品は wevocal-lib の SamplerDialog。WeVocal Studio と共通）
+  SelectionField.tsx  選択範囲の開始と終了の入力欄（部品は PevenMUI の SelectionField。WeVocal Studio と共通）
   ShortcutsDialog.tsx  ショートカットの一覧のダイアログ
   SilenceDialog.tsx  無音を挿入するダイアログ
   SoundSelectDialog.tsx  無音で区切って選択するダイアログ
   stableMemo.ts  関数の props が作り直されても描き直さない memo
   StatusBar.tsx  PC の下のステータスバー（プロジェクト名、形式、選択範囲、BPM、原音と加工後）
-  SynthDialog.tsx  音を 0 から作るダイアログ
+  SynthDialog.tsx  音を 0 から作るダイアログ（部品は wevocal-lib の SynthDialog。WeVocal Studio と共通）
   TempoChangeDialog.tsx  テンポの途中の変化を見つけたときに、マーカーを置くかを尋ねるダイアログ
-  TempoField.tsx  BPM の表示と入力（タップで測る、再解析）
+  TempoField.tsx  BPM の表示と入力（部品は PevenMUI の TempoField。WeVocal Studio と共通）
   Toolbar.tsx  PC の上のツールバー（再生、編集、表示のボタン）
   UpdatePrompt.tsx  新しい版が公開されたときの通知
-  VideoExportDialog.tsx  動画の書き出しのダイアログ
-  videoPrefs.ts  動画の書き出しで覚えておく選択（既定値）
+  VideoExportDialog.tsx  動画の書き出しのダイアログ（部品は converter の VideoExportDialog。WeVocal Studio と共通）
+  videoPrefs.ts  動画の書き出しで覚えておく選択と、見た目の組み立て（converter の host.ts。WeVocal Studio と共通）
   VolumePanel.tsx  音量の欄（トラックのフェーダーと、範囲の音量の編集）
   Waveform.tsx  波形と帯（スペクトログラム、ピッチ、音量、フォルマント）の Canvas と、その上の操作
-  WindowLimitScreen.tsx  ウィンドウの数が上限のときの画面（作業を開かない）
+  WindowLimitScreen.tsx  ウィンドウの数が上限のときの画面（部品は PevenMUI。WeVocal Studio と共通）
 
 src/components/inspector/
   Inspector.tsx  インスペクタ（右の欄）の部品（折りたたむ欄、行、数値の入力）
 
 src/components/tracks/
-  RenameDialog.tsx  名前の変更のダイアログ（トラック、プロジェクト）
+  RenameDialog.tsx  名前の変更のダイアログ（部品は PevenMUI の RenameDialog。WeVocal Studio と共通）
   TrackLanes.tsx  トラックの欄（波形付きの一覧）
   trackMenu.ts  トラックの右クリックメニュー
   TrackPanel.tsx  トラックの欄の外枠（一覧とタブの切り替え、たたむ）
@@ -161,8 +161,8 @@ src/constants/
   ui.ts  画面の定数（選択肢の表、小さいボタンの見た目）
 
 src/debug/
-  DebugOverlay.tsx  デバッグ表示（FPS、描画回数、メモリ、DSP の時間）
-  debugStats.ts  デバッグ表示用の計測値。計測はいつも行う（数を足すだけなので軽い）ので、
+  DebugOverlay.tsx  デバッグ表示（部品は PevenMUI。WeVocal Studio と共通）
+  debugStats.ts  デバッグ表示用の計測値（PevenMUI。WeVocal Studio と共通）
   diagnoseExtract.ts  ボーカル抽出の診断の本体
   ExtractDiagnose.tsx  ボーカル抽出の診断の画面（設定の開発者向け）
 
@@ -172,12 +172,12 @@ src/dsp/
   worker.ts  wasm の DSP エンジンをメインスレッド外で実行する Worker
 
 src/effects/
+  FxChainDialog.tsx  FX の列のダイアログ（部品は wevocal-lib の FxChainDialog。WeVocal Studio と共通）
   index.ts  エフェクトの表と、表の順に掛ける関数（書き出し、再生）
   types.ts  エフェクトの型。WeVocal Studio と共通にするため wevocal-lib に移した（ここは読み直すだけ）
 
 src/effects/eq/
   eq.ts  トラックのグラフィック EQ の計算。WeVocal Studio と共通にするため wevocal-lib に移した（ここは読み直すだけ）
-  EqDialog.tsx  トラックのグラフィック EQ のダイアログ
   EqGraph.tsx  グラフィック EQ のグラフ。部品は wevocal-lib/react に移した（WeVocal Studio と共通）。ここではテーマの色と文言を渡すだけ
 
 src/effects/fader/
@@ -198,7 +198,6 @@ src/hooks/
   useLaneCurve.ts  帯に描く曲線（音量、フォルマント）の値
   useLanes.ts  帯の表示と、フォーカスしている帯
   useMarkers.ts  マーカー（追加、名前、テンポ、前後への移動）
-  useNumberDraft.ts  数値の入力欄を、打っている途中の文字のまま扱う
   useOutput.ts  プロジェクトの保存と、音声の書き出し
   usePitchClipboard.ts  ピッチの曲線の切り取り、コピー、貼り付け
   usePitchTarget.ts  ペンで描いた目標のピッチ
@@ -233,7 +232,7 @@ src/project/
   projectFile.ts  プロジェクトファイル（.wvsp）の読み書き
   settingsMirror.ts  設定と画面の状態（localStorage）を、指定したフォルダーにも写す。戻すのは設定の「データ」から（memo/data-folder.md）
   storage.ts  ブラウザ内に保存しているデータの確認と削除（設定の「データ」）
-  windowSlot.ts  ウィンドウごとの枠（複数のウィンドウで、自動保存などの保存先を分ける）
+  windowSlot.ts  ウィンドウごとの枠（PevenMUI。WeVocal Studio と共通）。名前の頭はこのアプリのもの
 
 src/pwa/
   updateCheck.ts  新しい版の確認
@@ -241,7 +240,7 @@ src/pwa/
 src/settings/
   DataSection.tsx  設定の「データ」（使用量と削除）
   keymap.ts  Synth の操作の一覧と既定のキー
-  OutputDeviceRow.tsx  設定の「音声の出力先」の行
+  OutputDeviceRow.tsx  設定の「音声の出力先」の行（wevocal-lib。WeVocal Studio と共通）
   ProjectSection.tsx  設定の「プロジェクト」（名前とテンポ）
   settings.ts  設定の保存と読み込み、Context
   SettingsDialog.tsx  設定のダイアログ（PevenMUI の設定画面に、分類と中身を渡す）
@@ -251,12 +250,12 @@ src/settings/
 
 src/settings/items/
   debug.ts  設定の項目の定義（開発者向け、音声処理、試験的機能）
-  define.ts  設定の項目を定義する関数（check、choice、number、value）
+  define.ts  設定の項目を定義する関数（check、choice、number、value）。仕組みは PevenMUI の settingItems（WeVocal Studio と共通）。ここは訳文のキーと分類の型を決めるだけ
   display.ts  設定の項目の定義（表示と、表示メニューの切り替え）
   general.ts  設定の項目の定義（全般、編集、キーとマウス、ファイル）
-  index.ts  設定の項目をまとめ、型と既定値を作る
+  index.ts  設定の項目をまとめ、型と既定値を作る（PevenMUI の collectItems）
   process.ts  設定の項目の定義（処理、ピッチ解析、テンポ、ボーカル抽出）
-  SettingRow.tsx  項目の定義から設定画面の 1 行を作る
+  SettingRow.tsx  項目の定義から設定画面の 1 行を作る（部品は PevenMUI の SettingRow）
   stored.ts  設定の項目の定義（画面の操作で覚えておく値）
 
 dsp/src/
@@ -276,10 +275,6 @@ dsp/src/tests/
   sola3_level.rs  SOLAv3 を分けずに長い音に掛けると、後ろほど音量が上がるかを測る（memo/webgpu.md の 9.）。
   stretch.rs  時間伸縮・ピッチ変更のテスト。
   voices.rs  和音を 2 つの声に分ける試作の確認（memo/harmony-split.md）。結果は `cargo test voices -- --nocapture` で表示する
-
-dsp/src/voices/
-  detect.rs  和音を 2 つの声に分けるための、フレームごとの声（F0 と倍音の振幅）の推定（memo/harmony-split.md）
-  mod.rs  和音を 2 つの声に分ける（試作。memo/harmony-split.md）。
 ```
 <!-- map:end -->
 

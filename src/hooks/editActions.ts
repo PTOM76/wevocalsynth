@@ -1,7 +1,8 @@
 // 音声を書き換える操作（加工の適用、テンポの伸縮、区間の伸縮、サンプラー、曲線の書き込み）
 import type { Dispatch, SetStateAction } from 'react'
 import { applyFormantCurve, applyGainCurve, applyPitchCurve, spliceProcessed } from '../audio/edit'
-import { applyEq, flatEq, isFlatEq } from '../effects/eq/eq'
+import { EFFECTS } from '../effects'
+import { isNeutralChain } from 'wevocal-lib'
 import { applyEditToRanges, sliceRanges } from '../audio/multiRange'
 import { restoreClip } from '../audio/originalStore'
 import { placeOnNotes } from '../audio/sampler'
@@ -202,17 +203,17 @@ const applyFormant = () =>
     formantCurve.clear()
   })
 
-/** 選んでいるトラックの EQ を音声に書き込み、履歴に積む。書き込んだら EQ は平らに戻す（二重に掛からないように） */
-const applyTrackEq = () =>
+/** 選んでいるトラックの FX の列を音声に書き込み、履歴に積む。書き込んだら列は空に戻す（二重に掛からないように） */
+const applyTrackFx = () =>
   task.run(t('task.processing'), async (signal) => {
-    const eq = tracks.eqOf(tracks.activeId)
-    if (!edited || isFlatEq(eq)) return
-    const clip = await applyEq(edited, eq)
+    const fx = tracks.fxOf(tracks.activeId)
+    if (!edited || isNeutralChain(fx)) return
+    const clip = await EFFECTS.fx.render(edited, fx)
     if (signal.aborted) return
-    commit(clip, t('eq.historyLabel'))
-    tracks.setEq(tracks.activeId, { ...flatEq(eq.bands), on: eq.on, range: eq.range })
+    commit(clip, t('fx.historyLabel'))
+    tracks.setFx(tracks.activeId, [])
     setToast({ severity: 'success', message: t('toast.applied') })
   })
 
-  return { apply, changeTempo, stretchRange, retime, placeOnMidi, kanaDemo, applyCurve, applyGain, applyFormant, applyTrackEq }
+  return { apply, changeTempo, stretchRange, retime, placeOnMidi, kanaDemo, applyCurve, applyGain, applyFormant, applyTrackFx }
 }

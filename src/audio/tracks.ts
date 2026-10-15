@@ -1,5 +1,5 @@
-// トラックの形と、保存する設定（フェーダー、鳴らし方、EQ）の変換
-import { isFlatEq, parseEq, type TrackEq } from '../effects/eq/eq'
+// トラックの形と、保存する設定（フェーダー、鳴らし方、FX の列）の変換
+import { eqToSlot, isFlatEq, parseEq, type FxSlot, type TrackEq } from 'wevocal-lib'
 import type { EffectValues } from '../effects'
 export { DEFAULT_FADER, isNeutralFader, faderGain, type TrackFader } from '../effects/fader/fader'
 import type { Clip } from './types'
@@ -50,6 +50,9 @@ export interface StoredTrackSettings {
   volume?: number
   pan?: number
   invert?: boolean
+  /** FX の列 */
+  fx?: FxSlot[]
+  /** 古いファイルの EQ。読み込みで fx の先頭に読み替える（書かない） */
   eq?: TrackEq
   mute?: boolean
   solo?: boolean
@@ -58,16 +61,16 @@ export interface StoredTrackSettings {
 }
 
 /** `StoredTrackSettings` の項目名（保存したものから、この項目だけを取り出すのに使う） */
-const STORED_KEYS = ['volume', 'pan', 'invert', 'eq', 'mute', 'solo', 'overlay', 'morae'] as const satisfies readonly (keyof StoredTrackSettings)[]
+const STORED_KEYS = ['volume', 'pan', 'invert', 'fx', 'eq', 'mute', 'solo', 'overlay', 'morae'] as const satisfies readonly (keyof StoredTrackSettings)[]
 
 export function toStoredSettings(s: TrackSettings): StoredTrackSettings {
-  return { volume: s.fader.db, pan: s.fader.pan, invert: s.fader.invert, eq: isFlatEq(s.eq) && s.eq.on && s.eq.bands === 10 ? undefined : s.eq, mute: s.mix.mute, solo: s.mix.solo, overlay: s.overlay, morae: s.morae.length ? s.morae : undefined }
+  return { volume: s.fader.db, pan: s.fader.pan, invert: s.fader.invert, fx: s.fx.length ? s.fx : undefined, mute: s.mix.mute, solo: s.mix.solo, overlay: s.overlay, morae: s.morae.length ? s.morae : undefined }
 }
 
 export function fromStoredSettings(s: StoredTrackSettings | undefined): TrackSettings {
   return {
     fader: { db: s?.volume ?? 0, pan: s?.pan ?? 0, invert: !!s?.invert },
-    eq: parseEq(s?.eq),
+    fx: s?.fx ?? (s?.eq && !isFlatEq(parseEq(s.eq)) ? [eqToSlot(parseEq(s.eq))] : []),
     mix: { mute: !!s?.mute, solo: !!s?.solo },
     overlay: !!s?.overlay,
     morae: Array.isArray(s?.morae) ? s.morae : [],

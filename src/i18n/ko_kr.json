@@ -279,7 +279,6 @@
   "settings.kanaStrength": "공명을 바꾸는 강도",
   "settings.kanaStrengthHelp": "약하게 하면 모음다움은 줄지만 원래 음색이 남는다",
   "settings.groupAddonConverter": "변환",
-  "settings.eqBands": "EQ 밴드 수(새 트랙)",
   "settings.addonFolder": "지정한 폴더에 저장",
   "settings.addonFolderHelp": "모델 등 추가 기능을 브라우저의 저장 영역이 아닌 지정한 폴더에 저장합니다. 설정과 자동 저장한 작업도 복사하므로 PWA를 삭제해도 되돌릴 수 있습니다(Chrome, Edge). 설치된 추가 기능도 이 폴더로 옮길 수 있습니다",
   "settings.tempoChange": "템포 변화 감지",
@@ -306,6 +305,8 @@
   "settings.editBarOn": "항상 표시",
   "settings.editBarOff": "표시 안 함",
   "settings.editBarHelp": "범위를 선택했을 때의 편집 버튼 줄입니다. 자동은 스마트폰에서만, 항상 표시는 PC에서도 도구 모음 아래에 표시합니다",
+  "settings.showDevPlugins": "개발용 플러그인 표시",
+  "settings.showDevPluginsHelp": "FX의 추가 목록에 제작자용 템플릿 플러그인을 표시합니다",
 
   "export.title": "오디오 파일 내보내기",
   "export.run": "내보내기",
@@ -923,7 +924,6 @@
   "video.gapWider": "아주 넓게",
 
   "eq.title": "EQ ({name})",
-  "eq.menu": "EQ…",
   "eq.on": "EQ 사용",
   "eq.bands": "밴드 수",
   "eq.bandsN": "{n}밴드",
@@ -934,7 +934,6 @@
   "eq.pause": "일시정지",
   "eq.apply": "적용",
   "eq.applyHelp": "EQ를 트랙 오디오에 기록하고 EQ를 평탄하게 되돌립니다",
-  "eq.historyLabel": "EQ",
   "eq.range": "범위",
 
   "addonFolder.allow": "접근 허용",
@@ -979,5 +978,22 @@
   "window.noAutosave": "이 창은 자동 저장되지 않습니다",
 
   "dataFolder.found": "지정한 폴더에 이전 설정과 작업 데이터가 있습니다",
-  "dataFolder.overwrite": "덮어쓰기"
+  "dataFolder.overwrite": "덮어쓰기",
+
+  "fx.menu": "FX…",
+  "fx.historyLabel": "FX",
+  "fx.title": "FX ({name})",
+  "fx.add": "추가",
+  "fx.empty": "이펙트가 없습니다. 추가에서 선택하세요.",
+  "fx.remove": "삭제",
+  "fx.up": "위로",
+  "fx.down": "아래로",
+  "fx.missing": "이 이펙트({id})가 설치되어 있지 않아 그대로 통과시킵니다. 값은 보존됩니다.",
+  "fx.on": "켜기",
+  "fx.preset": "프리셋",
+  "fx.presetEmpty": "프리셋이 없습니다",
+  "fx.presetSave": "현재 값 저장",
+  "fx.presetRemove": "삭제",
+  "fx.presetName": "프리셋 {n}",
+  "fx.applyHelp": "FX 체인을 트랙 오디오에 기록하고 체인을 비웁니다"
 }

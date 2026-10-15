@@ -35,8 +35,8 @@ AI のエージェント向けの決まり。[docs/CODING.md](docs/CODING.md) �
 
 ## エフェクト
 
-- トラックに掛けるもの（EQ、フェーダー）は `src/effects/` のフォルダーに置き、`src/effects/index.ts` の表と `EffectValues` に足す。型は `effects/types.ts`（既定の値、何もしない値か、書き出しの計算、再生のノード）。再生、書き出し、トラックの状態は表から作られる
-- 保存のキー（volume、pan、invert、eq）は変えない。足したエフェクトの保存は `src/audio/tracks.ts` の `toStoredSettings` と `fromStoredSettings` に足す
+- トラックに掛けるもの（FX の列、フェーダー）は `src/effects/` のフォルダーに置き、`src/effects/index.ts` の表と `EffectValues` に足す。型は `effects/types.ts`（既定の値、何もしない値か、書き出しの計算、再生のノード）。再生、書き出し、トラックの状態は表から作られる
+- 保存のキー（volume、pan、invert、fx）は変えない。古いファイルの `eq` は読み込みで `fx` の先頭に読み替える（書くのは `fx`）。足したエフェクトの保存は `src/audio/tracks.ts` の `toStoredSettings` と `fromStoredSettings` に足す
 
 ## 音声処理（DSP）
 

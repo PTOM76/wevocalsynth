@@ -84,7 +84,6 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         <Group title={t('settings.groupProcess')}>
           {S('initialMode')}
           {S('saveMemory')}
-          {S('eqBands')}
         </Group>
       </>
     ),
@@ -251,6 +250,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
       <Group title={t('settings.groupExperimental')}>
         {S('showExperimentalAlgorithms')}
         {S('showVoiceSplit')}
+        {S('showDevPlugins')}
         {S('showKanaVoice')}
         {draft.showKanaVoice && S('kanaStrength')}
         {S('parallelProcess')}

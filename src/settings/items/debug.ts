@@ -45,6 +45,8 @@ export const experimental = defineItems('experimental', {
   showExperimentalAlgorithms: check(false, { label: 'settings.showExperimentalAlgorithms', help: 'settings.showExperimentalAlgorithmsHelp' }),
   // 「和音を分ける」（試作）をメニューに表示する
   showVoiceSplit: check(false, { label: 'settings.showVoiceSplit', help: 'settings.showVoiceSplitHelp' }),
+  // 開発者向けのプラグイン（雛形）を FX の追加の一覧に出す
+  showDevPlugins: check(false, { label: 'settings.showDevPlugins', help: 'settings.showDevPluginsHelp' }),
   // 声から一音を作る（試験的。memo/kana-voice.md）
   showKanaVoice: check(false, { label: 'settings.showKanaVoice', help: 'settings.showKanaVoiceHelp' }),
   // 声から五十音を作るとき、響きを動かす強さ（%）。弱めると母音らしさと引き換えに元の声質が残る

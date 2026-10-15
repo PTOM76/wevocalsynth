@@ -1,4 +1,5 @@
 // エディタ全体の状態と操作（文書、選択範囲、加工、再生、表示を束ねる）
+import { fxHost } from '../effects'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
@@ -66,6 +67,8 @@ export function useEditor() {
   const doc = useDocument(settings)
   const { history, tracks, markers } = doc
   const projectTempo = doc.tempo
+  // ディレイの同期に使うテンポ（effects/ の fxHost）
+  fxHost.bpm = projectTempo.bpm
   const setProjectTempo = doc.setTempo
   // 編集できるのは選んでいるトラックだけ。original / edited はそのトラックの原音、加工後
   const original = history.original
@@ -331,7 +334,7 @@ export function useEditor() {
   )
 
   // 加工の適用、テンポの伸縮、曲線の書き込みなど（editActions.ts）
-  const { apply, changeTempo, stretchRange, retime, placeOnMidi, kanaDemo, applyCurve, applyGain, applyFormant, applyTrackEq } = editActions({
+  const { apply, changeTempo, stretchRange, retime, placeOnMidi, kanaDemo, applyCurve, applyGain, applyFormant, applyTrackFx } = editActions({
     task, history, tracks, edited, shown, editRanges, multi, preview, params, setParams, commit, selections, setSelections,
     setToast, projectTempo, setProjectTempo, settings, pitch, pitchTarget, gainCurve, formantCurve,
   })
@@ -450,7 +453,7 @@ export function useEditor() {
     // 再生
     player, preview, loop, playback, repeat, setRepeat, seekEdge, seekBy,
     // 表示（ピッチ・スペクトログラム）とピッチ描画
-    showPitch, setShowPitch, showSpec, setShowSpec: requestShowSpec, analyzerInstalled, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, applyTrackEq, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
+    showPitch, setShowPitch, showSpec, setShowSpec: requestShowSpec, analyzerInstalled, showWave, setShowWave, showGain, setShowGain, gainCurve, applyGain, applyTrackFx, showFormant, setShowFormant, formantCurve, applyFormant, focusLane, setFocusLane, clip, penMode, setPenMode, grabMode, setGrabMode, pitch, voicing, spec, pitchTarget, pitchTools, tempo,
     // 操作
     tracks, addPicker, addSynth, gainDb, setGainDb, pan, setPan,
     cmd, apply, stretchRange, retime, placeOnMidi, markers, addMarker, seekMarker, extract: vocal.extract, prepareSeparate: vocal.prepareSeparate, splitStems: vocal.splitStems, splitLeadStems: vocal.splitLeadStems, splitInstrumentStems: vocal.splitInstrumentStems, splitVoices, kanaDemo, addonDialog: addons.dialog, ensureAddon: addons.ensure, extractDialog: vocal.dialog, applyCurve, saveProjectFile, dirty: doc.dirty, exportFile, exportOpen, openExport, video, exportActiveOnly, setExportOpen, baseName, exportName, picker, recent,

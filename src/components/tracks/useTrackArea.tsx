@@ -5,7 +5,7 @@ import type { View } from '../waveform/draw'
 import { ContextMenu, useStableFn } from 'pevenmui'
 import TrackPanel from './TrackPanel'
 import RenameDialog from './RenameDialog'
-import { isFlatEq } from '../../effects/eq/eq'
+import { isNeutralChain } from 'wevocal-lib'
 import { multiTrackMenuEntries, trackMenuEntries } from './trackMenu'
 import type { PickMods } from './useTrackDrag'
 
@@ -13,7 +13,7 @@ import type { PickMods } from './useTrackDrag'
  * トラックの欄と、その右クリックメニュー・名前の変更のつなぎ込み（App から分けたもの）。
  * `panel(view)` を波形の上に、`overlays` を画面のどこかに置く
  */
-export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, meter: ((id: string) => AnalyserNode | null) | null, openEq: () => void) {
+export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, meter: ((id: string) => AnalyserNode | null) | null, openFx: () => void) {
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const tr = ed.tracks
@@ -69,11 +69,11 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
     toggleSolo: tr.toggleSolo,
     inverted: (id: string) => !!tr.faderOf(id).invert,
     toggleInvert: tr.toggleInvert,
-    eqOn: (id: string) => !isFlatEq(tr.eqOf(id)),
-    // EQ のダイアログは選んでいるトラックを編集するので、選んでから開く
-    openEq: (id: string) => {
+    fxOn: (id: string) => !isNeutralChain(tr.fxOf(id)),
+    // FX のダイアログは選んでいるトラックを編集するので、選んでから開く
+    openFx: (id: string) => {
       tr.select(id)
-      openEq()
+      openFx()
     },
     overlay: tr.overlay,
     toggleOverlay: tr.toggleOverlay,
@@ -87,10 +87,10 @@ export function useTrackArea(ed: ReturnType<typeof useEditor>, busy: boolean, me
   /** 複数選んだトラックの上で右クリックしたらまとめての操作、それ以外はそのトラックの操作 */
   const menuFor = (id: string) => (picked.size > 1 && picked.has(id) ? multiTrackMenuEntries(tr.tracks.filter((x) => picked.has(x.id)).map((x) => x.id), actions) : trackMenuEntries(id, actions))
 
-  // 位相の反転か EQ を使っているトラック（「⋯」に色を付ける）
+  // 位相の反転か FX を使っているトラック（「⋯」に色を付ける）
   const marked = useMemo(
-    () => new Set(tr.tracks.filter((x) => tr.faderOf(x.id).invert || !isFlatEq(tr.eqOf(x.id))).map((x) => x.id)) as ReadonlySet<string>,
-    // faderOf と eqOf は effects だけで決まる
+    () => new Set(tr.tracks.filter((x) => tr.faderOf(x.id).invert || !isNeutralChain(tr.fxOf(x.id))).map((x) => x.id)) as ReadonlySet<string>,
+    // faderOf と fxOf は effects だけで決まる
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tr.tracks, tr.effects],
   )

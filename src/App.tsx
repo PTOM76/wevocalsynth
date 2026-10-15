@@ -178,7 +178,7 @@ export default function App() {
   const center = view.start + view.dur / 2
   // トラックの欄（右クリックメニュー・名前の変更を含む）。メニューの「トラック → 名前の変更」からも使う
   // トラックの「⋯」でも同じメニューを開ける（スマホは右クリックができない。位相の反転と EQ もここから）
-  const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null, dialogs.opener('eq'))
+  const trackArea = useTrackArea(ed, busy, settings.showMeters ? player.analyser : null, dialogs.opener('fx'))
 
   const selectionExport = useSelectionExport(ed)
   const { dragSelectionFile, saveSelectionToFolder } = selectionExport

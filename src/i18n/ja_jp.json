@@ -279,7 +279,6 @@
   "settings.kanaStrength": "響きを変える強さ",
   "settings.kanaStrengthHelp": "弱めると、母音らしさは減るが、元の声質が残る",
   "settings.groupAddonConverter": "変換",
-  "settings.eqBands": "EQのバンドの数（新しいトラック）",
   "settings.addonFolder": "指定したフォルダーに保存する",
   "settings.addonFolderHelp": "モデルなどの追加機能を、ブラウザのデータ領域ではなく、指定したフォルダーに保存します。設定と自動保存した作業も写すので、PWA を削除しても戻せます（Chrome、Edge）。導入済みの追加機能も、このフォルダーへ移動できます",
   "settings.tempoChange": "テンポの変化の検出",
@@ -306,6 +305,8 @@
   "settings.editBarOn": "常に表示",
   "settings.editBarOff": "表示しない",
   "settings.editBarHelp": "範囲を選んだときの編集のボタンの列。自動はスマホだけ、常に表示はパソコンでもツールバーの下に表示する",
+  "settings.showDevPlugins": "開発用のプラグインを表示する",
+  "settings.showDevPluginsHelp": "FX の「追加」に、作る人向けの雛形のプラグインを表示します",
 
   "export.title": "音声ファイルに書き出す",
   "export.run": "書き出し",
@@ -923,7 +924,6 @@
   "video.gapWider": "とても広い",
 
   "eq.title": "EQ（{name}）",
-  "eq.menu": "EQ…",
   "eq.on": "EQを使用する",
   "eq.bands": "バンドの数",
   "eq.bandsN": "{n}バンド",
@@ -934,7 +934,6 @@
   "eq.pause": "一時停止",
   "eq.apply": "適用",
   "eq.applyHelp": "EQをトラックの音声に書き込み、EQを平らに戻します",
-  "eq.historyLabel": "EQ",
   "eq.range": "上限",
 
   "addonFolder.allow": "アクセスを許可",
@@ -979,5 +978,22 @@
   "window.noAutosave": "このウィンドウは自動保存されません",
 
   "dataFolder.found": "指定したフォルダーに、以前の設定と作業データがあります",
-  "dataFolder.overwrite": "上書き"
+  "dataFolder.overwrite": "上書き",
+
+  "fx.menu": "FX…",
+  "fx.historyLabel": "FX",
+  "fx.title": "FX（{name}）",
+  "fx.add": "追加",
+  "fx.empty": "エフェクトがありません。追加から選んでください。",
+  "fx.remove": "削除",
+  "fx.up": "上へ",
+  "fx.down": "下へ",
+  "fx.missing": "このエフェクト（{id}）は入っていないため、素通しにしています。値は残してあります。",
+  "fx.on": "オン",
+  "fx.preset": "プリセット",
+  "fx.presetEmpty": "プリセットがありません",
+  "fx.presetSave": "今の値を保存",
+  "fx.presetRemove": "削除",
+  "fx.presetName": "プリセット {n}",
+  "fx.applyHelp": "FX の列をトラックの音声に書き込み、列を空に戻します"
 }

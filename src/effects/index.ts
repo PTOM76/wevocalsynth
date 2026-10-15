@@ -1,18 +1,22 @@
 // エフェクトの表と、表の順に掛ける関数（書き出し、再生）
 import type { Clip } from '../audio/types'
-import { eqEffect, type TrackEq } from './eq/eq'
+import { fxEffect, type FxSlot } from 'wevocal-lib'
 import { faderEffect, type TrackFader } from './fader/fader'
 import type { Effect, LiveEffect } from './types'
 
 /** トラックごとのエフェクトの値 */
 export interface EffectValues {
-  eq: TrackEq
+  /** FX の列（WeVocal プラグイン。EQ もここに入る） */
+  fx: FxSlot[]
   fader: TrackFader
 }
 type EffectId = keyof EffectValues
 
-/** エフェクトの表。掛ける順に並べる（EQ → フェーダー）。足すときは effects/ にフォルダーを作り、ここに足す */
-export const EFFECTS: { [K in EffectId]: Effect<EffectValues[K]> } = { eq: eqEffect, fader: faderEffect }
+/** エフェクトの表。掛ける順に並べる（FX の列 → フェーダー）。足すときは effects/ にフォルダーを作り、ここに足す */
+/** プラグインに渡すテンポ（ディレイの同期）。プロジェクトのテンポが変わったら bpm を書き換える */
+export const fxHost = { bpm: 120 }
+
+export const EFFECTS: { [K in EffectId]: Effect<EffectValues[K]> } = { fx: fxEffect({ bpm: () => fxHost.bpm }), fader: faderEffect }
 const ORDER = Object.keys(EFFECTS) as EffectId[]
 
 export const DEFAULT_EFFECTS = Object.fromEntries(ORDER.map((id) => [id, EFFECTS[id].initial])) as unknown as EffectValues

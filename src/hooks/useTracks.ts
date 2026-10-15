@@ -5,7 +5,7 @@ import { mapRanges, normalizeRanges } from '../audio/multiRange'
 import { silenceRange } from '../audio/edit'
 import { DEFAULT_MIX, isAudible, makeTrack, type Track, type TrackMix, type TrackSettings } from '../audio/tracks'
 import type { TrackFader } from '../effects/fader/fader'
-import type { TrackEq } from '../effects/eq/eq'
+import type { FxSlot } from 'wevocal-lib'
 import { DEFAULT_EFFECTS, type EffectValues } from '../effects'
 import { mixClips } from '../audio/mix'
 import type { useHistory } from './useHistory'
@@ -21,12 +21,12 @@ const NO_MORAE: MoraMark[] = []
 export function useTracks(history: ReturnType<typeof useHistory>) {
   const { tracks, activeId } = history
   const [mix, setMix] = useState<Record<string, TrackMix>>({})
-  // トラックのエフェクト（EQ、フェーダー。effects/）。変えたものだけを持ち、読むときは既定の値で埋める。再生と書き出しに常に掛ける
+  // トラックのエフェクト（FX の列、フェーダー。effects/）。変えたものだけを持ち、読むときは既定の値で埋める。再生と書き出しに常に掛ける
   const [effects, setEffects] = useState<Record<string, Partial<EffectValues>>>({})
   const effectsOf = (id: string): EffectValues => ({ ...DEFAULT_EFFECTS, ...effects[id] })
   const setEffect = <K extends keyof EffectValues>(id: string, key: K, v: EffectValues[K]) => setEffects((e) => ({ ...e, [id]: { ...e[id], [key]: v } }))
   const faderOf = (id: string) => effectsOf(id).fader
-  const eqOf = (id: string) => effectsOf(id).eq
+  const fxOf = (id: string) => effectsOf(id).fx
   // 大きな波形の後ろに重ねるトラック（見え方の切り替えなので履歴に入れない。既定は重ねない）
   const [overlay, setOverlay] = useState<ReadonlySet<string>>(new Set())
   const active = tracks.find((tr) => tr.id === activeId) ?? null
@@ -224,8 +224,8 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     effectsOf,
     faderOf,
     setFader: (id: string, patch: Partial<TrackFader>) => setEffects((e) => ({ ...e, [id]: { ...e[id], fader: { ...(e[id]?.fader ?? DEFAULT_EFFECTS.fader), ...patch } } })),
-    eqOf,
-    setEq: (id: string, eq: TrackEq) => setEffect(id, 'eq', eq),
+    fxOf,
+    setFx: (id: string, fx: FxSlot[]) => setEffect(id, 'fx', fx),
     /** トラック `id` の一音ずつの範囲（トラックが持ち、音声の編集と履歴に合わせて変わる） */
     moraeOf,
     setMorae: history.setMorae,
@@ -234,7 +234,7 @@ export function useTracks(history: ReturnType<typeof useHistory>) {
     /** ファイルを開き直したときに、トラックごとの状態を `initial`（保存した値。トラック id ごと）にする。無いトラックは既定値 */
     restoreSettings: (initial: Record<string, TrackSettings> = {}) => {
       const entries = Object.entries(initial)
-      setEffects(Object.fromEntries(entries.map(([id, s]) => [id, { eq: s.eq, fader: s.fader }])))
+      setEffects(Object.fromEntries(entries.map(([id, s]) => [id, { fx: s.fx, fader: s.fader }])))
       setMix(Object.fromEntries(entries.map(([id, s]) => [id, s.mix])))
       setOverlay(new Set(entries.filter(([, s]) => s.overlay).map(([id]) => id)))
       for (const [id, s] of entries) if (s.morae.length) history.setMorae(id, s.morae)

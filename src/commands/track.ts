@@ -1,5 +1,5 @@
 // トラックのコマンド（選んでいるトラックに効く）
-import { isFlatEq } from '../effects/eq/eq'
+import { isNeutralChain } from 'wevocal-lib'
 import { defineCommands, ready, type CommandContext } from './types'
 
 const active = (c: CommandContext) => c.ed.tracks.settingsOf(c.ed.tracks.activeId)
@@ -20,7 +20,7 @@ export const trackCommands = defineCommands({
   mute: { label: 'track.mute', checked: (c) => active(c).mix.mute, enabled: several, run: (c) => c.ed.tracks.toggleMute(c.ed.tracks.activeId) },
   solo: { label: 'track.solo', checked: (c) => active(c).mix.solo, enabled: several, run: (c) => c.ed.tracks.toggleSolo(c.ed.tracks.activeId) },
   invert: { label: 'track.invert', checked: (c) => !!active(c).fader.invert, enabled: several, run: (c) => c.ed.tracks.toggleInvert(c.ed.tracks.activeId) },
-  eq: { label: 'eq.menu', checked: (c) => !isFlatEq(active(c).eq), enabled: ready, run: (c) => c.dialogs.open('eq') },
+  fx: { label: 'fx.menu', checked: (c) => !isNeutralChain(active(c).fx), enabled: ready, run: (c) => c.dialogs.open('fx') },
   mergeDown: {
     label: 'track.mergeDown',
     enabled: (c) => ready(c) && activeIndex(c) >= 0 && activeIndex(c) < c.ed.tracks.tracks.length - 1,
