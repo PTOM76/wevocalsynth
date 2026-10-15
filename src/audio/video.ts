@@ -1,32 +1,10 @@
-// 動画の書き出しを追加機能「変換」に頼む
-import type * as Video from '../../converter/src/video/index'
+// 動画の書き出しを追加機能「変換」に頼む（手順は converter の host.ts。WeVocal Studio と共通）
+import { createVideoHost } from '../../converter/src/host'
 import { loadAddon } from '../addons/addons'
-import type { Clip } from './types'
 
-/**
- * 動画の書き出し。作るのは追加機能「変換」（converter/ の WeVocalConverter）が行う（memo/video-export.md）。
- * 使う前に導入を確かめる（useVideoExport の `ensure('converter')`）
- */
-export type { VideoContainer, VideoLook, WaveStyle } from '../../converter/src/video/index'
+export type { VideoContainer, VideoLook, WaveStyle } from '../../converter/src/host'
+export { VIDEO_MIME, VIDEO_EXT } from '../../converter/src/host'
 
-let mod: typeof Video | null = null
-const load = async () => (mod ??= await loadAddon<typeof Video>('converter'))
-
-/** このブラウザでその入れ物の動画を作れるか */
-export async function canEncodeVideo(container: Video.VideoContainer, width: number, height: number) {
-  return (await load()).canEncodeVideo(container, width, height)
-}
-
-/** 動画の 1 フレームを画像にする（プレビュー）。曲の中ほどで音が最も大きいところを描く */
-export async function renderPreview(clip: Clip, look: Video.VideoLook) {
-  const m = await load()
-  return m.renderFrame(clip, look, m.previewTime(clip))
-}
-
-/** 音声に簡易な波形を付けて動画にする */
-export async function renderVideo(clip: Clip, options: Video.VideoOptions) {
-  return (await load()).renderVideo(clip, options)
-}
-
-export const VIDEO_MIME: Record<Video.VideoContainer, string> = { webm: 'video/webm', mp4: 'video/mp4' }
-export const VIDEO_EXT: Record<Video.VideoContainer, string> = { webm: '.webm', mp4: '.mp4' }
+/** 作る手順（使う前に導入を確かめる。useVideoExport の `ensure('converter')`） */
+export const videoHost = createVideoHost((id) => loadAddon(id))
+export const { canEncodeVideo, renderPreview, renderVideo } = videoHost

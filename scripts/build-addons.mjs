@@ -15,6 +15,7 @@
 import { execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { writeWhisperManifests } from '../analyzer/scripts/whisperAddons.mjs'
+import { buildConverterAddon } from '../converter/scripts/addons.mjs'
 import { buildModelAddons, buildRuntimeAddons, writeManifest } from '../extractor/scripts/addons.mjs'
 
 const OUT = `${process.argv[2] ?? 'dist'}/addons`
@@ -44,9 +45,6 @@ if (want('lyrics')) {
   await writeWhisperManifests(OUT)
 }
 
-// 変換。今は動画の書き出しだけ（converter/src/video/）
-if (want('converter')) {
-  run('npx vite build -c vite.addons.converter.config.ts')
-  writeManifest('converter', join(OUT, 'converter'), 'index.js')
-}
+// 変換。今は動画の書き出しだけ（作る手順は converter。WeVocal Studio と共通）
+if (want('converter')) buildConverterAddon(OUT)
 
