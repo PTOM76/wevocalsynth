@@ -7,8 +7,8 @@ import { setExperimentalAlgorithms } from './components/AlgorithmMenu'
 import { setOutputDevice } from 'wevocal-lib'
 import { setOutputLimit } from './audio/outputLimit'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, Box, Button, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, editBarEnabled, DesktopLayout, MobileLayout } from 'pevenmui'
+import { Box, Button, GlobalStyles, Stack, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, Toast, editBarEnabled, DesktopLayout, MobileLayout } from 'pevenmui'
 import LevelMeter from './components/LevelMeter'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -614,30 +614,8 @@ export default function App() {
       {ed.addonDialog}
       {ed.extractDialog}
 
-      {/* ボタンのある通知は、押す間があるよう長めに出す */}
-      {/* スマホは下の再生バーを隠さないよう、通知を上に出す */}
-      <Snackbar anchorOrigin={mobile ? { vertical: 'top', horizontal: 'center' } : undefined} open={!!ed.toast} autoHideDuration={ed.toast?.actions ? 10000 : 4000} onClose={() => ed.setToast(null)}>
-        {ed.toast ? (
-          <Alert
-            severity={ed.toast.severity}
-            variant="filled"
-            onClose={() => ed.setToast(null)}
-            action={
-              ed.toast.actions && (
-                <>
-                  {ed.toast.actions.map((a) => (
-                    <Button key={a.label} color="inherit" size="small" onClick={() => (ed.setToast(null), a.onClick())}>
-                      {a.label}
-                    </Button>
-                  ))}
-                </>
-              )
-            }
-          >
-            {ed.toast.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      {/* 通知（PevenMUI の Toast。スマホは下の再生バーを隠さないよう上に出す） */}
+      <Toast toast={ed.toast} onClose={() => ed.setToast(null)} top={mobile} />
       </SliderResetContext.Provider>
       </WindowModeContext.Provider>
       </PevenLabels.Provider>
