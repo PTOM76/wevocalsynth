@@ -1,10 +1,7 @@
-// スマホで範囲を選んだときの編集のボタンの列
-import { Box, ButtonBase, Typography } from '@mui/material'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+// スマホで範囲を選んだときの編集のボタンの列（部品は PevenMUI の EditBar。ここは並べるボタンを決める）
 import { faCopy, faEllipsis, faHeadphones, faLayerGroup, faPaste, faScissors, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+import { EditBar } from 'pevenmui'
 import { useT } from '../i18n/i18n'
-import { pevenFont } from 'pevenmui'
 
 interface Props {
   playSelection: () => void
@@ -24,29 +21,24 @@ interface Props {
  */
 export default function MobileEditBar(p: Props) {
   const t = useT()
-  const button = (icon: IconDefinition, label: string, onClick: (e: React.MouseEvent<HTMLElement>) => void, disabled = false) => (
-    <ButtonBase
-      key={label}
-      disabled={disabled}
-      onClick={onClick}
-      sx={{ flexDirection: 'column', gap: 0.25, minWidth: 56, height: 44, px: 0.5, borderRadius: 1, color: 'text.primary', opacity: disabled ? 0.4 : 1 }}
-    >
-      <FontAwesomeIcon icon={icon} fontSize={15} />
-      <Typography sx={{ fontSize: pevenFont('xs'), lineHeight: 1, whiteSpace: 'nowrap' }}>{label}</Typography>
-    </ButtonBase>
-  )
   return (
-    <Box sx={{ display: 'flex', overflowX: 'auto', gap: 0.25, px: 0.5, py: 0.25, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-      {button(faHeadphones, t('mobileEdit.play'), p.playSelection)}
-      {button(faScissors, t('mobileEdit.cut'), p.cut)}
-      {button(faCopy, t('mobileEdit.copy'), p.copy)}
-      {button(faPaste, t('mobileEdit.paste'), p.paste, !p.canPaste)}
-      {button(faTrashCan, t('edit.delete'), p.remove)}
-      {button(faLayerGroup, t('mobileEdit.toTrack'), p.toNewTrack)}
-      {button(faEllipsis, t('mobileEdit.more'), (e) => {
-        const r = e.currentTarget.getBoundingClientRect()
-        p.more(r.left, r.top)
-      })}
-    </Box>
+    <EditBar
+      items={[
+        { label: t('mobileEdit.play'), icon: faHeadphones, onClick: p.playSelection },
+        { label: t('mobileEdit.cut'), icon: faScissors, onClick: p.cut },
+        { label: t('mobileEdit.copy'), icon: faCopy, onClick: p.copy },
+        { label: t('mobileEdit.paste'), icon: faPaste, onClick: p.paste, disabled: !p.canPaste },
+        { label: t('edit.delete'), icon: faTrashCan, onClick: p.remove },
+        { label: t('mobileEdit.toTrack'), icon: faLayerGroup, onClick: p.toNewTrack },
+        {
+          label: t('mobileEdit.more'),
+          icon: faEllipsis,
+          onClick: (e) => {
+            const r = e.currentTarget.getBoundingClientRect()
+            p.more(r.left, r.top)
+          },
+        },
+      ]}
+    />
   )
 }
