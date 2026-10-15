@@ -8,7 +8,8 @@
 
 mod ffi;
 pub mod kana;
-pub mod voices;
+// 和音の分離は wevocal-lib に移した（WeVocal Studio と共通）。crate::voices のままで使える
+pub use wevocal_lib::voices;
 
 #[cfg(test)]
 mod tests;
