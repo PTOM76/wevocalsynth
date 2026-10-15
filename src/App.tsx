@@ -8,7 +8,7 @@ import { setOutputDevice } from 'wevocal-lib'
 import { setOutputLimit } from './audio/outputLimit'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, Button, GlobalStyles, Stack, Snackbar, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, DesktopLayout, MobileLayout } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, editBarEnabled, DesktopLayout, MobileLayout } from 'pevenmui'
 import LevelMeter from './components/LevelMeter'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -434,8 +434,8 @@ export default function App() {
   )
 
   // 範囲を選んだときの編集のボタンの列。スマホの新しい画面は波形の下、パソコンはツールバーの下（設定の「編集バーの表示」。auto はスマホだけ）
-  const editBar = (show: boolean) =>
-    show && settings.editBar !== 'off' && editing && ed.selections.length > 0 ? (
+  const editBar = (touch: boolean) =>
+    editBarEnabled(settings.editBar, touch) && editing && ed.selections.length > 0 ? (
       <MobileEditBar
         playSelection={playback.playSelection}
         cut={ed.clip.cut}
@@ -474,7 +474,7 @@ export default function App() {
             editor={editor}
             editorFooter={
               <>
-              {editBar(settings.mobileUi === 'new')}
+              {settings.mobileUi === 'new' && editBar(true)}
               <Stack direction="row" sx={{ alignItems: 'center' }}>
                 <SelectionField
                   duration={ed.duration}
@@ -548,7 +548,7 @@ export default function App() {
                 }}
                 onCommand={commands.run}
               />
-              {editBar(settings.editBar === 'on')}
+              {editBar(false)}
               </>
             }
             editor={editor}

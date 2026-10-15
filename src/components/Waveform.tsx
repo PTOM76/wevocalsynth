@@ -3,9 +3,8 @@ import { nearestBeat } from '../audio/tempoMap'
 import { CURVE_HOP_SEC, type CurvePoint } from '../hooks/useLaneCurve'
 import { FORMANT_SCALE, GAIN_SCALE, curveValueAt, drawCurveLane, type CurveScale } from './waveform/curveLane'
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { flushSync } from 'react-dom'
 import { Box, Slider, Stack, Typography } from '@mui/material'
-import { canvasPixelRatio, localPoint, usePalette, useLongPress } from 'pevenmui'
+import { canvasPixelRatio, localPoint, usePalette, useLongPress, useBoxSize } from 'pevenmui'
 import { useLaneDivider } from './waveform/useLaneDivider'
 import { useLanePen } from './waveform/useLanePen'
 import { usePitchGrab } from './waveform/usePitchGrab'
@@ -193,7 +192,8 @@ function Waveform(props: Props) {
   const markerDragRef = useRef<{ id: string; x0: number; moved: boolean } | null>(null)
   // 音符ブロックを横にドラッグしている間の行き先
   const [noteGhost, setNoteGhost] = useState<NoteGhost | null>(null)
-  const [size, setSize] = useState({ width: 0, height: 0 })
+  // 置き場所の大きさに合わせて Canvas を伸び縮みさせる（高さも画面に合わせる。PevenMUI の useBoxSize）
+  const size = useBoxSize(boxRef)
   // 描いた曲線（ピッチ・音量）は配列の中身だけが変わるので、描き直しのきっかけに使うカウンタ
   const [drawVersion, setDrawVersion] = useState(0)
   const width = size.width
@@ -204,21 +204,6 @@ function Waveform(props: Props) {
   const duration = clipDuration(clip)
   const { view, scrollTo, zoomed, wheel } = props.viewCtl
   const waveScale = props.waveScale ?? 1
-
-  // 置き場所の大きさに合わせて Canvas を伸び縮みさせる（高さも画面に合わせる）
-  useEffect(() => {
-    const el = boxRef.current
-    if (!el) return
-    // 大きさが実際に変わったときだけ更新する（同じ値でも新しいオブジェクトを渡すと描き直しが走るため）
-    const ro = new ResizeObserver(([e]) => {
-      const width = Math.floor(e.contentRect.width)
-      const height = Math.floor(e.contentRect.height)
-      // 大きさが変わった同じフレームのうちに描き直す（Canvas は大きさを変えると消えるので、描画が遅れると一瞬ちらつく）
-      flushSync(() => setSize((s) => (s.width === width && s.height === height ? s : { width, height })))
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
 
   // ページ自体がスクロール・拡大しないよう、ホイールは non-passive で登録する
   const wheelRef = useRef(wheel)

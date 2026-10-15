@@ -1,10 +1,9 @@
 // 設定の項目の定義（表示と、表示メニューの切り替え）
+import type { EditBarSetting } from 'pevenmui'
 import type { LangSetting } from '../../i18n/i18n'
 import type { ThemeSetting } from '../settings'
 import { UI_SCALES } from '../../constants/ui'
 import { check, choice, defineItems, value } from './define'
-
-export type EditBarSetting = 'auto' | 'on' | 'off'
 
 /** 「表示」 */
 export const display = defineItems('display', {
