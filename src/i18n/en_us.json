@@ -309,6 +309,8 @@
   "settings.editBarHelp": "Row of editing buttons shown when a range is selected. Auto shows it on phones only; Always show also shows it below the toolbar on desktop",
   "settings.showDevPlugins": "Show development plugins",
   "settings.showDevPluginsHelp": "Shows the template plugin for plugin authors in the FX Add list",
+  "settings.showVst": "Allow loading VST plugins (experimental)",
+  "settings.showVstHelp": "Lets you pick a VST DLL in Settings > Plugins. The DLL runs in an emulator, so it is slow and is applied only when exporting (bypassed during playback). Experimental; some plugins do not work",
 
   "export.title": "Export audio",
   "export.run": "Export",
@@ -1038,5 +1040,7 @@
   "plugins.update": "Update",
   "plugins.updated": "Updated",
   "plugins.upToDate": "Up to date",
-  "plugins.noSource": "Cannot update because the source is unknown"
+  "plugins.noSource": "Cannot update because the source is unknown",
+  "plugins.vst.pick": "Choose a VST (DLL)",
+  "plugins.vst.notice": "Experimental. Applied only when exporting; bypassed during playback"
 }

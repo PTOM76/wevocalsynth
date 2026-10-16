@@ -45,6 +45,8 @@ export const experimental = defineItems('experimental', {
   showExperimentalAlgorithms: check(false, { label: 'settings.showExperimentalAlgorithms', help: 'settings.showExperimentalAlgorithmsHelp' }),
   // 「和音を分ける」（試作）をメニューに表示する
   showVoiceSplit: check(false, { label: 'settings.showVoiceSplit', help: 'settings.showVoiceSplitHelp' }),
+  // 試験的機能の VST（Windows の DLL をエミュレーターで動かす。書き出しのときだけ掛かる）を、設定のプラグインから導入できるようにする
+  showVst: check(false, { label: 'settings.showVst', help: 'settings.showVstHelp' }),
   // 開発者向けのプラグイン（雛形）を FX の追加の一覧に出す
   showDevPlugins: check(false, { label: 'settings.showDevPlugins', help: 'settings.showDevPluginsHelp' }),
   // 声から一音を作る（試験的。memo/kana-voice.md）

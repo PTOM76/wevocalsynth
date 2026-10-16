@@ -252,6 +252,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
       <Group title={t('settings.groupExperimental')}>
         {S('showExperimentalAlgorithms')}
         {S('showVoiceSplit')}
+        {S('showVst')}
         {S('showDevPlugins')}
         {S('showKanaVoice')}
         {draft.showKanaVoice && S('kanaStrength')}

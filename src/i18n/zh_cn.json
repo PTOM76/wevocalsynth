@@ -309,6 +309,8 @@
   "settings.editBarHelp": "选择范围后的编辑按钮行。自动仅在手机上显示，始终显示则在电脑上也显示在工具栏下方",
   "settings.showDevPlugins": "显示开发用插件",
   "settings.showDevPluginsHelp": "在 FX 的“添加”列表中显示面向开发者的模板插件",
+  "settings.showVst": "允许加载 VST（Windows 插件）（试验性）",
+  "settings.showVstHelp": "可在设置的“插件”中选择 VST 的 DLL 进行安装。DLL 通过模拟器运行，处理较慢，只在导出时生效（播放时直通）。属于试验性功能，部分插件无法运行",
 
   "export.title": "导出音频文件",
   "export.run": "导出",
@@ -1038,5 +1040,7 @@
   "plugins.update": "更新",
   "plugins.updated": "已更新",
   "plugins.upToDate": "已是最新",
-  "plugins.noSource": "来源未知，无法更新"
+  "plugins.noSource": "来源未知，无法更新",
+  "plugins.vst.pick": "选择 VST（DLL）",
+  "plugins.vst.notice": "试验性功能。只在导出时生效，播放时直通"
 }
