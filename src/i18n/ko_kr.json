@@ -1037,6 +1037,7 @@
   "plugins.error.id": "id 형식이 올바르지 않습니다",
   "plugins.error.processor": "processor가 지정되지 않았습니다",
   "plugins.error.reserved": "기본 플러그인의 id는 사용할 수 없습니다",
+  "plugins.error.vst": "VST를 불러올 수 없습니다 (지원하지 않는 DLL이거나 에뮬레이터가 지원하지 않는 명령을 사용합니다)",
   "plugins.update": "업데이트",
   "plugins.updated": "업데이트했습니다",
   "plugins.upToDate": "최신입니다",

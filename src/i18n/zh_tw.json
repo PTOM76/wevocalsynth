@@ -1037,6 +1037,7 @@
   "plugins.error.id": "id 格式不正確",
   "plugins.error.processor": "未指定 processor",
   "plugins.error.reserved": "不能使用內建外掛的 id",
+  "plugins.error.vst": "無法載入 VST（不支援的 DLL，或使用了模擬器不支援的指令）",
   "plugins.update": "更新",
   "plugins.updated": "已更新",
   "plugins.upToDate": "已是最新",
