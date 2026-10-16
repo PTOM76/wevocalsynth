@@ -1023,5 +1023,9 @@
   "plugins.error.format": "This plugin format cannot be added",
   "plugins.error.id": "The id is not valid",
   "plugins.error.processor": "No processor is specified",
-  "plugins.error.reserved": "The id of a built-in plugin cannot be used"
+  "plugins.error.reserved": "The id of a built-in plugin cannot be used",
+  "plugins.update": "Update",
+  "plugins.updated": "Updated",
+  "plugins.upToDate": "Up to date",
+  "plugins.noSource": "Cannot update because the source is unknown"
 }

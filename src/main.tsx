@@ -5,11 +5,12 @@ import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/500.css'
 import '@fontsource/roboto/700.css'
 import { AddonsContext, PevenProvider, preventPageZoom } from 'pevenmui'
+import { createPackageStore, packageFolderOf } from 'pevenmui/web'
 import App from './App.tsx'
 import CleanExtractScreen from './components/CleanExtractScreen'
 import { checkCleanBoot, pendingCleanJob } from './project/cleanExtract'
 import { clearOffloaded } from './audio/originalStore'
-import { loadInstalledPlugins, setPeaksOnBuild } from 'wevocal-lib'
+import { loadInstalledPlugins, setPeaksOnBuild, setPluginStore } from 'wevocal-lib'
 import { markActivity } from './debug/debugStats'
 import { app } from './appConfig'
 import { SettingsProvider, loadSettings } from './settings/settings'
@@ -18,7 +19,8 @@ import WindowLimitScreen from './components/WindowLimitScreen'
 import { addonsContext } from './addons/addons'
 
 preventPageZoom()
-// 導入したプラグインを読む（FX の列が使う）
+// 導入したプラグインの置き場（Cache Storage と、追加機能と共用する保存先のフォルダー）を決めて、読む（FX の列が使う）
+setPluginStore(createPackageStore({ cache: 'wevocal-plugins', folder: packageFolderOf(addonsContext.addons.folder, 'plugin.') }))
 void loadInstalledPlugins()
 // 波形の表を作ったことを、画面が止まったときの原因探しに残す
 setPeaksOnBuild(() => markActivity('peaks build'))

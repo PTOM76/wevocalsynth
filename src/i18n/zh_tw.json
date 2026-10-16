@@ -1023,5 +1023,9 @@
   "plugins.error.format": "無法新增此格式的外掛",
   "plugins.error.id": "id 格式不正確",
   "plugins.error.processor": "未指定 processor",
-  "plugins.error.reserved": "不能使用內建外掛的 id"
+  "plugins.error.reserved": "不能使用內建外掛的 id",
+  "plugins.update": "更新",
+  "plugins.updated": "已更新",
+  "plugins.upToDate": "已是最新",
+  "plugins.noSource": "來源未知，無法更新"
 }

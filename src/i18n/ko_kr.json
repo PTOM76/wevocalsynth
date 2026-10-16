@@ -1023,5 +1023,9 @@
   "plugins.error.format": "이 형식의 플러그인은 추가할 수 없습니다",
   "plugins.error.id": "id 형식이 올바르지 않습니다",
   "plugins.error.processor": "processor가 지정되지 않았습니다",
-  "plugins.error.reserved": "기본 플러그인의 id는 사용할 수 없습니다"
+  "plugins.error.reserved": "기본 플러그인의 id는 사용할 수 없습니다",
+  "plugins.update": "업데이트",
+  "plugins.updated": "업데이트했습니다",
+  "plugins.upToDate": "최신입니다",
+  "plugins.noSource": "가져온 곳을 알 수 없어 업데이트할 수 없습니다"
 }
