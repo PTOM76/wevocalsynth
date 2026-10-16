@@ -1004,6 +1004,8 @@
   "fx.presetExport": "导出预设",
   "fx.presetImport": "导入预设",
   "fx.presetImportError": "这不是此效果器的预设文件",
+  "fx.offlineOnly": "仅导出",
+  "fx.offlineOnlyHelp": "此插件仅在导出时生效，播放时直通。",
 
   "plugins.intro": "从 URL 添加用于 FX 的插件。添加的插件会保存在此设备上，离线也能使用。",
   "plugins.url": "插件清单的 URL",

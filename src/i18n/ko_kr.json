@@ -1004,6 +1004,8 @@
   "fx.presetExport": "프리셋 내보내기",
   "fx.presetImport": "프리셋 가져오기",
   "fx.presetImportError": "이 이펙트의 프리셋 파일이 아닙니다",
+  "fx.offlineOnly": "내보내기 전용",
+  "fx.offlineOnlyHelp": "이 플러그인은 내보낼 때만 적용됩니다. 재생 중에는 바이패스됩니다.",
 
   "plugins.intro": "URL에서 FX용 플러그인을 추가합니다. 추가한 플러그인은 이 기기에 저장되어 오프라인에서도 사용할 수 있습니다.",
   "plugins.url": "플러그인 매니페스트의 URL",
