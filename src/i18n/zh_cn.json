@@ -1001,6 +1001,9 @@
   "fx.load": "负载 {n}%",
   "fx.overloaded": "已直通",
   "fx.overloadedHelp": "因处理过重导致声音中断，已自动直通。先关闭再开启可重试。",
+  "fx.presetExport": "导出预设",
+  "fx.presetImport": "导入预设",
+  "fx.presetImportError": "这不是此效果器的预设文件",
 
   "plugins.intro": "从 URL 添加用于 FX 的插件。添加的插件会保存在此设备上，离线也能使用。",
   "plugins.url": "插件清单的 URL",

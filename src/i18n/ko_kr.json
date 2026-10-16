@@ -1001,6 +1001,9 @@
   "fx.load": "부하 {n}%",
   "fx.overloaded": "바이패스 중",
   "fx.overloadedHelp": "처리가 무거워 소리가 끊겨 자동으로 바이패스했습니다. 껐다가 다시 켜면 다시 시도합니다.",
+  "fx.presetExport": "프리셋 내보내기",
+  "fx.presetImport": "프리셋 가져오기",
+  "fx.presetImportError": "이 이펙트의 프리셋 파일이 아닙니다",
 
   "plugins.intro": "URL에서 FX용 플러그인을 추가합니다. 추가한 플러그인은 이 기기에 저장되어 오프라인에서도 사용할 수 있습니다.",
   "plugins.url": "플러그인 매니페스트의 URL",
