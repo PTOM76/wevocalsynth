@@ -1009,6 +1009,9 @@
   "fx.sidechainSource": "侧链音源",
   "fx.sidechainSelf": "此轨道自身",
   "fx.autoLane": "显示在时间轴上以编辑自动化",
+  "fx.search": "按名称搜索",
+  "fx.noMatch": "未找到",
+  "fx.addCancel": "取消",
 
   "plugins.intro": "从 URL 添加用于 FX 的插件。添加的插件会保存在此设备上，离线也能使用。",
   "plugins.url": "插件清单的 URL",

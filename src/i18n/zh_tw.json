@@ -1009,6 +1009,9 @@
   "fx.sidechainSource": "側鏈音源",
   "fx.sidechainSelf": "此軌道本身",
   "fx.autoLane": "顯示在時間軸上以編輯自動化",
+  "fx.search": "依名稱搜尋",
+  "fx.noMatch": "找不到",
+  "fx.addCancel": "取消",
 
   "plugins.intro": "從 URL 新增用於 FX 的外掛。新增的外掛會儲存在此裝置上，離線也能使用。",
   "plugins.url": "外掛資訊清單的 URL",
