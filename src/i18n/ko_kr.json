@@ -83,6 +83,7 @@
   "toast.specFailed": "스펙트로그램 계산에 실패했습니다: {error}",
   "toast.loadFailed": "불러오기에 실패했습니다: {file} ({error})",
   "toast.silentNormalize": "무음이라 노멀라이즈할 수 없습니다",
+  "toast.missingPlugins": "설치되지 않은 플러그인이 있습니다({ids}). 설정의 '플러그인'에서 추가하세요. 그때까지는 바이패스됩니다.",
 
   "settings.groupFile": "파일",
   "settings.rememberFolder": "열기·저장 폴더 기억",
@@ -998,6 +999,8 @@
   "fx.presetName": "프리셋 {n}",
   "fx.applyHelp": "FX 체인을 트랙 오디오에 기록하고 체인을 비웁니다",
   "fx.load": "부하 {n}%",
+  "fx.overloaded": "바이패스 중",
+  "fx.overloadedHelp": "처리가 무거워 소리가 끊겨 자동으로 바이패스했습니다. 껐다가 다시 켜면 다시 시도합니다.",
 
   "plugins.intro": "URL에서 FX용 플러그인을 추가합니다. 추가한 플러그인은 이 기기에 저장되어 오프라인에서도 사용할 수 있습니다.",
   "plugins.url": "플러그인 매니페스트의 URL",

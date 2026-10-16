@@ -3,7 +3,7 @@ import { fxHost } from '../effects'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
-import { AUDIO_ACCEPT, configurePlayback, decodeFile } from 'wevocal-lib'
+import { AUDIO_ACCEPT, configurePlayback, decodeFile, missingPlugins, whenPluginsLoaded } from 'wevocal-lib'
 import { PROJECT_EXT, isProjectFile, loadProject, type Project } from '../project/projectFile'
 import { normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
@@ -118,6 +118,16 @@ export function useEditor() {
     reportMemory('original', clipBytes(original))
     reportMemory('edited', edited === original ? 0 : clipBytes(edited))
   }, [original, edited, offloadVersion])
+  // 入っていないプラグインを使ったプロジェクトを開いたら、導入を勧める（同じ id は一度だけ。導入済みの読み込みが終わってから調べる）
+  const notifiedMissing = useRef(new Set<string>())
+  useEffect(() => {
+    void whenPluginsLoaded().then(() => {
+      const ids = missingPlugins(...Object.values(tracks.effects).map((e) => e.fx)).filter((id) => !notifiedMissing.current.has(id))
+      if (!ids.length) return
+      for (const id of ids) notifiedMissing.current.add(id)
+      setToast({ severity: 'info', message: t('toast.missingPlugins', { ids: ids.join(', ') }) })
+    })
+  }, [tracks.effects])
   // 原音を聴いているのに退避中なら、戻るまでは加工後を出す（退避中の空の Clip を画面や再生に渡さない）
   const originalReady = !!original && !isOffloaded(original)
   const shown = source === 'original' && originalReady ? original : edited

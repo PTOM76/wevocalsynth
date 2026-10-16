@@ -83,6 +83,7 @@
   "toast.specFailed": "頻譜圖計算失敗：{error}",
   "toast.loadFailed": "載入失敗：{file}（{error}）",
   "toast.silentNormalize": "靜音，無法正規化",
+  "toast.missingPlugins": "有未安裝的外掛（{ids}）。請在設定的「外掛」中新增。在此之前將直通。",
 
   "settings.groupFile": "檔案",
   "settings.rememberFolder": "記住開啟與儲存的資料夾",
@@ -998,6 +999,8 @@
   "fx.presetName": "預設 {n}",
   "fx.applyHelp": "將 FX 鏈寫入軌道音訊，並清空該鏈",
   "fx.load": "負載 {n}%",
+  "fx.overloaded": "已直通",
+  "fx.overloadedHelp": "因處理過重導致聲音中斷，已自動直通。先關閉再開啟可重試。",
 
   "plugins.intro": "從 URL 新增用於 FX 的外掛。新增的外掛會儲存在此裝置上，離線也能使用。",
   "plugins.url": "外掛資訊清單的 URL",

@@ -140,6 +140,7 @@ export default function AppDialogs({ ed, dialogs, bpm, seg, selectionExport }: P
     playing={player.playing}
     onTogglePlay={ed.playback.togglePlay}
     onApply={() => void ed.applyTrackFx()}
+    load={player.playing ? player.load : null}
     busy={busy}
     userPresets={settings.fxPresets}
     onUserPresetsChange={(plugin, list) => updateSettings({ fxPresets: { ...settings.fxPresets, [plugin]: list } })}

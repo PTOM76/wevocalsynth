@@ -83,6 +83,7 @@
   "toast.specFailed": "频谱图计算失败：{error}",
   "toast.loadFailed": "加载失败：{file}（{error}）",
   "toast.silentNormalize": "静音，无法标准化",
+  "toast.missingPlugins": "有未安装的插件（{ids}）。请在设置的“插件”中添加。在此之前将直通。",
 
   "settings.groupFile": "文件",
   "settings.rememberFolder": "记住打开和保存的文件夹",
@@ -998,6 +999,8 @@
   "fx.presetName": "预设 {n}",
   "fx.applyHelp": "将 FX 链写入轨道音频，并清空该链",
   "fx.load": "负载 {n}%",
+  "fx.overloaded": "已直通",
+  "fx.overloadedHelp": "因处理过重导致声音中断，已自动直通。先关闭再开启可重试。",
 
   "plugins.intro": "从 URL 添加用于 FX 的插件。添加的插件会保存在此设备上，离线也能使用。",
   "plugins.url": "插件清单的 URL",

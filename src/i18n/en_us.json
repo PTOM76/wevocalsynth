@@ -83,6 +83,7 @@
   "toast.specFailed": "Spectrogram failed: {error}",
   "toast.loadFailed": "Failed to open {file} ({error})",
   "toast.silentNormalize": "Cannot normalize silence",
+  "toast.missingPlugins": "Some plugins are not installed ({ids}). Add them in Settings, Plugins. Until then they are bypassed.",
 
   "settings.groupFile": "Files",
   "settings.rememberFolder": "Remember folders for open and save",
@@ -998,6 +999,8 @@
   "fx.presetName": "Preset {n}",
   "fx.applyHelp": "Writes the FX chain into the track audio and clears the chain",
   "fx.load": "Load {n}%",
+  "fx.overloaded": "Bypassed",
+  "fx.overloadedHelp": "Bypassed automatically because it was too heavy and the sound broke up. Turn it off and on to try again.",
 
   "plugins.intro": "Add plugins for FX from a URL. Added plugins are saved on this device and work offline.",
   "plugins.url": "URL of the plugin manifest",

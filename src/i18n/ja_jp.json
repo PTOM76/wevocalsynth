@@ -83,6 +83,7 @@
   "toast.specFailed": "スペクトログラムの計算に失敗しました: {error}",
   "toast.loadFailed": "読み込みに失敗しました: {file} ({error})",
   "toast.silentNormalize": "無音のためノーマライズできません",
+  "toast.missingPlugins": "入っていないプラグインがあります（{ids}）。設定の「プラグイン」で追加してください。それまでは素通しになります",
 
   "settings.groupFile": "ファイル",
   "settings.rememberFolder": "開く場所と保存先を記憶する",
@@ -998,6 +999,8 @@
   "fx.presetName": "プリセット {n}",
   "fx.applyHelp": "FX の列をトラックの音声に書き込み、列を空に戻します",
   "fx.load": "負荷 {n}%",
+  "fx.overloaded": "素通し中",
+  "fx.overloadedHelp": "処理が重く音が途切れるため、自動で素通しにしました。オフにしてからオンにすると、もう一度試します。",
 
   "plugins.intro": "FX に使うプラグインを URL から追加します。追加したプラグインはこの端末に保存され、ネットがなくても使えます。",
   "plugins.url": "プラグインのマニフェストの URL",

@@ -4,7 +4,7 @@ import type { Clip, Range } from './types'
 import { makePanner } from '../effects/fader/fader'
 import { createLiveEffects, DEFAULT_EFFECTS, type EffectValues, type LiveEffects } from '../effects'
 import { clipDuration } from './types'
-import { startContext, suspendContext } from 'wevocal-lib'
+import { startContext, startRenderLoad, suspendContext } from 'wevocal-lib'
 import { limitedOutput } from './outputLimit'
 
 /** 一緒に鳴らすトラック（id はレベルメーターの対応づけに使う） */
@@ -103,6 +103,8 @@ export function usePlayer(
   /** 範囲試聴の終わり（通常再生なら undefined）。クリップが切り替わって再生し直すときに使う */
   const playToRef = useRef<number | undefined>(undefined)
   const [playing, setPlaying] = useState(false)
+  // 音を作る処理の負荷（0〜1。測れなければ null）。FX のダイアログに出す
+  const [load, setLoad] = useState<number | null>(null)
   const [position, setPosition] = useState(0)
 
   /** 再生のたびに作る、音源より後ろの部品（音量・パン・フェーダー・ミュート・メーター）。止めたらすべて切り離す */
@@ -215,6 +217,7 @@ export function usePlayer(
     async (from: number, to?: number) => {
       if (!clip) return
       const ctx = (ctxRef.current ??= new AudioContext())
+      startRenderLoad(ctx, setLoad)
       await startContext(ctx, id)
       const bufferOf = (c: Clip) => {
         let b = buffers.current.get(c)
@@ -412,5 +415,5 @@ export function usePlayer(
   /** 全体のレベルメーター（左・右。再生していなければ null） */
   const masterAnalysers = useCallback(() => (sourceRef.current ? masterLRRef.current : null), [])
 
-  return { playing, position, livePosition, play, pause, seek, analyser, masterAnalysers }
+  return { playing, position, livePosition, play, pause, seek, analyser, masterAnalysers, load }
 }
