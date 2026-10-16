@@ -188,7 +188,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         </Group>
       </>
     ),
-    plugins: <PluginsSection />,
+    plugins: <PluginsSection vst={draft.showVst} />,
     addons: (
       <>
         <Group title={t('settings.groupAddonVocal')}>
