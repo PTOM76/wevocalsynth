@@ -1008,6 +1008,7 @@
   "fx.offlineOnlyHelp": "このプラグインは書き出しのときだけ掛かります。再生中は素通しです。",
   "fx.sidechainSource": "サイドチェーンの音",
   "fx.sidechainSelf": "このトラック自身",
+  "fx.autoLane": "時間軸に出してオートメーションを編集",
 
   "plugins.intro": "FX に使うプラグインを URL から追加します。追加したプラグインはこの端末に保存され、ネットがなくても使えます。",
   "plugins.url": "プラグインのマニフェストの URL",
