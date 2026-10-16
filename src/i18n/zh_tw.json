@@ -1006,6 +1006,8 @@
   "fx.presetImportError": "這不是此效果器的預設檔案",
   "fx.offlineOnly": "僅匯出",
   "fx.offlineOnlyHelp": "此外掛僅在匯出時生效，播放時直通。",
+  "fx.sidechainSource": "側鏈音源",
+  "fx.sidechainSelf": "此軌道本身",
 
   "plugins.intro": "從 URL 新增用於 FX 的外掛。新增的外掛會儲存在此裝置上，離線也能使用。",
   "plugins.url": "外掛資訊清單的 URL",
