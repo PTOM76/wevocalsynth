@@ -940,8 +940,6 @@
   "eq.applyHelp": "EQをトラックの音声に書き込み、EQを平らに戻します",
   "eq.range": "上限",
 
-  "addonFolder.allow": "アクセスを許可",
-  "addonFolder.permission": "追加機能の保存先のフォルダーへのアクセスが必要です",
 
   "tempoChange.title": "テンポの変化が検出されました",
   "tempoChange.message": "次の位置でテンポが変わっている可能性があります。採用すると、テンポのマーカーが配置されます。行を選択すると、その位置へ移動します",
@@ -981,8 +979,6 @@
   "window.retry": "再試行",
   "window.noAutosave": "このウィンドウは自動保存されません",
 
-  "dataFolder.found": "指定したフォルダーに、以前の設定と作業データがあります",
-  "dataFolder.overwrite": "上書き",
 
   "fx.menu": "FX…",
   "fx.historyLabel": "FX",

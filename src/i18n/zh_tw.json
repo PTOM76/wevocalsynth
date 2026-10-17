@@ -940,8 +940,6 @@
   "eq.applyHelp": "將 EQ 寫入音軌音訊，並將 EQ 恢復為平直",
   "eq.range": "範圍",
 
-  "addonFolder.allow": "允許存取",
-  "addonFolder.permission": "需要存取附加功能的儲存資料夾",
 
   "tempoChange.title": "偵測到速度變化",
   "tempoChange.message": "速度可能在以下位置發生變化。採用後將放置速度標記。選擇一列可移動到該位置",
@@ -981,8 +979,6 @@
   "window.retry": "重試",
   "window.noAutosave": "此視窗不會自動儲存",
 
-  "dataFolder.found": "指定的資料夾中有先前的設定和工作資料",
-  "dataFolder.overwrite": "覆寫",
 
   "fx.menu": "FX…",
   "fx.historyLabel": "FX",

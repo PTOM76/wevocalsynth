@@ -8,7 +8,7 @@ import { setOutputDevice } from 'wevocal-lib'
 import { setOutputLimit } from './audio/outputLimit'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, GlobalStyles, Stack, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, NoticeMessage, editBarEnabled, DesktopLayout, MobileLayout } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, NoticeMessage, useAddonFolderSync, editBarEnabled, DesktopLayout, MobileLayout } from 'pevenmui'
 import LevelMeter from './components/LevelMeter'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -36,9 +36,7 @@ import { canRecord } from 'wevocal-lib'
 import { flattenPitch } from './audio/pitchTools'
 import MobilePlayBar from './components/MobilePlayBar'
 import { useAppSettings } from './settings/settings'
-import { addonFolder, notifyAddonsChanged, onAddonsChanged } from './addons/addons'
 import { resyncAutosaveFolder, setAutosaveFolder } from './project/autosave'
-import { startDataFolderSync } from 'pevenmui/web'
 import { dataFolder } from './project/dataFolder'
 import { restoreFromFolder } from './project/storage'
 import DebugOverlay from './debug/DebugOverlay'
@@ -86,41 +84,18 @@ export default function App() {
   useEffect(() => setOutputLimit(settings.outputLimit ? settings.outputLimitDb : null), [settings.outputLimit, settings.outputLimitDb])
   // テンポを解析できたら、BPM と1拍目の位置を設定に入れる（拍の線がそれに合う）
   const ed = useEditor()
-  // 追加機能の保存先のフォルダー（試験的）。開いたときに許可がなければ、通知から許可してもらう（Service Worker からは求められない）
-  useEffect(() => {
-    addonFolder.setEnabled(settings.addonFolder)
-    if (!settings.addonFolder) return
-    void addonFolder.permission().then((p) => {
-      if (p !== 'prompt') return
-      const allow = () => void addonFolder.requestPermission().then((ok) => ok && notifyAddonsChanged())
-      ed.setToast({ severity: 'info', message: t('addonFolder.permission'), actions: [{ label: t('addonFolder.allow'), onClick: allow }] })
-    })
-    // 設定を変えたときと、開いたときだけ
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.addonFolder])
-  // 設定と自動保存した作業も、指定したフォルダーに写す（PWA を消しても戻せるように。src/project/dataFolder.ts）
-  useEffect(() => {
-    if (!settings.addonFolder) return setAutosaveFolder(false)
-    return startDataFolderSync(dataFolder, {
-      onLinked: (linked, resync) => {
-        setAutosaveFolder(linked)
-        if (resync) resyncAutosaveFolder()
-      },
-      // ほかのブラウザ（入れ直す前など）の写しがあれば、戻すか上書きするかを聞く
-      onOther: (restore, overwrite) =>
-        ed.setToast({
-          severity: 'info',
-          message: t('dataFolder.found'),
-          actions: [
-            { label: t('data.folderRestore'), onClick: restore },
-            { label: t('dataFolder.overwrite'), onClick: overwrite },
-          ],
-        }),
-      restore: () => void restoreFromFolder().then((ok) => ok && location.reload()),
-      onChanged: onAddonsChanged,
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.addonFolder])
+  // 追加機能の保存先のフォルダー（試験的）。設定と自動保存した作業も写す（PevenMUI。WeVocal Studio と共通）
+  useAddonFolderSync({
+    enabled: settings.addonFolder,
+    dataFolder,
+    setAutosaveFolder: (on, resync) => {
+      setAutosaveFolder(on)
+      if (resync) resyncAutosaveFolder()
+    },
+    restore: restoreFromFolder,
+    notify: ed.setToast,
+    labels: i18n.labels(lang),
+  })
   // 設定のテーマ（既定 / ライト / ダーク）を反映する
   const { setMode } = useColorScheme()
   useEffect(() => setMode(settings.theme), [settings.theme, setMode])

@@ -940,8 +940,6 @@
   "eq.applyHelp": "Write the EQ into the track audio and reset the EQ to flat",
   "eq.range": "Range",
 
-  "addonFolder.allow": "Allow access",
-  "addonFolder.permission": "Access to the add-on folder is needed",
 
   "tempoChange.title": "Tempo change detected",
   "tempoChange.message": "The tempo may change at the following positions. If you use them, tempo markers will be placed. Select a row to move to that position",
@@ -981,8 +979,6 @@
   "window.retry": "Retry",
   "window.noAutosave": "This window is not autosaved",
 
-  "dataFolder.found": "The specified folder contains earlier settings and work data",
-  "dataFolder.overwrite": "Overwrite",
 
   "fx.menu": "FX…",
   "fx.historyLabel": "FX",
