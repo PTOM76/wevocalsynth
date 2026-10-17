@@ -1014,6 +1014,8 @@
   "fx.search": "Search by name",
   "fx.noMatch": "No match",
   "fx.addCancel": "Cancel",
+  "fx.guiNative": "Plugin GUI",
+  "fx.guiStandard": "Standard GUI",
 
   "plugins.intro": "Add plugins for FX from a URL. Added plugins are saved on this device and work offline.",
   "plugins.url": "URL of a plugin manifest or a WebAudio Module (.js)",

@@ -1014,6 +1014,8 @@
   "fx.search": "按名称搜索",
   "fx.noMatch": "未找到",
   "fx.addCancel": "取消",
+  "fx.guiNative": "插件界面",
+  "fx.guiStandard": "标准界面",
 
   "plugins.intro": "从 URL 添加用于 FX 的插件。添加的插件会保存在此设备上，离线也能使用。",
   "plugins.url": "插件清单或 WebAudio Modules（.js）的 URL",

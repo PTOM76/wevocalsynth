@@ -1014,6 +1014,8 @@
   "fx.search": "名前で探す",
   "fx.noMatch": "見つかりません",
   "fx.addCancel": "キャンセル",
+  "fx.guiNative": "プラグインの画面",
+  "fx.guiStandard": "標準の画面",
 
   "plugins.intro": "FX に使うプラグインを URL から追加します。追加したプラグインはこの端末に保存され、ネットがなくても使えます。",
   "plugins.url": "プラグインのマニフェスト、または WebAudio Modules（.js）の URL",
