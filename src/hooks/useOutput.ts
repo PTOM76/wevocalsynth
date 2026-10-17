@@ -64,7 +64,7 @@ export function useOutput(d: Deps) {
    * 書き出す音声を作る。選んでいるトラックか、全トラックのミックス（`mix`）。
    * 選択範囲のみなら、どのトラックも同じ時間を切り出す（複数の範囲はつなげる）。仕上げ（ノーマライズ、フェード）も掛ける
    */
-  const renderClip = async (edited: Clip, s: { selectionOnly: boolean; mix: boolean }) => {
+  const renderClip = async (edited: Clip, s: { selectionOnly: boolean; mix: boolean }, onProgress?: (p: number) => void) => {
     // トラックの EQ とフェーダー（音量・パン）は、再生と同じく書き出しにも掛ける
     const render = async (c: Clip, id: string) => {
       const part = s.selectionOnly && d.selections.length ? sliceRanges(c, d.selections) : c
@@ -73,11 +73,14 @@ export function useOutput(d: Deps) {
     }
     // ミックス: 再生と同じく、ミュート・ソロに従って鳴るトラックだけを混ぜる（サンプルレートは選んでいるトラックに合わせる）
     const audible = history.tracks.filter((tr) => isAudible(tr.id, tracks.mix, history.tracks))
-    let clip = await render(edited, history.activeId)
-    if (s.mix && history.tracks.length > 1 && audible.length) {
-      const parts = await Promise.all(audible.map((tr) => render(tr.clip, tr.id)))
-      clip = await mixClips(parts, edited.sampleRate, Math.max(...parts.map((c) => c.channels.length)))
-    }
+    const mixing = s.mix && history.tracks.length > 1 && audible.length > 0
+    // 進み具合: トラックを 1 本作るごとに進め、混ぜる、仕上げで 1 を超えないように最後の 1 つぶんを残す
+    const total = (mixing ? audible.length : 1) + 1
+    let done = 0
+    const step = <T,>(v: T) => (onProgress?.(++done / total), v)
+    const clip = mixing
+      ? await Promise.all(audible.map((tr) => render(tr.clip, tr.id).then(step))).then((parts) => mixClips(parts, edited.sampleRate, Math.max(...parts.map((c) => c.channels.length))))
+      : await render(edited, history.activeId).then(step)
     return finishClip(clip, d.finish)
   }
 
@@ -100,8 +103,10 @@ export function useOutput(d: Deps) {
     const target = folder ?? (await pickSaveTarget(fileName, 'audio', { description: t('file.audioType'), mime: EXPORT_MIME[s.format], ext }, win ?? window))
     if (!target) return
     await d.task.run(t('task.exporting'), async (signal) => {
-      const clip = await renderClip(edited, s)
-      const blob = await exportAudio(clip, { ...s, range: null, sampleRate: s.sampleRate || clip.sampleRate }, d.task.setProgress)
+      // 作る処理を 0〜0.7、符号化を 0.7〜1 として、ゲージに出す
+      d.task.setProgress(0)
+      const clip = await renderClip(edited, s, (v) => d.task.setProgress(v * 0.7))
+      const blob = await exportAudio(clip, { ...s, range: null, sampleRate: s.sampleRate || clip.sampleRate }, (v) => d.task.setProgress(0.7 + v * 0.3))
       // MP3 などの Worker は止められないので、中断されていたら結果を捨てる
       if (signal.aborted) return
       await target.write(blob)
