@@ -1016,7 +1016,7 @@
   "fx.addCancel": "取消",
 
   "plugins.intro": "從 URL 新增用於 FX 的外掛。新增的外掛會儲存在此裝置上，離線也能使用。",
-  "plugins.url": "外掛資訊清單的 URL",
+  "plugins.url": "外掛清單或 WebAudio Modules（.js）的 URL",
   "plugins.add": "新增",
   "plugins.empty": "沒有新增的外掛",
   "plugins.remove": "刪除",
@@ -1038,6 +1038,7 @@
   "plugins.error.processor": "未指定 processor",
   "plugins.error.reserved": "不能使用內建外掛的 id",
   "plugins.error.vst": "無法載入 VST（不支援的 DLL，或使用了模擬器不支援的指令）",
+  "plugins.error.wam": "無法載入 WebAudio Modules（不是 WAM，或無法使用共用記憶體）",
   "plugins.update": "更新",
   "plugins.updated": "已更新",
   "plugins.upToDate": "已是最新",

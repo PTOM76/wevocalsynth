@@ -1016,7 +1016,7 @@
   "fx.addCancel": "取消",
 
   "plugins.intro": "从 URL 添加用于 FX 的插件。添加的插件会保存在此设备上，离线也能使用。",
-  "plugins.url": "插件清单的 URL",
+  "plugins.url": "插件清单或 WebAudio Modules（.js）的 URL",
   "plugins.add": "添加",
   "plugins.empty": "没有添加的插件",
   "plugins.remove": "删除",
@@ -1038,6 +1038,7 @@
   "plugins.error.processor": "未指定 processor",
   "plugins.error.reserved": "不能使用内置插件的 id",
   "plugins.error.vst": "无法加载 VST（不支持的 DLL，或使用了模拟器不支持的指令）",
+  "plugins.error.wam": "无法加载 WebAudio Modules（不是 WAM，或无法使用共享内存）",
   "plugins.update": "更新",
   "plugins.updated": "已更新",
   "plugins.upToDate": "已是最新",

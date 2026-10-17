@@ -1016,7 +1016,7 @@
   "fx.addCancel": "Cancel",
 
   "plugins.intro": "Add plugins for FX from a URL. Added plugins are saved on this device and work offline.",
-  "plugins.url": "URL of the plugin manifest",
+  "plugins.url": "URL of a plugin manifest or a WebAudio Module (.js)",
   "plugins.add": "Add",
   "plugins.empty": "No plugins added",
   "plugins.remove": "Remove",
@@ -1038,6 +1038,7 @@
   "plugins.error.processor": "No processor is specified",
   "plugins.error.reserved": "The id of a built-in plugin cannot be used",
   "plugins.error.vst": "Could not load the VST (an unsupported DLL, or it uses instructions the emulator does not support)",
+  "plugins.error.wam": "Could not load the WebAudio Module (it is not a WAM, or shared memory is unavailable)",
   "plugins.update": "Update",
   "plugins.updated": "Updated",
   "plugins.upToDate": "Up to date",
