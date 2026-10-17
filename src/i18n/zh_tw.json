@@ -310,7 +310,7 @@
   "settings.showDevPlugins": "顯示開發用外掛",
   "settings.showDevPluginsHelp": "在 FX 的「新增」清單中顯示給開發者的範本外掛",
   "settings.showVst": "允許載入 VST（Windows 外掛）（試驗性）",
-  "settings.showVstHelp": "可在設定的「外掛」中選擇 VST 的 DLL 進行安裝。DLL 透過模擬器執行，處理較慢，只在匯出時生效（播放時直通）。屬於試驗性功能，部分外掛無法執行",
+  "settings.showVstHelp": "可在設定的「外掛」中選擇 VST 的 DLL 進行安裝。DLL 透過模擬器執行，處理較重，過重的外掛在播放時會自動直通。屬於試驗性功能，部分外掛無法執行",
 
   "export.title": "匯出音訊檔",
   "export.run": "匯出",
@@ -1044,5 +1044,5 @@
   "plugins.upToDate": "已是最新",
   "plugins.noSource": "來源未知，無法更新",
   "plugins.vst.pick": "選擇 VST（DLL）",
-  "plugins.vst.notice": "試驗性功能。只在匯出時生效，播放時直通"
+  "plugins.vst.notice": "試驗性功能。過重的外掛在播放時會自動直通"
 }

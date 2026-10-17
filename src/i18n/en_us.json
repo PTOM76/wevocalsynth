@@ -310,7 +310,7 @@
   "settings.showDevPlugins": "Show development plugins",
   "settings.showDevPluginsHelp": "Shows the template plugin for plugin authors in the FX Add list",
   "settings.showVst": "Allow loading VST plugins (experimental)",
-  "settings.showVstHelp": "Lets you pick a VST DLL in Settings > Plugins. The DLL runs in an emulator, so it is slow and is applied only when exporting (bypassed during playback). Experimental; some plugins do not work",
+  "settings.showVstHelp": "Lets you pick a VST DLL in Settings > Plugins. The DLL runs in an emulator, so it is heavy; heavy plugins are bypassed automatically during playback. Experimental; some plugins do not work",
 
   "export.title": "Export audio",
   "export.run": "Export",
@@ -1044,5 +1044,5 @@
   "plugins.upToDate": "Up to date",
   "plugins.noSource": "Cannot update because the source is unknown",
   "plugins.vst.pick": "Choose a VST (DLL)",
-  "plugins.vst.notice": "Experimental. Applied only when exporting; bypassed during playback"
+  "plugins.vst.notice": "Experimental. Heavy plugins are bypassed automatically during playback"
 }

@@ -310,7 +310,7 @@
   "settings.showDevPlugins": "開発用のプラグインを表示する",
   "settings.showDevPluginsHelp": "FX の「追加」に、作る人向けの雛形のプラグインを表示します",
   "settings.showVst": "VST（Windows のプラグイン）を読み込めるようにする（試験的）",
-  "settings.showVstHelp": "設定の「プラグイン」で、VST の DLL を選んで導入できるようにする。DLL はエミュレーターで動かすため、処理が重く、書き出しのときだけ掛かる（再生中は素通し）。試験的な機能で、動かないプラグインもある",
+  "settings.showVstHelp": "設定の「プラグイン」で、VST の DLL を選んで導入できるようにする。DLL はエミュレーターで動かすため、処理が重い。重いプラグインは再生中に自動で素通しになる。試験的な機能で、動かないプラグインもある",
 
   "export.title": "音声ファイルに書き出す",
   "export.run": "書き出し",
@@ -1044,5 +1044,5 @@
   "plugins.upToDate": "最新です",
   "plugins.noSource": "取得元が分からないため更新できません",
   "plugins.vst.pick": "VST（DLL）を選ぶ",
-  "plugins.vst.notice": "試験的な機能です。書き出しのときだけ掛かり、再生中は素通しになります"
+  "plugins.vst.notice": "試験的な機能です。処理が重いプラグインは、再生中に自動で素通しになります"
 }
