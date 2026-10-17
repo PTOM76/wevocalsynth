@@ -1047,4 +1047,7 @@
   "plugins.noSource": "來源未知，無法更新",
   "plugins.vst.pick": "選擇 VST（DLL）",
   "plugins.vst.notice": "試驗性功能。過重的外掛在播放時會自動直通"
+  "plugins.vst.warning": "Windows VST 在模擬器中執行。即使能載入，也可能無法正常運作，例如無聲或聲音不正確",
+  "plugins.vst.load": "負載參考：約為播放時間的 {n}%（每個）",
+  "plugins.vst.loadHeavy": "負載參考：約為播放時間的 {n}%。無法跟上播放，因此播放時會被旁通，匯出時套用",
 }
