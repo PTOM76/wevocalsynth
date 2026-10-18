@@ -6,8 +6,7 @@ WeVocalSynthは、Webブラウザ上で音声素材のピッチおよび時間�
 <img width="600" alt="パソコンの画面" src="docs/images/readme-pc.png" />
 <img width="200" alt="スマホの画面" src="docs/images/readme-mobile.png" />
 
-
-インストールは不要。音声ファイルはサーバーへ送らず、処理はすべてブラウザ内で行う。
+インストールは不要で音声ファイルはサーバーへ送信せず、処理はすべてブラウザ内で実行する。
 
 ## できること
 | 分類 | 機能 |
@@ -15,7 +14,7 @@ WeVocalSynthは、Webブラウザ上で音声素材のピッチおよび時間�
 | 加工 | ピッチ変更（0.01半音単位）、時間伸縮、フォルマント保持、移動、ボーカルと楽器のモード、音の種類に合わせて選べる処理方式（Vesola、Solis、Phasera、HPSS など）、逆再生 |
 | ピッチ | 範囲の音程の表示と最寄りの音名に合わせる、ピッチ曲線の表示とペンでの描き直し、半音上下、平らにする、音階に揃える、ビブラート、MIDI の音程を当てはめる |
 | 編集 | 範囲選択（複数可）、切り取り、コピー、貼り付け（ピッチの曲線にも）、無音の挿入、音量編集、音量とフォルマントの曲線を描く、音符ブロックの移動と伸縮、マーカー、元に戻す、やり直す、操作履歴 |
-| トラック | 複数トラック（複製/追加/分割/統合、選択範囲を新しいトラックへ）、トラックごとの音量/パン（非破壊）、ミュート/ソロ、ほかのトラックを重ねて表示、音量メーター |
+| トラック | 複数トラック（複製/追加/分割/統合、選択範囲を新しいトラックへ）、トラックごとの音量/パン（非破壊）、ミュート/ソロ/エフェクト、ほかのトラックを重ねて表示、音量メーター |
 | 音声の作成 | 声、楽器の音色で、単音または MIDI のメロディから音声を作成（フォルマントと音量を指定、作成前に試聴）、選択範囲を MIDI の音符に並べる、録音 |
 | テンポ | BPM自動解析、拍の線と拍への吸着、BPM変更に合わせた全体の伸縮 |
 | 確認 | 加工後の試聴、スライダーの操作を即座に反映するループ試聴、原音との比較、帯パネルごとの表示（波形、ピッチ、音量、フォルマント） |
@@ -37,7 +36,7 @@ WeVocalSynthは、Webブラウザ上で音声素材のピッチおよび時間�
 | 項目 | 内容 |
 | --- | --- |
 | 画面 | React + TypeScript + MUI（[PevenMUI](https://github.com/PTOM76/pevenmui)、Vite） |
-| 音声処理 | Rust → WebAssembly（Web Worker で実行） |
+| 音声 | Web Audio、Rust（WebAssembly）、[wevocal-lib](https://github.com/PTOM76/wevocal-lib) |
 | 再生 | Web Audio API、AudioWorklet |
 
 ## セットアップ
@@ -53,9 +52,9 @@ npm run dev
 | フォルダー | 内容 |
 | --- | --- |
 | `extractor/` | WeVocalExtractor（ボーカル抽出） |
-| `analyzer/` | WeVocalAnalyzer（スペクトログラム） |
-| `converter/` | WeVocalConverter（動画の書き出し） |
-| `wevocal-lib/` | 共有の信号処理と、音声の読み込み、書き出し |
+| `analyzer/` | WeVocalAnalyzer（スペクトログラム、文字起こし） |
+| `converter/` | WeVocalConverter（動画出力） |
+| `wevocal-lib/` | 共有の信号処理と、音声の読み込み、書き出し、音声処理アルゴリズム、プラグイン |
 | `pevenmui/` | 画面の部品 |
 
 `--recursive` だと `extractor/pevenmui/` なども取得されるが、修正するのはルートの `pevenmui/` の方。紛らわしければ、それぞれのフォルダーで `todo setup:nested` を実行して隠す。追加機能を開発サーバーで試すときは、先に `npm run build:addons:dev` を実行する。
