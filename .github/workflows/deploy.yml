@@ -19,9 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        # extractor/（ボーカル抽出）と wevocal-lib/ は submodule
         with:
-          submodules: true
+          submodules: recursive
       - uses: actions/setup-node@v4
         with:
           node-version: 22
