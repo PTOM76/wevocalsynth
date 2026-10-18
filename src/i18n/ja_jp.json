@@ -308,7 +308,7 @@
   "settings.editBarOff": "表示しない",
   "settings.editBarHelp": "範囲を選んだときの編集のボタンの列。自動はスマホだけ、常に表示はパソコンでもツールバーの下に表示する",
   "settings.showDevPlugins": "開発用のプラグインを表示する",
-  "settings.showDevPluginsHelp": "FX の「追加」に、作る人向けの雛形のプラグインを表示します",
+  "settings.showDevPluginsHelp": "FX の「追加」に、開発者向けの雛形のプラグインを表示します",
   "settings.showVst": "VST（Windows のプラグイン）を読み込めるようにする（試験的）",
   "settings.showVstHelp": "設定の「プラグイン」で、VST の DLL を選んで導入できるようにする。DLL はエミュレーターで動かすため、処理が重い。重いプラグインは再生中に自動で素通しになる。試験的な機能で、動かないプラグインもある",
 
