@@ -940,7 +940,6 @@
   "eq.applyHelp": "將 EQ 寫入音軌音訊，並將 EQ 恢復為平直",
   "eq.range": "範圍",
 
-
   "tempoChange.title": "偵測到速度變化",
   "tempoChange.message": "速度可能在以下位置發生變化。採用後將放置速度標記。選擇一列可移動到該位置",
   "tempoChange.adopt": "採用",
@@ -978,7 +977,6 @@
   "window.limitHint": "請關閉其他視窗，或在設定中變更上限",
   "window.retry": "重試",
   "window.noAutosave": "此視窗不會自動儲存",
-
 
   "fx.menu": "FX…",
   "fx.historyLabel": "FX",
@@ -1051,5 +1049,6 @@
   "plugins.vst.notice": "試驗性功能。過重的外掛在播放時會自動直通",
   "plugins.vst.warning": "Windows VST 在模擬器中執行。即使能載入，也可能無法正常運作，例如無聲或聲音不正確",
   "plugins.vst.load": "負載參考：約為播放時間的 {n}%（每個）",
-  "plugins.vst.loadHeavy": "負載參考：約為播放時間的 {n}%。無法跟上播放，因此播放時會被旁通，匯出時套用"
+  "plugins.vst.loadHeavy": "負載參考：約為播放時間的 {n}%。無法跟上播放，因此播放時會被旁通，匯出時套用",
+  "plugins.warning.folderOnly": "外掛程式已儲存到所選資料夾，但無法儲存到瀏覽器儲存空間。請保持資料夾存取權限以繼續使用。"
 }

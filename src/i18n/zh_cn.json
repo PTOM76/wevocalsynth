@@ -940,7 +940,6 @@
   "eq.applyHelp": "将 EQ 写入音轨音频，并将 EQ 恢复为平直",
   "eq.range": "范围",
 
-
   "tempoChange.title": "检测到速度变化",
   "tempoChange.message": "速度可能在以下位置发生变化。采用后将放置速度标记。选择一行可移动到该位置",
   "tempoChange.adopt": "采用",
@@ -978,7 +977,6 @@
   "window.limitHint": "请关闭其他窗口，或在设置中更改上限",
   "window.retry": "重试",
   "window.noAutosave": "此窗口不会自动保存",
-
 
   "fx.menu": "FX…",
   "fx.historyLabel": "FX",
@@ -1051,5 +1049,6 @@
   "plugins.vst.notice": "试验性功能。过重的插件在播放时会自动直通",
   "plugins.vst.warning": "Windows VST 在模拟器中运行。即使能加载，也可能无法正常工作，例如无声或声音不正确",
   "plugins.vst.load": "负载参考：约为播放时间的 {n}%（每个）",
-  "plugins.vst.loadHeavy": "负载参考：约为播放时间的 {n}%。无法跟上播放，因此播放时会被旁通，导出时应用"
+  "plugins.vst.loadHeavy": "负载参考：约为播放时间的 {n}%。无法跟上播放，因此播放时会被旁通，导出时应用",
+  "plugins.warning.folderOnly": "插件已保存到所选文件夹，但无法保存到浏览器存储。请保持文件夹访问权限以继续使用。"
 }

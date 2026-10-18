@@ -940,7 +940,6 @@
   "eq.applyHelp": "Write the EQ into the track audio and reset the EQ to flat",
   "eq.range": "Range",
 
-
   "tempoChange.title": "Tempo change detected",
   "tempoChange.message": "The tempo may change at the following positions. If you use them, tempo markers will be placed. Select a row to move to that position",
   "tempoChange.adopt": "Use",
@@ -978,7 +977,6 @@
   "window.limitHint": "Close another window, or change the limit in Settings",
   "window.retry": "Retry",
   "window.noAutosave": "This window is not autosaved",
-
 
   "fx.menu": "FX…",
   "fx.historyLabel": "FX",
@@ -1051,5 +1049,6 @@
   "plugins.vst.notice": "Experimental. Heavy plugins are bypassed automatically during playback",
   "plugins.vst.warning": "The Windows VST runs in an emulator. Even if it loads, it may not work, for example it may be silent or sound wrong",
   "plugins.vst.load": "Estimated load: about {n}% of playback time (per instance)",
-  "plugins.vst.loadHeavy": "Estimated load: about {n}% of playback time. It cannot keep up with playback, so it is bypassed during playback and applied when exporting"
+  "plugins.vst.loadHeavy": "Estimated load: about {n}% of playback time. It cannot keep up with playback, so it is bypassed during playback and applied when exporting",
+  "plugins.warning.folderOnly": "The plugin was saved to the selected folder but not browser storage. Keep access to the folder enabled to use it."
 }
