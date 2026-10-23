@@ -97,6 +97,7 @@ src/components/
   AboutDialog.tsx  「このアプリについて」のダイアログ
   AlgorithmMenu.tsx  処理方式の一覧と選ぶメニュー（従来の方式と試験的な方式の表示を含む）
   AppDialogs.tsx  App が開くダイアログをまとめて置く（開閉は useDialogs）
+  AppDock.tsx  ドック（画面の端の欄に、ダイアログを置けるようにする PevenMUI の DockProvider）に、アプリの訳文を渡す
   AppHeader.tsx  スマホの上部バー（プロジェクト名とメニュー）
   AppIcon.tsx  アプリのアイコン（public/icon.svg）。GitHub Pages ではサブパスで配信されるため BASE_URL から組み立てる
   CleanExtractScreen.tsx  メモリが足りないときの抽出の画面（再読み込みの直後に表示する）

@@ -8,7 +8,8 @@ import { setOutputDevice } from 'wevocal-lib'
 import { setOutputLimit } from './audio/outputLimit'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, GlobalStyles, Stack, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, NoticeMessage, useAddonFolderSync, editBarEnabled, DesktopLayout, MobileLayout } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, NoticeMessage, useAddonFolderSync, editBarEnabled, DesktopLayout, MobileLayout, DockArea } from 'pevenmui'
+import AppDock from './components/AppDock'
 import LevelMeter from './components/LevelMeter'
 import type { Range } from './audio/types'
 import { useEditor } from './hooks/useEditor'
@@ -410,6 +411,7 @@ export default function App() {
       <PevenLabels.Provider value={i18n.labels(lang)}>
       <WindowModeContext.Provider value={settings.dialogWindow === 'auto' ? autoWindowMode() : settings.dialogWindow}>
       <SliderResetContext.Provider value={settings.sliderDoubleClickReset}>
+      <AppDock>
       {!mobile && <GlobalStyles styles={desktopStyles} />}
       {/* アプリとして画面の高さにぴったり収め、ページ全体はスクロールさせない */}
       <Box sx={{ height: FULL_HEIGHT, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.default' }}>
@@ -476,6 +478,10 @@ export default function App() {
         ) : (
           <DesktopLayout
             storageKey={app.key('inspectorWidth')}
+            dockTop={<DockArea edge="top" />}
+            dockLeft={<DockArea edge="left" />}
+            dockBottom={<DockArea edge="bottom" />}
+            dockRight={<DockArea edge="right" />}
             toolbar={
               <>
               <Toolbar
@@ -573,6 +579,7 @@ export default function App() {
 
       {/* 通知（PevenMUI の NoticeMessage。スマホは下の再生バーを隠さないよう上に出す） */}
       <NoticeMessage message={ed.toast} onClose={() => ed.setToast(null)} vertical={mobile ? 'top' : 'bottom'} horizontal={mobile ? 'center' : 'left'} />
+      </AppDock>
       </SliderResetContext.Provider>
       </WindowModeContext.Provider>
       </PevenLabels.Provider>

@@ -1050,5 +1050,12 @@
   "plugins.vst.warning": "Windows VST를 에뮬레이터에서 실행합니다. 불러와도 무음이 되거나 소리가 올바르지 않는 등 작동하지 않을 수 있습니다",
   "plugins.vst.load": "부하 기준: 재생 시간의 약 {n}%(1개당)",
   "plugins.vst.loadHeavy": "부하 기준: 재생 시간의 약 {n}%. 재생을 따라가지 못하므로 재생 중에는 바이패스되고, 내보내기에서 적용됩니다",
-  "plugins.warning.folderOnly": "플러그인을 선택한 폴더에는 저장했지만 브라우저 저장소에는 저장하지 못했습니다. 사용하려면 폴더 접근 권한을 유지하세요."
+  "plugins.warning.folderOnly": "플러그인을 선택한 폴더에는 저장했지만 브라우저 저장소에는 저장하지 못했습니다. 사용하려면 폴더 접근 권한을 유지하세요.",
+
+  "dock.dock": "패널에 고정",
+  "dock.undock": "대화상자로 표시",
+  "dock.edgeBottom": "아래에 고정",
+  "dock.edgeLeft": "왼쪽에 고정",
+  "dock.edgeRight": "오른쪽에 고정",
+  "dock.edgeTop": "위에 고정"
 }

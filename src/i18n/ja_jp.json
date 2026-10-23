@@ -1050,5 +1050,12 @@
   "plugins.vst.warning": "Windows の VST をエミュレーターで動かします。読み込めても、無音になる、音が正しくないなど、動作しないことがあります",
   "plugins.vst.load": "重さの目安: 再生の時間の約 {n}%（1 つ分）",
   "plugins.vst.loadHeavy": "重さの目安: 再生の時間の約 {n}%。再生には間に合わないため、再生中は素通しになり、書き出しで掛かります",
-  "plugins.warning.folderOnly": "プラグインは指定フォルダーに保存しましたが、ブラウザー内キャッシュには保存できませんでした。フォルダーへのアクセスを許可したままご利用ください。"
+  "plugins.warning.folderOnly": "プラグインは指定フォルダーに保存しましたが、ブラウザー内キャッシュには保存できませんでした。フォルダーへのアクセスを許可したままご利用ください。",
+
+  "dock.dock": "欄に置く",
+  "dock.undock": "ダイアログにする",
+  "dock.edgeBottom": "下に置く",
+  "dock.edgeLeft": "左に置く",
+  "dock.edgeRight": "右に置く",
+  "dock.edgeTop": "上に置く"
 }

@@ -1050,5 +1050,12 @@
   "plugins.vst.warning": "Windows VST 在模擬器中執行。即使能載入，也可能無法正常運作，例如無聲或聲音不正確",
   "plugins.vst.load": "負載參考：約為播放時間的 {n}%（每個）",
   "plugins.vst.loadHeavy": "負載參考：約為播放時間的 {n}%。無法跟上播放，因此播放時會被旁通，匯出時套用",
-  "plugins.warning.folderOnly": "外掛程式已儲存到所選資料夾，但無法儲存到瀏覽器儲存空間。請保持資料夾存取權限以繼續使用。"
+  "plugins.warning.folderOnly": "外掛程式已儲存到所選資料夾，但無法儲存到瀏覽器儲存空間。請保持資料夾存取權限以繼續使用。",
+
+  "dock.dock": "停靠到面板",
+  "dock.undock": "作為對話方塊顯示",
+  "dock.edgeBottom": "停靠在下方",
+  "dock.edgeLeft": "停靠在左側",
+  "dock.edgeRight": "停靠在右側",
+  "dock.edgeTop": "停靠在上方"
 }

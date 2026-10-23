@@ -1050,5 +1050,12 @@
   "plugins.vst.warning": "The Windows VST runs in an emulator. Even if it loads, it may not work, for example it may be silent or sound wrong",
   "plugins.vst.load": "Estimated load: about {n}% of playback time (per instance)",
   "plugins.vst.loadHeavy": "Estimated load: about {n}% of playback time. It cannot keep up with playback, so it is bypassed during playback and applied when exporting",
-  "plugins.warning.folderOnly": "The plugin was saved to the selected folder but not browser storage. Keep access to the folder enabled to use it."
+  "plugins.warning.folderOnly": "The plugin was saved to the selected folder but not browser storage. Keep access to the folder enabled to use it.",
+
+  "dock.dock": "Dock",
+  "dock.undock": "Show as a dialog",
+  "dock.edgeBottom": "Dock at the bottom",
+  "dock.edgeLeft": "Dock on the left",
+  "dock.edgeRight": "Dock on the right",
+  "dock.edgeTop": "Dock at the top"
 }
