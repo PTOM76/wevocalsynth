@@ -311,6 +311,8 @@
   "settings.showDevPluginsHelp": "Shows the template plugin for plugin authors in the FX Add list",
   "settings.showVst": "Allow loading VST plugins (experimental)",
   "settings.showVstHelp": "Lets you pick a VST DLL in Settings > Plugins. The DLL runs in an emulator, so it is heavy; heavy plugins are bypassed automatically during playback. Experimental; some plugins do not work",
+  "settings.dockWindowSnap": "Dock a separate window when dropped at an edge",
+  "settings.dockWindowSnapHelp": "Drop a dialog shown in a separate window at an edge of the main window to dock it there.",
 
   "export.title": "Export audio",
   "export.run": "Export",

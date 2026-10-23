@@ -128,6 +128,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         {S('uiScale')}
         {S('showMeters')}
         {S('minimapPlayhead')}
+        {S('dockWindowSnap')}
         {S('liveSelection')}
         <Row label={t('settings.language')}>
           <Choice<LangSetting>

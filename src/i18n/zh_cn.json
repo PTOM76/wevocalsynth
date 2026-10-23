@@ -311,6 +311,8 @@
   "settings.showDevPluginsHelp": "在 FX 的“添加”列表中显示面向开发者的模板插件",
   "settings.showVst": "允许加载 VST（Windows 插件）（试验性）",
   "settings.showVstHelp": "可在设置的“插件”中选择 VST 的 DLL 进行安装。DLL 通过模拟器运行，处理较重，过重的插件在播放时会自动直通。属于试验性功能，部分插件无法运行",
+  "settings.dockWindowSnap": "将独立窗口拖到边缘松开时停靠",
+  "settings.dockWindowSnapHelp": "将显示在独立窗口中的对话框拖到主窗口边缘后松开，会停靠到该边的面板。",
 
   "export.title": "导出音频文件",
   "export.run": "导出",

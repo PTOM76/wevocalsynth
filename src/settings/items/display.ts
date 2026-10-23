@@ -47,6 +47,8 @@ export const display = defineItems('display', {
   // レベルメーター（全体とトラックごと）を表示する
   showMeters: check(true, { label: 'settings.showMeters', help: 'settings.showMetersHelp' }),
   // ミニマップに再生位置の線を表示する（表示メニューにもある）
+  // 別の窓（ポップアップ）に出したダイアログを、本体の窓の端に寄せて離したら、その端の欄に置く（ドック）
+  dockWindowSnap: check(true, { label: 'settings.dockWindowSnap', help: 'settings.dockWindowSnapHelp' }),
   minimapPlayhead: check(true, { label: 'menu.minimapPlayhead', help: 'settings.minimapPlayheadHelp' }),
   // 範囲をドラッグしている途中も、選択範囲の数値などを更新する（切ると離したときに更新。軽い）
   liveSelection: check(false, { label: 'settings.liveSelection', help: 'settings.liveSelectionHelp' }),

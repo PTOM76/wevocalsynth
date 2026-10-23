@@ -311,6 +311,8 @@
   "settings.showDevPluginsHelp": "FX の「追加」に、開発者向けの雛形のプラグインを表示します",
   "settings.showVst": "VST（Windows のプラグイン）を読み込めるようにする（試験的）",
   "settings.showVstHelp": "設定の「プラグイン」で、VST の DLL を選んで導入できるようにする。DLL はエミュレーターで動かすため、処理が重い。重いプラグインは再生中に自動で素通しになる。試験的な機能で、動かないプラグインもある",
+  "settings.dockWindowSnap": "別の窓を端に寄せて離したら、欄に置く",
+  "settings.dockWindowSnapHelp": "別の窓（ポップアップ）に出したダイアログを、本体の窓の端に寄せて離すと、その端の欄に置きます。",
 
   "export.title": "音声ファイルに書き出す",
   "export.run": "書き出し",

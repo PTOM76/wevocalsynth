@@ -411,7 +411,7 @@ export default function App() {
       <PevenLabels.Provider value={i18n.labels(lang)}>
       <WindowModeContext.Provider value={settings.dialogWindow === 'auto' ? autoWindowMode() : settings.dialogWindow}>
       <SliderResetContext.Provider value={settings.sliderDoubleClickReset}>
-      <AppDock>
+      <AppDock windowSnap={settings.dockWindowSnap}>
       {!mobile && <GlobalStyles styles={desktopStyles} />}
       {/* アプリとして画面の高さにぴったり収め、ページ全体はスクロールさせない */}
       <Box sx={{ height: FULL_HEIGHT, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.default' }}>
