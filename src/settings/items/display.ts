@@ -65,7 +65,7 @@ export const view = defineItems(null, {
   // ピッチを波形の帯に重ねる（オーバーパネル）
   overlayPitch: value(false, { label: 'menu.overlayPitch' }),
   // 波形の下にミニマップを表示する（オフなら従来のスクロールバー）
-  minimap: value(true, { label: 'menu.minimap' }),
+  showMinimap: value(true, { label: 'menu.minimap' }),
   // 加工と音量の欄を表示する（標準では右の欄に置く。タブの × で閉じ、「表示」メニューで出す）
   showProcessPanel: value(true, { label: 'process.title' }),
   showVolumePanel: value(true, { label: 'volume.title' }),
