@@ -415,7 +415,7 @@ export default function App() {
         </WindowDialog>
       )}
       {settings.showVolumePanel && (
-        <WindowDialog open onClose={() => updateSettings({ showVolumePanel: false })} title={t('volume.title')} closeLabel={t('common.close')} name="volume" dockable defaultDock="right" dockSize={320} width={360} height={420} dialogProps={{ maxWidth: 'xs', fullWidth: true }}>
+        <WindowDialog open onClose={() => updateSettings({ showVolumePanel: false })} title={t('volume.title')} closeLabel={t('common.close')} name="volume" dockable defaultDock="right" dockSize={320} dockLength={250} width={360} height={420} dialogProps={{ maxWidth: 'xs', fullWidth: true }}>
           {volumePanel}
         </WindowDialog>
       )}
