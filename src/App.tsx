@@ -8,7 +8,7 @@ import { setOutputDevice } from 'wevocal-lib'
 import { setOutputLimit } from './audio/outputLimit'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, GlobalStyles, Stack, useColorScheme, useMediaQuery, useTheme } from '@mui/material'
-import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, NoticeMessage, useAddonFolderSync, editBarEnabled, DesktopLayout, MobileLayout, DockArea } from 'pevenmui'
+import { desktopStyles, LANDSCAPE_PHONE, usePersistentNumber, ContextMenu, setUiScale, FULL_HEIGHT, PevenLabels, type MenuEntry, WindowModeContext, autoWindowMode, useStableFn, NoticeMessage, useAddonFolderSync, editBarEnabled, DesktopLayout, MobileLayout, DockArea, WindowDialog } from 'pevenmui'
 import AppDock from './components/AppDock'
 import LevelMeter from './components/LevelMeter'
 import type { Range } from './audio/types'
@@ -406,6 +406,22 @@ export default function App() {
       />
     ) : null
 
+  /** 加工と音量の欄。標準で右の欄に置き、「ダイアログにする」でダイアログにもできる。タブの × で閉じる（「表示」メニューで出す） */
+  const dockedPanels = (
+    <>
+      {settings.showProcessPanel && (
+        <WindowDialog open onClose={() => updateSettings({ showProcessPanel: false })} title={t('process.title')} closeLabel={t('common.close')} name="process" dockable defaultDock="right" dockSize={320} width={360} height={640} dialogProps={{ maxWidth: 'xs', fullWidth: true }}>
+          {editPanel}
+        </WindowDialog>
+      )}
+      {settings.showVolumePanel && (
+        <WindowDialog open onClose={() => updateSettings({ showVolumePanel: false })} title={t('volume.title')} closeLabel={t('common.close')} name="volume" dockable defaultDock="right" dockSize={320} width={360} height={420} dialogProps={{ maxWidth: 'xs', fullWidth: true }}>
+          {volumePanel}
+        </WindowDialog>
+      )}
+    </>
+  )
+
   return (
     <LangContext.Provider value={lang}>
       <PevenLabels.Provider value={i18n.labels(lang)}>
@@ -515,12 +531,8 @@ export default function App() {
               </>
             }
             editor={editor}
-            inspector={
-              <>
-                {editPanel}
-                {volumePanel}
-              </>
-            }
+            // 加工と音量は、標準で右の欄（ドック）に置くパネル。欄にもダイアログにも移せる（下の dockedPanels）
+            inspector={null}
             statusBar={
               <StatusBar
                 fileName={ed.fileName}
@@ -544,6 +556,7 @@ export default function App() {
         )}
       </Box>
 
+      {!mobile && dockedPanels}
       <ContextMenu position={contextPos} entries={rulerAt ? rulerMenu : context} onClose={() => setContextPos(null)} />
       {trackArea.overlays}
       <RenameDialog

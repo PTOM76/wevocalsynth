@@ -70,7 +70,7 @@ export const MENU_BAR: { label: MessageKey; accessKey: string; items: MenuItem[]
     accessKey: 'V',
     items: [
       'spectrogram', 'wave', 'pitch', 'gain', 'formant', '-',
-      'pitchLine', 'notes', 'overlayPitch', 'minimap', '-',
+      'pitchLine', 'notes', 'overlayPitch', 'minimap', 'processPanel', 'volumePanel', '-',
       'zoomIn', 'zoomOut', 'showAll', 'zoomSelection',
       { label: 'wave.vZoom', enabled: opened, items: ['vZoomIn', 'vZoomOut', 'vZoomReset'] },
       'followPlayhead',

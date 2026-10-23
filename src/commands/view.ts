@@ -32,6 +32,8 @@ export const viewCommands = defineCommands({
   },
   overlayPitch: { label: 'menu.overlayPitch', checked: (c) => c.settings.overlayPitch, enabled: pitchShown, run: (c) => c.update({ overlayPitch: !c.settings.overlayPitch }) },
   minimap: { label: 'menu.minimap', checked: (c) => c.settings.minimap, enabled: opened, run: (c) => c.update({ minimap: !c.settings.minimap }) },
+  processPanel: { label: 'process.title', checked: (c) => c.settings.showProcessPanel, run: (c) => c.update({ showProcessPanel: !c.settings.showProcessPanel }) },
+  volumePanel: { label: 'volume.title', checked: (c) => c.settings.showVolumePanel, run: (c) => c.update({ showVolumePanel: !c.settings.showVolumePanel }) },
   followPlayhead: { label: 'wave.follow', checked: (c) => c.settings.followPlayhead, run: (c) => c.update({ followPlayhead: !c.settings.followPlayhead }) },
 
   zoomIn: {

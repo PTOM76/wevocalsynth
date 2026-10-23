@@ -66,6 +66,9 @@ export const view = defineItems(null, {
   overlayPitch: value(false, { label: 'menu.overlayPitch' }),
   // 波形の下にミニマップを表示する（オフなら従来のスクロールバー）
   minimap: value(true, { label: 'menu.minimap' }),
+  // 加工と音量の欄を表示する（標準では右の欄に置く。タブの × で閉じ、「表示」メニューで出す）
+  showProcessPanel: value(true, { label: 'process.title' }),
+  showVolumePanel: value(true, { label: 'volume.title' }),
   // 再生中、再生位置が画面の外に出たら表示範囲を追従させる（ツールバーのボタンで切り替える）
   followPlayhead: value(true, { label: 'wave.follow' }),
 })
