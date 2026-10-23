@@ -1,4 +1,5 @@
 // コマンド（操作）の型。メニュー、右クリック、ショートカット、ツールバーが id で参照する（memo/commands.md）
+import { commandDefiner, type CommandSpec } from 'pevenmui'
 import type { useWaveformView } from 'wevocal-lib/react'
 import type { useTrackArea } from '../components/tracks/useTrackArea'
 import type { MessageKey } from '../i18n/i18n'
@@ -27,27 +28,11 @@ export interface CommandContext {
   selectionExport: ReturnType<typeof useSelectionExport>
 }
 
-type T = (key: MessageKey, vars?: Record<string, string | number>) => string
-
-/** 1 つの操作 */
-export interface Command {
-  /** 名前（状態で変わるなら関数） */
-  label: MessageKey | ((c: CommandContext, t: T) => string)
-  /** キーの割り当てのない操作で、メニューの右に表示する操作（ホイールなど） */
-  hint?: (c: CommandContext) => string
-  /** 表示するか（省くといつも表示する。使えない環境や、試験的機能の設定がオフのときに隠す） */
-  visible?: (c: CommandContext) => boolean
-  /** 押せるか（省くといつも押せる） */
-  enabled?: (c: CommandContext) => boolean
-  /** オンとオフの操作なら、今オンか */
-  checked?: (c: CommandContext) => boolean
-  run: (c: CommandContext) => void
-  /** 押せないときはキーを受け取らない（ブラウザやほかの部品に任せる）。省くと、キーはいつも受け取り、押せないときは何もしない */
-  keyOnlyWhenEnabled?: boolean
-}
+/** 1 つの操作（型と使い方は PevenMUI の commands/commands.ts） */
+export type Command = CommandSpec<CommandContext, MessageKey>
 
 /** コマンドの集まりを定義する（型を保ったまま返す） */
-export const defineCommands = <T extends Record<string, Command>>(commands: T) => commands
+export const defineCommands = commandDefiner<CommandContext, MessageKey>()
 
 /** 音声を開いているか */
 export const opened = (c: CommandContext) => !!c.ed.edited
