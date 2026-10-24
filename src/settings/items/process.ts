@@ -57,7 +57,7 @@ export const pitch = defineItems('pitch', {
 export const tempo = defineItems('tempo', {
   // ファイルを開いたときにテンポを自動解析し、BPM と 1 拍目の位置を入れる
   autoTempo: check(true, { label: 'settings.autoTempo', help: 'settings.autoTempoHelp' }),
-  // 自動解析で、途中でテンポが変わるかも調べる感度（変わっていたらダイアログで尋ねる。audio/tempoChange.ts）
+  // 自動解析で、途中でテンポが変わるかも調べる感度（変わっていたらダイアログで尋ねる。wevocal-lib の tempoChange.ts）
   tempoChange: choice<'off' | 'low' | 'normal'>('low', {
     label: 'settings.tempoChange',
     help: 'settings.tempoChangeHelp',

@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react'
 import type { Clip } from '../audio/types'
 import { analyzeTempo, isCancelled, type TempoCandidate } from '../dsp/engine'
-import { detectTempoChanges, type TempoChangeSection } from '../audio/tempoChange'
+import { detectTempoChanges, type TempoChangeSection } from 'wevocal-lib'
 import { startJob } from '../progress/jobs'
 import { t } from '../i18n/i18n'
 import { useAppSettings } from '../settings/settings'
@@ -35,7 +35,7 @@ export function useTempo() {
       setCandidates(result)
       if (!result[0]) return
       onDone(result[0])
-      const found = await detectTempoChanges(clip, result[0], settings.tempoChange)
+      const found = await detectTempoChanges(clip, result[0], settings.tempoChange, analyzeTempo)
       if (latestRef.current === clip) setChanges(found)
     } catch (e) {
       if (latestRef.current === clip && !isCancelled(e)) onError(e)

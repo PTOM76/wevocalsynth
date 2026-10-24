@@ -1,6 +1,7 @@
 // App が開くダイアログをまとめて置く（開閉は useDialogs）
 import { useRef } from 'react'
 import { LicensesDialog } from 'pevenmui'
+import { TempoChangeDialog } from 'wevocal-lib/react'
 import type { segmentAt } from '../audio/tempoMap'
 import type { Dialogs } from '../hooks/useDialogs'
 import type { useEditor } from '../hooks/useEditor'
@@ -21,7 +22,6 @@ import ShortcutsDialog from './ShortcutsDialog'
 import SilenceDialog from './SilenceDialog'
 import SoundSelectDialog from './SoundSelectDialog'
 import SynthDialog from './SynthDialog'
-import TempoChangeDialog from './TempoChangeDialog'
 import VideoExportDialog from './VideoExportDialog'
 import KanaCutDialog from './KanaCutDialog'
 
@@ -147,6 +147,7 @@ export default function AppDialogs({ ed, dialogs, bpm, seg, selectionExport }: P
     onClose={dialogs.closer('fx')}
   />
   <TempoChangeDialog
+    t={t}
     open={dialogs.isOpen('tempoChange') && !!ed.tempo.changes}
     sections={ed.tempo.changes ?? []}
     onSeek={player.seek}
