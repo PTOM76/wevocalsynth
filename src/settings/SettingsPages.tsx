@@ -254,6 +254,7 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
         {S('showExperimentalAlgorithms')}
         {S('showVoiceSplit')}
         {S('showVst')}
+        {S('autoBypass')}
         {S('showDevPlugins')}
         {S('showKanaVoice')}
         {draft.showKanaVoice && S('kanaStrength')}

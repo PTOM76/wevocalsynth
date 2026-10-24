@@ -313,6 +313,8 @@
   "settings.showVstHelp": "可在設定的「外掛」中選擇 VST 的 DLL 進行安裝。DLL 透過模擬器執行，處理較重，過重的外掛在播放時會自動直通。屬於試驗性功能，部分外掛無法執行",
   "settings.dockWindowSnap": "將獨立視窗拖到邊緣放開時停靠",
   "settings.dockWindowSnapHelp": "將顯示在獨立視窗中的對話方塊拖到主視窗邊緣後放開，會停靠到該邊的面板。",
+  "settings.autoBypass": "自動直通過重的外掛",
+  "settings.autoBypassHelp": "處理持續跟不上時，讓該外掛直通，以免聲音斷續。關閉後，即使聲音斷續也繼續套用。外掛停止或輸出損壞時，無論此設定為何都會直通",
 
   "export.title": "匯出音訊檔",
   "export.run": "匯出",

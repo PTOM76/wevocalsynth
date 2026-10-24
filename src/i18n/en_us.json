@@ -313,6 +313,8 @@
   "settings.showVstHelp": "Lets you pick a VST DLL in Settings > Plugins. The DLL runs in an emulator, so it is heavy; heavy plugins are bypassed automatically during playback. Experimental; some plugins do not work",
   "settings.dockWindowSnap": "Dock a separate window when dropped at an edge",
   "settings.dockWindowSnapHelp": "Drop a dialog shown in a separate window at an edge of the main window to dock it there.",
+  "settings.autoBypass": "Bypass heavy plugins automatically",
+  "settings.autoBypassHelp": "When a plugin keeps failing to keep up, bypass it so the sound does not keep breaking up. When off, the plugin stays on even if the sound breaks up. A plugin that stops or outputs broken audio is always bypassed",
 
   "export.title": "Export audio",
   "export.run": "Export",

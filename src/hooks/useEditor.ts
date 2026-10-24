@@ -3,7 +3,7 @@ import { fxHost } from '../effects'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Clip, Range } from '../audio/types'
 import { clipDuration } from '../audio/types'
-import { AUDIO_ACCEPT, configurePlayback, decodeFile, missingPlugins, whenPluginsLoaded } from 'wevocal-lib'
+import { AUDIO_ACCEPT, configurePlayback, decodeFile, missingPlugins, setAutoBypass, whenPluginsLoaded } from 'wevocal-lib'
 import { PROJECT_EXT, isProjectFile, loadProject, type Project } from '../project/projectFile'
 import { normalizeRanges } from '../audio/multiRange'
 import { usePlayer } from '../audio/usePlayer'
@@ -193,6 +193,7 @@ export function useEditor() {
   // 再生方式の切り替え（開発者向け）を、再生の部品すべてに効かせる
   const { suspendWhenStopped, playbackSession } = settings
   useEffect(() => configurePlayback({ suspendWhenStopped, playbackSession, report: reportAudioContext }), [suspendWhenStopped, playbackSession])
+  useEffect(() => setAutoBypass(settings.autoBypass), [settings.autoBypass])
 
   // 原音を持たない設定にしたら、加工後の表示に戻す（原音の切り替えは出さない）
   useEffect(() => {

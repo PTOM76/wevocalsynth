@@ -313,6 +313,8 @@
   "settings.showVstHelp": "可在设置的“插件”中选择 VST 的 DLL 进行安装。DLL 通过模拟器运行，处理较重，过重的插件在播放时会自动直通。属于试验性功能，部分插件无法运行",
   "settings.dockWindowSnap": "将独立窗口拖到边缘松开时停靠",
   "settings.dockWindowSnapHelp": "将显示在独立窗口中的对话框拖到主窗口边缘后松开，会停靠到该边的面板。",
+  "settings.autoBypass": "自动直通过重的插件",
+  "settings.autoBypassHelp": "处理持续跟不上时，让该插件直通，以免声音断续。关闭后，即使声音断续也继续应用。插件停止或输出损坏时，无论此设置如何都会直通",
 
   "export.title": "导出音频文件",
   "export.run": "导出",
