@@ -9,6 +9,7 @@ import { releaseIdleDsp } from '../dsp/engine'
 import { releasePlayers } from './usePlayer'
 import { isMobile } from 'pevenmui/web'
 import * as host from '../../extractor/src/host'
+import { diagnoseExtract as runDiagnose } from '../../extractor/src/hostDiagnose'
 import type * as ExtractorModule from '../../extractor/src/index'
 
 /**
@@ -44,7 +45,7 @@ export const setGpuLostHandler = (f: ((message: string) => void) | undefined) =>
 /**
  * 抽出の手順。抽出は数百MB使うので、先に加工と解析の Worker（wasm のメモリ）と、再生用の音声の複製を手放す（iOS はタブのメモリの上限が低い）
  */
-const h = host.createHost({
+const io: host.HostIO = {
   loadAddon: (id) => loadAddon(id),
   installedManifest,
   addonFileUrl,
@@ -54,12 +55,11 @@ const h = host.createHost({
   },
   isMobile,
   onGpuLost: (message) => gpuLostHandler?.(message),
-})
+}
+const h = host.createHost(io)
 
-/** 診断用（debug/diagnoseExtract.ts） */
-export const openExtractor = h.openExtractor
-/** 抽出中か（診断で実行環境を作ると、抽出のモデルを入れ替えてしまう） */
-export const isExtracting = h.isExtracting
+/** 抽出の診断（設定の開発者向け。Extractor の hostDiagnose.ts） */
+export const diagnoseExtract = (o: ExtractOptions, log: (line: string) => void) => runDiagnose(h, io, o, log)
 
 /** `clip` の範囲（秒）を、取り出したボーカル（または伴奏）に置き換えた音声を返す。長さは変わらない */
 export function extractRanges(clip: Clip, ranges: Range[], stem: ExtractStem, o: ExtractOptions, onProgress: (p: number) => void, signal?: AbortSignal, confirmCpu?: ConfirmCpu) {

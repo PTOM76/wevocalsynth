@@ -6,10 +6,9 @@ import DataSection from './DataSection'
 import ProjectSection, { type ProjectSettings } from './ProjectSection'
 import { VOCAL_MODELS } from '../hooks/useVocalExtract'
 import { EXTRACT_MODELS, STEM_MODELS } from '../audio/vocalExtract'
-import { isMdxModel, resolveModel } from '../audio/vocalExtract'
+import { diagnoseExtract, isMdxModel, resolveModel } from '../audio/vocalExtract'
 import { backendAllowed } from '../../extractor/src/compat'
 import { visibleAlgorithms } from '../components/AlgorithmMenu'
-import ExtractDiagnose from '../debug/ExtractDiagnose'
 import OutputDeviceRow from './OutputDeviceRow'
 import SettingRow from './items/SettingRow'
 import ShortcutSection from './ShortcutSection'
@@ -18,7 +17,7 @@ import { i18n, t as translate, type LangSetting, type MessageKey } from '../i18n
 import type { Category } from './settingsSearch'
 import PluginsSection from './PluginsSection'
 import { Box, Button, Typography } from '@mui/material'
-import { AddonFolderRow, AddonSection, addonFolderSupported, Check, Choice, Group, Row, type WindowMode, pevenFont } from 'pevenmui'
+import { AddonFolderRow, AddonSection, addonFolderSupported, Check, Choice, Group, LogRunRow, Row, type WindowMode, pevenFont } from 'pevenmui'
 
 /** 設定の「ボーカル抽出」に並べる追加機能（モデル。実行環境はモデルと一緒に導入・削除するので出さない） */
 const VOCAL_ADDONS = [...Object.values(VOCAL_MODELS), ...Object.values(STEM_MODELS)].map((m) => m.addon)
@@ -266,7 +265,13 @@ export function settingsPages({ draft, set, onClose, t, project, go }: PageProps
     ),
     diagnose: (
       <Group title={t('settings.groupDiagnose')}>
-        <ExtractDiagnose options={{ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand, memoryMb: draft.vocalMemoryMb, threads: draft.vocalThreads }} />
+        <LogRunRow
+          label={t('settings.extractDiagnose')}
+          help={t('settings.extractDiagnoseHelp')}
+          runLabel={t('settings.extractDiagnoseRun')}
+          runningLabel={t('settings.extractDiagnoseRunning')}
+          run={(log) => diagnoseExtract({ model: draft.vocalModel, gpu: draft.vocalGpu, keepHighBand: draft.vocalKeepHighBand, memoryMb: draft.vocalMemoryMb, threads: draft.vocalThreads }, log)}
+        />
       </Group>
     ),
     pitch: (
