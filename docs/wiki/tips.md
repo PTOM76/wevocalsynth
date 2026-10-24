@@ -15,3 +15,4 @@ PWAにも対応しているので、パソコンだけでなく、iPad/iPhone/An
 WeVocalSynth は **We**b **Vocal** **Synth**esizer から来ている。ブラウザ（Web）だけで、ボーカル（Vocal）を作ったり加工したり（Synthesizer）できる、という意味を込めた。
 
 ボーカル抽出の WeVocalExtractor と、共有の信号処理ライブラリ wevocal-lib も、同じく「WeVocal」を頭に付けている。
+読み方はウェ・ボーカル・シンス (シンセでも良き)
