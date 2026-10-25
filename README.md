@@ -1,5 +1,5 @@
 # WeVocalSynth
-WeVocalSynthは、Webブラウザ上で音声素材のピッチおよび時間を編集するための音声加工ツールである。
+WeVocalSynthは、Webブラウザ上で音声のピッチおよび時間を編集するための音声加工ツールである。
 
 - https://wevocalsynth.pitan76.net/
 

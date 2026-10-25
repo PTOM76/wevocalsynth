@@ -1,4 +1,4 @@
-// キーの割り当てと、フォーカスしている帯（波形かピッチ）に効く切り取りなど。キーの処理はコマンド（src/commands/）
+// キーの割り当てと、フォーカスしている帯（波形かピッチ）に対して行う切り取りなど。キーの処理はコマンド（src/commands/）
 import { useMemo } from 'react'
 import type { Clip, Range } from '../audio/types'
 import type { usePlayer } from '../audio/usePlayer'

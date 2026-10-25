@@ -67,7 +67,6 @@ src/audio/
   silence.ts  無音で区切って、音のある所を探す。WeVocal Studio と共通にするため wevocal-lib に移した（ここは読み直すだけ）
   spectrogram.ts  スペクトログラムの計算を追加機能「解析」に頼む
   synth.ts  音を 0 から作る（wevocal-lib。WeVocal Studio と共通）
-  tempoChange.ts  曲の途中でテンポが変わる所を探す（自動解析で見つけたら、テンポのマーカーの候補にする）
   tempoMap.ts  テンポが途中で変わる曲のための、区間ごとのテンポと拍の位置。WeVocal Studio と共通にするため wevocal-lib に移した（ここは読み直すだけ）
   timeMap.ts  編集の前の時刻を、編集の後の時刻に写す（読みの帯などの位置を、音声の編集に追従させる）
   tracks.ts  トラックの形と、保存する設定（フェーダー、鳴らし方、FX の列）の変換
@@ -89,7 +88,7 @@ src/commands/
   menus.ts  メニューバーと右クリックメニューの並び（項目はコマンドの id。docs/DECISIONS.md の「メニューの構成」）
   play.ts  再生のコマンド（再生、ループ、移動）
   tools.ts  ツールのコマンド（ボーカル抽出、音声の作成、録音、ピッチの道具）
-  track.ts  トラックのコマンド（選んでいるトラックに効く）
+  track.ts  トラックのコマンド（選んでいるトラックに作用する）
   types.ts  コマンド（操作）の型。メニュー、右クリック、ショートカット、ツールバーが id で参照する（memo/commands.md）
   view.ts  表示のコマンド（帯の表示、拡大縮小、追従）
 
@@ -127,7 +126,6 @@ src/components/
   stableMemo.ts  関数の props が作り直されても描き直さない memo
   StatusBar.tsx  PC の下のステータスバー（プロジェクト名、形式、選択範囲、BPM、原音と加工後）
   SynthDialog.tsx  音を 0 から作るダイアログ（部品は wevocal-lib の SynthDialog。WeVocal Studio と共通）
-  TempoChangeDialog.tsx  テンポの途中の変化を見つけたときに、マーカーを置くかを尋ねるダイアログ
   TempoField.tsx  BPM の表示と入力（部品は PevenMUI の TempoField。WeVocal Studio と共通）
   Toolbar.tsx  PC の上のツールバー（再生、編集、表示のボタン）
   UpdatePrompt.tsx  新しい版が公開されたときの通知
@@ -164,8 +162,6 @@ src/constants/
 src/debug/
   DebugOverlay.tsx  デバッグ表示（部品は PevenMUI。WeVocal Studio と共通）
   debugStats.ts  デバッグ表示用の計測値（PevenMUI。WeVocal Studio と共通）
-  diagnoseExtract.ts  ボーカル抽出の診断の本体
-  ExtractDiagnose.tsx  ボーカル抽出の診断の画面（設定の開発者向け）
 
 src/dsp/
   engine.ts  DSP の Worker への頼みごと（加工、解析）と、Worker の管理
@@ -193,7 +189,7 @@ src/hooks/
   useDialogs.ts  ダイアログの開閉と、開くときに渡す値
   useDocument.ts  開いている文書（プロジェクト）: 名前、テンポ、マーカー、トラックと元に戻す、未保存の印、保存先、タイトル（memo/document.md）
   useEditor.ts  エディタ全体の状態と操作（文書、選択範囲、加工、再生、表示を束ねる）
-  useEditorKeys.ts  キーの割り当てと、フォーカスしている帯（波形かピッチ）に効く切り取りなど。キーの処理はコマンド（src/commands/）
+  useEditorKeys.ts  キーの割り当てと、フォーカスしている帯（波形かピッチ）に対して行う切り取りなど。キーの処理はコマンド（src/commands/）
   useFormantCurve.ts  フォルマントの帯に描いた曲線と、その試聴
   useHistory.ts  元に戻す、やり直す（差分で持ち、メモリの上限で古い段を捨てる）
   useLaneCurve.ts  帯に描く曲線（音量、フォルマント）の値
@@ -261,7 +257,7 @@ src/settings/items/
 
 dsp/src/
   ffi.rs  wasm 向け C ABI。wasm-bindgen を使わず、Worker から素の `WebAssembly.instantiate` で呼べる関数だけを公開する。
-  kana.rs  声の素材から一音を作る（試験的。memo/kana-voice.md）。今は母音だけ。
+  kana.rs  声から一音を作る（試験的。memo/kana-voice.md）。今は母音だけ。
   lib.rs  WeVocalSynth の DSP エンジン。
 
 dsp/src/tests/

@@ -1,4 +1,4 @@
-// トラックのコマンド（選んでいるトラックに効く）
+// トラックのコマンド（選んでいるトラックに作用する）
 import { isNeutralChain } from 'wevocal-lib'
 import { defineCommands, ready, type CommandContext } from './types'
 
