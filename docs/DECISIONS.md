@@ -81,13 +81,13 @@ ONNX Runtime Web 1.30 の WebGPU で fp16 版を動かすと、エラーにな�
 導入済みかだけを見ていたら、古い実行環境のまま新しい関数（`separateBoth`）を呼んで失敗した。配信中のマニフェストと版が違えば、更新の確認ダイアログを表示する。オフラインなら今ある版で使う (2026-10-01)。
 
 ### スペクトログラムは WeVocalAnalyzer に移し、追加機能として使う
-スペクトログラムを使う人は少ないため、基本機能から外し、別リポジトリの WeVocalAnalyzer（解析のアプリ兼ライブラリ）に移す。Synth からは、ボーカル抽出と同じく追加機能として導入してから使う。移し終わるまでは今の方式を残す。STFT などの計算の部品は wevocal-lib に置いたままにし、F0 など Synth に残る機能は Analyzer に依存させない (2026-10-05)。
+スペクトログラムを利用者は少ないため、基本機能から外し、別リポジトリの WeVocalAnalyzer（解析のアプリ兼ライブラリ）に移す。Synth からは、ボーカル抽出と同じく追加機能として導入してから使う。移し終わるまでは今の方式を残す。STFT などの計算の部品は wevocal-lib に置いたままにし、F0 など Synth に残る機能は Analyzer に依存させない (2026-10-05)。
 
 ### 追加機能の仕組みは PevenMUI に置く
 Analyzer でも歌詞の文字化を追加機能にするため、Synth の `src/addons/` を共通にした。導入、保存先、Service Worker の経路、導入のダイアログはどれも音声を扱わないので、wevocal-lib ではなく PevenMUI（`pevenmui/src/addons/`）に置いた。アプリは配信している一覧と IndexedDB を `createAddons` に渡すだけにする。導入のダイアログは、部品の文字を置いた場所の言語で表示する（フックは App の外側で呼ばれ、そこでは言語が分からないため）(2026-10-08)。
 
 ### 歌詞の文字化は、Analyzer と Synth の両方で追加機能にする
-transformers.js と ONNX Runtime の wasm、読みの辞書で約 43MB あり、使う人は少ない。Analyzer の本体からも外し、同じビルド（`analyzer/vite.addons.lyrics.config.ts`）を両方のアプリで配る。中身が同じなら版も同じになる (2026-10-08)。
+transformers.js と ONNX Runtime の wasm、読みの辞書で約 43MB あり、利用者は少ない。Analyzer の本体からも外し、同じビルド（`analyzer/vite.addons.lyrics.config.ts`）を両方のアプリで配る。中身が同じなら版も同じになる (2026-10-08)。
 
 ### 文字化のモデルも追加機能にし、ファイルは Hugging Face から取る
 最初はモデル（Whisper）を transformers.js が自分で取得して保存していたため、追加機能の保存先のフォルダーを使わず、設定から削除もできなかった。モデルを大きさごとの追加機能（`whisper-tiny`、`whisper-base`、`whisper-small`）にした。モデルは tiny でも約 120MB、small は約 560MB あり、配信先（GitHub Pages）の容量に収まらないので、マニフェストだけを配り、各ファイルの `url` に Hugging Face の場所（コミットで固定）を書く。導入の仕組みはそこから取り、大きさと sha256 を確かめて保存先に置く。Worker は transformers.js の `localModelPath` で保存先から読み、transformers.js 自身の保存先は使わない（`analyzer/scripts/whisperAddons.mjs`）(2026-10-09)。

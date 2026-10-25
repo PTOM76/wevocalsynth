@@ -1,6 +1,6 @@
 # WeVocalSynth ドキュメント
 
-## 使う人向け
+## 利用者向け
 - [使い方](MANUAL.md)
 - [バージョン履歴](VERSION.md)（マイナーバージョンごとの主な変更）
 - [プロジェクトファイルの形式](PROJECT_FORMAT.md)（.wvsp）
@@ -15,7 +15,7 @@
 - [ボーカル抽出](EXTRACTOR.md)（WeVocalSynth 側。本体は wevocalextractor の docs）
 - [速さの計測](PERFORMANCE.md)（測った値と、試した改善）
 
-## 開発する人向け
+## 開発者向け
 - [開発環境構築](SETUP.md)
 - [ファイル構成](STRUCTURE.md)（どのファイルが何を担当するか）
 - [コーディング規約](CODING.md)
