@@ -92,7 +92,7 @@ fn fast_formant_matches_reference() {
     assert!(diff < peak * 1e-3, "diff {diff} vs peak {peak}");
 }
 
-/// Pisol Direct は、下げても上げてもフォルマントの重心がほぼ動かず、長さも変わらないこと（補正を通さない）
+/// Vedict は、下げても上げてもフォルマントの重心がほぼ動かず、長さも変わらないこと（補正を通さない）
 #[test]
 fn psola_direct_keeps_formant() {
     let sr = 48000.0;
