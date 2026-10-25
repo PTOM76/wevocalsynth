@@ -533,6 +533,8 @@
   "algorithm.wsolaHint": "Overlaps similar waveforms. Fast, good for consonants",
   "algorithm.psola2": "Pisol",
   "algorithm.psola2Hint": "Splices at pitch periods. Less roughness",
+  "algorithm.psolad": "Pisol Direct",
+  "algorithm.psoladHint": "Repositions pitch periods without resampling. Natural formants",
   "algorithm.wsola2": "Wevia",
   "algorithm.wsola2Hint": "Fast, good for consonants. Less smearing",
   "algorithm.hpss": "HPSS",

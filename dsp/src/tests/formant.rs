@@ -91,3 +91,19 @@ fn fast_formant_matches_reference() {
     assert_eq!(fast.len(), reference.len());
     assert!(diff < peak * 1e-3, "diff {diff} vs peak {peak}");
 }
+
+/// Pisol Direct は、下げても上げてもフォルマントの重心がほぼ動かず、長さも変わらないこと（補正を通さない）
+#[test]
+fn psola_direct_keeps_formant() {
+    let sr = 48000.0;
+    let x = vowel(sr, 1.0, 150.0, 800.0);
+    let base = centroid(&x, sr);
+    for semi in [-12.0, -5.0, 5.0, 12.0] {
+        let y = process_with_progress(&[&x], sr, semi, 1.0, Algorithm::PsolaDirect, Formant::Shift(0.0), &mut |_| {});
+        let c = centroid(&y[0], sr);
+        println!("PsolaDirect {semi:+}: {base:.0}Hz -> {c:.0}Hz");
+        assert_eq!(y[0].len(), x.len());
+        assert!(y[0].iter().all(|v| v.is_finite()));
+        assert!((c - base).abs() < base * 0.2, "{semi}: moved formants ({c} vs {base})");
+    }
+}

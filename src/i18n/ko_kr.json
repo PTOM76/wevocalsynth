@@ -533,6 +533,8 @@
   "algorithm.wsolaHint": "비슷한 파형으로 겹침. 자음에 강하고 빠름",
   "algorithm.psola2": "Pisol",
   "algorithm.psola2Hint": "목소리의 주기마다 잘라 붙임. 갈라짐이 적음",
+  "algorithm.psolad": "Pisol Direct",
+  "algorithm.psoladHint": "주기를 다시 배열해 음높이를 바꿈. 음색이 자연스러움",
   "algorithm.wsola2": "Wevia",
   "algorithm.wsola2Hint": "자음에 강하고 빠름. 번짐이 적음",
   "algorithm.hpss": "HPSS",

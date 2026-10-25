@@ -533,6 +533,8 @@
   "algorithm.wsolaHint": "按相似波形重叠。擅长辅音，速度快",
   "algorithm.psola2": "Pisol",
   "algorithm.psola2Hint": "按声音周期切分拼接。破音少",
+  "algorithm.psolad": "Pisol Direct",
+  "algorithm.psoladHint": "重新排列周期来改变音高。音色自然",
   "algorithm.wsola2": "Wevia",
   "algorithm.wsola2Hint": "擅长辅音，速度快。模糊少",
   "algorithm.hpss": "HPSS",
