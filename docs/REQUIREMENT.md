@@ -1,5 +1,5 @@
 # 要件定義
-WeVocalSynth が何を目指し、どこまでできているか。細かい経緯はリポジトリ外の `DEFINE.md` と `TASK.md` にある。
+WeVocalSynth が何を目指し、どこまでできているか。残っている作業はルートの `TASK.md` にある。
 
 関連: [アーキテクチャ](ARCHITECTURE.md)、[決定事項](DECISIONS.md)
 

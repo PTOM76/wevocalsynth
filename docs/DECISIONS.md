@@ -195,6 +195,9 @@ MUI の既定では、目盛りがバーの上では背景色、外では文字�
 ### ファイル選択は拡張子だけで指定し、AIFF は自前で読む
 `audio/*` などの MIME 型は OS のダイアログが拡張子の一覧に展開し、並べた拡張子と重なって同じものが何度も発生したので、拡張子だけにした。AIFF は Chrome・Firefox の `decodeAudioData` が読めないので、非圧縮の整数・浮動小数を `wevocal-lib/web/src/aiff.ts` で読む (2026-10-02)。
 
+### デコードは、ファイルのヘッダーのサンプルレートで作った OfflineAudioContext で行う
+`decodeAudioData` は、結果をそのコンテキストのサンプルレートへ変換する。通常の AudioContext で読むと 44.1kHz の WAV も 48kHz などに変わり、元のレートで書き出せなくなる。そのため WAV と MP4 はヘッダーからレートを読み、同じレートの OfflineAudioContext で読む（`wevocal-lib/web/src/decode.ts` の `decodeFile`）。
+
 ### 自動保存は IndexedDB に配置する
 音声は localStorage の容量（約5MB）に収まらない。設定のような小さいものは localStorage に配置する。
 
