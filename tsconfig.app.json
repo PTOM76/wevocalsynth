@@ -23,5 +23,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "pevenmui/src", "wevocal-lib/web/src"]
+  "include": ["src", "pevenmui/src", "wevocal-lib/web/src"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
 }
