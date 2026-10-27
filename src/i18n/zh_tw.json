@@ -1022,6 +1022,8 @@
   "fx.copy": "複製",
   "fx.paste": "貼上",
   "fx.duplicate": "建立副本",
+  "fx.listFold": "摺疊清單",
+  "fx.listUnfold": "展開清單",
 
   "plugins.intro": "從 URL 新增用於 FX 的外掛。新增的外掛會儲存在此裝置上，離線也能使用。",
   "plugins.url": "外掛清單或 WebAudio Modules（.js）的 URL",

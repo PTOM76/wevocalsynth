@@ -1022,6 +1022,8 @@
   "fx.copy": "复制",
   "fx.paste": "粘贴",
   "fx.duplicate": "创建副本",
+  "fx.listFold": "折叠列表",
+  "fx.listUnfold": "展开列表",
 
   "plugins.intro": "从 URL 添加用于 FX 的插件。添加的插件会保存在此设备上，离线也能使用。",
   "plugins.url": "插件清单或 WebAudio Modules（.js）的 URL",

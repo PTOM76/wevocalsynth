@@ -1022,6 +1022,8 @@
   "fx.copy": "복사",
   "fx.paste": "붙여넣기",
   "fx.duplicate": "복제",
+  "fx.listFold": "목록 접기",
+  "fx.listUnfold": "목록 펼치기",
 
   "plugins.intro": "URL에서 FX용 플러그인을 추가합니다. 추가한 플러그인은 이 기기에 저장되어 오프라인에서도 사용할 수 있습니다.",
   "plugins.url": "플러그인 매니페스트 또는 WebAudio Modules(.js)의 URL",

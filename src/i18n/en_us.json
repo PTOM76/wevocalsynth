@@ -1022,6 +1022,8 @@
   "fx.copy": "Copy",
   "fx.paste": "Paste",
   "fx.duplicate": "Duplicate",
+  "fx.listFold": "Collapse the list",
+  "fx.listUnfold": "Expand the list",
 
   "plugins.intro": "Add plugins for FX from a URL. Added plugins are saved on this device and work offline.",
   "plugins.url": "URL of a plugin manifest or a WebAudio Module (.js)",

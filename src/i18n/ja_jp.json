@@ -1022,6 +1022,8 @@
   "fx.copy": "コピー",
   "fx.paste": "貼り付け",
   "fx.duplicate": "複製",
+  "fx.listFold": "一覧を閉じる",
+  "fx.listUnfold": "一覧を開く",
 
   "plugins.intro": "FX に使うプラグインを URL から追加します。追加したプラグインはこの端末に保存され、ネットがなくても使えます。",
   "plugins.url": "プラグインのマニフェスト、または WebAudio Modules（.js）の URL",
